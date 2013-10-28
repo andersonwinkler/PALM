@@ -32,7 +32,8 @@ opts.s               = cell(Nm,1);      % Surface file(s)
 opts.t               = cell(Nt,1);      % t contrast file(s)
 opts.f               = cell(Nf,1);      % F contrast file(s)
 opts.nP0             = 10000;           % Number of permutations
-opts.e               = [];              % File with definition of exchangeability blocks
+opts.eb              = [];              % File with definition of exchangeability blocks
+opts.vg              = [];              % File with definition of variance groups
 opts.PB              = false;           % Whole block permutation?
 opts.lx              = true;            % Lexicographic permutations?
 opts.EE              = true;            % Exchangeable errors?
@@ -112,10 +113,16 @@ while a <= nargin,
             f = f + 1;
             a = a + 2;
             
-        case '-e',
+        case '-eb',
             
             % Get the exchangeability blocks file.
-            opts.e = varargin{a+1};
+            opts.eb = varargin{a+1};
+            a = a + 2;
+            
+        case '-vg',
+            
+            % Get the variance groups file.
+            opts.vg = varargin{a+1};
             a = a + 2;
             
         case '-o',
@@ -293,7 +300,6 @@ while a <= nargin,
             
         case '-pmethod',
             
-            
             % Which method to use for to partition the model?
             methlist = {    ...
                 'Guttman',  ...
@@ -325,7 +331,6 @@ while a <= nargin,
             % If the user wants to have also the parametric p-values
             opts.savepara = true;
             a = a + 1;
-            
             
         case '-savemask',
             
@@ -637,7 +642,7 @@ for i = 1:Ni,
             plm.Yisvtx(i) = false;
             plm.Yisfac(i) = true;
         end
-        pln.Yarea{i} = calcarea(plm.srf{s},plm.Yisvtx(i));
+        pln.Yarea{i} = palm_calcarea(plm.srf{s},plm.Yisvtx(i));
     end
     
     % Check if size of data is compatible with size of mask

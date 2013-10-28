@@ -2,7 +2,7 @@ function palm_backend(varargin)
 
 % Start by taking what matters from the arguments
 global plm opts; % uncomment for debugging
-[opts,plm] = palm_takeargs(varargin);
+[opts,plm] = palm_takeargs(varargin{1});
 
 % To store the statistic name for each contrast, to be used later when
 % saving the statistic image to a file

@@ -19,7 +19,6 @@ N = size(M,1);
 S = zeros(N,1);
 U = unique(M,'rows');
 for u = 1:size(U,1),
-    uidx = all(repmat(U(u,:),[N 1]) == M,2);
+    uidx = all(bsxfun(@eq,U(u,:),M),2);
     S(uidx) = u;
 end
-

@@ -54,7 +54,7 @@ switch lower(fext),
         
         % Read an FSL "VEST" file.
         X.readwith = 'vestread';
-        [X.data,X.extra.PPH] = vestread(X.filename);
+        [X.data,X.extra.PPH] = palm_vestread(X.filename);
         
     case '.gz',
         
@@ -131,7 +131,7 @@ switch lower(fext),
             '.pial','.sulc','.thickness','.volume'},
         
         % Read a FreeSurfer curvature file
-        extern = checkprogs;
+        extern = palm_checkprogs;
         if extern.fs,
             X.readwith = 'fs_read_curv';
             [X.data,X.extra.fnum] = read_curv(X.filename);
@@ -149,7 +149,7 @@ switch lower(fext),
             'smoothwm.nofix','sphere','sphere.reg','white'},
         
         % Read a FreeSurfer surface file
-        extern = checkprogs;
+        extern = palm_checkprogs;
         if extern.fs,
             X.readwith = 'fs_read_surf';
             [X.data.vtx,X.data.fac] = read_surf(X.filename);
@@ -165,7 +165,7 @@ switch lower(fext),
     case {'.mgh','.mgz'},
         
         % Read a FreeSurfer MGH/MGZ file
-        extern = checkprogs;
+        extern = palm_checkprogs;
         if extern.fs,
             X.readwith = 'fs_load_mgh';
             [X.data,X.extra.M,X.extra.mr_parms,X.extra.volsz] = load_mgh(X.filename);
