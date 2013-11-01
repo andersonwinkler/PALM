@@ -28,7 +28,7 @@ function pvals = palm_datacdf(G,Gvals)
 % http://brainder.org
 
 % Sort the data and compute the empirical distribution
-[~,cdfG,distp] = csort(Gvals(:),'descend',true);
+[~,cdfG,distp] = palm_csort(Gvals(:),'descend',true);
 cdfG  = unique(cdfG);
 distp = flipud(unique(distp))./numel(Gvals);
 

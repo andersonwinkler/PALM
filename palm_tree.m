@@ -1,7 +1,34 @@
 function Ptree = palm_tree(B,M)
 % Generates a tree that takes the dependence structure
-% between observation into account. From this tree, the
+% between observations into account. From this tree, the
 % permutations can be generated later.
+%
+% Usage:
+% Ptree = palm_tree(B,M)
+%
+% - B       : Multi-level block definitions
+% - M       : Design matrix.
+% - Ptree   : Permutation tree, from which permutations are generated
+%             later.
+% 
+% Each node is a cell with 4 elements:
+% N{1,1}    : a vector with a sequence of indices that indicates the
+%             current lexicographic permutation. For within-block
+%             exchangeability at the first level, shows NaN.
+% N{1,2}(1) : A boolean indicating if the last lexicographic
+%             permutation of the branches that begin at this node
+%             has been reached, i.e., if the sequence N{1,1} is
+%             the last one lexicographically.
+% N{1,2}(2) : A boolean indicating if the last lexicographic
+%             permutation for all the sub-branches that begin at
+%             this node have been reached. For the terminal branches,
+%             for which there are no deeper nodes/branches, this
+%             is a NaN.
+% N{1,3}    : The branches that begin here. This cell will never
+%             change.
+% N{1,4}    : The branches that begin here, i.e., a copy of the
+%             previous. However, these are the ones
+%             that are shuffled and used to make the permutations.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -16,31 +43,11 @@ function Ptree = palm_tree(B,M)
 O = (1:size(M,1))';
 
 % Now make the actual tree.
-% Each node is a cell with 4 elements:
-% N{1,1}    : a vector with a sequence of indices that indicates the
-%             current lexicographic permutation. For within-block
-%             exchangeability at the first level, shows NaN.
-% N{1,2}(1) : A positive integer representing the depth of the
-%             tree at this level. Not currently used by the code,
-%             but available for future use.
-% N{1,2}(2) : A boolean indicating if the last lexicographic
-%             permutation of the branches that begin at this node
-%             has been reached, i.e., if the sequence N{1,1} is
-%             the last one lexicographically.
-% N{1,2}(3) : A boolean indicating if the last lexicographic
-%             permutation for all the sub-branches that begin at
-%             this node have been reached.
-% N{1,3}    : The branches that begin here. This cell will never
-%             change.
-% N{1,4}    : The branches that begin here, i.e., a copy of the
-%             previous. However, these are the ones
-%             that are shuffled and used to make the permutations.
-
 % For the 1st level (note that the levels begin at 0)
 recdepth = 0;
 Ptree = cell(1,4);
 [Ptree{1},Ptree{3}] = maketree(B,M,O,recdepth+1);
-Ptree{2} = [recdepth 0 0];
+Ptree{2} = [0 0];
 Ptree{4} = Ptree{3};
 
 % ==============================================================
@@ -54,11 +61,10 @@ nU = numel(U);
 
 % Some vars for later
 Ucnt    = zeros(nU,1);
-bsizchk = size(B,2) > 1;
-if bsizchk,
+if size(B,2) > 1,
     Ptree = cell(nU,4);
 else
-    Ptree = [];
+    Ptree = cell(nU,1);
 end
 
 % For each block
@@ -69,16 +75,20 @@ for u = 1:nU,
     
     % If this isn't the last level, continue constructing
     % the branches recursively.
-    if bsizchk,
+    if size(B,2) > 1,
         [Ptree{u,1},Ptree{u,3}] = ...
             maketree(B(idx,2:end),M(idx,:),O(idx),recdepth+1);
-        Ptree{u,2} = [recdepth 0 0];
         Ptree{u,4} = Ptree{u,3};
+        Ptree{u,2} = [0 0];
+        if size(B,2) == 2,
+            % For the terminal branches, it's not meaningful to have
+            % a true/false here, and this NaN is checked elsewhere.
+            Ptree{u,2}(2) = NaN;
+        end
     else
         % At the terminal branches, there is no more tree, so
         % just keep track of the observation indices.
         Ptree{u,1} = O(idx);
-        Ptree{u,2} = recdepth;
     end
     
     % This is only to later validate the subblocks, which need
@@ -110,11 +120,7 @@ if recdepth > 1,
     % Put in ascending order, and shuffle the branches
     % accordingly
     [S,idx] = sort(S);
-    if bsizchk,
-        Ptree = Ptree(idx,:);
-    else
-        Ptree = Ptree(idx,:);
-    end
+    Ptree = Ptree(idx,:);
     
 elseif nU == 1,
     % For whole block starting at the second level, the

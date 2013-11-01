@@ -45,7 +45,7 @@ opts.NPC             = false;           % Do non-parametric combination?
 opts.cmethod         = 'Tippett';       % Combination method.
 opts.cfallback       = 'Fisher';        % ...
 opts.savepara        = false;           % Save parametric p-values too?
-opts.corrmod         = true;            % FWER correction over modalities?
+opts.corrmod         = false;           % FWER correction over modalities?
 opts.corrcon         = false;           % FWER correction over contrasts?
 opts.savemask        = false;           % Save the masks?
 opts.FDR             = false;           % FDR adjustment?
@@ -98,7 +98,7 @@ while a <= nargin,
             % Get the design matrix file.
             opts.d = varargin{a+1};
             a = a + 2;
-            
+                        
         case '-t',
             
             % Get the t contrast files.
@@ -804,11 +804,11 @@ end
 % Read the exchangeability blocks. If none is specified, all observations
 % are assumed to be in the same big block.
 % Also, take the opportunity to define the variance groups.
-if isempty(opts.e),
+if isempty(opts.eb),
     plm.EB  = ones(N,1);
     plm.VG  = plm.EB;
 else
-    plm.EB = palm_miscread(opts.e);
+    plm.EB = palm_miscread(opts.eb);
     plm.EB = plm.EB.data;
     if isvector(plm.EB),
         plm.EB = plm.EB(:);

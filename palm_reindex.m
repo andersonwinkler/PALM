@@ -12,7 +12,7 @@ function Br = palm_reindex(varargin)
 % B     : Block definitions (multilevel).
 % meth  : Method for reindexing: 'continuous', 'restart',
 %         or 'mixed' as described above.
-%         Default: 'mixed'.
+%         Default: 'restart'.
 % Br    : Reindexed block definitions.
 % 
 % _____________________________________
@@ -22,7 +22,7 @@ function Br = palm_reindex(varargin)
 % http://brainder.org
 
 % Default
-meth = 'mixed';
+meth = 'restart';
 
 % Take care of input and output vars
 B  = varargin{1};

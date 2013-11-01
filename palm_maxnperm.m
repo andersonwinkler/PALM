@@ -16,7 +16,7 @@ function np = maxpnode(Ptree,np)
 % incremental.
 for u = 1:size(Ptree,1),
     np = np * seq2np(Ptree{u,1});
-    if size(Ptree,2) > 2,
+    if ~isnan(Ptree{u,2}(2)),
         np = maxpnode(Ptree{u,3},np);
     end
 end

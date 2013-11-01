@@ -2,6 +2,8 @@ function a = palm_nextperm(a)
 % Given a sequence of integers "a", returns the next lexicographic
 % permutation of this sequence. If "a" is already the last possible
 % permutation, returns a vector of zeros of size(a).
+% Note that to shuffle vectors, they must be supplied as
+% column vectors (N by 1).
 % 
 % Usage:
 % a1 = palm_nextperm(a)
@@ -10,7 +12,8 @@ function a = palm_nextperm(a)
 %      considered for the permutations. The rows as a whole
 %      are shuffled together.
 % a1 : Permuted sequence of values that corresponds to the
-%      next lexicographic permutation.
+%      next lexicographic permutation. If a is already the last
+%      possible permutation, a1 = false.
 % 
 % This function is an implementation of the "Algorithm L",
 % published by D. Knuth in his "The Art of Computer Programming",
@@ -21,6 +24,7 @@ function a = palm_nextperm(a)
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
+% Feb/2012 (first version)
 % Oct/2013 (this version)
 % http://brainder.org
 
@@ -56,7 +60,6 @@ if j > 0,
     end
 else
     % If the input is the last permutation, then there is no next.
-    % Return then a vector of zeros of the same size as a, so that
-    % it can be stored in the same variables in calling functions.
+    % Return then a boolean "false" that can be tested outside.
     a = false;
 end
