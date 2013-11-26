@@ -1,0 +1,1 @@
+This is niftimatlib-1.2, published on sf.net on 30/March/2012, and downloaded in 21/Nov/2013 from http://sourceforge.net/projects/niftilib/files/niftimatlib/

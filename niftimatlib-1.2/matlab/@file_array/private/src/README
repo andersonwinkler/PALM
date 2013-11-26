@@ -1,0 +1,12 @@
+To compile on a big-endian machine
+	mex -O -DBIGENDIAN file2mat.c
+	mex -O -DBIGENDIAN mat2file.c
+
+On a little-endian machine
+	mex -O file2mat.c
+	mex -O mat2file.c
+
+On a Windows machine
+	mex -O -DSPM_WIN32 file2mat.c
+	mex -O -DSPM_WIN32 mat2file.c
+

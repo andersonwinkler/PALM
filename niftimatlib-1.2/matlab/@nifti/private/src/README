@@ -1,0 +1,17 @@
+/* 
+ * This is a Matlab mex interface for Bob Cox's extensive nifti_stats.c
+ * functionality.  See nifti_stats.m for documentation.
+ */
+
+
+To compile on a big-endian machine
+	mex -DBIGENDIAN nifti_stats.c nifti_stats_mex.c -O
+
+On a little-endian machine
+	mex nifti_stats.c nifti_stats_mex.c -O
+
+On a Windows machine
+	mex -O -DSPM_WIN32 nifti_stats.c nifti_stats_mex.c
+
+
+mv the .mex* file up one level to the private dir
