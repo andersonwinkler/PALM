@@ -1,4 +1,20 @@
 function dpfl = palm_faclabel(dpf,fac)
+% Label a DPV file (vertexwise data).
+% 
+% Usage:
+% dpfl = palm_faclabel(dpf,fac)
+% 
+% - dpf  : Data per face to be labelled. The non-zero
+%          regions receive an unique identifier.
+% - fac  : Face indices (see palm_srfread for details).
+% - dpfl : Labelled data per vertex.
+% 
+% _____________________________________
+% Anderson M. Winkler
+% FMRIB / Univ. of Oxford
+% Feb/2012 (1st version)
+% Sep/2013 (this version)
+% http://brainder.org
 
 % Ignore faces that are not in the mask
 dpfl = zeros(size(dpf));
@@ -8,27 +24,51 @@ facm = bsxfun(@times,fac,dpf);
 k = 1; % label indices (to be incremented)
 for f = find(dpf)',
     
-    % Find other faces that share 2 vtx (1 edge)
+    % Find other faces that share vertices with
+    % the current one
     neifacidx = ...
         facm == fac(f,1) | ...
         facm == fac(f,2) | ...
         facm == fac(f,3);
-    neifacidx = sum(neifacidx,2) >= 2; % only 2+ shared vertices, not 1
-    numneigh  = sum(neifacidx); % number of neighbours
-    if numneigh > 1, % if not isolated face
+    
+    % Only 2+ shared vertices, not 1 (i.e., edge in common)
+    neifacidx = sum(neifacidx,2) >= 2;
+    
+    % Number of neighbours
+    numneigh  = sum(neifacidx);
+    
+    % If this isn't an isolated face
+    if numneigh > 1,
+        
+        % Sort the labels assigned to the neighbours
         flab = sort(dpfl(neifacidx));
         if flab(numneigh) == 0,
+            
+            % If the last (highest) label of the neighbours is
+            % zero, this means neither neighbour has received a
+            % label (yet, perhaps never). So use a new label, 
+            % and increment the counter.
             dpfl(neifacidx) = k;
+            k = k + 1;
         else
+            
+            % If one or more neighbours already have a label, assign
+            % the highest to all the others, including all other
+            % faces across the surface that may have received those.
             for n = numneigh:-1:1,
                 if flab(n) ~= 0,
                     dpfl(dpfl == flab(n)) = flab(numneigh);
                 end
             end
+            
+            % Only then assign the highest label to the current face
             dpfl(f) = flab(numneigh);
         end
-    else % isolated face
+        
+    else
+        
+        % If this is an isolated face, label it and increment the counter.
         dpfl(f) = k;
+        k = k + 1;
     end
-    k = k + 1;
 end

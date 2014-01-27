@@ -6,7 +6,7 @@ function S = palm_maskstruct(mask,readwith,extra)
 % M = maskstruct(mask,readwith,extra)
 %
 % Inputs:
-% Y        : A (n by m) real array.
+% mask     : A (1 by m) real array.
 % readwith : A string telling which function was used to read
 %            original data. See 'miscread.m' for help.
 % extra    : A struct that varies according to which function
@@ -37,7 +37,13 @@ switch lower(readwith),
         % If the original data is a CSV or VEST file.
         S.data = mask;
         
-    case 'spm_spm_vol'
+    case 'nifticlass',
+        
+        % If the original data is NIFTI and was read witht the NIFTI class
+        S.data      = palm_conv2to4(mask,extra.dat.dim(1:3));
+        S.extra.mat = extra.mat;
+        
+    case 'spm_spm_vol',
         
         % If the original data is NIFTI and was read with SPM.
         S.data           = palm_conv2to4(mask,extra(1).dim(1:3));

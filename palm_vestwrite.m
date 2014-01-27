@@ -1,4 +1,4 @@
-function vestwrite(filename,M)
+function palm_vestwrite(filename,M)
 % Write an FSL "vest" file, e.g. design matrix,
 % t-contrasts or f-contrasts.
 %

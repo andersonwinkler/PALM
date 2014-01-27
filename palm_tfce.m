@@ -1,4 +1,24 @@
 function tfcestat = palm_tfce(X,y,opts,plm)
+% Compute the TFCE statistic, for volume or surface
+% data (voxelwise or facewise).
+% 
+% Usage:
+% tfcestat = palm_tfce(X,y,opts,plm)
+% 
+% Inputs:
+% - X    : Statistical map.
+% - y    : Modality index (of those stored in the plm struct).
+% - opts : Struct with PALM options.
+% - plm  : Struct with PALM data.
+% 
+% Outputs:
+% - tfcestat  : TFCE map.
+% 
+% _____________________________________
+% Anderson M. Winkler
+% FMRIB / University of Oxford
+% Sep/2013
+% http://brainder.org
 
 % Choose an appropriate mask struct.
 if opts.NPC,

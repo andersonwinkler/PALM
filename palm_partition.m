@@ -1,4 +1,4 @@
-function [X,Z,eC] = palm_partition(M,C,meth,Y)
+function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 % Partition a design matrix into regressors of interest and
 % nuisance according to a given contrast.
 % 
@@ -18,8 +18,10 @@ function [X,Z,eC] = palm_partition(M,C,meth,Y)
 % Outputs:
 % X    : Matrix with regressors of interest.
 % Z    : Matrix with regressors of no interest.
-% eC   : Effective contrast, equivalent to the original,
-%        for the partitioned model [X Z].
+% eCm  : Effective contrast, equivalent to the original,
+%        for the partitioned model [X Z], and considering
+%        all regressors.
+% eCx  : Same as above, but considering only X.
 %
 % References:
 % * Guttman I. Linear Models: An Introduction. Wiley,
@@ -44,7 +46,7 @@ switch lower(meth),
         idx = any(C~=0,2);
         X   = M(:,idx);
         Z   = M(:,~idx);
-        eC  = C;
+        eCm = C;
         
     case 'beckmann'
         C2  = null(C');
@@ -55,14 +57,14 @@ switch lower(meth),
         F3  = pinv(C3'*Q*C3);
         X   = M*Q*C*F1;
         Z   = M*Q*C3*F3;
-        eC  = vertcat(eye(size(X,2)),...
+        eCm = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
     case 'winkler'
         Q   = pinv(M'*M);
         X   = M*Q*C*pinv(C'*Q*C);
         Z   = (M*Q*M'-X*pinv(X))*Y;
-        eC  = vertcat(eye(size(X,2)),...
+        eCm = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
     case 'ridgway'
@@ -71,9 +73,10 @@ switch lower(meth),
         [Z,~] = svd(M*C0);
         Z     = Z(:,1:rank(M)-rank(C));
         X     = X-Z*(pinv(Z)*X);
-        eC    = vertcat(eye(size(X,2)),...
+        eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
     otherwise
         error('''%s'' - Unknown partitioning scheme',meth);
 end
+eCx = eCm(1:size(X,2),:);

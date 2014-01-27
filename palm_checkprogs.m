@@ -19,6 +19,11 @@ function ext = palm_checkprogs
 persistent palm_extern;
 if isempty(palm_extern),
     
+    % Check the path of PALM and add the path for the NIFTI class.
+    palm_extern.palmpath = fileparts(mfilename('fullpath'));
+    addpath(fullfile(palm_extern.palmpath,'niftimatlib','matlab'));
+    addpath(fullfile(palm_extern.palmpath,'niftimatlib','matlab'));
+        
     % Check for FSL
     palm_extern.fsl = false;
     fsldir = getenv('FSLDIR');

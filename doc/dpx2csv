@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Print usage if no argument is given
+if [ -z "$1" ]; then
+cat <<EOU
+Concatenates several DPX (DPF or DPV) files into a
+large CSV file, with each DPX file represented as
+a column. Indices and coordinates are stripped out.
+
+Usage:
+dpx2csv <csvfile> <dpxfile1> <dpxfile2> ... <dpxfileN>
+
+_____________________________________
+Anderson M. Winkler
+FMRIB / University of Oxford
+Jul/2013
+http://brainder.org
+EOU
+exit
+fi
+
+if [[ $# -lt 2 ]] ; then
+  echo "Error: Insufficient arguments."
+  exit 1;
+fi
+csvfile=$1
+shift
+cut -d " " -f 5 $1 > ${csvfile}
+shift
+while (( $# )); do
+  cut -d " " -f 5 $1 | paste -d "," ${csvfile} - >> ${csvfile}.TMP__
+  mv ${csvfile}.TMP__ ${csvfile}
+  shift
+done
+exit 0;

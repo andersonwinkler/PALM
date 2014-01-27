@@ -19,6 +19,10 @@ function VG = palm_ptree2vg(Ptree)
 VG = pickvg(Ptree,isnan(Ptree{1,1}));
 [~,~,VG] = unique(VG);
 
+% Fix the sorting of rows using the 1st permutation
+[~,idx] = palm_permtree(Ptree,1,false);
+VG = VG(idx,:);
+
 % ==============================================
 function VG = pickvg(Ptree,withinblock)
 % This is the one that actually does the job, recursively

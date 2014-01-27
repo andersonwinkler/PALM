@@ -1,4 +1,4 @@
-function a = palm_nextperm(a)
+function [a,sucs] = palm_nextperm(a)
 % Given a sequence of integers "a", returns the next lexicographic
 % permutation of this sequence. If "a" is already the last possible
 % permutation, returns a vector of zeros of size(a).
@@ -8,17 +8,19 @@ function a = palm_nextperm(a)
 % Usage:
 % a1 = palm_nextperm(a)
 % 
-% a  : 2D array to be shuffled. Only the 1st column is
-%      considered for the permutations. The rows as a whole
-%      are shuffled together.
-% a1 : Permuted sequence of values that corresponds to the
-%      next lexicographic permutation. If a is already the last
-%      possible permutation, a1 = false.
+% a    : 2D array to be shuffled. Only the 1st column is
+%        considered for the permutations. The rows as a whole
+%        are shuffled together.
+% a1   : Permuted sequence of values that corresponds to the
+%        next lexicographic permutation.
+% sucs : If a is already the last possible permutation,
+%        a1 = flipud(a) and sucs is false.
+%        Otherwise sucs is true.
 % 
 % This function is an implementation of the "Algorithm L",
-% published by D. Knuth in his "The Art of Computer Programming",
-% Volume 4, Fascicle 2: Generating All Tuples and Permutations.
-% See also palm_algol to produce all possible permutations for
+% by D. Knuth (see "The Art of Computer Programming", Vol4,
+% Fasc 2: Generating All Tuples and Permutations.
+% See also palm_algol.m to produce all possible permutations for
 % a given sequence in a single function.
 %
 % _____________________________________
@@ -36,7 +38,7 @@ while j > 0 && a(j,1) >= a(j+1,1),
     j = j - 1;
 end
 
-% If this isn't yet the last permutation, brings up the next one.
+% If this isn't yet the last permutation, bring up the next one.
 if j > 0,
     
     % Step L3
@@ -58,8 +60,14 @@ if j > 0,
         k = k + 1;
         l = l - 1;
     end
+    
+    % Was the permutation successful?
+    sucs = true;
+    
 else
     % If the input is the last permutation, then there is no next.
-    % Return then a boolean "false" that can be tested outside.
-    a = false;
+    % Return then the first shuffle and a successful flag "false"
+    % that can be tested outside.
+    a    = flipud(a);
+    sucs = false;
 end

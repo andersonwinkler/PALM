@@ -5,14 +5,17 @@ function Br = palm_reindex(varargin)
 % or it restarts at 1 for each new block. A third method is a
 % mixture of both, i.e., it restarts at each block, but at the
 % last block it is continuous, crossing blocks.
+% Finally (and the default), it is also possible to add one
+% extra column to treat the simplification in which the last
+% level is omited for whole-block permutation ('fixleaves').
 %
 % Usage:
 % Br = palm_reindex(B,method)
 % 
 % B     : Block definitions (multilevel).
 % meth  : Method for reindexing: 'continuous', 'restart',
-%         or 'mixed' as described above.
-%         Default: 'restart'.
+%         'mixed' or 'fixleaves' as described above.
+%         Default: 'fixleaves'.
 % Br    : Reindexed block definitions.
 % 
 % _____________________________________
@@ -22,7 +25,7 @@ function Br = palm_reindex(varargin)
 % http://brainder.org
 
 % Default
-meth = 'restart';
+meth = 'fixleaves';
 
 % Take care of input and output vars
 B  = varargin{1};
@@ -31,7 +34,7 @@ if nargin > 1,
     meth = varargin{2};
 end
 
-switch meth,
+switch lower(meth),
     
     case 'continuous',
         
@@ -41,8 +44,8 @@ switch meth,
         % "previous" block.
         U = unique(B(:,1));
         for u = 1:numel(U),
-            idx = B(:,1) == u;
-            Br(idx,1) = u;
+            idx = B(:,1) == U(u);
+            Br(idx,1) = u*sign(U(u));
         end
         for b = 2:size(B,2), % 2nd onwards
             Bb = B(:,b);
@@ -50,11 +53,11 @@ switch meth,
             Up = unique(Bp);
             cnt = 1;
             for up = 1:numel(Up),
-                idxp = Bp == up;
+                idxp = Bp == Up(up);
                 U = unique(Bb(idxp));
                 for u = 1:numel(U),
-                    idx = (Bb == u) & idxp;
-                    Br(idx,b) = cnt;
+                    idx = (Bb == U(u)) & idxp;
+                    Br(idx,b) = cnt*sign(U(u));
                     cnt = cnt + 1;
                 end
             end
@@ -74,21 +77,43 @@ switch meth,
         Bb = palm_reindex(B,'continuous');
         Br = horzcat(Ba(:,1:end-1),Bb(:,end));
         
+    case 'fixleaves',
+        
+        % Renumber using sequential natural numbers
+        % starting from 1 but never crossing blocks,
+        % restarting instead for each block.
+        [Br,addcol] = renumber(B);
+        if addcol,
+            Br = horzcat(Br,(1:size(Br,1))');
+            Br = renumber(Br);
+        end
+        
     otherwise
-        error('Unknown method: %s',meth)
+        error('Unknown method: %s',meth);
 end
 
 % ==============================================
-function Br = renumber(B)
+function [Br,addcol] = renumber(B)
 % Note that this runs recursively.
+
 B1 = B(:,1);
-U  = unique(B1);
+U = unique(B1);
+addcolvec = false(size(U));
 nU = numel(U);
 Br = zeros(size(B));
 for u = 1:nU,
     idx = B1 == U(u);
-    Br(idx,1) = u;
+    Br(idx,1) = u*sign(U(u));
     if size(B,2) > 1,
-        [Br(idx,2:end)] = renumber(B(idx,2:end));
+        [Br(idx,2:end),addcolvec(u)] = renumber(B(idx,2:end));
+    elseif sum(idx) > 1,
+        addcol = true;
+        Br(idx) = -abs(B(idx));
+    else
+        addcol = false;
     end
+end
+
+if size(B,2) > 1,
+    addcol = any(addcolvec);
 end

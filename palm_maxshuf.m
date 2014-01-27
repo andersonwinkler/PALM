@@ -34,8 +34,8 @@ function np = maxpermnode(Ptree,np)
 % Number of permutations per node, recursive and
 % incremental.
 for u = 1:size(Ptree,1),
-    np = np * seq2np(Ptree{u,1});
-    if size(Ptree,2) > 1 && ~isnan(Ptree{u,2}(2)),
+    np = np * seq2np(Ptree{u,1}(:,1));
+    if size(Ptree{u,3},2) > 1,
         np = maxpermnode(Ptree{u,3},np);
     end
 end
@@ -57,19 +57,8 @@ function ns = maxflipnode(Ptree,ns)
 % Number of sign-flips per node, recursive and
 % incremental.
 for u = 1:size(Ptree,1),
-    if isnan(Ptree{u,1}),
-        % If this is NaN, this means it's within-block permutation
-        % (negative indices in the block definitions), so go deeper
-        % to see what are the possible sign-flips there. There is
-        % no need to count the flips at this level, because they will
-        % be considered at the deeper levels.
+    if size(Ptree{u,3},2) > 1,
         ns = maxflipnode(Ptree{u,3},ns);
-    else
-        % If not NaN, then it's whole-block permutation, and it
-        % should not go any level further. The value that goes in
-        % the exponent is the number of elements (branches) that
-        % begin at this node, or the number of leaves (observations)
-        % here if this is the last node.
-        ns = ns * 2^length(Ptree{u,1});
     end
+    ns = ns * Ptree{u,2}(1);
 end

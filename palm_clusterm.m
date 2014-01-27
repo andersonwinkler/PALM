@@ -1,4 +1,27 @@
 function [maxsize,clstat,sizes] = palm_clusterm(X,y,thr,opts,plm)
+% Compute cluster mass statistics, for volume or surface
+% data (voxelwise or facewise).
+% 
+% Usage:
+% [maxmass,clstat,masses] = palm_clusterm(X,y,thr,opts,plm)
+% 
+% Inputs:
+% - X    : Statistical map.
+% - y    : Modality index (of those stored in the plm struct).
+% - thr  : Cluster-forming threshold.
+% - opts : Struct with PALM options.
+% - plm  : Struct with PALM data.
+% 
+% Outputs:
+% - maxsize : Largest cluster mass.
+% - clstat  : Thresholded map with the cluster masses (cluster statistic).
+% - sizes   : Vector with all cluster masses.
+% 
+% _____________________________________
+% Anderson M. Winkler
+% FMRIB / University of Oxford
+% Sep/2013
+% http://brainder.org
 
 % Choose an appropriate mask struct.
 if opts.NPC,
@@ -57,7 +80,7 @@ if plm.Yisvol(y),
     
 elseif plm.Yisvtx(y) || plm.Yisfac(y),
     
-    % Now compute the cluster stats
+    % Compute the cluster stats
     U     = unique(dpxl(dpxl>0))';
     sizes = zeros(size(U));
     for u = 1:numel(U),

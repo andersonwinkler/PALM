@@ -17,6 +17,10 @@ switch lower(X.readwith),
         
         % Write a generic text file. Note that this doesn't recover
         % the original file (spaces become newlines).
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext),
+            X.filename = horzcat(X.filename,'.txt');
+        end
         fid = fopen(X.filename,'w');
         fprintf(fid,'%s\n',X.data{:});
         fclose(fid);
@@ -24,6 +28,10 @@ switch lower(X.readwith),
     case {'load','csvread'},
         
         % Write a CSV file.
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext),
+            X.filename = horzcat(X.filename,'.csv');
+        end
         csvwrite(X.filename,X.data);
         
     case 'vestread',
@@ -31,10 +39,31 @@ switch lower(X.readwith),
         % Write an FSL "VEST" file
         vestwrite(X.filename,X.data);
         
+    case 'nifticlass',
+        
+        % Write using the NIFTI class.
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext),
+            X.filename = horzcat(X.filename,'.nii');
+        end
+        dat = file_array(  ...
+            X.filename,    ...
+            size(X.data),  ...
+            'FLOAT32-LE',  ...
+            ceil(348/8)*8);
+        nii     = nifti;
+        nii.dat = dat;
+        nii.mat = X.extra.mat;
+        create(nii);
+        nii.dat(:,:,:) = X.data(:,:,:);
+        
     case 'spm_spm_vol',
         
         % Write NIFTI with SPM
-        X.filename = horzcat(X.filename,'.nii');
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext),
+            X.filename = horzcat(X.filename,'.nii');
+        end
         X.extra.fname = X.filename;
         X.extra.dt(1) = spm_type('float32'); % for now, save everything as double
         spm_write_vol(X.extra,X.data);
@@ -66,7 +95,7 @@ switch lower(X.readwith),
     case 'dpxread',
         
         % Write a DPX (DPV or DPF) file
-        dpxwrite(X.filename,X.data,X.extra.crd,X.extra.idx);
+        palm_dpxwrite(X.filename,X.data,X.extra.crd,X.extra.idx);
         
     case 'srfread',
         
