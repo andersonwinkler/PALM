@@ -143,10 +143,6 @@ if palm_isoctave,
     if ~ strcmpi(cmdname(end-5:end),'octave'),
         varargin = argv();
     end
-
-    % Be sure to print to the screen immediately
-    page_screen_output(0);
-    page_output_immediately(1);
 end
 
 % This is probably redundant but fix a bug in an old Matlab version
@@ -290,4 +286,4 @@ if nargin == 0 || strcmp(varargin{1},'-q'),
 end
 
 % Now run what matters
-palm_backend(varargin{:});
+palm_backend(varargin);

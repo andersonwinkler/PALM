@@ -144,9 +144,9 @@ if wholeblock && nU > 1,
     % Identify repeated sets of rows, which receive then
     % the same index; these repetitions are taken care of
     % later by the Algorithm L.
-    B1M     = sortrows([B1 M]);
-    Ms      = B1M(:,2:end);
-    [~,~,S] = unique(reshape(Ms',[numel(Ms)/nU nU])','rows');
+    B1M = sortrows([B1 M]);
+    Ms  = B1M(:,2:end);
+    S   = palm_mat2seq(reshape(Ms',[numel(Ms)/nU nU])');
     
     % Put in ascending order, and (un)shuffle the branches
     % accordingly

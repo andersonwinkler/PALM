@@ -1,29 +1,16 @@
 function [opts,plm] = palm_takeargs(varargin)
 
-% Load the defaults
-opts = palm_defaults;
-
-% As vararginx is actually from another function, fix it.
-if nargin == 1,
-    vararginx = palm_configrw(varargin{1});
-else
-    vararginx = varargin;
-    idxa = find(strcmpi(vararginx,'-o'));
-    if isempty(idxa),
-        cfgname = horzcat(opts.o,'_palmconfig.txt');
-    else
-        cfgname = horzcat(vararginx{idxa+1},'_palmconfig.txt');
-    end
-    palm_configrw(vararginx,cfgname);
-end
+% As varargin is actually from another function, fix it.
+varargin = varargin{1};
+nargin = numel(varargin);
 
 % Check if the number of input images/lists
 % match the number of masks.
-Ni = sum(strcmp(vararginx,'-i'));  % number of data inputs
-Nm = sum(strcmp(vararginx,'-m'));  % number of masks
-Ns = sum(strcmp(vararginx,'-s'));  % number of surfaces
-Nt = sum(strcmp(vararginx,'-t'));  % number of t-contrast files
-Nf = sum(strcmp(vararginx,'-f'));  % number of F-test files
+Ni = sum(strcmp(varargin,'-i')); % number of data inputs
+Nm = sum(strcmp(varargin,'-m')); % number of masks
+Ns = sum(strcmp(varargin,'-s')); % number of surfaces
+Nt = sum(strcmp(varargin,'-t')); % number of t-contrast files
+Nf = sum(strcmp(varargin,'-f')); % number of F-test files
 
 % There should be no more masks than modalities, and the number of
 % masks needs to be either 1 or the same number of modalities.
@@ -38,13 +25,51 @@ elseif Nm > 1 && Nm ~= Ni,
         'the option -i (%d modalities).'],Nm,Ni);
 end
 
-opts.i  = cell(Ni,1);  % Input files (to constitute Y later)
-opts.m  = cell(Nm,1);  % Mask file(s)
-opts.s  = cell(Nm,1);  % Surface file(s)
-opts.t  = cell(Nt,1);  % t contrast file(s)
-opts.f  = cell(Nf,1);  % F contrast file(s)
-opts.eb = [];          % File with definition of exchangeability blocks
-opts.vg = [];          % File with definition of variance groups
+% Define some defaults and organise all as a struct
+opts.i               = cell(Ni,1);      % Input files (to constitute Y later)
+opts.m               = cell(Nm,1);      % Mask file(s)
+opts.s               = cell(Nm,1);      % Surface file(s)
+opts.t               = cell(Nt,1);      % t contrast file(s)
+opts.f               = cell(Nf,1);      % F contrast file(s)
+opts.o               = 'result';        % Default output string
+opts.nP0             = 10000;           % Number of permutations
+opts.eb              = [];              % File with definition of exchangeability blocks
+opts.vg              = [];              % File with definition of variance groups
+opts.SB              = false;           % Whole block shuffling?
+opts.lx              = true;            % Lexicographic permutations?
+opts.EE              = [];              % Exchangeable errors?
+opts.ISE             = [];              % Independent and symmetric errors?
+opts.CMC             = false;           % Use Conditional Monte Carlo?
+opts.pmethod         = 'Beckmann';      % Method to partition the model.
+opts.rmethod         = 'Freedman-Lane'; % Regression/permutation method.
+opts.rfallback       = 'terBraak';      % Regression/permutation method if correcting over contrasts
+opts.NPC             = false;           % Do non-parametric combination?
+opts.cmethod         = 'Tippett';       % Combination method.
+opts.cfallback       = 'Fisher';        % ...
+opts.savepara        = false;           % Save parametric p-values too?
+opts.corrmod         = false;           % FWER correction over modalities?
+opts.corrcon         = false;           % FWER correction over contrasts?
+opts.savemask        = false;           % Save the masks?
+opts.FDR             = false;           % FDR adjustment?
+opts.draft           = 0;               % Run a draft scheme
+opts.clustere_t.do   = false;           % Do cluster extent for the t-stat?
+opts.clusterm_t.do   = false;           % Do cluster mass for the t-stat?
+opts.clustere_F.do   = false;           % Do cluster extent for the F-stat?
+opts.clusterm_F.do   = false;           % Do cluster mass for the F-stat?
+opts.tfce.do         = false;           % Do TFCE?
+opts.tfce.H          = 2;               % TFCE H parameter
+opts.tfce.E          = 0.5;             % TFCE E parameter
+opts.tfce.conn       = 6;               % TFCE connectivity neighbourhood
+opts.clustere_npc.do = false;           % Do cluster extent for the NPC z-stat?
+opts.clusterm_npc.do = false;           % Do cluster mass for the NPC z-stat?
+opts.tfce_npc.do     = false;           % Do TFCE for NPC?
+opts.tfce_npc.H      = 2;               % TFCE H parameter for NPC
+opts.tfce_npc.E      = 0.5;             % TFCE E parameter for NPC
+opts.tfce_npc.conn   = 6;               % TFCE connectivity neighbourhood for NPC
+opts.useniiclass     = true;            % Use the NIFTI class (saves memory)
+opts.saveperms       = false;           % Save permutation images?
+opts.inormal         = false;           % Do inverse-normal transformation?
+opts.seed            = 0;               % Seed for the random number generator
 
 % These are to be incremented below
 a = 1; i = 1; m = 1;
@@ -52,70 +77,70 @@ t = 1; f = 1; s = 1;
 
 % Take the input arguments
 while a <= nargin,
-    switch vararginx{a},
+    switch varargin{a},
         case '-i',
             
             % Get the filenames for the data.
-            opts.i{i} = vararginx{a+1};
+            opts.i{i} = varargin{a+1};
             i = i + 1;
             a = a + 2;
             
         case '-m',
             
             % Get the filenames for the masks, if any.
-            opts.m{m} = vararginx{a+1};
+            opts.m{m} = varargin{a+1};
             m = m + 1;
             a = a + 2;
             
         case '-s',
             
             % Get the filenames for the surfaces, if any.
-            opts.s{s} = vararginx{a+1};
+            opts.s{s} = varargin{a+1};
             s = s + 1;
             a = a + 2;
             
         case '-d',
             
             % Get the design matrix file.
-            opts.d = vararginx{a+1};
+            opts.d = varargin{a+1};
             a = a + 2;
                         
         case '-t',
             
             % Get the t contrast files.
-            opts.t{t} = vararginx{a+1};
+            opts.t{t} = varargin{a+1};
             t = t + 1;
             a = a + 2;
             
         case '-f',
             
             % Get the F contrast files.
-            opts.f{f} = vararginx{a+1};
+            opts.f{f} = varargin{a+1};
             f = f + 1;
             a = a + 2;
             
         case '-eb',
             
             % Get the exchangeability blocks file.
-            opts.eb = vararginx{a+1};
+            opts.eb = varargin{a+1};
             a = a + 2;
             
         case '-vg',
             
             % Get the variance groups file.
-            opts.vg = vararginx{a+1};
+            opts.vg = varargin{a+1};
             a = a + 2;
             
         case '-o',
             
             % Output prefix for the files to be saved.
-            opts.o = vararginx{a+1};
+            opts.o = varargin{a+1};
             a = a + 2;
             
         case '-n',
             
             % Number of permutations
-            opts.nP0 = vararginx{a+1};
+            opts.nP0 = varargin{a+1};
             if ischar(opts.nP0),
                 opts.nP0 = str2double(opts.nP0);
             end
@@ -125,7 +150,7 @@ while a <= nargin,
             
             % Threshold for cluster extent, t-stat
             opts.clustere_t.do  = true;
-            opts.clustere_t.thr = vararginx{a+1};
+            opts.clustere_t.thr = varargin{a+1};
             if ischar(opts.clustere_t.thr),
                 opts.clustere_t.thr = str2double(opts.clustere_t.thr);
             end
@@ -135,7 +160,7 @@ while a <= nargin,
             
             % Threshold for cluster mass, t-stat
             opts.clusterm_t.do  = true;
-            opts.clusterm_t.thr = vararginx{a+1};
+            opts.clusterm_t.thr = varargin{a+1};
             if ischar(opts.clusterm_t.thr),
                 opts.clusterm_t.thr = str2double(opts.clusterm_t.thr);
             end
@@ -145,7 +170,7 @@ while a <= nargin,
             
             % Threshold for cluster extent, F-stat
             opts.clustere_F.do  = true;
-            opts.clustere_F.thr = vararginx{a+1};
+            opts.clustere_F.thr = varargin{a+1};
             if ischar(opts.clustere_F.thr),
                 opts.clustere_F.thr = str2double(opts.clustere_F.thr);
             end
@@ -155,7 +180,7 @@ while a <= nargin,
             
             % Threshold for cluster mass, F-stat
             opts.clusterm_F.do  = true;
-            opts.clusterm_F.thr = vararginx{a+1};
+            opts.clusterm_F.thr = varargin{a+1};
             if ischar(opts.clusterm_F.thr),
                 opts.clusterm_F.thr = str2double(opts.clusterm_F.thr);
             end
@@ -182,7 +207,7 @@ while a <= nargin,
         case '-tfce_H',
             
             % TFCE H parameter
-            opts.tfce.H = vararginx{a+1};
+            opts.tfce.H = varargin{a+1};
             if ischar(opts.tfce.H),
                 opts.tfce.H = str2double(opts.tfce.H);
             end
@@ -191,7 +216,7 @@ while a <= nargin,
         case '-tfce_E',
             
             % TFCE E parameter
-            opts.tfce.E = vararginx{a+1};
+            opts.tfce.E = varargin{a+1};
             if ischar(opts.tfce.E),
                 opts.tfce.E = str2double(opts.tfce.E);
             end
@@ -200,7 +225,7 @@ while a <= nargin,
         case '-tfce_C',
             
             % TFCE connectivity
-            opts.tfce.conn = vararginx{a+1};
+            opts.tfce.conn = varargin{a+1};
             if ischar(opts.tfce.conn),
                 opts.tfce.conn = str2double(opts.tfce.conn);
             end
@@ -210,7 +235,7 @@ while a <= nargin,
             
             % Threshold for cluster extent, NPC, z-stat
             opts.clustere_npc.do  = true;
-            opts.clustere_npc.thr = vararginx{a+1};
+            opts.clustere_npc.thr = varargin{a+1};
             if ischar(opts.clustere_npc.thr),
                 opts.clustere_npc.thr = str2double(opts.clustere_npc.thr);
             end
@@ -220,7 +245,7 @@ while a <= nargin,
             
             % Threshold for cluster mass, NPC, z-stat
             opts.clusterm_npc.do  = true;
-            opts.clusterm_npc.thr = vararginx{a+1};
+            opts.clusterm_npc.thr = varargin{a+1};
             if ischar(opts.clusterm_npc.thr),
                 opts.clusterm_npc.thr = str2double(opts.clusterm_npc.thr);
             end
@@ -269,19 +294,6 @@ while a <= nargin,
             % Define whether Conditional Monte Carlo should be used or not
             opts.CMC = true;
             a = a + 1;
-            
-        case '-igrepx',
-            
-            % Define whether repeated rows in X should be ignored or not
-            % when defining the permutations
-            opts.igrepx = true;
-            a = a + 1;
-            
-        case '-twotail',
-            
-            % Do a two-tailed test for all t-contrasts?
-            opts.twotail = true;
-            a = a + 1;
                        
         case '-corrmod',
             
@@ -302,18 +314,6 @@ while a <= nargin,
             opts.savepara = true;
             a = a + 1;
             
-        case '-save1-p',
-            
-            % Save 1-p values (CDF) instead of the P-values
-            opts.savecdf = true;
-            a = a + 1;
-            
-        case '-logp',
-            
-            % Convert the P-values or (1-P)-values to -log10 before saving
-            opts.savelogp = true;
-            a = a + 1;
-            
         case '-savemask',
             
             % If the user wants to have also the masks used for each
@@ -324,106 +324,83 @@ while a <= nargin,
         case '-rmethod',
             
             % Which method to use for the regression/permutation?
-            if nargin > a,
-                methlist = {           ...
-                    'Draper-Stoneman', ...
-                    'Still-White',     ...
-                    'Freedman-Lane',   ...
-                    'terBraak',        ...
-                    'Kennedy',         ... % should never be used
-                    'Manly',           ...
-                    'Huh-Jhun',        ...
-                    'Smith'};
-                methidx = strcmpi(vararginx{a+1},methlist);
-                if ~any(methidx);
-                    error('Regression/Permutation method "%s" unknown.',vararginx{a+1});
-                else
-                    a = a + 2;
-                end
-                opts.rmethod = methlist{methidx};
+            methlist = {           ...
+                'Draper-Stoneman', ...
+                'Still-White',     ...
+                'Freedman-Lane',   ...
+                'terBraak',        ...
+                'Kennedy',         ... % should never be used
+                'Manly',           ...
+                'Huh-Jhun',        ...
+                'Smith'};
+            methidx = strcmpi(varargin{a+1},methlist);
+            if ~any(methidx);
+                error('Regression/Permutation method "%s" unknown.',varargin{a+1});
             else
-                error([....
-                    'The option -rmethod requires a method to be specified.\n'...
-                    'Consult the documentation.']);
+                a = a + 2;
             end
-
+            opts.rmethod = methlist{methidx};
             
         case '-npc',
             
             % Do the non-parametric combination?
             opts.NPC = true;
-            if nargin == a,
-                a = a + 1;
-                
-            elseif nargin > a && strcmp(vararginx{a+1},'-'),
-                a = a + 1;
-                
-            elseif nargin > a,
-                
-                % Which combining function to use for the combination?
-                methlist = {               ...
-                    'Tippett',             ...
-                    'Fisher',              ...
-                    'Pearson-David',       ...
-                    'Stouffer',            ...
-                    'Wilkinson',           ...
-                    'Winer',               ...
-                    'Edgington',           ...
-                    'Mudholkar-George',    ...
-                    'Friston',             ...
-                    'Darlington-Hayes',    ...
-                    'Zaykin',              ...
-                    'Dudbridge-Koeleman',  ...
-                    'Dudbridge-Koeleman2', ...
-                    'Nichols',             ...
-                    'Taylor-Tibshirani',   ...
-                    'Jiang'};
-                methidx = strcmpi(vararginx{a+1},methlist);
-                
-                % Check if method exists, and load extra parameters if needed
-                if ~any(methidx);
-                    error('Combining method "%s" unknown.',vararginx{a+1});
-                elseif any(strcmpi(vararginx{a+1},{...
-                        'Wilkinson',          ...
-                        'Darlington-Hayes',   ...
-                        'Zaykin',             ...
-                        'Dudbridge-Koeleman', ...
-                        'Jiang'})),
-                    if ischar(vararginx{a+2}),
-                        plm.npcparm = eval(vararginx{a+2});
-                    else
-                        plm.npcparm = vararginx{a+2};
-                    end
-                    a = a + 3;
-                elseif strcmpi(vararginx{a+1},'Friston'),
-                    if ischar(vararginx{a+2}) && ...
-                            strcmpi(vararginx{a+2}(1),'-'),
-                        plm.npcparm = 1;
-                        a = a + 2;
-                    elseif ischar(vararginx{a+2}),
-                        plm.npcparm = eval(vararginx{a+2});
-                        a = a + 3;
-                    else
-                        plm.npcparm = vararginx{a+2};
-                        a = a + 3;
-                    end
-                elseif strcmpi(vararginx{a+1},'Dudbridge-Koeleman2'),
-                    if ischar(vararginx{a+2}),
-                        plm.npcparm = eval(vararginx{a+2});
-                    else
-                        plm.npcparm = vararginx{a+2};
-                    end
-                    if ischar(vararginx{a+3}),
-                        plm.npcparm2 = eval(vararginx{a+3});
-                    else
-                        plm.npcparm2 = vararginx{a+3};
-                    end
-                    a = a + 4;
+            a = a + 1;
+            
+        case '-cmethod',
+            
+            % Which combining function to use for the combination?
+            opts.NPC = true;
+            methlist = {               ...
+                'Tippett',             ...
+                'Fisher',              ...
+                'Pearson-David',       ...
+                'Stouffer',            ...
+                'Wilkinson',           ...
+                'Winer',               ...
+                'Edgington',           ...
+                'Mudholkar-George',    ...
+                'Friston',             ...
+                'Darlington-Hayes',    ...
+                'Zaykin',              ...
+                'Dudbridge-Koeleman',  ...
+                'Dudbridge-Koeleman2', ...
+                'Nichols',             ...
+                'Taylor-Tibshirani',   ...
+                'Jiang'};
+            methidx = strcmpi(varargin{a+1},methlist);
+            
+            % Check if method exists, and load extra parameters if needed
+            if ~any(methidx);
+                error('Combining method "%s" unknown.',varargin{a+1});
+            elseif any(strcmpi(varargin{a+1},{...
+                    'Wilkinson',          ...
+                    'Darlington-Hayes',   ...
+                    'Zaykin',             ...
+                    'Dudbridge-Koeleman', ...
+                    'Jiang'})),
+                if ischar(varargin{a+2}),
+                    plm.npcparm = eval(varargin{a+2});
                 else
-                    a = a + 2;
+                    plm.npcparm = varargin{a+2};
                 end
-                opts.cmethod = methlist{methidx};
+                a = a + 3;
+            elseif any(strcmpi(varargin{a+1},'Dudbridge-Koeleman2')),
+                if ischar(varargin{a+2}),
+                    plm.npcparm = eval(varargin{a+2});
+                else
+                    plm.npcparm = varargin{a+2};
+                end
+                if ischar(varargin{a+3}),
+                    plm.npcparm2 = eval(varargin{a+3});
+                else
+                    plm.npcparm2 = varargin{a+3};
+                end
+                a = a + 4;
+            else
+                a = a + 2;
             end
+            opts.cmethod = methlist{methidx};
             
         case '-fdr',
             
@@ -434,7 +411,7 @@ while a <= nargin,
         case '-draft',
             
             % Do a draft scheme
-            opts.draft = vararginx{a+1};
+            opts.draft = varargin{a+1};
             if ischar(opts.draft),
                 opts.draft = str2double(opts.draft);
             end
@@ -461,48 +438,29 @@ while a <= nargin,
         case '-seed'
             
             % Seed for the random number generator
-            opts.seed = vararginx{a+1};
+            opts.seed = varargin{a+1};
             if ischar(opts.seed) && ~ strcmpi(opts.seed,'shuffle'),
                 opts.seed = str2double(opts.seed);
             end
             a = a + 2;
             
-        case '-shrink',
-            
-            % Remove from the analysis observations that are 0 in X and
-            % belong to VGs not being considered for this contrast
-            opts.shrink = true;
-            a = a + 1;
-            
-        case '-zstat',
-            
-            % Convert the statistic for each test (not NPC) to a z-score
-            opts.zstat = true;
-            a = a + 1;
-            
-        case '-pmethod', % removed from the help
+        case '-pmethod', % not an useful option, removed from the help
             
             % Which method to use for to partition the model?
-            if nargin > a,
-                methlist = {    ...
-                    'Guttman',  ...
-                    'Beckmann', ...
-                    'Ridgway'};
-                methidx = strcmpi(vararginx{a+1},methlist);
-                if ~any(methidx);
-                    error('Partition method "%s" unknown.',vararginx{a+1});
-                else
-                    a = a + 2;
-                end
-                opts.pmethod = methlist{methidx};
+            methlist = {    ...
+                'Guttman',  ...
+                'Beckmann', ...
+                'Ridgway'};
+            methidx = strcmpi(varargin{a+1},methlist);
+            if ~any(methidx);
+                error('Partition method "%s" unknown.',varargin{a+1});
             else
-                error([....
-                    'The option -pmethod requires a method to be specified.\n'...
-                    'Consult the documentation.']);
+                a = a + 2;
             end
+            opts.pmethod = methlist{methidx};
             
         otherwise
-            error('Unknown option: ''%s''',vararginx{a});
+            error('Unknown option: ''%s''',varargin{a});
     end
 end
 
@@ -519,13 +477,10 @@ end
 % No FWER or NPC if using draft mode
 if opts.draft,
     if opts.corrmod || opts.corrcon,
-        warning('The draft mode does not allow FWER-correction, only FDR.\n%s',''); %#ok
+        warning('The draft mode does not allow FWER-correction.\n%s',''); %#ok
     end
     if opts.NPC,
         warning('The draft mode does not allow NPC.\n%s',''); %#ok
-    end
-    if opts.clustere_npc.do || opts.clustere_npc.do || opts.tfce_npc.do,
-        warning('The draft mode does not allow spatial statistics (cluster or TFCE).\n%s',''); %#ok
     end
     opts.corrmod         = false;
     opts.corrcon         = false;
@@ -541,7 +496,7 @@ if any(strcmpi(opts.cmethod,{'Darlington-Hayes','Jiang'})),
     if opts.savepara,
         warning([...
             'No parametric combination p-value will be saved for the\n', ...
-            '         Darlington-Hayes or Jiang methods%s'],'');
+            '         methods Darlington-Hayes or Jiang%s'],'');
     end
     if any([ ...
             opts.clustere_npc.do   ...
@@ -549,7 +504,7 @@ if any(strcmpi(opts.cmethod,{'Darlington-Hayes','Jiang'})),
             opts.tfce_npc.do]'),
         warning([ ...
             'No NPC cluster-level or TFCE statistic will be produced for the\n', ...
-            '         Darlington-Hayes or Jiang methods%s'],'');
+            '         methods Darlington-Hayes or Jiang%s'],'');
         opts.clustere_npc.do = false;
         opts.clusterm_npc.do = false;
         opts.tfce_npc.do     = false;
@@ -869,8 +824,6 @@ end
 % - if the user gives ISE only, it's ISE only
 % - if the user gives EE only, it's EE only
 % - if the user gives both, it's both
-opts.EE  = [];
-opts.ISE = [];
 if isempty(opts.EE) && isempty(opts.ISE),
     opts.EE  = true;
     opts.ISE = false;
@@ -917,7 +870,7 @@ if Nt || Nf,
     c = 1;
     for t = 1:Nt,
         tmp = palm_miscread(opts.t{t});
-        if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
+        if any(strcmp(tmp.readwith,{'vestread','csvread'})),
             tcon{t} = tmp.data;
             for j = 1:size(tcon{t},1),
                 plm.Cset{c} = tcon{t}(j,:)';
@@ -932,7 +885,7 @@ if Nt || Nf,
     % the corresponding loaded t contrast VEST file.
     for f = 1:Nf,
         tmp = palm_miscread(opts.f{f});
-        if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
+        if any(strcmp(tmp.readwith,{'vestread','csvread'})),
             for j = 1:size(tmp.data,1),
                 plm.Cset{c} = tcon{f}(logical(tmp.data(j,:)),:)';
                 c = c + 1;
@@ -952,41 +905,30 @@ plm.nC = numel(plm.Cset);
 % The partitioning needs to be done now, because some regression methods
 % may not be used if correction over contrasts is needed and the relevant
 % regressors aren't compatible with synchronised permutations/sign-flips
-if ~ opts.igrepx,
-    plm.Xset = cell(plm.nC,1);
-    seqtmp = zeros(plm.N,plm.nC);
-    for c = 1:plm.nC,
-        plm.Xset{c} = palm_partition(plm.M,plm.Cset{c},'Guttman');
-        [~,~,seqtmp(:,c)] = unique(plm.Xset{c},'rows');
-    end
-    if opts.corrcon && any(sum(diff(seqtmp,1,2).^2,2) ~= 0) ...
-            && ~ any(strcmpi(opts.rmethod,{'terBraak','Manly'})),
-        warning([ ...
-            'You chose to correct over contrasts, but with the contrasts\n' ...
-            '         given, this is not possible using the %s method.\n' ...
-            '         Using instead the %s method.\n' ...
-            '         If, however, you really want to use %s, use the\n' ...
-            '         option -igrepx, which will ignore repeated values in\n' ...
-            '         the rows of X when permuting.'], ...
-            opts.rmethod,opts.rfallback,opts.rmethod);
-        opts.rmethod = opts.rfallback;
-    end
+% Partition the model.
+plm.Xset  = cell(plm.nC,1); % set of regressors of interest
+plm.Zset  = plm.Xset;       % set of nuisance regressors
+plm.eCset = plm.Xset;       % set of effective contrasts
+seqtmp = zeros(plm.N,plm.nC);
+for c = 1:plm.nC,
+    [plm.Xset{c},plm.Zset{c},plm.eCset{c}] = ...
+        palm_partition(plm.M,plm.Cset{c},'Guttman');
+    seqtmp(:,c) = palm_mat2seq(plm.Xset{c});
 end
-if opts.corrcon && opts.shrink,
+if opts.corrcon && any(sum(diff(seqtmp,1,2).^2,2) ~= 0) ...
+        && ~ any(strcmpi(opts.rmethod,{'terBraak','Manly'})),
     warning([ ...
-        'You chose to correct over contrasts and also to remove from\n' ...
-        '         the design the observations that are not considered\n' ...
-        '         for inference on each of them. This is impossible.\n' ...
-        '         Switching off the option ''-shrink''']); %#ok<WNTAG>
-    opts.shrink = false;
+        'You chose to correct over contrasts, but with the contrasts\n' ...
+        '         given, this is not possible using the %s method.\n' ...
+        '         Using instead the %s method.'],opts.rmethod,opts.rfallback);
+    opts.rmethod = opts.rfallback;
 end
 
 % Read the exchangeability blocks. If none is specified, all observations
 % are assumed to be in the same big block. Also treat the legacy format of
 % a single column for the EBs.
 if isempty(opts.eb),
-    %plm.EB = [ones(plm.N,1) (1:plm.N)'];
-    plm.EB = [];
+    plm.EB  = [ones(plm.N,1) (1:plm.N)'];
 else
     plm.EB = palm_miscread(opts.eb);
     plm.EB = plm.EB.data;
@@ -1005,16 +947,11 @@ end
 if isempty(opts.vg),
     % Generate an initial dependence tree, to be used to define variance groups.
     % The tree used for the permutations later require the design matrix, and
-    % varies for each contrast -- all to be taken care of later.
-    if isempty(plm.EB),
-        plm.VG = ones(plm.N,1);
-    else
-        Ptree = palm_tree(plm.EB,(1:plm.N)');
-        plm.VG = palm_ptree2vg(Ptree);
-    end
+    % varies for each contrast (to be taken care of later).
+    Ptree = palm_tree(plm.EB,(1:plm.N)');
+    plm.VG = palm_ptree2vg(Ptree);
 else
     % The automatic variance groups can be overriden if the user specified
     % a file with the custom definitions.
     plm.VG = palm_miscread(opts.vg);
 end
-plm.nVG = numel(unique(plm.VG));

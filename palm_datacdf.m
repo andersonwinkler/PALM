@@ -23,7 +23,7 @@ function pvals = palm_datacdf(G,Gvals)
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / Univ. of Oxford
-% Jul/2012 (original version)
+% Jul/2012 (1st version)
 % Aug/2013 (this version)
 % http://brainder.org
 
