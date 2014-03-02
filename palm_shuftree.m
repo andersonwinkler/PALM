@@ -1,42 +1,41 @@
-function [Bset,nB] = palm_shuftree(varargin)
+function [Bset,nB,mtr] = palm_shuftree(varargin)
 % This is a wrapper for the palm_permtree.m and palm_fliptree.m
 % that generates a sigle set of permutations. It can also generate
 % only permutations with sign-flipping depending on the input
 % arguments.
 % 
 % Usage (style 1)
-% [Bset,nB] = palm_shuftree(Ptree,N,nP0,CMC,EE,ISE,idxout)
+% [Bset,nB] = palm_shuftree(Ptree,nP0,CMC,EE,ISE,idxout)
 % 
 % Inputs:
-% - Ptree  : Permutation tree.
-% - N      : Number of observations.
-% - nP0    : Requested number of permutations.
-% - CMC    : Use Conditional Monte Carlo.
-% - EE     : Allow permutations?
-% - ISE    : Allow sign-flips?
-%            If you supply the EE argument, you must
-%            also supply ISE argument. If one is omited,
-%            the other needs to be omited too.
-%            Default is true for EE, and false for ISE.
-% - idxout : (Optional) If true, the output isn't a cell
-%            array with permutation matrices, but an array
-%            with permutation indices.
+% - Ptree   : Permutation tree.
+% - nP0     : Requested number of permutations.
+% - CMC     : Use Conditional Monte Carlo.
+% - EE      : Allow permutations?
+% - ISE     : Allow sign-flips?
+%             If you supply the EE argument, you must
+%             also supply ISE argument. If one is omited,
+%             the other needs to be omited too.
+%             Default is true for EE, and false for ISE.
+% - idxout  : (Optional) If true, the output isn't a cell
+%             array with permutation matrices, but an array
+%             with permutation indices.
 % 
 % Outputs:
-% - Bset   : Set of permutations and/or sign flips.
-% - nB     : Number of permutations and/or sign-flips.
+% - Bset    : Set of permutations and/or sign flips.
+% - nB      : Number of permutations and/or sign-flips.
 % 
 % 
 % Usage (style 2, to be used by the PALM main function):
-% [Bset,nB] = palm_shuftree(opts,plm)
+% [Bset,nB,metr] = palm_shuftree(opts,plm)
 % 
 % Inputs:
-% - opts   : Struct with PALM options
-% - plm    : Struct with PALM data
+% - opts    : Struct with PALM options
+% - plm     : Struct with PALM data
 % 
 % Outputs:
-% - Bset   : Set of permutations and/or sign flips.
-% - nB     : Number of permutations and/or sign-flips.
+% - Bset    : Set of permutations and/or sign flips.
+% - nB      : Number of permutations and/or sign-flips.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -50,25 +49,24 @@ if nargin == 2,
     plm     = varargin{2};
     EE      = opts.EE;
     ISE     = opts.ISE;
-    N       = plm.N;
     nP0     = opts.nP0;
     CMC     = opts.CMC;
-    Ptree   = palm_tree(plm.tmp.EB,plm.tmp.seq);
+    Ptree   = palm_tree(plm.EB,plm.tmp.seq);
     idxout  = false;
-elseif nargin == 4 || nargin == 6 || nargin == 7,
+    seq     = plm.tmp.seq;
+elseif nargin == 3 || nargin == 5 || nargin == 6,
     Ptree   = varargin{1};
-    N       = varargin{2};
-    nP0     = varargin{3};
-    CMC     = varargin{4};
-    if nargin == 6 || nargin == 7,
-        EE  = varargin{5};
-        ISE = varargin{6};
+    nP0     = varargin{2};
+    CMC     = varargin{3};
+    if nargin == 5 || nargin == 6,
+        EE  = varargin{4};
+        ISE = varargin{5};
     else
         EE  = true;
         ISE = false;
     end
-    if nargin == 7,
-        idxout = varargin{7};
+    if nargin == 6,
+        idxout = varargin{6};
     else
         idxout = false;
     end
@@ -102,20 +100,19 @@ maxB = maxP * maxS;
 
 % String for the screen output below
 if EE && ~ISE,
-    whatshuf = 'permutations only';
+    whatshuf  = 'permutations only';
+    whatshuf2 = 'perms';
 elseif ISE && ~EE,
-    whatshuf = 'sign-flips only';
+    whatshuf  = 'sign-flips only';
+    whatshuf2 = 'flips';
 elseif EE && ISE,
-    whatshuf = 'permutations and sign-flips';
+    whatshuf  = 'permutations and sign-flips';
+    whatshuf2 = 'both';
 end
 
-% This ensures that there is at least 1 permutation (no permutation)
-% and 1 sign-flipping (no sign-flipping). These are modified below as
-% needed.
-Pset{1} = speye(N);
-Sset = Pset;
-
 % Generate the Pset and Sset
+Pset = {};
+Sset = {};
 if nP0 == 0 || nP0 >= maxB,
     % Run exhaustively if the user requests too many permutations.
     % Note that here CMC is irrelevant.
@@ -147,10 +144,20 @@ elseif nP0 < maxB,
     end
 end
 
-% Generate the set of shufflings, mixing permutations and
-% sign-flippings as needed.
+% This ensures that there is at least 1 permutation (no permutation)
+% and 1 sign-flipping (no sign-flipping).
 nP = numel(Pset);
 nS = numel(Sset);
+if nP > 0 && nS == 0,
+    Sset{1} = Pset{1};
+    nS = 1;
+elseif nP == 0 && nS > 0,
+    Pset{1} = Sset{1};
+    nP = 1;
+end
+
+% Generate the set of shufflings, mixing permutations and
+% sign-flippings as needed.
 if nS == 1,
     % If only 1 sign-flip is possible, ignore it.
     Bset = Pset;
@@ -193,17 +200,36 @@ nB = numel(Bset);
 
 % In the draft mode, the permutations can't be in lexicographic
 % order, but entirely shuffled.
-if nargin == 2 && opts.draft,
+if opts.draft,
     Bset2 = cell(size(Bset));
     [~,idx] = sort(rand(nB,1));
-    for p = 1:nB,
+    for p = 2:nB,
         Bset2{p} = Bset(idx(p));
     end
     Bset = Bset2;
 end
 
 % If the desired outputs are permutation indices instead
-% of permutation matrices
-if idxout,
-    Bset = palm_swapfmt(Bset);
+% of permutation matrices, output them
+if idxout || (nargout == 3 && nargin == 2),
+    % Convert formats if needed.
+    %Bidx = palm_swapfmt(Bset);
+    Bidx = zeros(size(Bset{1},1),nB);
+    for p = 1:nB,
+        Bidx(:,p) = palm_perm2idx(Bset{p});
+    end
+    
+    % Compute some metrics
+    if nargout == 3,
+        Ptree1 = palm_tree(plm.EB,ones(size(seq)));
+        mtr = zeros(8,1);
+        [mtr(1),mtr(2),mtr(3),mtr(4),mtr(6)] = ...
+            palm_metrics(Ptree,seq,whatshuf2);
+        [~,~,~,~,mtr(5)] = ...
+            palm_metrics(Ptree1,ones(size(seq)),whatshuf2);
+        [mtr(7),mtr(8)] = palm_metrics(Bidx,seq);
+    end
+    if idxout,
+        Bset = Bidx;
+    end
 end
