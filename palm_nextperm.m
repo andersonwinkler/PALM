@@ -18,8 +18,8 @@ function [a,sucs] = palm_nextperm(a)
 %        Otherwise sucs is true.
 % 
 % This function is an implementation of the "Algorithm L",
-% by D. Knuth (see "The Art of Computer Programming", Vol4,
-% Fasc 2: Generating All Tuples and Permutations.
+% by D. Knuth (see "The Art of Computer Programming", Vol.4,
+% Fasc.2: Generating All Tuples and Permutations.
 % See also palm_algol.m to produce all possible permutations for
 % a given sequence in a single function.
 %

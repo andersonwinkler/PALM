@@ -130,7 +130,7 @@ end
 
 % ==============================================================
 function [Ptree,flagsucs] = nextperm(Ptree)
-% Make the next single shuffle of tree branches, and returns
+% Make the next single shuffle of tree branches, and return
 % the shuffled tree. This can be used to compute exhaustively
 % all possible permutations.
 
@@ -192,20 +192,20 @@ end
 
 % ==============================================================
 function Ptree = randomperm(Ptree)
-% Make a random shuffling of all branches in the tree.
+% Make a random shuffle of all branches in the tree.
 
 % For each branch of the current node
 nU = size(Ptree,1);
 for u = 1:nU,
     
     % Make sure this isn't within-block at 1st level (marked as NaN)
-    if ~ isnan(Ptree{u,1}),
+    if ~ isnan(Ptree{u,1}(1)),
         Ptree{u,1} = Ptree{u,1}(randperm(size(Ptree{u,1},1)),:);
         Ptree{u,3} = Ptree{u,3}(Ptree{u,1}(:,3),:);
     end
-    
+
     % Make sure the next isn't the last level.
-    if size(Ptree{u,3}) > 1,
+    if size(Ptree{u,3},2) > 1,
         Ptree{u,3} = randomperm(Ptree{u,3});
     end
 end

@@ -17,6 +17,10 @@ switch lower(X.readwith),
         
         % Write a generic text file. Note that this doesn't recover
         % the original file (spaces become newlines).
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext),
+            X.filename = horzcat(X.filename,'.txt');
+        end
         fid = fopen(X.filename,'w');
         fprintf(fid,'%s\n',X.data{:});
         fclose(fid);
@@ -24,6 +28,10 @@ switch lower(X.readwith),
     case {'load','csvread'},
         
         % Write a CSV file.
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext),
+            X.filename = horzcat(X.filename,'.csv');
+        end
         csvwrite(X.filename,X.data);
         
     case 'vestread',

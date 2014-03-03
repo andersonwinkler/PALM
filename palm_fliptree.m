@@ -202,7 +202,7 @@ nU = size(Ptree,1);
 if size(Ptree,2) == 3,
     for u = 1:nU,
         if Ptree{u,2}(1) > 1,
-            bidx = d2b(Ptree{u,2}(2),size(Ptree{u,3},1));
+            bidx = palm_d2b(Ptree{u,2}(2),size(Ptree{u,3},1));
             bidx(~~bidx) = -1;
             bidx( ~bidx) =  1;
         else
@@ -220,9 +220,3 @@ elseif size(Ptree,2) == 1,
         P{numel(P)+1} = sgn(v)*ones(size(Ptree{u}));
     end
 end
-
-% ==============================================================
-function b = d2b(d,n)
-% Converts decimal to binary with at least n digits.
-[~,e] = log2(max(d));
-b = rem(floor(d*pow2(1-max(n,e):0)),2);

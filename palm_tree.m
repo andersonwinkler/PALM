@@ -30,17 +30,17 @@ function Ptree = palm_tree(B,M)
 % N{1,2}(2) : An integer indicating the current sign-flip for the
 %             branches that begin at this node. This ranges between
 %             0 and N{1,2}(1)-1.
-% N{1,3}    : The branches that begin here. This cell will never
-%             change.
-% N{1,4}    : The branches that begin here, i.e., a copy of the
-%             previous. However, these are the ones
-%             that are shuffled and used to make the permutations.
+% N{1,3}    : The branches that begin here.
 %
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
-% Oct/2013
+% Dec/2013
 % http://brainder.org
+
+if nargin == 1 || isempty(M),
+    M = (1:size(B,1))';
+end
 
 % Make an initial sanity check:
 Bs = sortrows(B);
@@ -144,9 +144,9 @@ if wholeblock && nU > 1,
     % Identify repeated sets of rows, which receive then
     % the same index; these repetitions are taken care of
     % later by the Algorithm L.
-    B1M = sortrows([B1 M]);
-    Ms  = B1M(:,2:end);
-    S   = palm_mat2seq(reshape(Ms',[numel(Ms)/nU nU])');
+    B1M     = sortrows([B1 M]);
+    Ms      = B1M(:,2:end);
+    [~,~,S] = unique(reshape(Ms',[numel(Ms)/nU nU])','rows');
     
     % Put in ascending order, and (un)shuffle the branches
     % accordingly
@@ -245,7 +245,7 @@ elseif wholeblock && numel(unique(Usgn)) > 1,
     % Make sure that for whole-block permutation, there is no mix of
     % sub-blocks with positive and negative signs, as these cannot be
     % shuffled.
-    error('Not al sub-blocks within an EB have the same sign indicator at level %d.\n',recdepth);
+    error('Not all sub-blocks within an EB have the same sign indicator at level %d.\n',recdepth);
     
 elseif wholeblock,
     

@@ -1,27 +1,26 @@
-function gcdf = palm_gcdf(G,df1,df2)
+function pvals = palm_gpval(G,df1,df2)
 % Wrapper to convert a pivotal statistic computed with
 % 'pivotal.m' (or simplifications) to a parametric p-value.
-% The output is 1-p, i.e. the CDF.
-% 
+%
 % Note that this doesn't try to deal with precision
-% issues when the value of the cdf is close to 1. Use
-% instead palm_gpval to get these values right, i.e., the
-% p-vals *that usually matter* are then close to zero.
-% 
+% issues when the p-value is close to 1. Use
+% instead palm_gcdf to get these values right, i.e., the
+% p-vals that *don't usually matter* are then close to zero.
+%
 % Usage:
-% cdf = palm_gcdf(G,df1,df2)
-% 
+% pvals = palm_gpval(G,df1,df2)
+%
 % Inputs:
 % G        : G or Z statistic.
 % df1, df2 : Degrees of freedom (non infinite).
-%            df1 must be a scalar
+%            df1 must be a scalar.
 %            For z, use df1 = 0.
 %            For Chi2, use df1 = -1, and df2 as the df.
-% 
+%
 % Outputs:
-% cdf      : Parametric cdf (1-p), based on a
+% pvals    : Parametric p-values based on a
 %            t, F, z or Chi2 distribution.
-% 
+%
 % _____________________________________
 % Anderson Winkler
 % FMRIB / University of Oxford
@@ -33,21 +32,22 @@ df2 = bsxfun(@times,ones(size(G)),df2);
 
 if df1 == 1,
     
-    % Student's t, Aspin's v
-    gcdf = tcdf(G,df2);
+    % Student's t, Aspin-Welch v
+    pvals = tcdf(-G,df2);
     
 elseif df1 == 0,
     
     % Normal distribution
-    gcdf = normcdf(G);
+    pvals = normcdf(-G);
     
-elseif df1 < 0,
+elseif df1 == -1,
     
-    % Chi^2, via lower Gamma incomplete for precision and speed
-    gcdf = gammainc(G/2,df2/2);
+    % Chi^2, via upper Gamma incomplete for precision and speed
+    pvals = gammainc(G/2,df2/2,'upper');
     
 else
     
-    % G or F
-    gcdf = fcdf(G,df1,df2);
+    % G or F, via conversion to Beta
+    B = (df1.*G./df2)./(1+df1.*G./df2);
+    pvals = betainc(1-B,df2/2,df1/2);
 end
