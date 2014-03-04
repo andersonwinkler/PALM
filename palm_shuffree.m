@@ -63,8 +63,7 @@ end
 % Sequence of unique values to shuffle
 N = size(M,1);
 [~,~,seq] = unique(M,'rows');
-seq  = horzcat(seq,(1:N)');
-seqS = sortrows(seq);
+seqS = sortrows(horzcat(seq,(1:N)'));
 U    = unique(seqS(:,1));
 nU   = numel(U);
 
@@ -102,10 +101,13 @@ lmaxB = lmaxP + lmaxS;
 % String for the screen output below
 if EE && ~ISE,
     whatshuf = 'permutations only';
+    stype    = 'perms';
 elseif ISE && ~EE,
     whatshuf = 'sign-flips only';
+    stype    = 'flips';
 elseif EE && ISE,
     whatshuf = 'permutations and sign-flips';
+    stype    = 'both';
 end
 
 % This ensures that there is at least 1 permutation (no permutation)
@@ -243,7 +245,7 @@ if nargout == 3,
     mtr(1:2)        = lmaxB;
     mtr(3)          = NaN;
     mtr(6)          = 2^nU - 1;
-    [mtr(7),mtr(8)] = palm_metrics(Bset,seq);
+    [mtr(7),mtr(8)] = palm_metrics(Bset,seq,stype);
 end
 
 % If the desired outputs are permutation matrices instead of indices

@@ -61,25 +61,20 @@ if iscell(varargin{1}),
     dowhat = 'entropy';
     Ptree  = varargin{1};
     N      = numel(palm_permtree(Ptree,1,false,true));
-    if nargin == 1,
-        X     = (1:N)';
-        stype = 'perms';
-    elseif nargin == 2,
-        X     = varargin{2};
-        stype = 'perms';
-    elseif nargin == 3,
-        X     = varargin{2};
-        stype = varargin{3};
-    end
 else
     dowhat = 'hamming';
     Pset   = varargin{1};
     N      = size(Pset,1);
-    if nargin == 1,
-        X  = (1:N)';
-    elseif nargin == 2,
-        X  = varargin{2};
-    end
+end
+if nargin == 1,
+    X     = (1:N)';
+    stype = 'perms';
+elseif nargin == 2,
+    X     = varargin{2};
+    stype = 'perms';
+elseif nargin == 3,
+    X     = varargin{2};
+    stype = varargin{3};
 end
 if isempty(X),
     X = (1:N)';
@@ -149,7 +144,14 @@ switch dowhat,
         varargout{1} = mean(sum(bsxfun(@ne,Pset(:,1),Pset),1),2);
         
         % Now take ties in X into account:
-        XP = X(Pset);
+        if strcmpi(stype,'perms'),
+            XP = X(Pset);
+        elseif strcmpi(stype,'flips'),
+            XP = bsxfun(@times,X,Pset);
+        elseif strcmpi(stype,'both'),
+            XP = X(Pset);
+            XP = XP.*sign(Pset);
+        end
         varargout{2} = mean(sum(bsxfun(@ne,XP(:,1),XP),1),2);
 end
 

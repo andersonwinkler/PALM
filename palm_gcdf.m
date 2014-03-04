@@ -31,7 +31,13 @@ function gcdf = palm_gcdf(G,df1,df2)
 % Make sure the sizes match
 df2 = bsxfun(@times,ones(size(G)),df2);
 
-if df1 == 1,
+if df1 > 1,
+    
+    % G or F
+    B = (df1.*G./df2)./(1+df1.*G./df2);
+    gcdf = betainc(B,df1/2,df2/2);
+
+elseif df1 == 1,
     
     % Student's t, Aspin's v
     gcdf = tcdf(G,df2);
@@ -46,8 +52,4 @@ elseif df1 < 0,
     % Chi^2, via lower Gamma incomplete for precision and speed
     gcdf = gammainc(G/2,df2/2);
     
-else
-    
-    % G or F
-    gcdf = fcdf(G,df1,df2);
 end

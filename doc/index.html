@@ -1,4 +1,4 @@
-<p><strong>PALM</strong> &mdash; <strong>Permutation Analysis of Linear Models</strong> &mdash; is a <span style="font-variant: small-caps;">Matlab</span>/Octave tool that allows inference using non-parametric, permutation methods, offering a number of features not currently available in other analysis software. These features currently include:</p>
+<p><strong>PALM</strong> &mdash; <strong>Permutation Analysis of Linear Models</strong> &mdash; is a <span style="font-variant: small-caps;">Matlab</span>/Octave tool that allows inference using non-parametric, permutation methods, offering a number of features not available in other analysis software. These features currently include:</p>
 <ul>
 	<li>Ability to work with volumetric and surface-based formats, including facewise data, as well as with non-imaging data.</li>
 	<li>A choice of various regression and permutation strategies;</li>
@@ -7,6 +7,7 @@
 	<li>Shuffling of observations with complex, tree-like covariance structure;</li>
 	<li>Permutation with sign-flipping;</li>
 	<li>Non-Parametric Combination (<span style="font-variant: small-caps;">npc</span>) for joint inference over multiple modalities of the same size, with various combining functions to be chosen from;</li>
+    <li>Conventional multivariate statistics (<span style="font-variant: small-caps;">manova/mancova</span>) for joint inference over multiple modalities of the same size, with various statistics available, assessed non-parametrically;</li>
 	<li><span style="font-variant: small-caps;">fwer</span>-correction over multiple contrasts, multiple modalities, with or without the same size or geometry;</li>
 	<li><span style="font-variant: small-caps;">fdr</span>-correction and adjustment;</li>
 	<li>A fast draft mode, in which a minimum number of permutations is performed for each test.</li>
@@ -31,7 +32,6 @@
 <ol>
 	<li>Uncompress the downloaded file above.</li>
 	<li>Make sure that the location of your Octave binary matches the location indicated in the first line of the script <code>palm</code> (not to be confused with the <code>palm.m</code>). In most Linux systems this is <code>/usr/bin/octave</code>, but you may need to edit the first line of the file <code>palm</code> to point to the correct location.</li>
-	<li>Add the path of the directory of the <code>palm</code> command to your <code>~/.octaverc</code> file, so that Octave knows where to find all the needed functions.</li>
 	<li>To invoke <span style="font-variant: small-caps;">palm</span> simply type <code>./palm</code> in the directory where you installed it. You can also add the path to your <code>$PATH</code> variable, so that you can call it easily from any directory just by typing <code>palm</code>.</li>
 </ol>
 <hr>
@@ -65,11 +65,11 @@
 </tr>
 <tr>
 <td><code>-t &lt;file&gt;</code></td>
-<td><i>t</i>-contrasts file, in <span style="font-variant: small-caps;">csv</span> or <span style="font-variant: small-caps;">vest</span> format (used by <span style="font-variant: small-caps;">fsl</span>). The option <code>-t</code> can be used more than once, so that more than one <i>t</i>-contrasts file can be loaded.</td>
+<td><em>t</em>-contrasts file, in <span style="font-variant: small-caps;">csv</span> or <span style="font-variant: small-caps;">vest</span> format (used by <span style="font-variant: small-caps;">fsl</span>). The option <code>-t</code> can be used more than once, so that more than one <em>t</em>-contrasts file can be loaded.</td>
 </tr>
 <tr>
 <td><code>-f &lt;file&gt;</code></td>
-<td><i>F</i>-contrasts file, in <span style="font-variant: small-caps;">csv</span> or <span style="font-variant: small-caps;">vest</span> format (used by <span style="font-variant: small-caps;">fsl</span>). Advanced: The option <code>-f</code> can be used more than once, so that more than one <i>F</i>-contrasts file can be loaded. Each file supplied with a <code>-f</code> corresponds to the file supplied with the option <code>-t</code> in the same order. The option <code>-f</code> cannot be used more than the number of times the option <code>-t</code> was used.</td>
+<td><em>F</em>-contrasts file, in <span style="font-variant: small-caps;">csv</span> or <span style="font-variant: small-caps;">vest</span> format (used by <span style="font-variant: small-caps;">fsl</span>). The option <code>-f</code> can be used more than once, so that more than one <em>F</em>-contrasts file can be loaded. Each file supplied with a <code>-f</code> corresponds to the file supplied with the option <code>-t</code> in the same order. The option <code>-f</code> cannot be used more than the number of times the option <code>-t</code> was used.</td>
 </tr>
 <tr>
 <td><code>-inormal</code></td>
@@ -89,7 +89,7 @@
 </tr>
 <tr>
 <td><code>-sb</code></td>
-<td>Permute blocks as a whole if the block specification has a single column. Otherwise, permutations will happen within block.</td>
+<td>Shuffle blocks as a whole if the block specification has a single column. Otherwise, permutations will happen within block.</td>
 </tr>
 <tr>
 <td><code>-vg &lt;file&gt;</code></td>
@@ -116,56 +116,28 @@
 <td>Run two-tailed tests for all the t-contrasts instead of one-tailed. If <span style="font-variant: small-caps;">npc</span> is used, it becomes also two-tailed.</td>
 </tr>
 <tr>
-<td><code>-npc</code></td>
-<td>Use non-parametric combination (<span style="font-variant: small-caps;">npc</span>).</td>
+<td><code>-npc &lt;method&gt;</code></td>
+<td>Do non-parametric combination (<span style="font-variant: small-caps;">npc</span>), using the the specified method, which can be one of: <code>Tippett</code>, <code>Fisher</code>, <code>Pearson-David</code>, <code>Stouffer</code>, <code>Wilkinson &lt;alpha&gt;</code>, <code>Winer</code>, <code>Edgington</code>, <code>Mudholkar-George</code>, <code>Friston</code>, <code>Darlington-Hayes &lt;r&gt;</code>, <code>Zaykin &lt;alpha&gt;</code>, <code>Dudbridge-Koeleman &lt;r&gt;</code>, <code>Dudbridge-Koeleman2 &lt;r&gt; &lt;alpha&gt;</code>, <code>Nichols</code>, <code>Taylor-Tibshirani</code> or <code>Jiang &lt;alpha&gt;</code>. Default is <code>Tippett</code>. Note that some methods require 1 or 2 additional parameters to be provided.</td>
 </tr>
 <tr>
-<td><code>-cmethod &lt;string&gt;</code></td>
-<td>Method for combination in the <span style="font-variant: small-caps;">npc</span>. It can be one of: <code>Tippett</code>, <code>Fisher</code>, <code>Pearson-David</code>, <code>Stouffer</code>, <code>Wilkinson &lt;alpha&gt;</code>, <code>Winer</code>, <code>Edgington</code>, <code>Mudholkar-George</code>, <code>Friston</code>, <code>Darlington-Hayes &lt;r&gt;</code>, <code>Zaykin &lt;alpha&gt;</code>, <code>Dudbridge-Koeleman &lt;r&gt;</code>, <code>Dudbridge-Koeleman2 &lt;r&gt; &lt;alpha&gt;</code>, <code>Nichols</code>, <code>Taylor-Tibshirani</code> or <code>Jiang &lt;alpha&gt;</code>. Default is <code>Tippett</code>. Note that some methods require 1 or 2 additional parameters to be provided.</td>
+<td><code>-mv &lt;statistic&gt;</code></td>
+<td>Do classical multivariate analysis (<span style="font-variant: small-caps;">mv</span>), using the the specified statistic, which can be one of: <code>Wilks</code>, <code>Hotelling</code>, <code>Pillai</code>, <code>Roy_ii</code> or <code>Roy_iii</code>.</td>
 </tr>
 <tr>
 <td><code>-o &lt;string&gt;</code></td>
 <td>Output prefix. It may itself be prefixed by a path. Default is <code>palm</code>.</td>
 </tr>
 <tr>
+<td><code>-T</code></td>
+<td>Enable <span style="font-variant: small-caps;">tfce</span> inference for univariate (partial) tests, as well as for <span style="font-variant: small-caps;">npc</span> and/or <span style="font-variant: small-caps;">mv</span> if these options have been enabled.</td>
+</tr>
+<tr>
 <td><code>-c &lt;real&gt;</code></td>
-<td>Enable cluster extent for <i>t</i> contrasts, with the supplied cluster-forming threshold.</td>
+<td>Enable cluster extent for <em>t</em> contrasts for univariate (partial) tests, with the supplied cluster-forming threshold (z-score), as well as for <span style="font-variant: small-caps;">npc</span> and/or <span style="font-variant: small-caps;">mv</span> if these options have been enabled.</td>
 </tr>
 <tr>
 <td><code>-C &lt;real&gt;</code></td>
-<td>Enable cluster mass for <i>t</i> contrasts, with the supplied cluster-forming threshold.</td>
-</tr>
-<tr>
-<td><code>-F &lt;positive&gt;</code></td>
-<td>Enable cluster extent for <i>F</i> contrasts, with the supplied cluster-forming threshold.</td>
-</tr>
-<tr>
-<td><code>-S &lt;positive&gt;</code></td>
-<td>Enable cluster mass for <i>F</i> contrasts, with the supplied cluster-forming threshold.</td>
-</tr>
-<tr>
-<td><code>-T</code></td>
-<td>Enable <span style="font-variant: small-caps;">tfce</span> inference for 3D (volume) data, i.e., with <em>H</em> = 2, <em>E</em> = 0.5, <em>C</em> = 6.</td>
-</tr>
-<tr>
-<td><code>-T2</code></td>
-<td>Enable <span style="font-variant: small-caps;">tfce</span> inference for 2D (surface, <span style="font-variant: small-caps;">tbss</span>) data, i.e., <em>H</em> = 2, <em>E</em> = 1, <em>C</em> = 26.</td>
-</tr>
-<tr>
-<td><code>-cnpc &lt;real&gt;</code></td>
-<td>Enable <span style="font-variant: small-caps;">npc</span> cluster extent, with the supplied cluster-forming threshold (z-stat).</td>
-</tr>
-<tr>
-<td><code>-Cnpc &lt;real&gt;</code></td>
-<td>Enable <span style="font-variant: small-caps;">npc</span> cluster mass, with the supplied cluster-forming threshold (z-stat).</td>
-</tr>
-<tr>
-<td><code>-Tnpc</code></td>
-<td>Enable <span style="font-variant: small-caps;">tfce</span> inference for <span style="font-variant: small-caps;">npc</span> on 3D data, with <em>H</em> = 2, <em>E</em> = 0.5, <em>C</em> = 6.</td>
-</tr>
-<tr>
-<td><code>-T2npc</code></td>
-<td>Enable <span style="font-variant: small-caps;">tfce</span> inference for <span style="font-variant: small-caps;">npc</span> on 2D data, i.e., <em>H</em> = 2, <em>E</em> = 1, <em>C</em> = 26.</td>
+<td>Enable cluster mass for <em>t</em> contrasts for univariate (partial) tests, with the supplied cluster-forming threshold (z-score), as well as for <span style="font-variant: small-caps;">npc</span> and/or <span style="font-variant: small-caps;">mv</span> if these options have been enabled.</td>
 </tr>
 <tr>
 <td><code>-tfce_H &lt;real&gt;</code></td>
@@ -178,6 +150,46 @@
 <tr>
 <td><code>-tfce_C &lt;integer&gt;</code></td>
 <td>Set the <span style="font-variant: small-caps;">tfce</span> <em>C</em> parameter (connectivity).</td>
+</tr>
+<tr>
+<td><code>-tfce2D</code></td>
+<td>Set <span style="font-variant: small-caps;">tfce</span> parameters for 2D data (surface, <span style="font-variant: small-caps;">tbss</span>) data, i.e., <em>H</em> = 2, <em>E</em> = 1, <em>C</em> = 26.</td>
+</tr>
+<tr>
+<td><code>-Tuni</code></td>
+<td>Enable <span style="font-variant: small-caps;">tfce</span> inference for univariate (partial) tests.</td>
+</tr>
+<tr>
+<td><code>-cuni &lt;real&gt;</code></td>
+<td>Enable cluster extent for <em>t</em> contrasts for univariate (partial) tests, with the supplied cluster-forming threshold (z-score).</td>
+</tr>
+<tr>
+<td><code>-Cuni &lt;real&gt;</code></td>
+<td>Enable cluster mass for <em>t</em> contrasts for univariate (partial) tests, with the supplied cluster-forming threshold (z-score).</td>
+</tr>
+<tr>
+<td><code>-Tnpc</code></td>
+<td>Enable <span style="font-variant: small-caps;">tfce</span> inference for <span style="font-variant: small-caps;">npc</span>.</td>
+</tr>
+<tr>
+<td><code>-cnpc &lt;real&gt;</code></td>
+<td>Enable cluster extent for <em>t</em> contrasts for <span style="font-variant: small-caps;">npc</span>, with the supplied cluster-forming threshold (z-score).</td>
+</tr>
+<tr>
+<td><code>-Cnpc &lt;real&gt;</code></td>
+<td>Enable cluster mass for <em>t</em> contrasts for <span style="font-variant: small-caps;">npc</span>, with the supplied cluster-forming threshold (z-score).</td>
+</tr>
+<tr>
+<td><code>-Tmv</code></td>
+<td>Enable <span style="font-variant: small-caps;">tfce</span> inference for <span style="font-variant: small-caps;">mv</span>.</td>
+</tr>
+<tr>
+<td><code>-cmv &lt;real&gt;</code></td>
+<td>Enable cluster extent for <em>t</em> contrasts for <span style="font-variant: small-caps;">mv</span>, with the supplied cluster-forming threshold (z-score).</td>
+</tr>
+<tr>
+<td><code>-Cmv &lt;real&gt;</code></td>
+<td>Enable cluster mass for <em>t</em> contrasts for <span style="font-variant: small-caps;">mv</span>, with the supplied cluster-forming threshold (z-score).</td>
 </tr>
 <tr>
 <td><code>-corrmod</code></td>
@@ -205,7 +217,7 @@
 </tr>
 <tr>
 <td><code>-savemask</code></td>
-<td>Save the effective masks used for each modality.</td>
+<td>Save the effective masks used for each modality, as well as an intersection mask used for <span style="font-variant: small-caps;">npc</span> and/or <span style="font-variant: small-caps;">mv</span> of these have been selected.</td>
 </tr>
 <tr>
 <td><code>-noniiclass</code></td>
@@ -220,16 +232,44 @@
 <td>Save one statistic image per permutation, as well as a <span style="font-variant: small-caps;">csv</span> file with the permutation indices (one permutation per row, one index per column; sign-flips are represented by the negative indices). Use cautiously, as this may consume large amounts of disk space.</td>
 </tr>
 <tr>
+<td><code>-savemetrics</code></td>
+<td>Save a <span style="font-variant: small-caps;">csv</span> file with various permutation metrics.</td>
+</tr>
+<tr>
 <td><code>-seed &lt;positive&gt;</code></td>
 <td>Seed used for the random number generator. Use a positive integer up to 2^32. Default is <code>0</code>. To start with a random number, use the word <code>twist</code> instead of the integer. Note that a given seed used in <span style="font-variant: small-caps;">matlab</span> isn't equivalent to the same seed used in Octave.</td>
 </tr>
 <tr>
-<td><code>-shrink</code></td>
-<td>Remove observations that are zeroed out among the regressors of interest and which don't belong to the currently tested contrast. This option cannot be used together with <code>-corrcon</code>.</td>
+<td><code>-demean</code></td>
+<td>Mean center the data, as well as all columns of the design matrix. If the original design had an intercept, the intercept is removed.</code>.</td>
+</tr>
+<tr>
+<td><code>-vgdemean</code></td>
+<td>Mean center the data, as well as all columns of the design matrix, within each <span style="font-variant: small-caps;">vg</span>. Intercepts are removed.</code>.</td>
+</tr>
+<tr>
+<td><code>-ev4vg</code></td>
+<td>Add to the design one <span style="font-variant: small-caps;">ev</span> modelling the mean of each <span style="font-variant: small-caps;">vg</span></code>.</td>
+</tr>
+<tr>
+<td><code>-removeignored</code></td>
+<td>Remove from the data and design those observations that have their own, exclusive regressor, but which don't belong to any contrast.</td>
+</tr>
+<tr>
+<td><code>-removevgsize1</code></td>
+<td>Remove from the data and design those observations that are in <span style="font-variant: small-caps;">vg</span>s of size 1.</td>
+</tr>
+<tr>
+<td><code>-pearson</code></td>
+<td>Instead of <em>t</em>, <em>F</em>, <em>v</em> or <em>G</em>, compute either the Pearson's correlation coefficient, <em>r</em> (if the constrast has rank=1), or the coefficient of determination <em>R</em><sup>2</sup> (if the constrast has rank>1).</td>
 </tr>
 <tr>
 <td><code>-zstat</code></td>
-<td>Convert the original statistic (<i>t</i>, <i>F</i>, <i>v</i> or <i>G</i>) to a normally distributed, <i>z</i>-statistic. In addition to having gaussianized statistics, this option allows correction over contrasts that are not of the same rank (i.e., using the option <code>-corrcon</code>).</td>
+<td>Convert the original statistic (<em>t</em>, <em>F</em>, <em>v</em> or <em>G</em>) to a normally distributed, <em>z</em>-statistic. In addition to having gaussianized statistics, this option allows correction over contrasts that are not of the same rank (i.e., using the option <code>-corrcon</code>).</td>
+</tr>
+<tr>
+<td><code>-noranktest</code></td>
+<td>For <span style="font-variant: small-caps;">mv</span>, don't check the rank of the data before trying to compute the multivariate statistics.</td>
 </tr>
 </tbody>
 </table>
@@ -255,21 +295,21 @@
 <h4>Support for <span style="font-variant: small-caps;">nifti</span> files</h4>
 <p>Support for <a title="The NIFTI file format" href="http://brainder.org/2012/09/23/the-nifti-file-format/" target="_blank"><span style="font-variant: small-caps;">nifti</span> files</a> is provided, internally, by the publicly available <a title="NIFTI class for MATLAB" href="http://sourceforge.net/projects/niftilib/files/niftimatlib/" target="_blank"><span style="font-variant: small-caps;">nifti</span> class</a>. This allows reading and writing even huge files without using too much computer <span style="font-variant: small-caps;">ram</span>. However, the <span style="font-variant: small-caps;">nifti</span> class does not operate on compressed files, i.e., with extension <code>.nii.gz</code>. To read these files, it is recommended that they are uncompressed (with <code>gunzip</code>).</p>
 
-<p>Alternatively, if the datasets are small, and if you have either <span style="font-variant: small-caps;">fsl</span> or FreeSurfer installed, you can disable the <span style="font-variant: small-caps;">nifti</span> class with the option <code>-noniiclass</code>. This allows to read/write these <code>.nii.gz</code> files directly. However, if these files are too big when uncompressed, this can easily use all the computer memory and your system may become unstable until it is (possibly) restarted. So, use with this option with great caution.</p>
+<p>Alternatively, if the datasets are small, and if have either <span style="font-variant: small-caps;">fsl</span> or FreeSurfer are installed, the <span style="font-variant: small-caps;">nifti</span> class can be disabled with the option <code>-noniiclass</code>. This allows to read/write these <code>.nii.gz</code> files directly. However, if these files are too big when uncompressed, this can easily use all the computer memory and the system may become unstable until it is (possibly) restarted. This option should be used with great caution.</p>
 
-<p>The <span style="font-variant: small-caps;">nifti</span> class, that is used by default, already comes with precompiled binaries for <span style="font-variant: small-caps;">Matlab</span> in various platforms, and for Octave for most 64-bit Linux distributions. If you need to compile it for your distribution, use:</p>
+<p>The <span style="font-variant: small-caps;">nifti</span> class, that is used by default, already comes with precompiled binaries for <span style="font-variant: small-caps;">Matlab</span> in various platforms, and for Octave for most 64-bit Linux distributions. If compilation is needed, use:</p>
 <code>cd /full/path/to/palm/niftimatlib/matlab/@file_array/private<br>
 ./compile.sh</code>
 
 <h4>Support for FreeSurfer files</h4>
-<p>To be able to read/write FreeSurfer binary files (surfaces and curvatures), <a title="FreeSurfer" href="http://surfer.nmr.mgh.harvard.edu/" target="_blank">FreeSurfer</a> needs to be installed and configured correctly in your system. Surface files in <a title="Braindering with ASCII files" href="http://brainder.org/2011/09/25/braindering-with-ascii-files/" target="_blank">ASCII format</a> are read directly by <span style="font-variant: small-caps;">palm</span> as long as their file extension is <code>srf</code>, so FreeSurfer isn't necessary for these files.</p>
+<p>To be able to read/write FreeSurfer binary files (surfaces and curvatures), <a title="FreeSurfer" href="http://surfer.nmr.mgh.harvard.edu/" target="_blank">FreeSurfer</a> needs to be installed and configured correctly. Surface files in <a title="Braindering with ASCII files" href="http://brainder.org/2011/09/25/braindering-with-ascii-files/" target="_blank">ASCII format</a> are read directly by <span style="font-variant: small-caps;">palm</span> as long as their file extension is <code>srf</code>, so FreeSurfer isn't necessary for these files.</p>
 
 <p>Freesurfer "curvature" files converted to <span style="font-variant: small-caps;">ascii</span> (<span style="font-variant: small-caps;">asc</span>/<span style="font-variant: small-caps;">dpv</span>/<span style="font-variant: small-caps;">dpf</span>/<span style="font-variant: small-caps;">dpx</span>) need to be merged and converted to <span style="font-variant: small-caps;">csv</span> tables. To generate a valid <span style="font-variant: small-caps;">csv</span> file, use the command <code>dpx2csv</code> (available in <span style="font-variant: small-caps;">palm</span>, or <a href="dpx2csv"><b>here</b></a>) to make the <span style="font-variant: small-caps;">csv</span> file, initially with one column per subject and one row per vertex or face, then transpose the rows and columns of this file with the command <code>transpose</code> (also available in <span style="font-variant: small-caps;">palm</span>, or <a href="transpose"><b>here</b></a>).</p>
 
 <h4>Support for <span style="font-variant: small-caps;">csv</span> files</h4>
-<p>Although <span style="font-variant: small-caps;">palm</span> was created with imaging in mind, it can be used for non-imaging data. Any kind of data that can be arranged in a table and saved as comma-separated values file (<span style="font-variant: small-caps;">csv</span>) (i.e., <i>any</i> data) can be used as input. Each row constitutes a subject or observation, and each column represents a measurement. <span style="font-variant: small-caps;">csv</span> files must contain numeric fields only, i.e., title labels are not accepted and will cause errors.</p>
+<p>Although <span style="font-variant: small-caps;">palm</span> was created with imaging in mind, it can be used for non-imaging data. Any kind of data that can be arranged in a table and saved as comma-separated values file (<span style="font-variant: small-caps;">csv</span>) (i.e., <em>any</em> data) can be used as input. Each row constitutes a subject or observation, and each column represents a measurement. <span style="font-variant: small-caps;">csv</span> files must contain numeric fields only, i.e., title labels are not accepted and will cause errors.</p>
 
-<p>If your data is arranged as space- or tab-separated values instead of comma-separated values, it can be converted quickly using <code>awk</code> (or <code>gawk</code>). Just run:</p>
+<p>If the data is arranged as space- or tab-separated values instead of comma-separated values, it can be converted quickly using <code>awk</code> (or <code>gawk</code>):</p>
 
 <code>awk 'BEGIN { OFS="," } { $1=$1; print $0 }' oldfile.txt &gt; newfile.csv</code>
 
@@ -277,7 +317,7 @@
 
 <code>awk 'BEGIN { FS="x"; OFS="," } { $1=$1; print $0 }' oldfile.txt &gt; newfile.csv</code>
 
-<p>Just replace the <code>"x"</code> for the separator in your original table (e.g., a semicolon).</p>
+<p>where the <code>"x"</code> should be replaced by the separator in the original table (e.g., a semicolon).</p>
 
 <h4>Support for other file formats</h4>
 <p>If there is a file format that cannot be easily converted to <span style="font-variant: small-caps;">csv</span>, and which you'd like to be able to read directly in <span style="font-variant: small-caps;">palm</span>, feel free to contact us. New formats may be added for future releases.</p>
@@ -346,7 +386,7 @@
 </tr>
 <tr>
 <td><code>{stat}</code></td>
-<td>The name of the statistic, which can be <code>tstat</code> for the <i>t</i>-statistic, <code>fstat</code> for the <i>F</i>-statistic, <code>vstat</code> for the Aspin&ndash;Welch's <i>v</i>-statistic or <code>gstat</code> for the <i>G</i>-statistic (<em>v</em>&sup2;), or <code>npc</code> for the z-score of the chosen <span style="font-variant: small-caps;">npc</span> combining method.</td>
+<td>The name of the statistic, which can be <code>tstat</code> for the <em>t</em>-statistic, <code>fstat</code> for the <em>F</em>-statistic, <code>vstat</code> for the Aspin&ndash;Welch's <em>v</em>-statistic, <code>gstat</code> for the <em>G</em>-statistic, <code>rstat</code> for the Person's correlation (<em>r</em>), <code>rsqstat</code> for the coefficient of determination (<em>R</em><sup>2</sup>), or <code>zstat</code> if the option <code>-zstat</code> was enabled. For <span style="font-variant: small-caps;">npc</span>, it is <code>npc</code>, appended by the name of the combining function. For <span style="font-variant: small-caps;">mv</span>, it is <code>mv</code> appended by the name of the statistic, or by <code>tsqstat</code> for Hotelling's <em>T</em><sup>2</sup>. If <code>-zstat</code> was enabled, <code>npc</code> and <code>mv</code> are prefixed by a <code>z</code>.</td>
 </tr>
 <tr>
 <td><code>{pval}</code></td>
@@ -390,7 +430,12 @@
 <tr>
 <td>Univariate statistics</td>
 <td><em>t</em> and <em>F.</em></td>
-<td><em>t</em>, <em>F</em>, Aspin&ndash;Welch's <em>v</em> and <em>v</em>&sup2; (<em>G</em>).</td>
+<td><em>t</em>, <em>F</em>, Aspin&ndash;Welch's <em>v</em>, <em>G</em>, Pearson's <em>r</em> and <em>R</em><sup>2</sup>.</td>
+</tr>
+<tr>
+<td>Multivariate statistics</td>
+<td>None</td>
+<td>Hotelling's <em>T</em><sup>2</sup>, Wilks' lambda, Pillai's trace, Lawley&ndash;Hotelling's trace, Roy's largest root (two variants).</td>
 </tr>
 <tr>
 <td>Spatial statistics</td>
@@ -410,7 +455,7 @@
 <tr>
 <td>Block permutation</td>
 <td>Either whole-block or within-block.</td>
-<td>Whole-block and/or within-block, either in isolation or in arbitrary combinations, with multiple and complex levels of dependence between observations.</td>
+<td>Whole-block and/or within-block, either in isolation or in arbitrary combinations, with multiple and complex levels of tree-like dependence between observations.</td>
 </tr>
 <tr>
 <td>Variance groups</td>
@@ -453,6 +498,16 @@
 <td>Yes.</td>
 </tr>
 <tr>
+<td>Parametric p-values</td>
+<td>No.</td>
+<td>Yes, for univariate, multivariate, and <span style="font-variant: small-caps;">npc</span> (all uncorrected).</td>
+</tr>
+<tr>
+<td>Permutation metrics</td>
+<td>None.</td>
+<td>Average Hamming distance, Hubermann&ndash;Hogg complexity and entropy measurements.</td>
+</tr>
+<tr>
 <td>Overall performance</td>
 <td>Slower, except for <span style="font-variant: small-caps;">tfce</span>.</td>
 <td>Faster, except for <span style="font-variant: small-caps;">tfce</span>.</td>
@@ -472,8 +527,8 @@
 <hr>
 <h2>References</h2>
 <ul>
-<li>Winkler AM, Ridgway GR, Webster MA, Smith SM, Nichols TE. Permutation inference for the general linear model. 2013. <i>(submitted)</i></li>
-<li>Nichols TE, Holmes AP. Nonparametric permutation tests for functional neuroimaging: a primer with examples. <i>Hum Brain Mapp.</i> 2002 Jan;15(1):1-25.</li>
+<li>Winkler AM, Ridgway GR, Webster MA, Smith SM, Nichols TE. Permutation inference for the general linear model. 2014. <em>Neuroimage</em> (in press).</li>
+<li>Nichols TE, Holmes AP. Nonparametric permutation tests for functional neuroimaging: a primer with examples. <em>Hum Brain Mapp.</em> 2002 Jan;15(1):1-25.</li>
 <li>Holmes AP, Blair RC, Watson JD, Ford I. Nonparametric analysis of statistic images from functional mapping experiments. J Cereb Blood Flow Metab. 1996 Jan;16(1):7-22.</li>
 </ul>
 <h2>Acknowledgements</h2>

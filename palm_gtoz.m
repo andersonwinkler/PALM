@@ -32,7 +32,7 @@ if isnan(df2),
     % Apply Fisher's r-to-z transform
     Z = atanh(G);
     
-elseif ~isempty(df2),
+else
     siz = size(G);
     Z   = zeros(siz);
     df2 = bsxfun(@times,ones(siz),df2);

@@ -30,7 +30,13 @@ function pvals = palm_gpval(G,df1,df2)
 % Make sure the sizes match
 df2 = bsxfun(@times,ones(size(G)),df2);
 
-if df1 == 1,
+if df1 > 1,
+    
+    % G or F, via conversion to Beta
+    B = (df1.*G./df2)./(1+df1.*G./df2);
+    pvals = betainc(1-B,df2/2,df1/2);
+    
+elseif df1 == 1,
     
     % Student's t, Aspin-Welch v
     pvals = tcdf(-G,df2);
@@ -40,14 +46,8 @@ elseif df1 == 0,
     % Normal distribution
     pvals = normcdf(-G);
     
-elseif df1 == -1,
+elseif df1 < 0,
     
     % Chi^2, via upper Gamma incomplete for precision and speed
     pvals = gammainc(G/2,df2/2,'upper');
-    
-else
-    
-    % G or F, via conversion to Beta
-    B = (df1.*G./df2)./(1+df1.*G./df2);
-    pvals = betainc(1-B,df2/2,df1/2);
 end

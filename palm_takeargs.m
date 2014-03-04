@@ -40,7 +40,7 @@ end
 
 opts.i   = cell(Ni,1);  % Input files (to constitute Y later)
 opts.m   = cell(Nm,1);  % Mask file(s)
-opts.s   = cell(Nm,1);  % Surface file(s)
+opts.s   = cell(Ns,1);  % Surface file(s)
 opts.t   = cell(Nt,1);  % t contrast file(s)
 opts.f   = cell(Nf,1);  % F contrast file(s)
 opts.eb  = [];          % File with definition of exchangeability blocks
@@ -125,59 +125,142 @@ while a <= nargin,
             
         case '-c',
             
-            % Threshold for cluster extent, t-stat
-            opts.clustere_t.do  = true;
-            opts.clustere_t.thr = vararginx{a+1};
-            if ischar(opts.clustere_t.thr),
-                opts.clustere_t.thr = str2double(opts.clustere_t.thr);
+            % Threshold for cluster extent, univariate, NPC and MV
+            opts.clustere_uni.do  = true;
+            opts.clustere_uni.thr = vararginx{a+1};
+            if ischar(opts.clustere_uni.thr),
+                opts.clustere_uni.thr = str2double(opts.clustere_uni.thr);
+            end
+            opts.clustere_npc.do  = true;
+            opts.clustere_npc.thr = vararginx{a+1};
+            if ischar(opts.clustere_npc.thr),
+                opts.clustere_npc.thr = str2double(opts.clustere_npc.thr);
+            end
+            opts.clustere_mv.do   = true;
+            opts.clustere_mv.thr  = vararginx{a+1};
+            if ischar(opts.clustere_mv.thr),
+                opts.clustere_mv.thr = str2double(opts.clustere_mv.thr);
             end
             a = a + 2;
             
         case '-C',
             
-            % Threshold for cluster mass, t-stat
-            opts.clusterm_t.do  = true;
-            opts.clusterm_t.thr = vararginx{a+1};
-            if ischar(opts.clusterm_t.thr),
-                opts.clusterm_t.thr = str2double(opts.clusterm_t.thr);
+            % Threshold for cluster mass, univariate, NPC and MV
+            opts.clusterm_uni.do  = true;
+            opts.clusterm_uni.thr = vararginx{a+1};
+            if ischar(opts.clusterm_uni.thr),
+                opts.clusterm_uni.thr = str2double(opts.clusterm_uni.thr);
+            end
+            opts.clusterm_npc.do  = true;
+            opts.clusterm_npc.thr = vararginx{a+1};
+            if ischar(opts.clusterm_npc.thr),
+                opts.clusterm_npc.thr = str2double(opts.clusterm_npc.thr);
+            end
+            opts.clusterm_mv.do   = true;
+            opts.clusterm_mv.thr  = vararginx{a+1};
+            if ischar(opts.clusterm_mv.thr),
+                opts.clusterm_mv.thr = str2double(opts.clusterm_mv.thr);
             end
             a = a + 2;
             
-        case '-F',
+        case '-cuni',
             
-            % Threshold for cluster extent, F-stat
-            opts.clustere_F.do  = true;
-            opts.clustere_F.thr = vararginx{a+1};
-            if ischar(opts.clustere_F.thr),
-                opts.clustere_F.thr = str2double(opts.clustere_F.thr);
+            % Threshold for cluster extent, univariate
+            opts.clustere_uni.do  = true;
+            opts.clustere_uni.thr = vararginx{a+1};
+            if ischar(opts.clustere_uni.thr),
+                opts.clustere_uni.thr = str2double(opts.clustere_uni.thr);
             end
             a = a + 2;
             
-        case '-S',
+        case '-Cuni',
             
-            % Threshold for cluster mass, F-stat
-            opts.clusterm_F.do  = true;
-            opts.clusterm_F.thr = vararginx{a+1};
-            if ischar(opts.clusterm_F.thr),
-                opts.clusterm_F.thr = str2double(opts.clusterm_F.thr);
+            % Threshold for cluster mass, univariate
+            opts.clusterm_uni.do  = true;
+            opts.clusterm_uni.thr = vararginx{a+1};
+            if ischar(opts.clusterm_uni.thr),
+                opts.clusterm_uni.thr = str2double(opts.clusterm_uni.thr);
+            end
+            a = a + 2;
+            
+        case '-cnpc',
+            
+            % Threshold for cluster extent, NPC
+            opts.NPC = true;
+            opts.clustere_npc.do  = true;
+            opts.clustere_npc.thr = vararginx{a+1};
+            if ischar(opts.clustere_npc.thr),
+                opts.clustere_npc.thr = str2double(opts.clustere_npc.thr);
+            end
+            a = a + 2;
+            
+        case '-Cnpc',
+            
+            % Threshold for cluster mass, NPC
+            opts.NPC = true;
+            opts.clusterm_npc.do  = true;
+            opts.clusterm_npc.thr = vararginx{a+1};
+            if ischar(opts.clusterm_npc.thr),
+                opts.clusterm_npc.thr = str2double(opts.clusterm_npc.thr);
+            end
+            a = a + 2;
+             
+        case '-cmv',
+            
+            % Threshold for cluster extent, MV
+            opts.MV = true;
+            opts.clustere_mv.do  = true;
+            opts.clustere_mv.thr = vararginx{a+1};
+            if ischar(opts.clustere_mv.thr),
+                opts.clustere_mv.thr = str2double(opts.clustere_mv.thr);
+            end
+            a = a + 2;
+            
+        case '-Cmv',
+            
+            % Threshold for cluster mass, MV
+            opts.MV = true;
+            opts.clusterm_mv.do  = true;
+            opts.clusterm_mv.thr = vararginx{a+1};
+            if ischar(opts.clusterm_mv.thr),
+                opts.clusterm_mv.thr = str2double(opts.clusterm_mv.thr);
             end
             a = a + 2;
             
         case '-T',
             
-            % Do TFCE?
-            opts.tfce.do   = true;
-            opts.tfce.H    = 2;
-            opts.tfce.E    = 0.5;
-            opts.tfce.conn = 6;
+            % Do TFCE for univariate, NPC and MV?
+            opts.tfce_uni.do = true;
+            opts.tfce_npc.do = true;
+            opts.tfce_mv.do  = true;
+            a = a + 1;
+            
+        case '-Tuni',
+            
+            % Do TFCE for uni?
+            opts.tfce_uni.do = true;
+            a = a + 1;
+            
+        case '-Tnpc',
+            
+            % Do TFCE for NPC?
+            opts.NPC = true;
+            opts.tfce_npc.do = true;
+            a = a + 1;
+            
+        case '-Tmv',
+            
+            % Do TFCE for MV?
+            opts.MV = true;
+            opts.tfce_mv.do  = true;
             a = a + 1;
             
         case '-tfce2D',
             
             % Do TFCE in 2D mode?
-            opts.tfce.H    = 2;
-            opts.tfce.E    = 1;
-            opts.tfce.conn = 26;
+            opts.tfce.H      = 2;
+            opts.tfce.E      = 1;
+            opts.tfce.conn   = 26;
             a = a + 1;
             
         case '-tfce_H',
@@ -206,59 +289,7 @@ while a <= nargin,
                 opts.tfce.conn = str2double(opts.tfce.conn);
             end
             a = a + 2;
-            
-        case '-cnpc',
-            
-            % Threshold for cluster extent, NPC, z-stat
-            opts.clustere_npc.do  = true;
-            opts.clustere_npc.thr = vararginx{a+1};
-            if ischar(opts.clustere_npc.thr),
-                opts.clustere_npc.thr = str2double(opts.clustere_npc.thr);
-            end
-            a = a + 2;
-            
-        case '-Cnpc',
-            
-            % Threshold for cluster mass, NPC, z-stat
-            opts.clusterm_npc.do  = true;
-            opts.clusterm_npc.thr = vararginx{a+1};
-            if ischar(opts.clusterm_npc.thr),
-                opts.clusterm_npc.thr = str2double(opts.clusterm_npc.thr);
-            end
-            a = a + 2;
-             
-        case '-Tnpc',
-            
-            % Do TFCE for NPC?
-            opts.tfce_npc.do = true;
-            a = a + 1;
-            
-        case '-cmv',
-            
-            % Threshold for cluster extent, MV, z-stat
-            opts.clustere_mv.do  = true;
-            opts.clustere_mv.thr = vararginx{a+1};
-            if ischar(opts.clustere_mv.thr),
-                opts.clustere_mv.thr = str2double(opts.clustere_mv.thr);
-            end
-            a = a + 2;
-            
-        case '-Cmv',
-            
-            % Threshold for cluster mass, MV, z-stat
-            opts.clusterm_mv.do  = true;
-            opts.clusterm_mv.thr = vararginx{a+1};
-            if ischar(opts.clusterm_mv.thr),
-                opts.clusterm_mv.thr = str2double(opts.clusterm_mv.thr);
-            end
-            a = a + 2;
-            
-        case '-Tmv',
-            
-            % Do TFCE for MV?
-            opts.tfce_mv.do = true;
-            a = a + 1;
-            
+                       
         case '-sb',
             
             % Define whether should permute blocks as a whole (-sb) or not
@@ -317,7 +348,7 @@ while a <= nargin,
             opts.savepara = true;
             a = a + 1;
             
-        case '-save1-p',
+        case {'-savecdf','-save1-p'},
             
             % Save 1-p values (CDF) instead of the P-values
             opts.savecdf = true;
@@ -370,7 +401,7 @@ while a <= nargin,
             if nargin == a,
                 a = a + 1;
                 
-            elseif nargin > a && strcmp(vararginx{a+1},'-'),
+            elseif nargin > a && strcmp(vararginx{a+1}(1),'-'),
                 a = a + 1;
                 
             elseif nargin > a,
@@ -437,7 +468,7 @@ while a <= nargin,
                 else
                     a = a + 2;
                 end
-                opts.cmethod = methlist{methidx};
+                opts.npcmethod = methlist{methidx};
             end
             
         case '-mv',
@@ -447,16 +478,17 @@ while a <= nargin,
             if nargin == a,
                 a = a + 1;
                 
-            elseif nargin > a && strcmp(vararginx{a+1},'-'),
+            elseif nargin > a && strcmp(vararginx{a+1}(1),'-'),
                 a = a + 1;
                 
             elseif nargin > a,
                 
                 % Which multivariate statistic to use?
                 methlist = {     ...
-                    'Wilk',      ...
+                    'Wilks',     ...
                     'Hotelling', ...
                     'Pillai',    ...
+                    'Roy',       ...
                     'Roy_ii',    ...
                     'Roy_iii'};
                 methidx = strcmpi(vararginx{a+1},methlist);
@@ -465,7 +497,7 @@ while a <= nargin,
                 if ~any(methidx);
                     error('Multivariate statistic "%s" unknown.',vararginx{a+1});
                 else
-                    opts.MVstat = methlist{methidx};
+                    opts.mvstat = methlist{methidx};
                     a = a + 2;
                 end
             end
@@ -557,14 +589,20 @@ while a <= nargin,
             
         case '-zstat',
             
-            % Convert the statistic for each test (not NPC) to a z-score
+            % Convert the statistic for each test to a z-score
             opts.zstat = true;
             a = a + 1;
             
         case '-pearson',
             
-            % Compute the Pearson's correlation coefficient (R^2 if rank(C)>1)
+            % Compute the Pearson's correlation coefficient (R^2 if rank(C)>1).
             opts.pearson = true;
+            a = a + 1;
+            
+        case '-noranktest',
+            
+            % Don't test the rank(Y) before doing MANOVA/MANCOVA.
+            opts.noranktest = true;
             a = a + 1;
             
         case '-pmethod', % removed from the help
@@ -593,20 +631,40 @@ while a <= nargin,
     end
 end
 
-% Some obvious sanity check.
-% Make sure opts.NPC and/or opts.MV are marked as true if any
-% NPC and/or MV spatial statistic was selected.
-if any([...
-        opts.clustere_npc.do ...
-        opts.clusterm_npc.do ...
-        opts.tfce_npc.do]),
-    opts.NPC = true;
-end
-if any([...
-        opts.clustere_mv.do ...
-        opts.clusterm_mv.do ...
-        opts.tfce_mv.do]),
-    opts.MV = true;
+% This simplifies some tests later
+opts.spatial     = false;
+opts.spatial_uni = false;
+opts.spatial_npc = false;
+opts.spatial_mv  = false;
+if any([ ...
+        opts.clustere_uni.do  ...
+        opts.clusterm_uni.do  ...
+        opts.tfce_uni.do      ...
+        opts.clustere_npc.do  ...
+        opts.clusterm_npc.do  ...
+        opts.tfce_npc.do      ...
+        opts.clustere_mv.do   ...
+        opts.clusterm_mv.do   ...
+        opts.tfce_mv.do]'),
+    opts.spatial = true;
+    if any([ ...
+            opts.clustere_uni.do  ...
+            opts.clusterm_uni.do  ...
+            opts.tfce_uni.do]'),
+        opts.spatial_uni = true;
+    end
+    if any([ ...
+            opts.clustere_npc.do  ...
+            opts.clusterm_npc.do  ...
+            opts.tfce_npc.do]'),
+        opts.spatial_npc = true;
+    end
+    if any([ ...
+            opts.clustere_mv.do  ...
+            opts.clusterm_mv.do  ...
+            opts.tfce_mv.do]'),
+        opts.spatial_mv = true;
+    end
 end
 
 % No FWER or NPC if using draft mode
@@ -632,43 +690,52 @@ if opts.draft,
 end
 
 % Some NPC methods don't have an analytical form for the parametric p-value
-if opts.NPC && any(strcmpi(opts.cmethod,{'Darlington-Hayes','Jiang'})),
+if opts.NPC && any(strcmpi(opts.npcmethod,{'Darlington-Hayes','Jiang'})),
     plm.nonpcppara = true;
     if opts.savepara,
         warning([...
             'No parametric combination p-value will be saved for the\n', ...
             '         Darlington-Hayes or Jiang methods%s'],'');
     end
-    if any([ ...
-            opts.clustere_npc.do   ...
-            opts.clusterm_npc.do   ...
-            opts.tfce_npc.do]'),
+    if opts.spatial_npc,
         warning([ ...
             'No NPC cluster-level or TFCE statistic will be produced for the\n', ...
             '         Darlington-Hayes or Jiang methods%s'],'');
         opts.clustere_npc.do = false;
         opts.clusterm_npc.do = false;
         opts.tfce_npc.do     = false;
+        opts.spatial_npc     = false;
     end
 else
     plm.nonpcppara = false;
 end
 
-% No parametric p-values or z-scores for MV, at least currently
-if opts.MV && (opts.savepara || opts.zstat),
-    warning([...
-            'No parametric multivariate p-value will be saved (not implemented yet).\n', ...
-            '         No multivariate statistic converted to z-score will be saved (not implemented yet).%s'],'');
+% Likewise, some MV methods don't have an analytical form for the parametric p-value
+if opts.MV && strcmpi(opts.mvstat,'Roy_iii'),
     plm.nomvppara = true;
+    if opts.savepara,
+        warning('No parametric p-value will be saved for the Roy_iii method.%s',''); %#ok
+    end
+    if opts.spatial_mv,
+        warning([ ...
+            'No multivariate cluster-level or TFCE statistic will be produced\n', ...
+            '         for the Roy_iii statistic%s'],'');
+        opts.clustere_mv.do  = false;
+        opts.clusterm_mv.do  = false;
+        opts.tfce_mv.do      = false;
+        opts.spatial_mv      = false;
+    end
 else
     plm.nomvppara = false;
 end
 
 % Some more warnings and sanity checks
-if opts.pearson && (opts.MV || opts.NPC),
-    error([ ...
-        'It''s not possible to compute the Pearson''s r or R^2 together with\n', ...
-        'multivariate methods or NPC.%s'],'');
+if opts.pearson && (opts.NPC || opts.MV),
+    warning([ ...
+        'It''s not possible to compute the Pearson''s r or R^2 together with NPC or\n', ...
+        '         multivariate methods. Disabling the options ''-npc'' and ''-mv''.%s'],'');
+    opts.NPC = false;
+    opts.MV  = false;
 end
 if opts.pearson && ~ opts.demean,
     warning([ ...
@@ -712,19 +779,7 @@ end
 % Read and organise the surfaces. If no surfaces have been loaded, but the
 % user wants cluster extent, cluster mass, or TFCE, an error will be
 % printed later down in the code.
-if any([ ...
-        opts.clustere_t.do     ...
-        opts.clustere_F.do     ...
-        opts.clusterm_t.do     ...
-        opts.clusterm_F.do     ...
-        opts.clustere_npc.do   ...
-        opts.clusterm_npc.do   ...
-        opts.clustere_mv.do    ...
-        opts.clusterm_mv.do    ...
-        opts.tfce.do           ...
-        opts.tfce_npc.do           ...
-        opts.tfce_mv.do]') && ...
-        Ns > 0,
+if opts.spatial && Ns > 0,
     plm.srf = cell(Ns,1);
     for s = 1:Ns,
         plm.srf{s} = palm_miscread(opts.s{s});
@@ -754,15 +809,15 @@ plm.Yisvol   = zeros(Ni,1); % Is Y a volume image?
 plm.Yissrf   = zeros(Ni,1); % Is Y a surface-based image (DPX)?
 plm.Yisvtx   = false(Ns,1); % Is vertexwise?
 plm.Yisfac   = false(Ns,1); % is facewise? (this is currently dichotomous with Yisvtx, but later there may be edges/connectivity too)
-plm.Yarea    = cell(Ns,1);  % To store area per face or per vertex (used for cluster-level & TFCE inferences).
+plm.Yarea    = cell(Ns,1);  % To store area per face or per vertex (used for cluster-level & TFCE).
 plm.Ykindstr = cell(Ni,1);  % string to save the files later
 for i = 1:Ni,
     
-    % Read a temporary version
+    % Read an initial version
     fprintf('Reading input %d/%d: %s\n',i,Ni,opts.i{i});
     Ytmp = palm_miscread(opts.i{i},opts.useniiclass);
     
-    % If this is 4D, read with NIFTI, needs a mask now
+    % If this is 4D, read with the NIFTI class, it needs a mask now
     if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,
         if Nm == 0 
             % If a mask hasn't been supplied, make one
@@ -780,7 +835,7 @@ for i = 1:Ni,
             plm.masks{i} = palm_maskstruct(tmpmsk,Ytmp.readwith,Ytmp.extra);
         else
             % Otherwise, check the size of the one supplied
-            if Nm == 1, m = 1; elseif Nm > 1, m = i; end
+            if Nm == 1, m = 1; else m = i; end
             if any(Ytmp.extra.dat.dim(1:3) ~= size(plm.masks{m}.data)),
                 error([...
                     'The size of the data does not match the size of the mask:\n' ...
@@ -837,7 +892,7 @@ for i = 1:Ni,
         
         % Sort out loading for the NIFTI class
         if strcmp(Ytmp.readwith,'nifticlass'),
-            if Nm == 1, m = 1; elseif Nm ~= 1, m = i; end
+            if Nm == 1, m = 1; else m = i; end
             tmpmsk = plm.masks{m}.data(:)';
             
             % Read each volume, reshape and apply the mask
@@ -852,11 +907,12 @@ for i = 1:Ni,
             plm.Yset{i} = palm_conv4to2(Ytmp.data);
         end
     end
-    
+
     % Check if the size of data is compatible with size of mask.
-    % If read with the NIFTI class, this was already taken care of.
+    % If read with the NIFTI class, this was already taken care of
+    % and can be skipped.
     if ~ strcmp(Ytmp.readwith,'nifticlass'),
-        if Nm == 1, m = 1; elseif Nm > 1, m = i; end
+        if Nm == 1, m = 1; else m = i; end
         if Nm > 0 && size(plm.Yset{i},2) ~= numel(plm.masks{m}.data),
             error([...
                 'The size of the data does not match the size of the mask:\n' ...
@@ -894,7 +950,7 @@ for i = 1:Ni,
         end
     end
     plm.Yset{i} = plm.Yset{i}(:,maskydat);
-    
+
     % Prepare a string with a representative name for the kind of data,
     % i.e., voxel for volumetric data,
     switch Ytmp.readwith,
@@ -915,16 +971,7 @@ for i = 1:Ni,
     % If this is a DPX/curvature file, and if one of the spatial
     % statistics has been invoked, check if surfaces are available
     % and with compatible size, then compute the area (dpv or dpf)
-    if plm.Yissrf(i) && ...
-            any([ ...
-            opts.clustere_t.do   ...
-            opts.clustere_F.do   ...
-            opts.clusterm_t.do   ...
-            opts.clusterm_F.do   ...
-            opts.clustere_npc.do ...
-            opts.clusterm_npc.do ...
-            opts.tfce.do         ...
-            opts.tfce_npc.do]'),
+    if plm.Yissrf(i) && opts.spatial,
         if Ns == 0,
             error([ ...
                 'To use cluster extent, cluster mass, or TFCE with vertexwise or facewise data\n'...
@@ -949,38 +996,43 @@ end
 plm.nY = numel(plm.Yset);
 plm.nmasks = numel(plm.masks);
 
-% Create an intersection mask if NPC is to be done, and further apply
+% Create an intersection mask if NPC or MV is to be done, and further apply
 % to the data that was previously masked above, as needed.
-if (opts.NPC  || opts.MV) && plm.nmasks > 1,
-    
-    % If there is one mask per modality, make an instersection mask.
-    maskinter = true(size(plm.masks{1}.data));
-    for m = 1:plm.nmasks,
-        maskinter = maskinter & plm.masks{m}.data;
+if opts.NPC || opts.MV,
+    if plm.nmasks > 1,
+        
+        % If there is one mask per modality, make an instersection mask.
+        maskinter = true(size(plm.masks{1}.data));
+        for m = 1:plm.nmasks,
+            maskinter = maskinter & plm.masks{m}.data;
+        end
+        
+        % Note that this line below uses Ytmp, which is from the previous loop.
+        % This can be used here because with NPC all data has the same size.
+        plm.maskinter = palm_maskstruct(maskinter(:)',Ytmp.readwith,Ytmp.extra);
+        
+        % Apply it to further subselect data points
+        for y = 1:plm.nY,
+            plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{y}.data));
+        end
+    else
+        
+        % If only one mask was given.
+        plm.maskinter = plm.masks{1};
+        for y = 1:plm.nY,
+            plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{1}.data));
+        end
     end
-    
-    % Note that this line below uses Ytmp, which is from the previous loop.
-    % This can be used here because with NPC all data has the same size.
-    plm.maskinter = palm_maskstruct(maskinter(:)',Ytmp.readwith,Ytmp.extra);
-    
-    % Apply it to further subselect data points
-    for y = 1:plm.nY,
-        plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{y}.data));
-    end
-    
-elseif opts.NPC || opts.MV,
-    
-    % If only one mask was given.
-    plm.maskinter = plm.masks{1};
 end
 
 % Make sure that all data have the same size if NPC or MV are to be done
 if opts.NPC || opts.MV,
+    plm.Ysiz = zeros(plm.nY,1);
+    siz1 = size(plm.Yset{1});
     for y = 1:plm.nY,
-        if y == 1,
-        siz = size(plm.Yset{y});
-        end
-        if any(siz ~= size(plm.Yset{y})),
+        plm.Ysiz(y) = size(plm.Yset{y},2);
+        sizy = size(plm.Yset{y});
+        if any(siz1 ~= sizy),
             error('The sizes of some of the imaging modalities don''t match');
         end
     end
@@ -1002,9 +1054,32 @@ if opts.savemask,
     end
     if opts.NPC || opts.MV,
         M          = plm.maskinter;
-        M.filename = sprintf('%s_npc_mask',opts.o);
+        M.filename = sprintf('%s_intersection_mask',opts.o);
         M.data     = double(M.data);
         palm_miscwrite(M);
+    end
+end
+
+% If MV was selected, make sure that Y is full rank at each datapoint.
+if opts.MV && ~ opts.noranktest,
+    fprintf('Testing rank of the data (for MV tests). To skip, use -noranktest.\n')
+    Y = cat(3,plm.Yset{:});
+    Y = permute(Y,[1 3 2]);
+    failed = false(1,size(Y,3));
+    for v = 1:size(Y,3),
+        if rank(Y(:,:,v)) ~= plm.nY;
+            failed(v) = true;
+        end
+    end
+    if any(failed),
+        fname = sprintf('%s_%s_mv_illconditioned',...
+            opts.o,plm.Ykindstr{1});
+    palm_quicksave(double(failed),0,opts,plm,[],[],fname);
+    error([
+        'One or more datapoints have ill-conditioned data. This makes\n' ...
+        'it impossible to run multivariate analyses as MANOVA/MANCOVA.\n' ...
+        'Please, see the ill-conditioned datapoints marked as 1 in the file:\n' ...
+        '%s.*\n'],fname); %#ok
     end
 end
 
@@ -1042,7 +1117,7 @@ if isfield(opts,'d'),
             '- Observations in the data: %d'],size(plm.M,1),plm.N);
     end
 else
-    % If a design matrix is not specified, use a single column of ones and
+    % If a design matrix has not been specified, use a single column of ones and
     % make sure that ISE only (not EE) is used.
     plm.M    = ones(plm.N,1);
     opts.EE  = false;
@@ -1095,11 +1170,20 @@ if Nt || Nf,
         end
     end
 else
-    % If no constrasts were at all specified, run an F-test over all
-    % regressors in the design matrix. If there is only 1 regressor, this
-    % will be a t-test. If there are exchangeability blocks, the statistic
-    % then will be either a v^2 or v.
-    plm.Cset{1} = eye(size(plm.M,2));
+    % If no constrasts were at all specified:
+    if size(plm.M,2) == 1,
+        
+        % If there is only 1 regressor, test its effect both
+        % positive and negative.
+        % The statistic will be t or v, depending on the number of VGs.
+        plm.Cset{1} = 1;
+        plm.Cset{2} = -1;
+        
+    else
+        % Otherwise, run an F-test over all regressors in the design matrix.
+        % The statistic will be F or G, depending on the number of VGs.
+        plm.Cset{1} = eye(size(plm.M,2));
+    end
 end
 plm.nC = numel(plm.Cset);
 for c = 1:plm.nC,
@@ -1152,8 +1236,7 @@ else
     plm.EB = palm_reindex(plm.EB,'fixleaves'); 
 end
 
-% Load/define the variance groups. They depend only on permutations, not
-% on sign flips
+% Load/define the variance groups.
 if isempty(opts.vg),
     % Generate an initial dependence tree, to be used to define variance groups.
     % The tree used for the permutations later require the design matrix, and
@@ -1172,6 +1255,7 @@ else
 end
 plm.nVG = numel(unique(plm.VG));
 
+% Remove the variance groups with just 1 observation?
 if plm.nVG > 1 && ~ opts.removevgsize1 && (opts.vgdemean || opts.ev4vg) && ...
         any(sum(bsxfun(@eq,plm.VG,unique(plm.VG)'),1) == 1),
         warning([...
@@ -1180,8 +1264,6 @@ if plm.nVG > 1 && ~ opts.removevgsize1 && (opts.vgdemean || opts.ev4vg) && ...
         '         Enabling the option ''-removevgsize1''%s.'],'');
     opts.removevgsize1 = true;
 end
-
-% Remove the variance groups with just 1 observation?
 if opts.removevgsize1,
     
     % Indices of the observations to keep
@@ -1196,8 +1278,8 @@ if opts.removevgsize1,
     if ~ isempty(plm.EB),
         plm.EB = plm.EB(idx,:);
     end
-    plm.M   = plm.M(idx,:);
-    plm.N   = sum(idx);
+    plm.M = plm.M(idx,:);
+    plm.N = sum(idx);
     [tmp,~,plm.VG] = unique(plm.VG(idx));
     plm.nVG = numel(tmp);
 end
@@ -1233,14 +1315,13 @@ if opts.removeignored,
     for c = 1:plm.nC,
         plm.Cset{c}(F,:) = [];
     end
-    plm.M          = plm.M(idx,:);
-    plm.M(:,F)     = [];
-    plm.N          = sum(idx);
-    plm.VG         = plm.VG(idx);
+    plm.M      = plm.M(idx,:);
+    plm.M(:,F) = [];
+    plm.N      = sum(idx);
+    plm.VG     = plm.VG(idx);
     [tmp,~,plm.VG] = unique(plm.VG(idx));
-    plm.nVG = numel(tmp);
+    plm.nVG    = numel(tmp);
 end
-
 
 % Add one regressor for each variance group, if requested
 if opts.ev4vg,
@@ -1278,11 +1359,11 @@ if opts.demean || opts.vgdemean,
     if any(intercp),
         for c = 1:plm.nC,
             if any(intercp*plm.Cset{c} ~= 0,2),
-                warning([ ...
+                error([ ...
                     'Contrast %d (and perhaps others) tests the intercept. This means\n' ...
                     'that the options ''-demean'' and ''-vgdemean'' cannot be used.\n' ...
                     'If ''-demean'' was added to calculate Pearson''s "r" or the "R^2"\n' ...
-                    'note that these statistics cannot be computed for constant variables.%s','']); %#ok
+                    'note that these statistics cannot be computed for constant variables.%s'],c,'');
             else
                 plm.Cset{c}(intercp,:) = [];
             end

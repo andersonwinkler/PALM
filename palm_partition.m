@@ -33,7 +33,7 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 %   imaging of dementia. PhD thesis. 2009.
 % * Winkler AM, Ridgway GR, Webster MG, Smith SM,
 %   Nichols TE. Permutation inference for the general
-%   linear model (in press).
+%   linear model. Neuroimage 2014 (in press).
 % _____________________________________
 % A. Winkler, G. Ridgway & T. Nichols
 % FMRIB / University of Oxford
