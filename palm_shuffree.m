@@ -241,11 +241,10 @@ Bset = sortrows(Bset);
 
 % Compute some metrics
 if nargout == 3,
-    mtr             = zeros(8,1);
+    mtr             = zeros(6,1);
     mtr(1:2)        = lmaxB;
-    mtr(3)          = NaN;
-    mtr(6)          = 2^nU - 1;
-    [mtr(7),mtr(8)] = palm_metrics(Bset,seq,stype);
+    mtr(4)          = 2^nU - 1;
+    [mtr(5),mtr(6)] = palm_metrics(Bset,seq,stype);
 end
 
 % If the desired outputs are permutation matrices instead of indices

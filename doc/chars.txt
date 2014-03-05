@@ -1,5 +1,0 @@
-&mdash;
-&rarr;
-&ndash;
-&sup2;
-&oelig;

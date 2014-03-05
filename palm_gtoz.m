@@ -21,17 +21,19 @@ function Z = palm_gtoz(G,df1,df2)
 % Jan/2014
 % http://brainder.org
 
-% If df2 isn't supplied, use a Fisher r-to-z trasnformation
+% If df2 is NaN, this is r or R^2
 if isnan(df2),
     
-    % If rank(C) > 1, i.e., df1 > 1, this is R^2.
-    if df1 > 1,
-        G = 2*G - 1;        
+    if df1 == 1,
+        % If rank(C) = 1, i.e., df1 = 1, this is r, so
+        % do a Fisher's r-to-z stransformation
+        Z = atanh(G);
+    elseif df1 > 1,
+        % If rank(C) > 1, i.e., df1 > 1, this is R^2, so
+        % use a probit transformation.
+        Z = norminv(G);        
     end
-    
-    % Apply Fisher's r-to-z transform
-    Z = atanh(G);
-    
+
 else
     siz = size(G);
     Z   = zeros(siz);

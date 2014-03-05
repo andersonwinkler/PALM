@@ -14,7 +14,7 @@ function Pnew = palm_swapfmt(Pset)
 % Pnew : The converted set of permutations.
 % 
 % _____________________________________
-% Anderson Winkler
+% Anderson M. Winkler
 % FMRIB / University of Oxford
 % Dec/2013
 % http://brainder.org

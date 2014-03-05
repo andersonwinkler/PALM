@@ -213,7 +213,6 @@ end
 % of permutation matrices, output them
 if idxout || (nargout == 3 && nargin == 2),
     % Convert formats if needed.
-    %Bidx = palm_swapfmt(Bset);
     Bidx = zeros(size(Bset{1},1),nB);
     for p = 1:nB,
         Bidx(:,p) = palm_perm2idx(Bset{p});
@@ -222,12 +221,12 @@ if idxout || (nargout == 3 && nargin == 2),
     % Compute some metrics
     if nargout == 3,
         Ptree1 = palm_tree(plm.EB,ones(size(seq)));
-        mtr = zeros(8,1);
-        [mtr(1),mtr(2),mtr(3),mtr(4),mtr(6)] = ...
+        mtr = zeros(6,1);
+        [mtr(1),mtr(2),mtr(4)] = ...
             palm_metrics(Ptree,seq,whatshuf2);
-        [~,~,~,~,mtr(5)] = ...
+        [~,~,mtr(3)] = ...
             palm_metrics(Ptree1,ones(size(seq)),whatshuf2);
-        [mtr(7),mtr(8)] = palm_metrics(Bidx,seq);
+        [mtr(5),mtr(6)] = palm_metrics(Bidx,seq);
     end
     if idxout,
         Bset = Bidx;

@@ -18,17 +18,17 @@
 <h2>Downloading and installing <span style="font-variant: small-caps;">palm</span></h2>
 <p>To download <span style="font-variant: small-caps;">palm</span>, <strong>click here</strong>.</p>
 
-<p><span style="font-variant: small-caps;">palm</span> runs inside <a title="GNU Octave" href="http://www.gnu.org/software/octave/" target="_blank">Octave</a> or <a title="MATLAB" href="http://www.mathworks.co.uk/products/matlab/" target="_blank"><span style="font-variant: small-caps;">Matlab</span></a>. If you use Linux and have Octave installed, it can also run as a standalone command, with Octave being silently called behind the scenes. Each of these possibilities is detailed below.</p>
+<p><span style="font-variant: small-caps;">palm</span> runs inside <a title="GNU Octave" href="http://www.gnu.org/software/octave/" target="_blank">Octave</a> or <a title="MATLAB" href="http://www.mathworks.co.uk/products/matlab/" target="_blank"><span style="font-variant: small-caps;">Matlab</span></a>. It can also run as a standalone command, with Octave being silently called behind the scenes, in Linux systems. Each of these possibilities is detailed below.</p>
 <h3>Running inside <span style="font-variant: small-caps;">Matlab</span></h3>
-<p>Uncompress the downloaded file and add the newly created directory, named <code>palm</code>, to the <span style="font-variant: small-caps;">Matlab</span> path (menu File &rarr; Set Path). To invoke <span style="font-variant: small-caps;">palm</span> and see usage information, just type <code>palm</code> at the prompt.</p>
+<p>Uncompress the downloaded file and add the newly created directory, named <code>palm</code>, to the <span style="font-variant: small-caps;">Matlab</span> path (menu File &rarr; Set Path). Typing <code>palm</code> at the prompt without arguments shows usage information.</p>
 <h3>Running inside Octave</h3>
 <p>Uncompress the downloaded file and add the newly created directory, named <code>palm</code>, to the Octave path. This can be done with the command <code>addpath</code>:</p>
 
 <p><code>addpath('/full/path/to/palm')</code></p>
 
-<p>You may want to add this line to your <code>~/.octaverc</code> file, so that the change becomes permanent. To invoke <span style="font-variant: small-caps;">palm</span> and see usage information, just type <code>palm</code> at the prompt.</p>
+<p>This line can be added to the <code>~/.octaverc</code> file, so that the change becomes permanent. Typing <code>palm</code> at the prompt without arguments shows usage information.</p>
 <h3>Running as a standalone command</h3>
-<p>If you have Octave installed in your Linux system, it may be much simpler to run <span style="font-variant: small-caps;">palm</span> as a command directly from the shell, and you can easily call it from shell scripts. To do so:</p>
+<p>In a Linux system, if Octave is installed, it may be much simpler to run <span style="font-variant: small-caps;">palm</span> as a command directly from the shell, and it can easily be called from shell scripts. To do so:</p>
 <ol>
 	<li>Uncompress the downloaded file above.</li>
 	<li>Make sure that the location of your Octave binary matches the location indicated in the first line of the script <code>palm</code> (not to be confused with the <code>palm.m</code>). In most Linux systems this is <code>/usr/bin/octave</code>, but you may need to edit the first line of the file <code>palm</code> to point to the correct location.</li>
@@ -36,7 +36,7 @@
 </ol>
 <hr>
 <h2>Using <span style="font-variant: small-caps;">palm</span></h2>
-<p>To use <span style="font-variant: small-caps;">palm</span> for your analysis, at minimum you need to have a set of observations that are exchangeable, or that otherwise meet criteria such that permutation analysis can be used.</p>
+<p>To use <span style="font-variant: small-caps;">palm</span>, a set of observations that are exchangeable are necessary.</p>
 <h3>Input options</h3>
 <p>A description of the input options is below. The same information can be seen if the command <code>palm</code> is executed without arguments.</p>
 <table>
@@ -281,7 +281,7 @@
 </thead>
 <tbody>
 <tr><td><code>nii</code>, <code>hdr</code>, <code>img</code></td><td><span style="font-variant: small-caps;">nifti</span> file. Can be used to input data (option <code>-i</code>) and mask (<code>-m</code>). Note that the old <span style="font-variant: small-caps;">analyze</span> format is not supported.</td></tr>
-<tr><td><code>nii.gz</code></td><td>Compressed <span style="font-variant: small-caps;">nifti</span> file. Should be uncompressed manually (with <code>gunzip</code>) and loaded as <code>nii</code> (it uses more disk space, but far less <span style="font-variant: small-caps;">ram</span>). Can only be read directly with the option <code>-noniiclass</code>.</td></tr>
+<tr><td><code>nii.gz</code></td><td>Compressed <span style="font-variant: small-caps;">nifti</span> file. Should be uncompressed manually (with <code>gunzip</code>) and loaded as <code>nii</code> (it uses more disk space, but far less <span style="font-variant: small-caps;">ram</span>). Or can be read directly with the option <code>-noniiclass</code>, but beware that for large datasets, it may use all <span style="font-variant: small-caps;">ram</span>.</td></tr>
 <tr><td><code>mgh</code>, <code>mgz</code></td><td>FreeSurfer data, either volumetric or surface-based. Can be used to input data (option <code>-i</code>) or mask for the same kind of data (option <code>-m</code>).</td></tr>
 <tr><td><code>dpv</code>, <code>dpf</code>, <code>dpx</code></td><td>Data-per-vertex (vertexwise), data-per-face (facewise), or unspecified surface-based data. Can be used to specify a mask (option <code>-m</code>) for surface-based data. Multiple such files can be merged into a <span style="font-variant: small-caps;">csv</span> table, and then input with the option <code>-i</code>; see details below.</td></tr>
 <tr><td><code>csv</code></td><td><span style="font-variant: small-caps;">csv</span> table. Can be used to specify input data (option <code>-i</code>), mask for the same kind of data (option <code>-m</code>), design matrix (option <code>-d</code>), contrasts (options <code>-t</code> and <code>-f</code>), exchangeability blocks (<code>-eb</code>) and variance groups (<code>-vg</code>).</td></tr>
@@ -331,10 +331,10 @@
 
 <p>For more details and examples, <a href="blocks.html"><b>click here</b></a>.</p>
 <h3>Output files</h3>
-<p>All output file names are prefixed by the string supplied with the option <code>-o</code>. If this option is not supplied, the outputs will be saved to the directory from which <span style="font-variant: small-caps;">palm</span> is executed, all named as <code>result_*</code>. The file names follow a consistent convention described below, which depends on whether the option <code>-npc</code> is used or not.</p>
+<p>All output file names are prefixed by the string supplied with the option <code>-o</code>. If this option is not supplied, the outputs will be saved to the directory from which <span style="font-variant: small-caps;">palm</span> is executed, all named as <code>palm_*</code>. The file names follow a consistent convention described below, which depends on whether the option <code>-npc</code> is used or not.</p>
 
 <p>The format of the outputs is the same as the input data (supplied with the option <code>-i</code>, collapsed along the dimension of the observations, i.e., the 4th dimension for 4D datasets (<span style="font-variant: small-caps;">nifti</span> or FreeSurfer surface formats), or the 1st dimension (rows) of <span style="font-variant: small-caps;">csv</span> files or 2D <span style="font-variant: small-caps;">nifti</span> files.</p>
-<p>There are 2 outputs of general interest: the statistic image and its associated p-value. Additionally, a small text file in <span style="font-variant: small-caps;">csv</span> format is saved containing the degrees of freedom associated with the statistic. If the option <code>-saveperms</code> is used, the statistic computed for each permutation is also saved, as well as a table with the permutation indices for these images. These files are named according to the following convention:</p>
+<p>There are 2 outputs of general interest: the statistic image and its associated p-value. If the option <code>-saveperms</code> is used, the statistic computed for each permutation is also saved, as well as a table with the permutation indices for these images. These files are named according to the following convention:</p>
 
 <table>
 <thead>
@@ -410,6 +410,7 @@
 </tr>
 </tbody>
 </table>
+<p>In addition, other files are created: a small text file is saved containing the degrees of freedom associated with the statistic. For the <em>v</em> and <em>G</em> statistics, the degrees of freedom associated with the errors vary for each image point and are saved as a map. A configuration file with all the input options is also saved. This file can be used as the sole argument to <code>palm</code> to run the same analysis again.</p>
 <hr>
 <h2>Comparison with randomise</h2>
 <p>Compared to <span style="font-variant: small-caps;">fsl</span>'s randomise, <span style="font-variant: small-caps;">palm</span> performs overall the same kind of non-parametric test, offering various new features. A comparison is shown below:</p>
@@ -435,7 +436,7 @@
 <tr>
 <td>Multivariate statistics</td>
 <td>None</td>
-<td>Hotelling's <em>T</em><sup>2</sup>, Wilks' lambda, Pillai's trace, Lawley&ndash;Hotelling's trace, Roy's largest root (two variants).</td>
+<td>Hotelling's <em>T</em><sup>2</sup>, Wilks' lambda, Pillai's trace, Lawley&ndash;Hotelling's trace, Roy's largest root (both variants), assessed parametrically and non-parametrically.</td>
 </tr>
 <tr>
 <td>Spatial statistics</td>
@@ -468,9 +469,9 @@
 <td>Multiple.</td>
 </tr>
 <tr>
-<td>Joint inference across modalities</td>
+<td>Joint permutation inference across modalities</td>
 <td>No.</td>
-<td>Yes. Various combining functions available: Tippett, Fisher, Pearson&ndash;David, Stouffer, Wilkinson, Winer, Edgington, Mudholkar&ndash;George, Friston, Darlington&ndash;Hayes, Zaykin, Dudbridge&ndash;Koeleman (2 variants), Nichols, Taylor&ndash;Tibshirani and Jiang.</td>
+<td>Yes. Various combining functions available: Tippett, Fisher, Pearson&ndash;David, Stouffer, Wilkinson, Winer, Edgington, Mudholkar&ndash;George, Friston, Darlington&ndash;Hayes, Zaykin, Dudbridge&ndash;Koeleman (2 variants), Nichols, Taylor&ndash;Tibshirani and Jiang. Most of these can also be assessed parametrically.</td>
 </tr>
 <tr>
 <td><span style="font-variant: small-caps;">fwer</span> correction</td>
@@ -500,7 +501,7 @@
 <tr>
 <td>Parametric p-values</td>
 <td>No.</td>
-<td>Yes, for univariate, multivariate, and <span style="font-variant: small-caps;">npc</span> (all uncorrected).</td>
+<td>Yes, for univariate, multivariate, and most of the <span style="font-variant: small-caps;">npc</span> combining functions (uncorrected and <span style="font-variant: small-caps;">fdr</span>-corrected).</td>
 </tr>
 <tr>
 <td>Permutation metrics</td>

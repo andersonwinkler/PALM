@@ -17,27 +17,12 @@ else
     palm_configrw(vararginx,cfgname);
 end
 
-% Check if the number of input images/lists
-% match the number of masks.
+% Number of input images/masks/surfaces
 Ni = sum(strcmp(vararginx,'-i'));  % number of data inputs
 Nm = sum(strcmp(vararginx,'-m'));  % number of masks
 Ns = sum(strcmp(vararginx,'-s'));  % number of surfaces
 Nt = sum(strcmp(vararginx,'-t'));  % number of t-contrast files
 Nf = sum(strcmp(vararginx,'-f'));  % number of F-test files
-
-% There should be no more masks than modalities, and the number of
-% masks needs to be either 1 or the same number of modalities.
-if Nm > Ni,
-    error([...
-        'There are more masks supplied with -m (%d masks) than\n'...
-        'modalities supplied with -i (%d modalities)'],Nm,Ni);
-elseif Nm > 1 && Nm ~= Ni,
-    error([...
-        'The number of masks supplied with -m (%d masks) is larger than 1,\n'...
-        'but still not the same as the number of modalities supplied with\n'...
-        'the option -i (%d modalities).'],Nm,Ni);
-end
-
 opts.i   = cell(Ni,1);  % Input files (to constitute Y later)
 opts.m   = cell(Nm,1);  % Mask file(s)
 opts.s   = cell(Ns,1);  % Surface file(s)
@@ -660,8 +645,8 @@ if any([ ...
         opts.spatial_npc = true;
     end
     if any([ ...
-            opts.clustere_mv.do  ...
-            opts.clusterm_mv.do  ...
+            opts.clustere_mv.do   ...
+            opts.clusterm_mv.do   ...
             opts.tfce_mv.do]'),
         opts.spatial_mv = true;
     end
@@ -786,13 +771,22 @@ if opts.spatial && Ns > 0,
     end
 end
 
+% There should be no more masks than modalities, and the number of
+% masks needs to be either 1 or the same number of modalities.
+if Nm > Ni,
+    error([...
+        'There are more masks supplied with -m (%d masks) than\n'...
+        'modalities supplied with -i (%d modalities)'],Nm,Ni);
+elseif Nm > 1 && Nm ~= Ni,
+    error([...
+        'The number of masks supplied with -m (%d masks) is larger than 1,\n'...
+        'but still not the same as the number of modalities supplied with\n'...
+        'the option -i (%d modalities).'],Nm,Ni);
+end
+
 % Read and organise the masks. If there are no masks specified, one for
 % each modality will be created after each modality is loaded.
-if Nm == 0,
-    plm.masks = cell(Ni,1);
-else
-    plm.masks = cell(Nm,1);
-end
+plm.masks = cell(Ni,1);
 for m = 1:Nm,
     plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass);
     if strcmp(plm.masks{m}.readwith,'nifticlass'),
@@ -802,11 +796,16 @@ for m = 1:Nm,
     plm.masks{m}.data(isinf(plm.masks{m}.data)) = 0;
     plm.masks{m}.data = logical(plm.masks{m}.data);
 end
+if Nm == 1,
+    for i = 2:Ni,
+        plm.masks{i} = plm.masks{1};
+    end
+end
 
 % Read and organise the data.
 plm.Yset     = cell(Ni,1);  % Regressands (Y)
-plm.Yisvol   = zeros(Ni,1); % Is Y a volume image?
-plm.Yissrf   = zeros(Ni,1); % Is Y a surface-based image (DPX)?
+plm.Yisvol   = false(Ni,1); % Is Y a volume image?
+plm.Yissrf   = false(Ni,1); % Is Y a surface-based image (DPX)?
 plm.Yisvtx   = false(Ns,1); % Is vertexwise?
 plm.Yisfac   = false(Ns,1); % is facewise? (this is currently dichotomous with Yisvtx, but later there may be edges/connectivity too)
 plm.Yarea    = cell(Ns,1);  % To store area per face or per vertex (used for cluster-level & TFCE).
@@ -817,7 +816,7 @@ for i = 1:Ni,
     fprintf('Reading input %d/%d: %s\n',i,Ni,opts.i{i});
     Ytmp = palm_miscread(opts.i{i},opts.useniiclass);
     
-    % If this is 4D, read with the NIFTI class, it needs a mask now
+    % If this is 4D read with the NIFTI class, it needs a mask now
     if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,
         if Nm == 0 
             % If a mask hasn't been supplied, make one
@@ -834,13 +833,12 @@ for i = 1:Ni,
             tmpmsk = tmpmsk(:)';
             plm.masks{i} = palm_maskstruct(tmpmsk,Ytmp.readwith,Ytmp.extra);
         else
-            % Otherwise, check the size of the one supplied
-            if Nm == 1, m = 1; else m = i; end
-            if any(Ytmp.extra.dat.dim(1:3) ~= size(plm.masks{m}.data)),
+            % If a mask was supplied, check its size
+            if any(Ytmp.extra.dat.dim(1:3) ~= size(plm.masks{i}.data)),
                 error([...
                     'The size of the data does not match the size of the mask:\n' ...
                     '- Data file %d (%s)\n' ...
-                    '- Mask file %d (%s)'],i,opts.i{i},m,opts.m{m})
+                    '- Mask file %d (%s)'],i,opts.i{i},i,opts.m{i})
             end
         end
     end
@@ -887,14 +885,13 @@ for i = 1:Ni,
                 '- File %d (%s) has %d observations\n'   ...
                 '- File %d (%s) has %d observations'], ...
                 1,opts.i{1},plm.N, ...
-                i,opts.i{i},size(Ytmp.data,1));
+                i,opts.i{i},size(Ytmp.data,4));
         end
         
         % Sort out loading for the NIFTI class
         if strcmp(Ytmp.readwith,'nifticlass'),
-            if Nm == 1, m = 1; else m = i; end
-            tmpmsk = plm.masks{m}.data(:)';
-            
+            tmpmsk = plm.masks{i}.data(:)';
+
             % Read each volume, reshape and apply the mask
             plm.Yset{i} = zeros(plm.N,sum(tmpmsk));
             for n = 1:plm.N,
@@ -912,16 +909,15 @@ for i = 1:Ni,
     % If read with the NIFTI class, this was already taken care of
     % and can be skipped.
     if ~ strcmp(Ytmp.readwith,'nifticlass'),
-        if Nm == 1, m = 1; else m = i; end
-        if Nm > 0 && size(plm.Yset{i},2) ~= numel(plm.masks{m}.data),
+        if Nm > 0 && size(plm.Yset{i},2) ~= numel(plm.masks{i}.data),
             error([...
                 'The size of the data does not match the size of the mask:\n' ...
                 '- Data file %d (%s)\n' ...
-                '- Mask file %d (%s)'],i,opts.i{i},m,opts.m{m})
+                '- Mask file %d (%s)'],i,opts.i{i},i,opts.m{i})
         end
     end
     
-    % Make a mask removing constant values, Inf and NaN. This will be
+    % Make mask that removes constant values, Inf and NaN. This will be
     % merged with the user-supplied mask, if any, or will be the sole mask
     % available to select the datapoints of interest.
     if Nm == 0 && ndims(Ytmp.data) == 4 ...
@@ -938,15 +934,13 @@ for i = 1:Ni,
     % for each modality. If no masks were supplied, create them, except
     % for the NIFTI class, which should have been created above
     if strcmp(Ytmp.readwith,'nifticlass'),
-        if Nm == 1, m = 1; else m = i; end
-        plm.masks{m}.data(plm.masks{m}.data) = maskydat(:);
+        plm.masks{i}.data(plm.masks{i}.data) = maskydat(:);
     else
         if Nm == 0,
             plm.masks{i} = palm_maskstruct(maskydat,Ytmp.readwith,Ytmp.extra);
         else
-            if Nm == 1, m = 1; else m = i; end
-            maskydat = plm.masks{m}.data(:) & maskydat(:);
-            plm.masks{m}.data = reshape(maskydat,size(plm.masks{m}.data));
+            maskydat = plm.masks{i}.data(:) & maskydat(:);
+            plm.masks{i}.data = reshape(maskydat,size(plm.masks{i}.data));
         end
     end
     plm.Yset{i} = plm.Yset{i}(:,maskydat);

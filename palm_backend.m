@@ -4,15 +4,10 @@ function palm_backend(varargin)
 global plm opts; % uncomment for debugging
 [opts,plm] = palm_takeargs(varargin{:});
 
-% To store the statistic name for each contrast, to be used later when
-% saving the statistic image to a file
-plm.Gname = cell(plm.nC,1);
-
 % Variables to store stuff for later.
-plm.rC           = zeros(plm.nC,1);       % to store the rank of each contrast, but can be 0 if conversion to z-stat is enabled
-if opts.zstat,
-    plm.rC0      = zeros(plm.nC,1);       % to store the rank of each contrast.
-end
+plm.Gname        = cell(plm.nC,1);        % name of the statistic for each contrast
+plm.rC           = zeros(plm.nC,1);       % to store the rank of each contrast, but can be 0 after conversion to z-score
+plm.rC0      = zeros(plm.nC,1);           % to store the rank of each contrast.
 G                = cell(plm.nY,plm.nC);   % to store G at each permutation (volatile)
 df2              = cell(plm.nY,plm.nC);   % to store df2 at each permutation (volatile)
 Gpperm           = cell(plm.nY,plm.nC);   % counter, for the permutation p-value (volatile)
@@ -354,10 +349,23 @@ for c = 1:plm.nC,
     % defined just for the 1st contrast, not for the others.
     if c == 1 || ~ any(strcmpi(opts.rmethod,{'terbraak','manly'})),
         if isempty(plm.EB),
-            [plm.tmp.Pset,plm.nP(c),plm.metr{c}] = palm_shuffree(...
-                plm.tmp.seq,opts.nP0,opts.CMC,opts.EE,opts.ISE,false);
+            if opts.savemetrics,
+                [plm.tmp.Pset,plm.nP(c),plm.metr{c}] =  ...
+                    palm_shuffree(plm.tmp.seq,opts.nP0, ...
+                    opts.CMC,opts.EE,opts.ISE,false);
+            else
+                [plm.tmp.Pset,plm.nP(c)] =              ...
+                    palm_shuffree(plm.tmp.seq,opts.nP0, ...
+                    opts.CMC,opts.EE,opts.ISE,false);
+            end
         else
-            [plm.tmp.Pset,plm.nP(c),plm.metr{c}] = palm_shuftree(opts,plm);
+            if opts.savemetrics,
+                [plm.tmp.Pset,plm.nP(c),plm.metr{c}] =  ...
+                    palm_shuftree(opts,plm);
+            else
+                [plm.tmp.Pset,plm.nP(c)] =              ...
+                    palm_shuftree(opts,plm);
+            end
         end
     else
         plm.nP(2:end) = plm.nP(1);
@@ -382,13 +390,11 @@ for c = 1:plm.nC,
     end
     
     % If the user requests, save the permutation metrics
-    if opts.savemetrics, % FIXME
+    if opts.savemetrics,
         fid = fopen(sprintf('%s_con%d_metrics.csv',opts.o,c),'w');
         fprintf(fid,[ ...
             'Log of max number of permutations given the tree (W),%f\n' ...
             'Log of max number of permutations if unrestricted (W0),%f\n' ...
-            'Anisotropy [1-log(W)/log(W0)],%f\n' ...
-            '-log(W/W0),%f\n' ...
             'Huberman & Hogg complexity (tree only),%d\n' ...
             'Huberman & Hogg complexity (tree & design),%d\n' ...
             'Average Hamming distance (tree only),%f\n' ...
@@ -482,11 +488,11 @@ for c = 1:plm.nC,
                     
                     % Save also the degrees of freedom for the unpermuted
                     if numel(df2{y,c}) == 1,
-                        savedof(plm.rC(c),df2{y,c}, ...
+                        savedof(max(plm.rC(c),plm.rC0(c)),df2{y,c}, ...
                             sprintf('%s_%s_%s_mod%d_con%d_dof.txt', ...
                             opts.o,plm.Ykindstr{y},plm.Gname{c},y,c));
                     else
-                        savedof(plm.rC(c),mean(df2{y,c}), ...
+                        savedof(max(plm.rC(c),plm.rC0(c)),mean(df2{y,c}), ...
                             sprintf('%s_%s_%s_mod%d_con%d_dof.txt', ...
                             opts.o,plm.Ykindstr{y},plm.Gname{c},y,c));
                         palm_quicksave(df2{y,c},0,opts,plm,y,c, ...

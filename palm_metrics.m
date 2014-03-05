@@ -1,11 +1,11 @@
 function varargout = palm_metrics(varargin)
 % Compute some permutation metrics:
-% - For permutation trees, return the ratios of entropies
+% - For permutation trees, return the entropies.
 % - For sets of permutations, return the average Hamming distance.
 % 
 % Usage:
-% [lW,lW0,rl,lr,C] = palm_metrics(Ptree,X,stype)
-% [Hamm,HammX]     = palm_metrics(Pset,X)
+% [lW,lW0,C]   = palm_metrics(Ptree,X,stype)
+% [Hamm,HammX] = palm_metrics(Pset,X)
 % 
 % Inputs:
 % - Ptree : Permutation tree.
@@ -23,16 +23,6 @@ function varargout = palm_metrics(varargin)
 % - lW0   : Log of the max number of permutations without the restrictions
 %           imposed by the tree, but with the restrictions imposed by the
 %           input design X.
-% - rl    : Ratio of the logs of the number of possible permutations
-%           in the restricted over the unrestricted, subtracted from 1,
-%           i.e., rl = 1 - log(W)/log(W0). This is the "anisotropy".
-%           Values close to 1 indicate that there is very strong structure
-%           within the data. Values close to 0 indicate weak or no structure,
-%           such that the data can be shuffled freely or almost freely.
-% - lr    : Negative log of the ratio, i.e. lr = -log(W/W0). This is
-%           self-explanatory :-)
-%           For rl and lr to be meaningful, the imput X must be the same
-%           used originally to create the permutation tree.
 % - C     : Huberman & Hogg complexity (C) of a given tree.
 %           For this to give exactly the same result as in the original
 %           paper, such that it measures the relationships in the tree
@@ -120,21 +110,10 @@ switch dowhat,
             varargout{2} = lW0;
         end
         
-        % Anisotropy of the data structure, i.e.,
-        % ratio of the logs of the entropies.
-        if nargout > 2,
-            varargout{3} = 1 - lW/lW0;
-        end
-        
-        % If the user wants the log of the ratios: -log(W/W0).
-        if nargout > 3,
-            varargout{4} = lW0 - lW;
-        end
-        
         % If the user wants, output also the Huberman & Hogg complexity,
         % which is computed recursively below
-        if nargout > 4,
-            varargout{5} = hhcomplexity(Ptree,1) - 1;
+        if nargout > 2,
+            varargout{3} = hhcomplexity(Ptree,1) - 1;
         end
         
     case 'hamming',
@@ -149,8 +128,8 @@ switch dowhat,
         elseif strcmpi(stype,'flips'),
             XP = bsxfun(@times,X,Pset);
         elseif strcmpi(stype,'both'),
-            XP = X(Pset);
-            XP = XP.*sign(Pset);
+            XP = X(abs(Pset));
+            XP = sign(Pset).*XP;
         end
         varargout{2} = mean(sum(bsxfun(@ne,XP(:,1),XP),1),2);
 end
