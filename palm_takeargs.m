@@ -21,11 +21,13 @@ end
 Ni = sum(strcmp(vararginx,'-i'));  % number of data inputs
 Nm = sum(strcmp(vararginx,'-m'));  % number of masks
 Ns = sum(strcmp(vararginx,'-s'));  % number of surfaces
+Nd = sum(strcmp(vararginx,'-d'));  % number of design files (currently only one can actually be used)
 Nt = sum(strcmp(vararginx,'-t'));  % number of t-contrast files
 Nf = sum(strcmp(vararginx,'-f'));  % number of F-test files
 opts.i   = cell(Ni,1);  % Input files (to constitute Y later)
 opts.m   = cell(Nm,1);  % Mask file(s)
 opts.s   = cell(Ns,1);  % Surface file(s)
+opts.d   = cell(Nd,1);  % Design file(s)
 opts.t   = cell(Nt,1);  % t contrast file(s)
 opts.f   = cell(Nf,1);  % F contrast file(s)
 opts.eb  = [];          % File with definition of exchangeability blocks
@@ -34,7 +36,7 @@ opts.EE  = [];          % To be filled below
 opts.ISE = [];          % To be filled below
 
 % These are to be incremented below
-a = 1; i = 1; m = 1;
+a = 1; i = 1; m = 1; d = 1;
 t = 1; f = 1; s = 1; 
 
 % Take the input arguments
@@ -64,7 +66,8 @@ while a <= nargin,
         case '-d',
             
             % Get the design matrix file.
-            opts.d = vararginx{a+1};
+            opts.d{d} = vararginx{a+1};
+            d = d + 1;
             a = a + 2;
                         
         case '-t',
@@ -415,19 +418,39 @@ while a <= nargin,
                 if ~any(methidx);
                     error('Combining method "%s" unknown.',vararginx{a+1});
                 elseif any(strcmpi(vararginx{a+1},{...
-                        'Wilkinson',          ...
-                        'Darlington-Hayes',   ...
-                        'Zaykin',             ...
-                        'Dudbridge-Koeleman', ...
+                        'Wilkinson',       ...
+                        'Zaykin',          ...
                         'Jiang'})),
-                    if ischar(vararginx{a+2}),
+                    if ischar(vararginx{a+2}) && ...
+                            strcmpi(vararginx{a+2}(1),'-'),
+                        plm.npcparm = 0.05;
+                        a = a + 2;
+                    elseif ischar(vararginx{a+2}),
+                        a = a + 3;
                         plm.npcparm = eval(vararginx{a+2});
                     else
                         plm.npcparm = vararginx{a+2};
+                        a = a + 3;
                     end
-                    a = a + 3;
+                elseif any(strcmpi(vararginx{a+1},{...
+                        'Darlington-Hayes',   ...
+                        'Dudbridge-Koeleman', ...
+                        'Jiang'})),
+                    if nargin == a + 1 || ...
+                            ischar(vararginx{a+2}) && ...
+                            strcmpi(vararginx{a+2}(1),'-'),
+                        plm.npcparm = 1;
+                        a = a + 2;
+                    elseif ischar(vararginx{a+2}),
+                        plm.npcparm = eval(vararginx{a+2});
+                        a = a + 3;
+                    else
+                        plm.npcparm = vararginx{a+2};
+                        a = a + 3;
+                    end
                 elseif strcmpi(vararginx{a+1},'Friston'),
-                    if ischar(vararginx{a+2}) && ...
+                    if nargin == a + 1 || ...
+                            ischar(vararginx{a+2}) && ...
                             strcmpi(vararginx{a+2}(1),'-'),
                         plm.npcparm = 1;
                         a = a + 2;
@@ -439,17 +462,29 @@ while a <= nargin,
                         a = a + 3;
                     end
                 elseif strcmpi(vararginx{a+1},'Dudbridge-Koeleman2'),
-                    if ischar(vararginx{a+2}),
-                        plm.npcparm = eval(vararginx{a+2});
+                    if nargin == a + 1 || ...
+                            ischar(vararginx{a+2}) && ...
+                            strcmpi(vararginx{a+2}(1),'-'),
+                        plm.npcparm  = 1;
+                        plm.npcparm2 = 0.05;
+                        a = a + 2;
                     else
-                        plm.npcparm = vararginx{a+2};
+                        if ischar(vararginx{a+2}),
+                            plm.npcparm = eval(vararginx{a+2});
+                        else
+                            plm.npcparm = vararginx{a+2};
+                        end
+                        if nargin == a + 2 || ...
+                                ischar(vararginx{a+3}) && ...
+                                strcmpi(vararginx{a+3}(1),'-'),
+                            plm.npcparm2 = 0.05;
+                        elseif ischar(vararginx{a+3}),
+                            plm.npcparm2 = eval(vararginx{a+3});
+                        else
+                            plm.npcparm2 = vararginx{a+3};
+                        end
+                        a = a + 4;
                     end
-                    if ischar(vararginx{a+3}),
-                        plm.npcparm2 = eval(vararginx{a+3});
-                    else
-                        plm.npcparm2 = vararginx{a+3};
-                    end
-                    a = a + 4;
                 else
                     a = a + 2;
                 end
@@ -590,6 +625,12 @@ while a <= nargin,
             opts.noranktest = true;
             a = a + 1;
             
+        case '-evperdat',
+            
+            % Use one (single) EV per datum
+            opts.evperdat = true;
+            a = a + 1;
+            
         case '-pmethod', % removed from the help
             
             % Which method to use for to partition the model?
@@ -613,6 +654,33 @@ while a <= nargin,
             
         otherwise
             error('Unknown option: ''%s''',vararginx{a});
+    end
+end
+
+% Until voxelwise regressors are implemented, this should give an error
+if Nd > 1,
+    error('Only one design file is currently allowed.\n');
+end
+
+% A quick check for the case of 1 EV per column in Y.
+if opts.evperdat,
+    if any([...
+            opts.igrepx
+            opts.removeignored
+            opts.removevgsize1
+            opts.ev4vg
+            opts.pearson]),
+        error([...
+            'The option ''-evperdat'' is incompatible with the options listed below:\n' ...
+            '''-igrepx''\n' ...
+            '''-removeignored''\n' ...
+            '''-removevgsize1''\n' ...
+            '''-ev4vg''\n' ...
+            '''-pearson''\n' ...
+            'None of these can be enaabled with ''-evperdat''.%s'],'');
+    end
+    if strcmpi(opts.rmethod,'terBraak'),
+        error('The option ''-evperdat'' cannot be used with the ter Braak method (not implemented)');
     end
 end
 
@@ -818,7 +886,7 @@ for i = 1:Ni,
     
     % If this is 4D read with the NIFTI class, it needs a mask now
     if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,
-        if Nm == 0 
+        if Nm == 0,
             % If a mask hasn't been supplied, make one
             tmpmsk = false(Ytmp.extra.dat.dim(1:3));
             for a = 1:Ytmp.extra.dat.dim(2), % y coords
@@ -976,12 +1044,12 @@ for i = 1:Ni,
             s = i;
         end
         if size(plm.srf{s}.data.vtx,1) == size(plm.Yset{i},2);
-            plm.Yisvtx(i) = true;
-            plm.Yisfac(i) = false;
+            plm.Yisvtx(i)   = true;
+            plm.Yisfac(i)   = false;
             plm.Ykindstr{i} = 'vtx';
         elseif size(plm.srf{s}.data.fac,1) == size(plm.Yset{i},2);
-            plm.Yisvtx(i) = false;
-            plm.Yisfac(i) = true;
+            plm.Yisvtx(i)   = false;
+            plm.Yisfac(i)   = true;
             plm.Ykindstr{i} = 'fac';
         end
         plm.Yarea{i} = palm_calcarea(plm.srf{s},plm.Yisvtx(i));
@@ -992,7 +1060,7 @@ plm.nmasks = numel(plm.masks);
 
 % Create an intersection mask if NPC or MV is to be done, and further apply
 % to the data that was previously masked above, as needed.
-if opts.NPC || opts.MV,
+if opts.NPC || opts.MV || opts.evperdat,
     if plm.nmasks > 1,
         
         % If there is one mask per modality, make an instersection mask.
@@ -1020,7 +1088,7 @@ if opts.NPC || opts.MV,
 end
 
 % Make sure that all data have the same size if NPC or MV are to be done
-if opts.NPC || opts.MV,
+if opts.NPC || opts.MV || opts.evperdat,
     plm.Ysiz = zeros(plm.nY,1);
     siz1 = size(plm.Yset{1});
     for y = 1:plm.nY,
@@ -1046,7 +1114,7 @@ if opts.savemask,
         M.data = double(M.data);
         palm_miscwrite(M);
     end
-    if opts.NPC || opts.MV,
+    if plm.nY > 1 && (opts.NPC || opts.MV || opts.evperdat),
         M          = plm.maskinter;
         M.filename = sprintf('%s_intersection_mask',opts.o);
         M.data     = double(M.data);
@@ -1099,10 +1167,30 @@ elseif opts.EE  && isempty(opts.ISE),
     opts.ISE = false;
 end
 
-% Read the design matrix.
-if isfield(opts,'d'),
-    plm.M = palm_miscread(opts.d);
-    plm.M = plm.M.data;
+% Read and assemble the design matrix.
+if Nd > 0,
+    fprintf('Reading design matrix and contrasts.\n');
+    Mtmp = palm_miscread(opts.d{1});
+    if opts.evperdat,
+        if ndims(Mtmp.data) == 2,
+            plm.M = Mtmp.data;
+        elseif ndims(Mtmp.data) == 4,
+            if strcmp(Mtmp.readwith,'nifticlass'),
+                tmpmsk = plm.maskinter.data(:)';
+                plm.M = zeros(plm.N,sum(tmpmsk));
+                for n = 1:plm.N,
+                    tmp = Mtmp.extra.dat(:,:,:,n);
+                    tmp = tmp(:)';
+                    plm.M(n,:) = tmp(tmpmsk);
+                end
+            else
+                plm.M = palm_conv4to2(Mtmp.data);
+                plm.M = plm.M(:,plm.maskinter.data(:));
+            end
+        end
+    else
+        plm.M = Mtmp.data;
+    end
     if size(plm.M,1) ~= plm.N,
         error([
             'The number of rows in the design matrix does not\n' ...
@@ -1165,7 +1253,7 @@ if Nt || Nf,
     end
 else
     % If no constrasts were at all specified:
-    if size(plm.M,2) == 1,
+    if size(plm.M,2) == 1 || opts.evperdat,
         
         % If there is only 1 regressor, test its effect both
         % positive and negative.
@@ -1190,7 +1278,7 @@ end
 % The partitioning needs to be done now, because some regression methods
 % may not be used if correction over contrasts is needed and the relevant
 % regressors aren't compatible with synchronised permutations/sign-flips
-if ~ opts.igrepx,
+if ~ opts.igrepx && ~ opts.evperdat,
     plm.Xset = cell(plm.nC,1);
     seqtmp = zeros(plm.N,plm.nC);
     for c = 1:plm.nC,
@@ -1209,6 +1297,8 @@ if ~ opts.igrepx,
             opts.rmethod,opts.rfallback,opts.rmethod);
         opts.rmethod = opts.rfallback;
     end
+elseif opts.evperdat
+    
 end
 
 % Read the exchangeability blocks. If none is specified, all observations

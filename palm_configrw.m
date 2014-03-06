@@ -33,19 +33,23 @@ elseif nargin == 2,
     fid = fopen(plmfile,'w');
     fprintf(fid,'# Configuration file for PALM.\n');
     fprintf(fid,'# %s\n',datestr(now));
+    fprintf('Running PALM with the following user supplied options:');
     for c = 1:numel(cfg),
         if strcmp(cfg{c}(1),'-'),
+            fprintf('\n%s',cfg{c});
             fprintf(fid,'\n%s',cfg{c});
         else
             if ischar(cfg{c}),
+                fprintf(' %s',cfg{c});
                 fprintf(fid,' %s',cfg{c});
             else
+                fprintf(' %s',num2str(cfg{c}));
                 fprintf(fid,' %s',num2str(cfg{c}));
             end
         end
     end
     fclose(fid);
-    
+    fprintf('\n');
 else
     error('Incorrect number of input arguments.');
 end

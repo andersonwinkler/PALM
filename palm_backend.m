@@ -7,7 +7,7 @@ global plm opts; % uncomment for debugging
 % Variables to store stuff for later.
 plm.Gname        = cell(plm.nC,1);        % name of the statistic for each contrast
 plm.rC           = zeros(plm.nC,1);       % to store the rank of each contrast, but can be 0 after conversion to z-score
-plm.rC0      = zeros(plm.nC,1);           % to store the rank of each contrast.
+plm.rC0          = zeros(plm.nC,1);       % to store the rank of each contrast.
 G                = cell(plm.nY,plm.nC);   % to store G at each permutation (volatile)
 df2              = cell(plm.nY,plm.nC);   % to store df2 at each permutation (volatile)
 Gpperm           = cell(plm.nY,plm.nC);   % counter, for the permutation p-value (volatile)
@@ -93,47 +93,63 @@ end
 % For each contrast.
 for c = 1:plm.nC,
     
-    % Partition the model, now using the method chosen by the user
-    [plm.tmp.X,plm.tmp.Z,plm.tmp.eCm,plm.tmp.eCx] = ...
-        palm_partition(plm.M,plm.Cset{c},opts.pmethod);
-    
-    plm.tmp.Mp = [plm.tmp.X plm.tmp.Z]; % partitioned design matrix, joined
-    % To avoid rank deficiency issues after partitioning, remove
-    % columns that are all equal to zero.
-    idx = all(plm.tmp.X == 0,1);
-    plm.tmp.X(:,idx)   = [];
-    plm.tmp.eCx(idx,:) = [];
-    idx = all(plm.tmp.Mp == 0,1);
-    plm.tmp.Mp(:,idx)  = [];
-    plm.tmp.eCm(idx,:) = [];
+    if ~ opts.evperdat,
+        
+        % Partition the model, now using the method chosen by the user
+        [plm.tmp.X,plm.tmp.Z,plm.tmp.eCm,plm.tmp.eCx] = ...
+            palm_partition(plm.M,plm.Cset{c},opts.pmethod);
+        plm.tmp.Mp = [plm.tmp.X plm.tmp.Z]; % partitioned design matrix, joined
 
-    % Some methods don't work well if Z is empty, and there is no point in
-    % using any of them all anyway.
-    if isempty(plm.tmp.Z),
-        plm.tmp.rmethod = 'noz';
+        % To avoid rank deficiency issues after partitioning, remove
+        % columns that are all equal to zero.
+        idx = all(plm.tmp.X == 0,1);
+        plm.tmp.X(:,idx)   = [];
+        plm.tmp.eCx(idx,:) = [];
+        idx = all(plm.tmp.Mp == 0,1);
+        plm.tmp.Mp(:,idx)  = [];
+        plm.tmp.eCm(idx,:) = [];
+        
+        % Some methods don't work well if Z is empty, and there is no point in
+        % using any of them all anyway.
+        if isempty(plm.tmp.Z),
+            plm.tmp.rmethod = 'noz';
+        else
+            plm.tmp.rmethod = opts.rmethod;
+        end
+        
+        % Some other variables to be used in the function handles below.
+        plm.tmp.nEV = size(plm.tmp.Mp,2);    % number of regressors in the design
+        plm.rC(c)   = rank(plm.tmp.eCm);     % rank(C), also df1 for all methods
+        plm.tmp.rC  = plm.rC(c);
+        
+        % Residual-forming matrix. This is used by the ter Braak method and
+        % also to compute some of the stats later. Note that, even though the
+        % residual-forming matrix does change at every permutation, the trace
+        % for each VG remains unchanged, hence it's not necessary to recompute
+        % it for every permutation, and just one works for all.
+        plm.tmp.Hm  = plm.tmp.Mp*pinv(plm.tmp.Mp);
+        plm.tmp.Rm  = eye(plm.N) - plm.tmp.Hm;
+        plm.tmp.dRm = diag(plm.tmp.Rm); % this is used for the pivotal statistic
+        plm.tmp.rM  = plm.N - round(sum(plm.tmp.dRm)); % this is faster than rank(M)
+        
     else
-        plm.tmp.rmethod = opts.rmethod;
+        % If one EV per datum, this is a simplification of the above, for
+        % what matters, and for speed.
+        plm.tmp.rmethod = 'evperdat';
+        plm.tmp.eCx = plm.Cset{c};
+        plm.tmp.Mp  = plm.M;
+        plm.tmp.nEV = 1;
+        plm.rC(c)   = 1;
+        plm.tmp.rC  = plm.rC(c);
+        plm.tmp.dRm = 1-plm.M.*bsxfun(@rdivide,plm.M,sum(plm.M.*plm.M,1));
+        plm.tmp.rM  = plm.N - 1;        
     end
+    plm.tmp.evperdat = opts.evperdat;
     
     % Make the 3D dataset for MANOVA/MANCOVA
     if opts.MV,
         plm.tmp.Yq = cat(3,plm.Yset{:});
     end
-    
-    % Some other variables to be used in the function handles below.
-    plm.tmp.nEV = size(plm.tmp.Mp,2);    % number of regressors in the design
-    plm.rC(c)   = rank(plm.tmp.eCm);     % rank(C), also df1 for all methods
-    plm.tmp.rC  = plm.rC(c);
-    
-    % Residual-forming matrix. This is used by the ter Braak method and
-    % also to compute some of the stats later. Note that, even though the
-    % residual-forming matrix does change at every permutation, the trace
-    % for each VG remains unchanged, hence it's not necessary to recompute
-    % it for every permutation, and just one works for all.
-    plm.tmp.Hm  = plm.tmp.Mp*pinv(plm.tmp.Mp);
-    plm.tmp.Rm  = eye(plm.N) - plm.tmp.Hm;
-    plm.tmp.dRm = diag(plm.tmp.Rm); % this is used for the pivotal statistic
-    plm.tmp.rM  = plm.N - round(sum(plm.tmp.dRm)); % this is faster than rank(M)
     
     % Decide which method is going to be used for the regression and
     % permutations, compute some useful matrices for later and create
@@ -146,6 +162,9 @@ for c = 1:plm.nC,
     % function handles.
     isterbraak = false;
     switch lower(plm.tmp.rmethod),
+        case 'evperdat',
+            prepglm         = @(P,Y0)evperdat(P,Y0,plm);
+            plm.tmp.eC      = plm.tmp.eCx;
         case 'noz',
             prepglm         = @(P,Y0)noz(P,Y0,plm);
             plm.tmp.eC      = plm.tmp.eCx;
@@ -190,8 +209,10 @@ for c = 1:plm.nC,
     end
     
     % Ignore (or not) repeated elements in the design matrix
-    if opts.igrepx
+    if opts.igrepx,
         plm.tmp.seq = (1:size(plm.tmp.X,1))';
+    elseif opts.evperdat,
+        plm.tmp.seq = (1:plm.N)';
     else
         [~,~,plm.tmp.seq] = unique(plm.Xset{c},'rows');
     end
@@ -452,8 +473,13 @@ for c = 1:plm.nC,
             end
             
             % Do the GLM fit.
-            psi = M\Y;
-            res = Y - M*psi;
+            if opts.evperdat,
+                psi = sum(M.*Y,1)./sum(M.*M,1);
+                res = Y - bsxfun(@times,M,psi);
+            else
+                psi = M\Y;
+                res = Y - M*psi;
+            end
             
             % Unless this is draft mode, there is no need to fit
             % again for the MV later
@@ -518,7 +544,7 @@ for c = 1:plm.nC,
             
             % Save the unpermuted statistic if z-score
             if opts.zstat
-                plm.Gname{c} = 'zstat';
+                plm.Gname{c} = sprintf('z%s',plm.Gname{c});
                 if p == 1,
                     palm_quicksave(G{y,c},0,opts,plm,y,c, ...
                         sprintf('%s_%s_%s_mod%d_con%d', ...
@@ -1109,7 +1135,7 @@ for c = 1:plm.nC,
         end
         
         % Parametric MV pvalue
-        if opts.savepara && ~ plm.nonpcppara,
+        if opts.savepara && ~ plm.nomvppara,
             palm_quicksave(plm.Qppara{c},1,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_%s_con%d', ...
                 opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'uncparap',c));
@@ -1377,7 +1403,7 @@ if opts.MV && opts.corrcon,
     plm.Qmax = cat(2,plm.Qmax{:});
     distmax = max(plm.Qmax,[],2);
     for c = 1:plm.nC,
-        palm_quicksave(palm_datapval(plm.Q{c},distmax,npcrev), ...
+        palm_quicksave(palm_datapval(plm.Q{c},distmax,false), ...
             1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
             opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'fwecp',c));
     end
@@ -1423,8 +1449,14 @@ end
 % ==============================================================
 % Below are the functions for each of the regression methods:
 % ==============================================================
+function [Mr,Y] = evperdat(P,Y,plm)
+% This is the same as Draper-Stoneman, for when
+% there one EV per datum. Y remains unchanged.
+Mr = P*plm.M;
+
+% ==============================================================
 function [Mr,Y] = noz(P,Y,plm)
-% This is the same as Draper-Stoneman
+% This is the same as Draper-Stoneman, for when there is no Z
 % Y remains unchanged
 Mr = P*plm.tmp.X;
 
@@ -1545,8 +1577,13 @@ function [G,df2] = fastt(M,psi,res,plm)
 % df2 : Degrees of freedom. df1 is 1 for the t statistic.
 
 df2 = plm.N-plm.tmp.rM;
-G   = plm.tmp.eC'*psi;
-den = sqrt(plm.tmp.eC'/(M'*M)*plm.tmp.eC*sum(res.^2)./df2);
+if plm.tmp.evperdat,
+    G   = psi;
+    den = sqrt(sum(res.^2,1)./sum(M.*M,1)./df2);
+else
+    G   = plm.tmp.eC'*psi;
+    den = sqrt(plm.tmp.eC'/(M'*M)*plm.tmp.eC*sum(res.^2)./df2);
+end
 G   = G./den;
 
 % ==============================================================
@@ -1593,31 +1630,36 @@ function [G,df2] = fastv(M,psi,res,plm)
 % G   : Aspin-Welch v statistic.
 % df2 : Degrees of freedom 2. df1 is 1.
 
-r = size(M,2);
 m = size(res,2);
-
 W = zeros(plm.nVG,m);
-dRmb = zeros(plm.nVG,1);
+if plm.tmp.evperdat,
+    r = 1;
+    dRmb = zeros(plm.nVG,m);
+else
+    r = size(M,2);
+    dRmb = zeros(plm.nVG,1);
+end
+
 cte = zeros(r^2,m);
 for b = 1:plm.nVG,
     bidx = plm.VG == b;
-    dRmb(b) = sum(plm.tmp.dRm(bidx));
-    W(b,:) = dRmb(b)./sum(res(bidx,:).^2);
-    Mb = M(bidx,:)'*M(bidx,:);
-    cte = cte + Mb(:)*W(b,:);
+    dRmb(b,:) = sum(plm.tmp.dRm(bidx,:),1);
+    W(b,:) = dRmb(b,:)./sum(res(bidx,:).^2,1);
+    Mb = sum(M(bidx,:).*M(bidx,:),1);
+    cte = cte + Mb.*W(b,:);
     W(b,:) = W(b,:)*sum(bidx);
 end
 
 den = zeros(1,m);
 for j = 1:m,
-    den(j) = plm.tmp.eC'/(reshape(cte(:,j),[r r]))*plm.tmp.eC;
+    den(j) = 1./(reshape(cte(:,j),[r r]));
 end
-G = plm.tmp.eC'*psi./sqrt(den);
+G = psi./sqrt(den);
 
 bsum = zeros(1,m);
 sW1 = sum(W,1);
 for b = 1:plm.nVG,
-    bsum = bsum + bsxfun(@rdivide,(1-W(b,:)./sW1).^2,dRmb(b));
+    bsum = bsum + bsxfun(@rdivide,(1-W(b,:)./sW1).^2,dRmb(b,:));
 end
 df2 = 1/3./bsum;
 
@@ -1690,12 +1732,18 @@ function Q = fasttsq(M,psi,res,plm)
 
 nT  = size(res,2);
 df0 = plm.N-plm.tmp.rM;
-cte1 = zeros(nT,plm.nY);
-for y = 1:plm.nY,
-    cte1(:,y) = plm.tmp.eC'*psi(:,:,y);
-end
-cte2 = plm.tmp.eC'/(M'*M)*plm.tmp.eC;
 S = spr(res)/df0;
+if plm.tmp.evperdat,
+    cte1 = permute(psi,[1 3 2]);
+    cte2 = sum(M.*M,1);
+else
+    cte1 = zeros(nT,plm.nY);
+    for y = 1:plm.nY,
+        cte1(:,y) = plm.tmp.eC'*psi(:,:,y);
+    end
+    cte2 = plm.tmp.eC'/(M'*M)*plm.tmp.eC;
+end
+
 Q = zeros(1,nT);
 for t = 1:nT,
     Q(1,t) = cte1(t,:)/S(:,:,t)/cte2*cte1(t,:)';
@@ -2025,7 +2073,7 @@ A = (lw <= ltk).*S + (lw > ltk).*tk;
 
 % ==============================================================
 function T = taylortibshirani(G,df2,plm,c)
-P = palm_gpvals(G,plm.rC(c),df2);
+P = palm_gpval(G,plm.rC(c),df2);
 [~,tmp] = sort(P);
 [~,prank] = sort(tmp);
 T = sum(1-P.*(plm.nY+1)./prank)/plm.nY;
