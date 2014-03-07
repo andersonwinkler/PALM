@@ -3,7 +3,7 @@ function [opts,plm] = palm_takeargs(varargin)
 % Load the defaults
 opts = palm_defaults;
 
-% As vararginx is actually from another function, fix it.
+% As varargin is actually from another function, fix it.
 if nargin == 1,
     vararginx = palm_configrw(varargin{1});
 else
@@ -42,6 +42,7 @@ t = 1; f = 1; s = 1;
 % Take the input arguments
 while a <= nargin,
     switch vararginx{a},
+            
         case '-i',
             
             % Get the filenames for the data.
@@ -1338,6 +1339,12 @@ else
     plm.VG = plm.VG.data;
 end
 plm.nVG = numel(unique(plm.VG));
+
+% MV can't be used if nVG>1 (pivotality loss), although NPC remains an
+% option
+if opts.MV && plm.nVG > 1,
+    error('There are more than 1 variance group. MV cannot be used.');
+end
 
 % Remove the variance groups with just 1 observation?
 if plm.nVG > 1 && ~ opts.removevgsize1 && (opts.vgdemean || opts.ev4vg) && ...
