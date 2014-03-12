@@ -4,9 +4,6 @@ function palm_help(varargin)
 if nargin == 1 && strcmpi(varargin{1},'logo'),
     showlogo;
 else
-    if ~ palm_isoctave,
-        fprintf('.......................................................................\n');
-    end
     showlogo;
     fprintf('\n');
     fprintf('The options are:\n');

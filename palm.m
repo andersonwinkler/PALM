@@ -20,6 +20,11 @@ if palm_isoctave,
     % Be sure to print to the screen immediately
     page_screen_output(0);
     page_output_immediately(1);
+else
+    % This line marks the place up to nothing will be printed. It's long as
+    % this because if it fails, at least it's not ugly and looks
+    % purposeful from the outside :-)
+    fprintf('.......................................................................\n');
 end
 
 % This is probably redundant but fix a bug in an old Matlab version

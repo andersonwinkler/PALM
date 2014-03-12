@@ -39,10 +39,15 @@ opts.ISE = [];          % To be filled below
 a = 1; i = 1; m = 1; d = 1;
 t = 1; f = 1; s = 1; 
 
+% Remove trailing empty arguments. This is useful for some Octave versions.
+while numel(vararginx) > 0 && isempty(vararginx{1}),
+    vararginx(1) = [];
+end
+narginx = numel(vararginx);
+
 % Take the input arguments
-while a <= nargin,
+while a <= narginx,
     switch vararginx{a},
-            
         case '-i',
             
             % Get the filenames for the data.
