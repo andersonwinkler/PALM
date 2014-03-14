@@ -1,5 +1,5 @@
 function palm(varargin)
-% Type 'palm -help' for help.
+% Type 'palm' without arguments for help.
 
 % This is redundant in when running as a function as all files should
 % be together, but it helps when running from the shell

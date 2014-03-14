@@ -74,6 +74,7 @@ if wholeblock,
 else
     Ptree{2}(1) = 1;
 end
+Ptree{u,2}(1) = uint64(Ptree{u,2}(1));
 
 % ==============================================================
 function [S,Ptree] = maketree(B,M,O,wholeblock,nosf)
@@ -122,12 +123,15 @@ for u = 1:nU,
             
         elseif size(Ptree{u,3},2) > 1,
             % If it might be flipped here, but there are distal branches
-            Ptree{u,2}(1) = 2^(size(Ptree{u,1},1) *~ isnan(Ptree{u,1}(1)));
+            Ptree{u,2}(1) = 2^(size(Ptree{u,1},1) * ~isnan(Ptree{u,1}(1)));
             
         else
             % If there are no further branches
             Ptree{u,2}(1) = 2^(size(Ptree{u,3},1));
         end
+        
+        % This number can get big, and must remain integer, not float.
+        Ptree{u,2}(1) = uint64(Ptree{u,2}(1));
         
     else
         % At the terminal branches, there is no more tree, so

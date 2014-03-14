@@ -87,15 +87,15 @@ if EE,
     lmaxP = lfac(N+1) - sum(lfac(nrep+1));
 end
 if ISE,
-    maxS = 2^N;
-    if maxS > 1.7976931348623158e308,
-        fprintf('Number of possible sign-flips is >= 1.7976931348623158e308.\n');
+    maxS = uint64(2^N);
+    if maxS >= uint64(2^N),
+        fprintf('Number of possible sign-flips is >= 2^64.\n');
     else
-        fprintf('Number of possible sign-flips is %g.\n',maxS);
+        fprintf('Number of possible sign-flips is %d.\n',maxS);
     end
     lmaxS = N * log(2);
 end
-maxB  =  maxP *  maxS;
+maxB  =  maxP *  double(maxS);
 lmaxB = lmaxP + lmaxS;
 
 % String for the screen output below

@@ -90,13 +90,13 @@ if EE,
 end
 if ISE,
     maxS = palm_maxshuf(Ptree,'flips');
-    if maxS > 1.7976931348623158e308,
-        fprintf('Number of possible sign-flips is >= 1.7976931348623158e308.\n');
+    if maxS > uint64(2^N),
+        fprintf('Number of possible sign-flips is >= 2^64.\n');
     else
         fprintf('Number of possible sign-flips is %g.\n',maxS);
     end
 end
-maxB = maxP * maxS;
+maxB = maxP * double(maxS);
 
 % String for the screen output below
 if EE && ~ISE,
