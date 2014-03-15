@@ -87,9 +87,12 @@ if EE,
     lmaxP = lfac(N+1) - sum(lfac(nrep+1));
 end
 if ISE,
-    maxS = uint64(2^N);
-    if maxS >= uint64(2^N),
-        fprintf('Number of possible sign-flips is >= 2^64.\n');
+    maxS = 2^N;
+    if maxS >= 2^52,
+        fprintf('Number of possible sign-flips is >= 2^52.\n');
+        if ~ EE && (nP0 == 0 || nP0 > 2^52),
+            error('It''s not possible to run more than 2^52 sign-flips.')
+        end
     else
         fprintf('Number of possible sign-flips is %d.\n',maxS);
     end

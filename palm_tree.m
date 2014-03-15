@@ -10,7 +10,7 @@ function Ptree = palm_tree(B,M)
 % - M       : Design matrix.
 % - Ptree   : Permutation tree, from which permutations are generated
 %             later.
-% 
+%
 % Each node is a cell with 4 elements:
 % N{1,1}    : A 3-column array for whole block in which:
 %             - the 1st is a sequence of indices that indicates the
@@ -74,7 +74,6 @@ if wholeblock,
 else
     Ptree{2}(1) = 1;
 end
-Ptree{u,2}(1) = uint64(Ptree{u,2}(1));
 
 % ==============================================================
 function [S,Ptree] = maketree(B,M,O,wholeblock,nosf)
@@ -102,7 +101,7 @@ for u = 1:nU,
     
     % Enter into each unique block
     idx = B1 == U(u);
-
+    
     % If this isn't the last level, continue constructing
     % the branches recursively.
     if size(B,2) > 1,
@@ -115,7 +114,7 @@ for u = 1:nU,
             wholeblockb,          ...
             wholeblockb || nosf);
         Ptree{u,2} = [0 0];
-            
+        
         % Count the number of possible sign-flips for these branches
         if nosf,
             % If it was flipped at higher levels (whole-block)
@@ -129,9 +128,6 @@ for u = 1:nU,
             % If there are no further branches
             Ptree{u,2}(1) = 2^(size(Ptree{u,3},1));
         end
-        
-        % This number can get big, and must remain integer, not float.
-        Ptree{u,2}(1) = uint64(Ptree{u,2}(1));
         
     else
         % At the terminal branches, there is no more tree, so

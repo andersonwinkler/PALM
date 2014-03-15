@@ -43,10 +43,10 @@ else
         case 'perms',
             maxb = maxpermnode(Ptree,1);
         case 'flips',
-            maxb = maxflipnode(Ptree,uint64(1));
+            maxb = maxflipnode(Ptree,1);
         case 'both',
             maxp = maxpermnode(Ptree,1);
-            maxs = maxflipnode(Ptree,uint64(1));
+            maxs = maxflipnode(Ptree,1);
             maxb = maxp * double(maxs);
     end
 end

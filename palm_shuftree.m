@@ -90,8 +90,11 @@ if EE,
 end
 if ISE,
     maxS = palm_maxshuf(Ptree,'flips');
-    if maxS > uint64(2^N),
-        fprintf('Number of possible sign-flips is >= 2^64.\n');
+    if maxS > 2^52,
+        fprintf('Number of possible sign-flips is >= 2^52.\n');
+        if ~ EE && (nP0 == 0 || nP0 > 2^52),
+            error('It''s not possible to run more than 2^52 sign-flips.')
+        end
     else
         fprintf('Number of possible sign-flips is %g.\n',maxS);
     end
