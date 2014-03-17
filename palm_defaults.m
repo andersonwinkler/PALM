@@ -50,3 +50,5 @@ opts.zstat           = false;           % Convert G-stat to z-stat?
 opts.pearson         = false;           % Compute the Pearson's correlation coefficient (R^2 if rank(C)>1)?
 opts.noranktest      = false;           % Don't test the rank(Y) before doing MANOVA/MANCOVA.
 opts.evperdat        = false;           % Use one (single!) EV per datum?
+opts.singlevg        = false;           % use a single VG (overrides automatic VGs)
+opts.transposedata   = false;           % transpose data if 2D?

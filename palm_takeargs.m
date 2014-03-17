@@ -598,6 +598,13 @@ while a <= narginx,
             opts.ev4vg = true;
             a = a + 1;
             
+        case '-singlevg',
+            
+            % Use a single VG, overriding the automatic definitions
+            % from the blocks.
+            opts.singlevg = true;
+            a = a + 1;
+            
         case '-removeignored',
             
             % Remove from the analysis observations that are have their own
@@ -658,6 +665,12 @@ while a <= narginx,
                     'Consult the documentation.']);
             end
             
+        case '-transposedata',
+            
+            % Transpose the data if it's 2D?
+            opts.transposedata = true;
+            a = a + 1;
+            
         otherwise
             error('Unknown option: ''%s''',vararginx{a});
     end
@@ -673,14 +686,12 @@ if opts.evperdat,
     if any([...
             opts.igrepx
             opts.removeignored
-            opts.removevgsize1
             opts.ev4vg
             opts.pearson]),
         error([...
             'The option ''-evperdat'' is incompatible with the options listed below:\n' ...
             '''-igrepx''\n' ...
             '''-removeignored''\n' ...
-            '''-removevgsize1''\n' ...
             '''-ev4vg''\n' ...
             '''-pearson''\n' ...
             'None of these can be enaabled with ''-evperdat''.%s'],'');
@@ -944,6 +955,11 @@ for i = 1:Ni,
         % This should cover the CSV files and DPX 4D files that
         % were converted to CSV with 'dpx2csv' and then transposed.
         plm.Yset{i} = Ytmp.data;
+        
+        % Transpose if that was chosen.
+        if opts.transposedata,
+            plm.Yset{i} = plm.Yset{i}';
+        end
         
     elseif ndims(Ytmp.data) == 4,
         
@@ -1331,53 +1347,27 @@ if isempty(opts.vg),
     % Generate an initial dependence tree, to be used to define variance groups.
     % The tree used for the permutations later require the design matrix, and
     % varies for each contrast -- all to be taken care of later.
-    if isempty(plm.EB),
+    if isempty(plm.EB) || opts.singlevg,
         plm.VG = ones(plm.N,1);
     else
         Ptree  = palm_tree(plm.EB,(1:plm.N)');
         plm.VG = palm_ptree2vg(Ptree);
     end
+elseif opts.singlevg,
+    error('The option ''-singlevg'' cannot be used together with the option ''-vg''.');
 else
     % The automatic variance groups can be overriden if the user specified
     % a file with the custom definitions.
     plm.VG = palm_miscread(opts.vg);
     plm.VG = plm.VG.data;
 end
-plm.nVG = numel(unique(plm.VG));
+[tmp,~,plm.VG] = unique(plm.VG);
+plm.nVG = numel(tmp);
 
 % MV can't be used if nVG>1 (pivotality loss), although NPC remains an
 % option
 if opts.MV && plm.nVG > 1,
     error('There are more than 1 variance group. MV cannot be used.');
-end
-
-% Remove the variance groups with just 1 observation?
-if plm.nVG > 1 && ~ opts.removevgsize1 && (opts.vgdemean || opts.ev4vg) && ...
-        any(sum(bsxfun(@eq,plm.VG,unique(plm.VG)'),1) == 1),
-        warning([...
-        'The options ''-vgdemean'' and ''-ev4vg'' require that observations\n'...
-        '         in variance groups of size 1 are removed.\n'...
-        '         Enabling the option ''-removevgsize1''%s.'],'');
-    opts.removevgsize1 = true;
-end
-if opts.removevgsize1,
-    
-    % Indices of the observations to keep
-    uVG = unique(plm.VG)';
-    idxvg = sum(bsxfun(@eq,plm.VG,uVG),1) == 1;
-    idx   = any(bsxfun(@eq,plm.VG,uVG(~idxvg)),2);
-    
-    % Modify all data as needed
-    for y = 1:plm.nY,
-        plm.Yset{y} = plm.Yset{y}(idx,:);
-    end
-    if ~ isempty(plm.EB),
-        plm.EB = plm.EB(idx,:);
-    end
-    plm.M = plm.M(idx,:);
-    plm.N = sum(idx);
-    [tmp,~,plm.VG] = unique(plm.VG(idx));
-    plm.nVG = numel(tmp);
 end
 
 % Remove observations marked to be ignored, i.e, those that
@@ -1417,6 +1407,45 @@ if opts.removeignored,
     plm.VG     = plm.VG(idx);
     [tmp,~,plm.VG] = unique(plm.VG(idx));
     plm.nVG    = numel(tmp);
+end
+
+% Remove the variance groups with just 1 observation?
+if plm.nVG > 1 && ~ opts.removevgsize1 && (opts.vgdemean || opts.ev4vg) && ...
+        any(sum(bsxfun(@eq,plm.VG,unique(plm.VG)'),1) == 1),
+        warning([...
+        'The options ''-vgdemean'' and ''-ev4vg'' require that observations\n' ...
+        '         in variance groups of size 1 are removed.\n' ...
+        '         Enabling the option ''-removevgsize1''%s.'],'');
+    opts.removevgsize1 = true;
+end
+if ~ opts.removevgsize1,
+    for u = 1:plm.nVG,
+        if sum((plm.VG == u),1) == 1,
+            warning([...
+                'There are variance groups with just one observation.\n' ...
+                '         Consider using the option ''-removevgsize1'' to improve the\n' ...
+                '         variance estimates (at the cost of reducing sample size).%s'],'');
+        end
+    end
+end
+if opts.removevgsize1,
+    
+    % Indices of the observations to keep
+    uVG = unique(plm.VG)';
+    idxvg = sum(bsxfun(@eq,plm.VG,uVG),1) == 1;
+    idx   = any(bsxfun(@eq,plm.VG,uVG(~idxvg)),2);
+    
+    % Modify all data as needed
+    for y = 1:plm.nY,
+        plm.Yset{y} = plm.Yset{y}(idx,:);
+    end
+    if ~ isempty(plm.EB),
+        plm.EB = plm.EB(idx,:);
+    end
+    plm.M = plm.M(idx,:);
+    plm.N = sum(idx);
+    [tmp,~,plm.VG] = unique(plm.VG(idx));
+    plm.nVG = numel(tmp);
 end
 
 % Add one regressor for each variance group, if requested
