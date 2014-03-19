@@ -52,3 +52,5 @@ opts.noranktest      = false;           % Don't test the rank(Y) before doing MA
 opts.evperdat        = false;           % Use one (single!) EV per datum?
 opts.singlevg        = false;           % use a single VG (overrides automatic VGs)
 opts.transposedata   = false;           % transpose data if 2D?
+opts.highestH        = [];              % fraction of highest Hamming to use
+opts.lowestH         = [];              % fraction of lowest Hamming to use

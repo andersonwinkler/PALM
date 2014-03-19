@@ -11,7 +11,7 @@
 # Do you prefer Matlab or Octave? Octave is free (it doesn't need licences),
 # is faster to load, but somewhat slower to run. Matlab uses licenses (this
 # may bother other users in a network), is slower to load, but runs faster
-# once loaded. In the var below, use 0 for Matlab, 1 for Octave:
+# once loaded. In the var below, use 1 for Octave, 2 for Matlab:
 WHICH_TO_RUN=1
 
 # If Octave isn't in the path, or to use a specific version,
@@ -21,6 +21,7 @@ OCTAVEPATH=""
 # If Matlab isn't in the path, or to use a specific version,
 # add here the path to the Matlab executable binary:
 MATLABPATH=/Applications/MATLAB_R2013b.app/bin/
+#MATLABPATH=/opt/11b/bin/
 
 # =========================================================================
 # Normally there is no need to edit below this line:
@@ -39,7 +40,7 @@ if [[ ${WHICH_TO_RUN} -eq 1 ]] ; then
       OCTAVECMD=${OCTAVEPATH}/octave
    fi
    ${OCTAVECMD} -q --eval "${RUNCMD}"
-elif [[ ${WHICH_TO_RUN} -eq 0 ]] ; then
+elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    if [[ ${MATLABPATH} == "" ]] ; then
       MATLABCMD=matlab
    else

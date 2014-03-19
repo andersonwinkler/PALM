@@ -1,6 +1,7 @@
 function palm_backend(varargin)
 
 % Take the arguments. Save a small log if needed.
+%clear global plm opts % comment for debugging
 global plm opts; % uncomment for debugging
 [opts,plm] = palm_takeargs(varargin{:});
 
@@ -373,11 +374,13 @@ for c = 1:plm.nC,
             if opts.savemetrics,
                 [plm.tmp.Pset,plm.nP(c),plm.metr{c}] =  ...
                     palm_shuffree(plm.tmp.seq,opts.nP0, ...
-                    opts.CMC,opts.EE,opts.ISE,false);
+                    opts.CMC,opts.EE,opts.ISE,false,    ...
+                    opts.highestH,opts.lowestH);
             else
                 [plm.tmp.Pset,plm.nP(c)] =              ...
                     palm_shuffree(plm.tmp.seq,opts.nP0, ...
-                    opts.CMC,opts.EE,opts.ISE,false);
+                    opts.CMC,opts.EE,opts.ISE,false,    ...
+                    opts.highestH,opts.lowestH);
             end
         else
             if opts.savemetrics,
@@ -391,7 +394,7 @@ for c = 1:plm.nC,
     else
         plm.nP(2:end) = plm.nP(1);
     end
-    
+
     % If the user wants to save the permutations, save the vectors now.
     % This has 3 benefits: (1) the if-test below will run just once, rather
     % than many times inside the loop, (2) if the user only wants the

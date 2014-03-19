@@ -20,6 +20,9 @@ if palm_isoctave,
     % Be sure to print to the screen immediately
     page_screen_output(0);
     page_output_immediately(1);
+    
+    % Disable some warnings
+    warning('off','Octave:precedence-change');
 else
     % This line marks the place up to nothing will be printed. It's long as
     % this because if it fails, at least it's not ugly and looks
@@ -31,7 +34,7 @@ end
 nargin = numel(varargin);
 
 % Print usage if no inputs are given
-if nargin == 0 || strcmp(varargin{1},'-q'),
+if (nargin == 0) || strcmp(varargin{1},'-q'),
     palm_help;
     return;
 end

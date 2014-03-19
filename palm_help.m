@@ -216,6 +216,12 @@ else
     fprintf('	for each column in the observed data (entered with -i). This\n');
     fprintf('	enables voxelwise/facewise/vertexwise regressors.\n');
     fprintf('\n');
+    fprintf('-singlevg : Override the automatic definition of variance groups for a\n');
+    fprintf('	single VG.\n');
+    fprintf('\n');
+    fprintf('-transposedata : For input data (-i) that are csv tables (2D), transpose\n');
+    fprintf('	rows and columns.\n');
+    fprintf('\n');
     fprintf('_____________________________________\n');
     fprintf('Anderson M. Winkler\n');
     fprintf('FMRIB / Univ. of Oxford\n');

@@ -671,6 +671,24 @@ while a <= narginx,
             opts.transposedata = true;
             a = a + 1;
             
+        case '-highestH',
+            
+            % Use only the perms with the highest Hamming distance?
+            opts.highestH = vararginx{a+1};
+            if ischar(opts.highestH),
+                opts.highestH = str2double(opts.highestH);
+            end
+            a = a + 2;
+            
+        case '-lowestH',
+            
+            % Use only the perms with the lowest Hamming distance?
+            opts.lowestH = vararginx{a+1};
+            if ischar(opts.lowestH),
+                opts.lowestH = str2double(opts.lowestH);
+            end
+            a = a + 2;
+            
         otherwise
             error('Unknown option: ''%s''',vararginx{a});
     end
@@ -699,6 +717,17 @@ if opts.evperdat,
     if strcmpi(opts.rmethod,'terBraak'),
         error('The option ''-evperdat'' cannot be used with the ter Braak method (not implemented)');
     end
+end
+
+% Only highest or lowest Hamming allowed, not both
+if ~isempty(opts.highestH) && ~isempty(opts.lowestH),
+    error('Only one of ''-highestH'' or ''-lowestH'' can be used at any given time.');
+end
+if ~isempty(opts.highestH) && (opts.highestH <= 0 || opts.highestH > 1),
+    error('The value given to ''-highestH'' must be >= 0 or < 1');
+end
+if ~isempty(opts.lowestH)  && (opts.lowestH  <= 0 || opts.lowestH  > 1),
+    error('The value given to ''-lowestH'' must be >= 0 or < 1');
 end
 
 % This simplifies some tests later
@@ -931,6 +960,11 @@ for i = 1:Ni,
     % Now deal with the data
     if ndims(Ytmp.data) == 2,
         
+        % Transpose if that was chosen.
+        if opts.transposedata,
+            Ytmp.data = Ytmp.data';
+        end
+        
         % For the first input data, keep the size to
         % compare with the others, then check the size
         if i == 1,
@@ -955,11 +989,6 @@ for i = 1:Ni,
         % This should cover the CSV files and DPX 4D files that
         % were converted to CSV with 'dpx2csv' and then transposed.
         plm.Yset{i} = Ytmp.data;
-        
-        % Transpose if that was chosen.
-        if opts.transposedata,
-            plm.Yset{i} = plm.Yset{i}';
-        end
         
     elseif ndims(Ytmp.data) == 4,
         
@@ -1293,6 +1322,9 @@ plm.nC = numel(plm.Cset);
 for c = 1:plm.nC,
     if any(isnan(plm.Cset{c}(:))) || any(isinf(plm.Cset{c}(:))),
         error('The constrasts cannot contain NaN or Inf.');
+    end
+    if opts.evperdat && size(plm.Cset{c},1) ~= 1,
+        error('The contrast file must contain a single element when using the option ''-evperdat''.');
     end
 end
 

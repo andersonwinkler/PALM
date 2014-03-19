@@ -45,31 +45,35 @@ function [Bset,nB,mtr] = palm_shuftree(varargin)
 
 % Take arguments
 if nargin == 2,
-    opts    = varargin{1};
-    plm     = varargin{2};
-    EE      = opts.EE;
-    ISE     = opts.ISE;
-    nP0     = opts.nP0;
-    CMC     = opts.CMC;
-    Ptree   = palm_tree(plm.EB,plm.tmp.seq);
-    idxout  = false;
-    seq     = plm.tmp.seq;
+    opts     = varargin{1};
+    plm      = varargin{2};
+    EE       = opts.EE;
+    ISE      = opts.ISE;
+    nP0      = opts.nP0;
+    CMC      = opts.CMC;
+    Ptree    = palm_tree(plm.EB,plm.tmp.seq);
+    idxout   = false;
+    seq      = plm.tmp.seq;
+    highestH = opts.highestH;
+    lowestH  = opts.lowestH;
 elseif nargin == 3 || nargin == 5 || nargin == 6,
-    Ptree   = varargin{1};
-    nP0     = varargin{2};
-    CMC     = varargin{3};
+    Ptree    = varargin{1};
+    nP0      = varargin{2};
+    CMC      = varargin{3};
     if nargin == 5 || nargin == 6,
-        EE  = varargin{4};
-        ISE = varargin{5};
+        EE   = varargin{4};
+        ISE  = varargin{5};
     else
-        EE  = true;
-        ISE = false;
+        EE   = true;
+        ISE  = false;
     end
     if nargin == 6,
         idxout = varargin{6};
     else
         idxout = false;
     end
+    highestH  = [];
+    lowestH   = [];
 else
     error('Incorrect number of input arguments');
 end
@@ -214,12 +218,12 @@ end
 
 % If the desired outputs are permutation indices instead
 % of permutation matrices, output them
-if idxout || (nargout == 3 && nargin == 2),
+if idxout || ...
+        (nargout == 3 && nargin == 2) || ...
+        (~isempty(highestH) || ~isempty(lowestH)),
+    
     % Convert formats if needed.
-    Bidx = zeros(size(Bset{1},1),nB);
-    for p = 1:nB,
-        Bidx(:,p) = palm_perm2idx(Bset{p});
-    end
+    Bidx = palm_swapfmt(Bset);
     
     % Compute some metrics
     if nargout == 3,
@@ -231,6 +235,39 @@ if idxout || (nargout == 3 && nargin == 2),
             palm_metrics(Ptree1,ones(size(seq)),whatshuf2);
         [mtr(5),mtr(6)] = palm_metrics(Bidx,seq);
     end
+    
+    % Select permutation according to the Hamming distance
+    % If the user wants only highest or lowest Hamming distances
+    Hamm = sum(bsxfun(@ne,Bidx(:,1),Bidx),1);
+    if ~ isempty(highestH),
+        nB = ceil(nB.*highestH);
+        [~,idx] = sort(Hamm(:),'descend');
+        [~,idxback] = sort(idx);
+        Hidx = false(size(idx));
+        Hidx(1:nB-1) = true;
+        Hidx = Hidx(idxback);
+        Hidx(1) = true;
+        if idxout,
+            Bidx = Bidx(:,Hidx);
+        else
+            Bset = Bset(Hidx);
+        end
+    end
+    if ~ isempty(lowestH),
+        nB = ceil(nB.*lowestH);
+        [~,idx] = sort(Hamm(:),'ascend');
+        [~,idxback] = sort(idx);
+        Hidx = false(size(idx));
+        Hidx(1:nB) = true;
+        Hidx = Hidx(idxback);
+        if idxout,
+            Bidx = Bidx(:,Hidx);
+        else
+            Bset = Bset(Hidx);
+        end
+    end
+    
+    % Output as indices if needed
     if idxout,
         Bset = Bidx;
     end

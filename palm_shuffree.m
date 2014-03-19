@@ -9,23 +9,27 @@ function [Bset,nB,mtr] = palm_shuffree(varargin)
 % [Bset,nB] = palm_freeshuf(M,nP0,CMC,EE,ISE,idxout)
 % 
 % Inputs:
-% - M       : Design matrix.
-% - nP0     : Requested number of permutations.
-% - CMC     : Use Conditional Monte Carlo.
-% - EE      : Allow permutations?
-% - ISE     : Allow sign-flips?
-%             If you supply the EE argument, you must
-%             also supply ISE argument. If one is omited,
-%             the other needs to be omited too.
-%             Default is true for EE, and false for ISE.
-% - idxout  : (Optional) If true, the output isn't a cell
-%             array with permutation matrices, but an array
-%             with permutation indices.
+% - M        : Design matrix.
+% - nP0      : Requested number of permutations.
+% - CMC      : Use Conditional Monte Carlo.
+% - EE       : Allow permutations?
+% - ISE      : Allow sign-flips?
+%              If you supply the EE argument, you must
+%              also supply ISE argument. If one is omited,
+%              the other needs to be omited too.
+%              Default is true for EE, and false for ISE.
+% - idxout   : (Optional) If true, the output isn't a cell
+%              array with permutation matrices, but an array
+%              with permutation indices.
+% - highestH : (Optional) Fraction of permutations to be run,
+%              selecting only those with highest Hamming distance.
+% - lowestH  : (Optional) Fraction of permutations to be run,
+%              selecting only those with highest Hamming distance.
 % 
 % Outputs:
-% - Bset    : Set of permutations and/or sign flips.
-% - nB      : Number of permutations and/or sign-flips.
-% - mtr     : Some metrics. See palm_metrics.m for details.
+% - Bset     : Set of permutations and/or sign flips.
+% - nB       : Number of permutations and/or sign-flips.
+% - mtr      : Some metrics. See palm_metrics.m for details.
 % 
 % _____________________________________
 % Anderson M. Winkler
@@ -34,7 +38,7 @@ function [Bset,nB,mtr] = palm_shuffree(varargin)
 % http://brainder.org
 
 % Accept arguments
-if nargin < 2 || nargin > 6 || nargin == 4,
+if nargin < 2 || nargin > 8 || nargin == 4,
     error('Incorrect number of arguments');
 end
 M   = varargin{1};
@@ -56,8 +60,21 @@ if nargin > 5,
 else
     idxout = false;
 end
+if nargin > 6,
+    highestH = varargin{7};
+else
+    highestH = [];
+end
+if nargin > 7,
+    lowestH = varargin{8};
+else
+    lowestH = [];
+end
 if ~EE && ~ISE,
     error('EE and/or ISE must be enabled, otherwise there is nothing to shuffle.')
+end
+if ~ isempty(highestH) && ~ isempty(lowestH),
+    error('The options ''highestH'' and ''lowestH'' cannot be set simultaneously.')
 end
 
 % Sequence of unique values to shuffle
@@ -241,6 +258,28 @@ nB = size(Bset,2);
 
 % Sort back to the original order
 Bset = sortrows(Bset);
+
+% If the user wants only highest or lowest Hamming distances
+Hamm = sum(bsxfun(@ne,Bset(:,1),Bset),1);
+if ~ isempty(highestH),
+    nB = ceil(nB.*highestH);
+    [~,idx] = sort(Hamm(:),'descend');
+    [~,idxback] = sort(idx);
+    Hidx = false(size(idx));
+    Hidx(1:nB-1) = true;
+    Hidx = Hidx(idxback);
+    Hidx(1) = true;
+    Bset = Bset(:,Hidx);
+end
+if ~ isempty(lowestH),
+    nB = ceil(nB.*lowestH);
+    [~,idx] = sort(Hamm(:),'ascend');
+    [~,idxback] = sort(idx);
+    Hidx = false(size(idx));
+    Hidx(1:nB) = true;
+    Hidx = Hidx(idxback);
+    Bset = Bset(:,Hidx);
+end
 
 % Compute some metrics
 if nargout == 3,
