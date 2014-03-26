@@ -172,9 +172,9 @@ else
     fprintf('-savemetrics : Save a csv file with various permutation metrics.\n');
     fprintf('\n');
     fprintf('-seed <positive> : Seed used for the random number generator. Use a\n');
-    fprintf('	positive integer up to 232^. Default is 0. To start with a random\n');
-    fprintf('	number, use the word twist instead of the integer. Note that a\n');
-    fprintf('	given seed used in matlab isn''t equivalent to the same seed used\n');
+    fprintf('	positive integer up to 2^32. Default is 0. To start with a random\n');
+    fprintf('	number, use the word ''twist'' instead of the integer. Note that a\n');
+    fprintf('	given seed used in Matlab isn''t equivalent to the same seed used\n');
     fprintf('	in Octave.\n');
     fprintf('\n');
     fprintf('-demean : Mean center the data, as well as all columns of the design\n');

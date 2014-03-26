@@ -21,13 +21,15 @@ function Pnew = palm_swapfmt(Pset)
 
 if iscell(Pset),
     Pnew = zeros(size(Pset{1},1),numel(Pset));
+    I = (1:size(Pset{1},1))';
     for p = 1:numel(Pset),
-        Pnew(:,p) = palm_perm2idx(Pset{p});
+        Pnew(:,p) = Pset{p}*I;
     end
     if size(unique(abs(Pnew)','rows'),1) == 1;
         Pnew = sign(Pnew);
     end
 else
+    P = speye(size(Pset,1));
     Pnew = cell(size(Pset,2),1);
     for p = 1:size(Pset,2),
         sgn = sign(Pset(:,p));
@@ -35,7 +37,7 @@ else
         if all(true(size(idx)) == idx),
             Pnew{p} = sparse(diag(sgn));
         else
-            Pnew{p} = sparse(diag(sgn))*palm_idx2perm(idx);
+            Pnew{p} = sparse(diag(sgn))*P(idx,:);
         end
     end
 end

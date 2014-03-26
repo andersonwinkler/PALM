@@ -16,18 +16,36 @@ WHICH_TO_RUN=1
 
 # If Octave isn't in the path, or to use a specific version,
 # add here the path to the Octave executable binary:
-OCTAVEPATH=""
+OCTAVEPATH=/usr/bin
 
 # If Matlab isn't in the path, or to use a specific version,
 # add here the path to the Matlab executable binary:
-MATLABPATH=/Applications/MATLAB_R2013b.app/bin/
+#MATLABPATH=/Applications/MATLAB_R2013b.app/bin/
 #MATLABPATH=/opt/11b/bin/
+MATLABPATH=/usr/local/bin/
 
 # =========================================================================
 # Normally there is no need to edit below this line:
 
 # Locate PALM
-PALMDIR=$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)
+cmdfull=${BASH_SOURCE[0]}
+PALMDIR=$(dirname ${cmdfull})
+rlink=$(readlink ${cmdfull})
+cnt=1
+while [[ ${rlink} != "" ]] && [[ ${cnt} -lt 100 ]]; do
+  dirnam=$(dirname ${rlink})
+  if [[ ${dirnam:0} == "/" ]] ; then
+    PALMDIR=${dirnam}
+  else
+    PALMDIR="${PALMDIR}/${dirnam}"
+  fi
+  rlink=$(readlink ${rlink})
+  cnt=$(expr ${cnt} + 1)
+done
+if [[ ${cnt} -eq 100 ]] ; then
+  echo "Error: Too many levels."
+  exit 1
+fi
 
 # Command to run inside either Octave or Matlab
 RUNCMD="addpath('$PALMDIR'); palm $@ ; exit" 

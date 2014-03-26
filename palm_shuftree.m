@@ -3,10 +3,10 @@ function [Bset,nB,mtr] = palm_shuftree(varargin)
 % that generates a sigle set of permutations. It can also generate
 % only permutations with sign-flipping depending on the input
 % arguments.
-% 
+%
 % Usage (style 1)
 % [Bset,nB] = palm_shuftree(Ptree,nP0,CMC,EE,ISE,idxout)
-% 
+%
 % Inputs:
 % - Ptree   : Permutation tree.
 % - nP0     : Requested number of permutations.
@@ -20,19 +20,19 @@ function [Bset,nB,mtr] = palm_shuftree(varargin)
 % - idxout  : (Optional) If true, the output isn't a cell
 %             array with permutation matrices, but an array
 %             with permutation indices.
-% 
+%
 % Outputs:
 % - Bset    : Set of permutations and/or sign flips.
 % - nB      : Number of permutations and/or sign-flips.
-% 
-% 
+%
+%
 % Usage (style 2, to be used by the PALM main function):
 % [Bset,nB,metr] = palm_shuftree(opts,plm)
-% 
+%
 % Inputs:
 % - opts    : Struct with PALM options
 % - plm     : Struct with PALM data
-% 
+%
 % Outputs:
 % - Bset    : Set of permutations and/or sign flips.
 % - nB      : Number of permutations and/or sign-flips.
@@ -200,14 +200,14 @@ else
         [pidx,sidx] = ind2sub([nP nS],idx);
         for b = 2:nP0,
             Bset{b} = Pset{pidx(b)} * Sset{sidx(b)};
-        end 
+        end
     end
 end
 nB = numel(Bset);
 
 % In the draft mode, the permutations can't be in lexicographic
 % order, but entirely shuffled.
-if nargin == 2 && opts.draft,
+if nargin >= 2 && opts.draft,
     Bset2 = cell(size(Bset));
     [~,idx] = sort(rand(nB,1));
     for p = 2:nB,
@@ -218,23 +218,12 @@ end
 
 % If the desired outputs are permutation indices instead
 % of permutation matrices, output them
-if idxout || ...
-        (nargout == 3 && nargin == 2) || ...
-        (~isempty(highestH) || ~isempty(lowestH)),
+if idxout || ... % indices out instead of a cell array
+        (nargout == 3 && nargin == 2) || ...  % save metrics
+        (~isempty(highestH) || ~isempty(lowestH)), % select by Hamming
     
-    % Convert formats if needed.
+    % Convert formats
     Bidx = palm_swapfmt(Bset);
-    
-    % Compute some metrics
-    if nargout == 3,
-        Ptree1 = palm_tree(plm.EB,ones(size(seq)));
-        mtr = zeros(6,1);
-        [mtr(1),mtr(2),mtr(4)] = ...
-            palm_metrics(Ptree,seq,whatshuf2);
-        [~,~,mtr(3)] = ...
-            palm_metrics(Ptree1,ones(size(seq)),whatshuf2);
-        [mtr(5),mtr(6)] = palm_metrics(Bidx,seq);
-    end
     
     % Select permutation according to the Hamming distance
     % If the user wants only highest or lowest Hamming distances
@@ -247,11 +236,8 @@ if idxout || ...
         Hidx(1:nB-1) = true;
         Hidx = Hidx(idxback);
         Hidx(1) = true;
-        if idxout,
-            Bidx = Bidx(:,Hidx);
-        else
-            Bset = Bset(Hidx);
-        end
+        Bidx = Bidx(:,Hidx);
+        Bset = Bset(Hidx);
     end
     if ~ isempty(lowestH),
         nB = ceil(nB.*lowestH);
@@ -260,11 +246,19 @@ if idxout || ...
         Hidx = false(size(idx));
         Hidx(1:nB) = true;
         Hidx = Hidx(idxback);
-        if idxout,
-            Bidx = Bidx(:,Hidx);
-        else
-            Bset = Bset(Hidx);
-        end
+        Bidx = Bidx(:,Hidx);
+        Bset = Bset(Hidx);
+    end
+    
+    % Compute some metrics
+    if nargout == 3,
+        Ptree1 = palm_tree(plm.EB,ones(size(seq)));
+        mtr = zeros(6,1);
+        [mtr(1),mtr(2),mtr(4)] = ...
+            palm_metrics(Ptree,seq,whatshuf2);
+        [~,~,mtr(3)] = ...
+            palm_metrics(Ptree1,ones(size(seq)),whatshuf2);
+        [mtr(5),mtr(6)] = palm_metrics(Bidx,seq);
     end
     
     % Output as indices if needed
