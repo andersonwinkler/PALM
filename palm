@@ -21,8 +21,8 @@ OCTAVEPATH=/usr/bin
 # If Matlab isn't in the path, or to use a specific version,
 # add here the path to the Matlab executable binary:
 #MATLABPATH=/Applications/MATLAB_R2013b.app/bin/
-#MATLABPATH=/opt/11b/bin/
-MATLABPATH=/usr/local/bin/
+MATLABPATH=/opt/13a/bin/
+#MATLABPATH=/usr/local/bin/
 
 # =========================================================================
 # Normally there is no need to edit below this line:

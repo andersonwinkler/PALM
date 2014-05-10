@@ -11,5 +11,5 @@ function y = palm_isoctave
 persistent palm_isoct;
 if isempty(palm_isoct),
     palm_isoct = exist('OCTAVE_VERSION','builtin') ~= 0;
-end;
+end
 y = palm_isoct;

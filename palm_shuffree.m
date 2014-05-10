@@ -84,6 +84,9 @@ seqS = sortrows(horzcat(seq,(1:N)'));
 U    = unique(seqS(:,1));
 nU   = numel(U);
 
+% Logs, to help later
+lfac = palm_factorial(N);
+
 % Number of unique permutations & sign flips
 maxP  = 1;
 maxS  = 1;
@@ -94,17 +97,17 @@ if EE,
     for u = 1:nU,
         nrep(u) = sum(seqS(:,1) == U(u));
     end
-    maxP = factorial(N)/prod(factorial(nrep));
+    lmaxP = floor(lfac(N+1) - sum(lfac(nrep+1)));
+    maxP = exp(lmaxP);
     if maxP > 1.7976931348623158e308,
         fprintf('Number of possible permutations is >= 1.7976931348623158e308.\n');
     else
         fprintf('Number of possible permutations is %g.\n',maxP);
     end
-    lfac  = palm_factorial(N);
-    lmaxP = lfac(N+1) - sum(lfac(nrep+1));
 end
 if ISE,
-    maxS = 2^N;
+    lmaxS = N * log(2);
+    maxS = exp(lmaxS);
     if maxS >= 2^52,
         fprintf('Number of possible sign-flips is >= 2^52.\n');
         if ~ EE && (nP0 == 0 || nP0 > 2^52),
@@ -113,7 +116,6 @@ if ISE,
     else
         fprintf('Number of possible sign-flips is %d.\n',maxS);
     end
-    lmaxS = N * log(2);
 end
 maxB  =  maxP *  double(maxS);
 lmaxB = lmaxP + lmaxS;

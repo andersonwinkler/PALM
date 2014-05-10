@@ -12,8 +12,8 @@ if palm_isoctave,
     sigterm_dumps_octave_core(0);
     
     % If running as a script, take the input arguments
-    cmdname = program_invocation_name();
-    if ~ strcmpi(cmdname(end-5:end),'octave'),
+    [~,cmdname,~] = fileparts(program_invocation_name());
+    if ~ strcmpi(cmdname(1:6),'octave'),
         varargin = argv();
     end
     

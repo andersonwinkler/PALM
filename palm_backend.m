@@ -369,7 +369,7 @@ for c = 1:plm.nC,
     
     % Define the set of permutations. For ter Braak and Manly, this is
     % defined just for the 1st contrast, not for the others.
-    if c == 1 || ~ any(strcmpi(opts.rmethod,{'terbraak','manly'})),
+    if c == 1 || ~ ( any(strcmpi(opts.rmethod,{'terbraak','manly'})) || opts.corrcon),
         if isempty(plm.EB),
             if opts.savemetrics,
                 [plm.tmp.Pset,plm.nP(c),plm.metr{c}] =  ...
@@ -547,8 +547,8 @@ for c = 1:plm.nC,
             
             % Save the unpermuted statistic if z-score
             if opts.zstat
-                plm.Gname{c} = sprintf('z%s',plm.Gname{c});
                 if p == 1,
+                    plm.Gname{c} = sprintf('z%s',plm.Gname{c});
                     palm_quicksave(G{y,c},0,opts,plm,y,c, ...
                         sprintf('%s_%s_%s_mod%d_con%d', ...
                         opts.o,plm.Ykindstr{y},plm.Gname{c},y,c));
@@ -1635,29 +1635,40 @@ function [G,df2] = fastv(M,psi,res,plm)
 
 m = size(res,2);
 W = zeros(plm.nVG,m);
+den = zeros(1,m);
 if plm.tmp.evperdat,
     r = 1;
     dRmb = zeros(plm.nVG,m);
+    cte = zeros(1,m);
+    for b = 1:plm.nVG,
+        bidx = plm.VG == b;
+        dRmb(b,:) = sum(plm.tmp.dRm(bidx,:),1);
+        W(b,:) = dRmb(b,:)./sum(res(bidx,:).^2,1);
+        Mb = sum(M(bidx,:).*M(bidx,:),1);
+        cte = cte + Mb.*W(b,:);
+        W(b,:) = W(b,:)*sum(bidx);
+    end
+    for t = 1:m,
+        den(t) = 1./(reshape(cte(:,t),[r r]));
+    end
+    G = psi./sqrt(den);
 else
     r = size(M,2);
     dRmb = zeros(plm.nVG,1);
+    cte = zeros(r^2,m);
+    for b = 1:plm.nVG,
+        bidx = plm.VG == b;
+        dRmb(b) = sum(plm.tmp.dRm(bidx,:),1);
+        W(b,:) = dRmb(b)./sum(res(bidx,:).^2,1);
+        Mb = M(bidx,:)'*M(bidx,:);
+        cte = cte + Mb(:)*W(b,:);
+        W(b,:) = W(b,:)*sum(bidx);
+    end
+    for t = 1:m,
+        den(t) = plm.tmp.eC'/(reshape(cte(:,t),[r r]))*plm.tmp.eC;
+    end
+    G = plm.tmp.eC'*psi./sqrt(den);
 end
-
-cte = zeros(r^2,m);
-for b = 1:plm.nVG,
-    bidx = plm.VG == b;
-    dRmb(b,:) = sum(plm.tmp.dRm(bidx,:),1);
-    W(b,:) = dRmb(b,:)./sum(res(bidx,:).^2,1);
-    Mb = sum(M(bidx,:).*M(bidx,:),1);
-    cte = cte + Mb.*W(b,:);
-    W(b,:) = W(b,:)*sum(bidx);
-end
-
-den = zeros(1,m);
-for j = 1:m,
-    den(j) = 1./(reshape(cte(:,j),[r r]));
-end
-G = psi./sqrt(den);
 
 bsum = zeros(1,m);
 sW1 = sum(W,1);

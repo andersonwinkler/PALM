@@ -203,8 +203,8 @@ else
     fprintf('	that have their own, exclusive regressor, but which don''t belong\n');
     fprintf('	to any contrast.\n');
     fprintf('\n');
-    fprintf('-removevgsize1 : Remove from the data and design those observations\n');
-    fprintf('	that are in VGs of size 1.\n');
+    fprintf('-removevgbysize <integer> : Remove from the data and design those\n');
+    fprintf('	observations that are in VGs of size smaller or equal than specified.\n');
     fprintf('\n');
     fprintf('-zstat : Convert the original statistic (t, F, v, G, r, R2, or any of\n');
     fprintf('	the MV statistics) to a normally distributed, z-statistic.\n');
@@ -225,7 +225,7 @@ else
     fprintf('_____________________________________\n');
     fprintf('Anderson M. Winkler\n');
     fprintf('FMRIB / Univ. of Oxford\n');
-    fprintf('Mar/2014\n');
+    fprintf('Apr/2014\n');
     fprintf('http://brainder.org\n');
 end
 

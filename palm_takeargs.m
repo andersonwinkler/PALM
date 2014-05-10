@@ -251,7 +251,7 @@ while a <= narginx,
             
         case '-tfce2D',
             
-            % Do TFCE in 2D mode?
+            % Shortcut for -tfce_H 2 -tfce_E 1 -tfce_C 26, i.e., parameters for TFCE in 2D mode
             opts.tfce.H      = 2;
             opts.tfce.E      = 1;
             opts.tfce.conn   = 26;
@@ -613,12 +613,15 @@ while a <= narginx,
             opts.removeignored = true;
             a = a + 1;
             
-        case '-removevgsize1',
+        case '-removevgbysize',
             
             % Remove from the analysis observations that are the only
             % in their variance group.
-            opts.removevgsize1 = true;
-            a = a + 1;
+            opts.removevgbysize = vararginx{a+1};
+            if ischar(opts.removevgbysize),
+                opts.removevgbysize = str2double(opts.removevgbysize);
+            end
+            a = a + 2;
             
         case '-zstat',
             
@@ -764,6 +767,10 @@ if any([ ...
             opts.tfce_mv.do]'),
         opts.spatial_mv = true;
     end
+end
+
+if opts.spatial && palm_isoctave,
+    pkg load image
 end
 
 % No FWER or NPC if using draft mode
@@ -1442,15 +1449,15 @@ if opts.removeignored,
 end
 
 % Remove the variance groups with just 1 observation?
-if plm.nVG > 1 && ~ opts.removevgsize1 && (opts.vgdemean || opts.ev4vg) && ...
+if plm.nVG > 1 && ~ opts.removevgbysize && (opts.vgdemean || opts.ev4vg) && ...
         any(sum(bsxfun(@eq,plm.VG,unique(plm.VG)'),1) == 1),
         warning([...
         'The options ''-vgdemean'' and ''-ev4vg'' require that observations\n' ...
         '         in variance groups of size 1 are removed.\n' ...
         '         Enabling the option ''-removevgsize1''%s.'],'');
-    opts.removevgsize1 = true;
+    opts.removevgbysize = true;
 end
-if ~ opts.removevgsize1,
+if ~ opts.removevgbysize,
     tmpwarned = false;
     for u = 1:plm.nVG,
         if sum((plm.VG == u),1) == 1,
@@ -1464,11 +1471,11 @@ if ~ opts.removevgsize1,
         end
     end
 end
-if opts.removevgsize1,
+if opts.removevgbysize > 0,
     
     % Indices of the observations to keep
     uVG = unique(plm.VG)';
-    idxvg = sum(bsxfun(@eq,plm.VG,uVG),1) == 1;
+    idxvg = sum(bsxfun(@eq,plm.VG,uVG),1) <= opts.removevgbysize;
     idx   = any(bsxfun(@eq,plm.VG,uVG(~idxvg)),2);
     
     % Modify all data as needed
