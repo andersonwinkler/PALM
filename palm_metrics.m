@@ -5,7 +5,7 @@ function varargout = palm_metrics(varargin)
 % 
 % Usage:
 % [lW,lW0,C]   = palm_metrics(Ptree,X,stype)
-% [Hamm,HammX] = palm_metrics(Pset,X)
+% [Hamm,HammX,Eucl,EuclX] = palm_metrics(Pset,X)
 % 
 % Inputs:
 % - Ptree : Permutation tree.
@@ -38,6 +38,8 @@ function varargout = palm_metrics(varargin)
 %           elements in X. If X isn't supplied, or if X has no ties,
 %           or if X is the same used originally to create the permutation
 %           set, Hamm and HammX are the same.
+% - Eucl  : Same as Hamm, but using the Euclidean distance.
+% - EuclX : Same as HammX, but using the Euclidean distance.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -52,7 +54,7 @@ if iscell(varargin{1}),
     Ptree  = varargin{1};
     N      = numel(palm_permtree(Ptree,1,false,true));
 else
-    dowhat = 'hamming';
+    dowhat = 'distances';
     Pset   = varargin{1};
     N      = size(Pset,1);
 end
@@ -116,12 +118,15 @@ switch dowhat,
             varargout{3} = hhcomplexity(Ptree,1) - 1;
         end
         
-    case 'hamming',
+    case 'distances',
         
         % Average change per permutation, i.e., average
         % Hamming distance.
         varargout{1} = mean(sum(bsxfun(@ne,Pset(:,1),Pset),1),2);
         
+        % Average Euclidean distance per permutation.
+        varargout{3} = mean(sum(bsxfun(@minus,Pset(:,1),Pset).^2,1).^.5,2);
+
         % Now take ties in X into account:
         if strcmpi(stype,'perms'),
             XP = X(Pset);
@@ -132,12 +137,14 @@ switch dowhat,
             XP = sign(Pset).*XP;
         end
         varargout{2} = mean(sum(bsxfun(@ne,XP(:,1),XP),1),2);
+        varargout{4} = mean(sum(bsxfun(@minus,XP(:,1),XP).^2,1).^.5,2);
 end
 
 % ==============================================================
 function D = hhcomplexity(Ptree,D)
 % Computes recursively the Huberman & Hogg complexity.
 % For the 1st iteration, D = 1.
+
 for u = 1:size(Ptree,1),
     if isnan(Ptree{u,1}(1)),
         k = size(Ptree{u,3},1);

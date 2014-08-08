@@ -5,7 +5,11 @@ opts = palm_defaults;
 
 % As varargin is actually from another function, fix it.
 if nargin == 1,
-    vararginx = palm_configrw(varargin{1});
+    if exist(varargin{1},'file'),
+        vararginx = palm_configrw(varargin{1});
+    else
+        error('Unknown option or file not found: %s',varargin{1});
+    end
 else
     vararginx = varargin;
     idxa = find(strcmpi(vararginx,'-o'));
@@ -13,6 +17,10 @@ else
         cfgname = horzcat(opts.o,'_palmconfig.txt');
     else
         cfgname = horzcat(vararginx{idxa+1},'_palmconfig.txt');
+    end
+    [opth,~,~] = fileparts(cfgname);
+    if ~isempty(opth) && ~exist(opth,'dir'),
+        mkdir(opth);
     end
     palm_configrw(vararginx,cfgname);
 end
@@ -30,14 +38,19 @@ opts.s   = cell(Ns,1);  % Surface file(s)
 opts.d   = cell(Nd,1);  % Design file(s)
 opts.t   = cell(Nt,1);  % t contrast file(s)
 opts.f   = cell(Nf,1);  % F contrast file(s)
-opts.eb  = [];          % File with definition of exchangeability blocks
-opts.vg  = [];          % File with definition of variance groups
-opts.EE  = [];          % To be filled below
-opts.ISE = [];          % To be filled below
+opts.eb       = [];     % File with definition of exchangeability blocks
+opts.vg       = [];     % File with definition of variance groups
+opts.EE       = false;  % To be filled below (don't edit this here!)
+opts.ISE      = false;  % To be filled below (don't edit this here!)
+opts.within   = false;  % To be filled below (don't edit this here!)
+opts.whole    = false;  % To be filled below (don't edit this here!)
+opts.conlist  = [];     % File with the list of contrasts to be performed
+opts.conskipcount = 0;  % When saving the contrasts, skip how many from 1?
+opts.singlevg = true;   % Make sure that sigle VG will be used if nothing is supplied (don't edit this here!)
 
 % These are to be incremented below
 a = 1; i = 1; m = 1; d = 1;
-t = 1; f = 1; s = 1; 
+t = 1; f = 1; s = 1;
 
 % Remove trailing empty arguments. This is useful for some Octave versions.
 while numel(vararginx) > 0 && isempty(vararginx{1}),
@@ -48,6 +61,12 @@ narginx = numel(vararginx);
 % Take the input arguments
 while a <= narginx,
     switch vararginx{a},
+        case {'-help','-?','-basic','-advanced'},
+            
+            % Do nothing, as these options are parsed separately,
+            % and should anyway be given without any other argument.
+            a = a + 1;
+            
         case '-i',
             
             % Get the filenames for the data.
@@ -75,7 +94,7 @@ while a <= narginx,
             opts.d{d} = vararginx{a+1};
             d = d + 1;
             a = a + 2;
-                        
+            
         case '-t',
             
             % Get the t contrast files.
@@ -90,16 +109,43 @@ while a <= narginx,
             f = f + 1;
             a = a + 2;
             
+        case '-conlist',
+            
+            % List of contrasts that will actually be performed, from a
+            % text file
+            opts.conlist = varargin{a+1};
+            a = a + 2;
+            
+        case '-conskipcount',
+            
+            % Numbers to skip when saving the contrasts
+            opts.conskipcount = vararginx{a+1};
+            if ischar(opts.conskipcount),
+                opts.conskipcount = str2double(opts.concountskip);
+            end
+            a = a + 2;
+            
+        case '-fonly',
+            
+            % Run only the F-contrasts
+            opts.fonly = true;
+            a = a + 1;
+            
         case '-eb',
             
             % Get the exchangeability blocks file.
             opts.eb = vararginx{a+1};
             a = a + 2;
             
-        case '-vg',
+        case '-vg'
             
             % Get the variance groups file.
             opts.vg = vararginx{a+1};
+            if ischar(opts.vg) && ...
+                    ~any(strcmpi(opts.vg,{'auto','automatic','default'})),
+                opts.singlevg = false;
+                opts.vg = 'auto';
+            end
             a = a + 2;
             
         case '-o',
@@ -198,7 +244,7 @@ while a <= narginx,
                 opts.clusterm_npc.thr = str2double(opts.clusterm_npc.thr);
             end
             a = a + 2;
-             
+            
         case '-cmv',
             
             % Threshold for cluster extent, MV
@@ -251,7 +297,8 @@ while a <= narginx,
             
         case '-tfce2D',
             
-            % Shortcut for -tfce_H 2 -tfce_E 1 -tfce_C 26, i.e., parameters for TFCE in 2D mode
+            % Shortcut for -tfce_H 2 -tfce_E 1 -tfce_C 26,
+            % i.e., parameters for TFCE in 2D mode
             opts.tfce.H      = 2;
             opts.tfce.E      = 1;
             opts.tfce.conn   = 26;
@@ -283,11 +330,17 @@ while a <= narginx,
                 opts.tfce.conn = str2double(opts.tfce.conn);
             end
             a = a + 2;
-                       
-        case '-sb',
             
-            % Define whether should permute blocks as a whole (-sb) or not
-            opts.SB = true;
+        case '-within',
+            
+            % Define whether should permute blocks as a whole or not
+            opts.within = true;
+            a = a + 1;
+            
+        case '-whole',
+            
+            % Define whether should permute blocks as a whole or not
+            opts.whole = true;
             a = a + 1;
             
         case '-ee',
@@ -300,21 +353,23 @@ while a <= narginx,
         case '-ise',
             
             % Independent and symmetric errors (ISE)?
-            % If yes, this means sign-flippings.            
+            % If yes, this means sign-flippings.
             opts.ISE = true;
             a = a + 1;
             
-        case '-cmc',
+        case '-cmcp',
             
-            % Define whether Conditional Monte Carlo should be used or not
-            opts.CMC = true;
+            % Define whether Conditional Monte Carlo should be used or not,
+            % that is, ignoring repeated elements in the permutation set.
+            opts.cmcp = true;
             a = a + 1;
             
-        case '-igrepx',
+        case '-cmcx',
             
             % Define whether repeated rows in X should be ignored or not
-            % when defining the permutations
-            opts.igrepx = true;
+            % when defining the permutations, which constitutes another
+            % form of CMC
+            opts.cmcx = true;
             a = a + 1;
             
         case '-twotail',
@@ -322,7 +377,7 @@ while a <= narginx,
             % Do a two-tailed test for all t-contrasts?
             opts.twotail = true;
             a = a + 1;
-                       
+            
         case '-corrmod',
             
             % Correct over modalities.
@@ -386,7 +441,7 @@ while a <= narginx,
                     'The option -rmethod requires a method to be specified.\n'...
                     'Consult the documentation.']);
             end
-
+            
             
         case '-npc',
             
@@ -520,11 +575,11 @@ while a <= narginx,
                 methidx = strcmpi(vararginx{a+1},methlist);
                 
                 % Check if method exists, and load extra parameters if needed
-                if ~any(methidx);
-                    error('Multivariate statistic "%s" unknown.',vararginx{a+1});
-                else
+                if any(methidx);
                     opts.mvstat = methlist{methidx};
                     a = a + 2;
+                else
+                    error('Multivariate statistic "%s" unknown.',vararginx{a+1});
                 end
             end
             
@@ -566,7 +621,40 @@ while a <= narginx,
             
             % Inverse-normal transformation?
             opts.inormal = true;
-            a = a + 1;
+            
+            % Take the parameters given to -inormal
+            parms = {};
+            if nargin - a >= 1,
+                if ~strcmp(vararginx{a+1}(1),'-'),
+                    parms{1} = vararginx{a+1};
+                end
+            end
+            if nargin - a >= 2,
+                if ~strcmp(vararginx{a+2}(1),'-'),
+                    parms{2} = vararginx{a+2};
+                end
+            end
+            a = a + 1 + numel(parms);
+            
+            % Then modify the variables accordingly
+            methlist = {   ...
+                'Blom',    ...
+                'Tukey',   ...
+                'Bliss',   ...
+                'Waerden', ...
+                'SOLAR'};
+            for p = 1:numel(parms),
+                methidx = strcmpi(parms{p},methlist);
+                if any(methidx);
+                    opts.inormal_meth = parms{p};
+                elseif any(parms{p},{'quali','qualitative','discrete'}),
+                    opts.inormal_quanti = false;
+                elseif any(parms{p},{'quanti','quantitative','continuous'}),
+                    opts.inormal_quanti = true;
+                else
+                    error('Parameter "%s" unknown for the -inormal option.',parms{p});
+                end
+            end
             
         case '-seed'
             
@@ -591,18 +679,11 @@ while a <= narginx,
             % a global intercept, if any, from the design.
             opts.vgdemean = true;
             a = a + 1;
-                        
+            
         case '-ev4vg',
             
             % Add to the design matrix one EV for each variance group.
             opts.ev4vg = true;
-            a = a + 1;
-            
-        case '-singlevg',
-            
-            % Use a single VG, overriding the automatic definitions
-            % from the blocks.
-            opts.singlevg = true;
             a = a + 1;
             
         case '-removeignored',
@@ -647,7 +728,13 @@ while a <= narginx,
             opts.evperdat = true;
             a = a + 1;
             
-        case '-pmethod', % removed from the help
+        case '-transposedata',
+            
+            % Transpose the data if it's 2D?
+            opts.transposedata = true;
+            a = a + 1;
+            
+        case '-pmethod', % not in the help
             
             % Which method to use for to partition the model?
             if nargin > a,
@@ -668,13 +755,7 @@ while a <= narginx,
                     'Consult the documentation.']);
             end
             
-        case '-transposedata',
-            
-            % Transpose the data if it's 2D?
-            opts.transposedata = true;
-            a = a + 1;
-            
-        case '-highestH',
+        case '-highestH', % not in the help
             
             % Use only the perms with the highest Hamming distance?
             opts.highestH = vararginx{a+1};
@@ -683,7 +764,7 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-lowestH',
+        case '-lowestH', % not in the help
             
             % Use only the perms with the lowest Hamming distance?
             opts.lowestH = vararginx{a+1};
@@ -705,7 +786,7 @@ end
 % A quick check for the case of 1 EV per column in Y.
 if opts.evperdat,
     if any([...
-            opts.igrepx
+            opts.cmcx
             opts.removeignored
             opts.ev4vg
             opts.pearson]),
@@ -1017,7 +1098,7 @@ for i = 1:Ni,
         % Sort out loading for the NIFTI class
         if strcmp(Ytmp.readwith,'nifticlass'),
             tmpmsk = plm.masks{i}.data(:)';
-
+            
             % Read each volume, reshape and apply the mask
             plm.Yset{i} = zeros(plm.N,sum(tmpmsk));
             for n = 1:plm.N,
@@ -1030,7 +1111,7 @@ for i = 1:Ni,
             plm.Yset{i} = palm_conv4to2(Ytmp.data);
         end
     end
-
+    
     % Check if the size of data is compatible with size of mask.
     % If read with the NIFTI class, this was already taken care of
     % and can be skipped.
@@ -1070,7 +1151,7 @@ for i = 1:Ni,
         end
     end
     plm.Yset{i} = plm.Yset{i}(:,maskydat);
-
+    
     % Prepare a string with a representative name for the kind of data,
     % i.e., voxel for volumetric data,
     switch Ytmp.readwith,
@@ -1180,7 +1261,7 @@ if opts.savemask,
     end
 end
 
-% If MV was selected, make sure that Y is full rank at each datapoint.
+% If MV was selected, make sure that Y is full rank.
 if opts.MV && ~ opts.noranktest,
     fprintf('Testing rank of the data (for MV tests). To skip, use -noranktest.\n')
     Y = cat(3,plm.Yset{:});
@@ -1194,12 +1275,12 @@ if opts.MV && ~ opts.noranktest,
     if any(failed),
         fname = sprintf('%s_%s_mv_illconditioned',...
             opts.o,plm.Ykindstr{1});
-    palm_quicksave(double(failed),0,opts,plm,[],[],fname);
-    error([
-        'One or more datapoints have ill-conditioned data. This makes\n' ...
-        'it impossible to run multivariate analyses as MANOVA/MANCOVA.\n' ...
-        'Please, see the ill-conditioned datapoints marked as 1 in the file:\n' ...
-        '%s.*\n'],fname); %#ok
+        palm_quicksave(double(failed),0,opts,plm,[],[],fname);
+        error([
+            'One or more datapoints have ill-conditioned data. This makes\n' ...
+            'it impossible to run multivariate analyses as MANOVA/MANCOVA.\n' ...
+            'Please, see these datapoints marked as 1 in the file:\n' ...
+            '%s.*\n'],fname); %#ok
     end
 end
 
@@ -1207,7 +1288,10 @@ end
 % modalities if the user requested
 if opts.inormal,
     for y = 1:plm.nY,
-        plm.Yset{y} = palm_inormal(plm.Yset{y},'Waerden');
+        plm.Yset{y} = palm_inormal( ...
+            plm.Yset{y},            ...
+            opts.inormal_meth,      ...
+            opts.inormal_quanti);
     end
 end
 
@@ -1216,13 +1300,8 @@ end
 % - if the user gives ISE only, it's ISE only
 % - if the user gives EE only, it's EE only
 % - if the user gives both, it's both
-if isempty(opts.EE) && isempty(opts.ISE),
+if ~opts.EE && ~opts.ISE,
     opts.EE  = true;
-    opts.ISE = false;
-elseif opts.ISE && isempty(opts.EE),
-    opts.EE  = false;
-elseif opts.EE  && isempty(opts.ISE),
-    opts.ISE = false;
 end
 
 % Read and assemble the design matrix.
@@ -1270,7 +1349,7 @@ end
 % Read and organise the contrasts.
 plm.Cset = cell(0);
 if Nt || Nf,
-
+    
     % There can't be more F than t contrast files
     if Nf > Nt,
         warning([...
@@ -1309,6 +1388,21 @@ if Nt || Nf,
             error('Invalid F contrast file: %s',opts.t{t});
         end
     end
+    nC = numel(plm.Cset);
+    
+    % If only some contrasts are to be run
+    if ~isempty(opts.conlist),
+        conlist = palm_miscread(opts.conlist);
+        if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
+            conlist = unique(conlist.data(:));
+            if min(conlist) < 1 || max(conlist) > nC,
+                error('Contrasts specified with ''-conlist'' are out of bounds.');
+            end
+            plm.Cset = plm.Cset(conlist);
+        else
+            error('Invalid file: %s',opts.conlist);
+        end
+    end
 else
     % If no constrasts were at all specified:
     if size(plm.M,2) == 1 || opts.evperdat,
@@ -1325,6 +1419,13 @@ else
         plm.Cset{1} = eye(size(plm.M,2));
     end
 end
+if opts.fonly,
+    for c = numel(plm.Cset):-1:1,
+        if rank(plm.Cset{c}) <= 1,
+            plm.Cset(c) = [];
+        end
+    end
+end
 plm.nC = numel(plm.Cset);
 for c = 1:plm.nC,
     if any(isnan(plm.Cset{c}(:))) || any(isinf(plm.Cset{c}(:))),
@@ -1339,7 +1440,7 @@ end
 % The partitioning needs to be done now, because some regression methods
 % may not be used if correction over contrasts is needed and the relevant
 % regressors aren't compatible with synchronised permutations/sign-flips
-if ~ opts.igrepx && ~ opts.evperdat,
+if ~ opts.cmcx && ~ opts.evperdat,
     plm.Xset = cell(plm.nC,1);
     seqtmp = zeros(plm.N,plm.nC);
     for c = 1:plm.nC,
@@ -1359,41 +1460,55 @@ if ~ opts.igrepx && ~ opts.evperdat,
         opts.rmethod = opts.rfallback;
     end
 elseif opts.evperdat
-    
+    % FIXME!!
 end
 
 % Read the exchangeability blocks. If none is specified, all observations
-% are assumed to be in the same big block. Also treat the legacy format of
+% are assumed to be in the same large block. Also treat the legacy format of
 % a single column for the EBs.
 if isempty(opts.eb),
-    %plm.EB = [ones(plm.N,1) (1:plm.N)'];
     plm.EB = [];
+    if opts.within || opts.whole,
+        warning([ ...
+            'Options -within and/or -whole ignored, because no file defining\n' ...
+            '         the exchangeability blocks was supplied (option -eb).\n' ...
+            '         Performing free shuffling.']); %#ok
+    end
 else
     plm.EB = palm_miscread(opts.eb);
     plm.EB = plm.EB.data;
     if isvector(plm.EB),
-        if opts.SB,  % whole-block shuffling
-            plm.EB = [+ones(plm.N,1) plm.EB(:)];
-        else         % within-block shuffling
-            plm.EB = [-ones(plm.N,1) plm.EB(:) (1:plm.N)'];
+        if opts.within && opts.whole, % within + whole block shuffling
+            plm.EB = [+ones(plm.N,1) +plm.EB(:) (1:plm.N)'];
+        elseif opts.whole             % whole-block shuffling
+            plm.EB = [+ones(plm.N,1) -plm.EB(:) (1:plm.N)'];
+        else                          % within-block shuffling (this is the default, and not meant to be changed)
+            plm.EB = [-ones(plm.N,1) +plm.EB(:) (1:plm.N)'];
         end
+    elseif opts.within || opts.whole,
+        warning([ ...
+            'Options -within and/or -whole ignored, as the file defining\n' ...
+            '         the exchangeability blocks (option -eb) already defines\n' ...
+            '         how the data should be shuffled.%s'],'');
     end
-    plm.EB = palm_reindex(plm.EB,'fixleaves'); 
+    plm.EB = palm_reindex(plm.EB,'fixleaves');
 end
 
 % Load/define the variance groups.
-if isempty(opts.vg),
-    % Generate an initial dependence tree, to be used to define variance groups.
-    % The tree used for the permutations later require the design matrix, and
-    % varies for each contrast -- all to be taken care of later.
-    if isempty(plm.EB) || opts.singlevg,
+if opts.singlevg,
+    % If single VG, it's all ones
+    plm.VG = ones(plm.N,1);
+elseif strcmpi(opts.vg,'auto'),
+    if isempty(plm.EB),
+        % If auto, but there are no exchangeability blocks, it's all ones too
         plm.VG = ones(plm.N,1);
     else
+        % Generate an initial dependence tree, to be used to define variance groups.
+        % The tree used for the permutations later require the design matrix, and
+        % varies for each contrast -- all to be taken care of later.
         Ptree  = palm_tree(plm.EB,(1:plm.N)');
         plm.VG = palm_ptree2vg(Ptree);
     end
-elseif opts.singlevg,
-    error('The option ''-singlevg'' cannot be used together with the option ''-vg''.');
 else
     % The automatic variance groups can be overriden if the user specified
     % a file with the custom definitions.
@@ -1403,10 +1518,9 @@ end
 [tmp,~,plm.VG] = unique(plm.VG);
 plm.nVG = numel(tmp);
 
-% MV can't be used if nVG>1 (pivotality loss), although NPC remains an
-% option
+% MV can't yet be used if nVG>1, although NPC remains an option
 if opts.MV && plm.nVG > 1,
-    error('There are more than 1 variance group. MV cannot be used.');
+    error('There are more than one variance group. MV cannot be used (but NPC can).');
 end
 
 % Remove observations marked to be ignored, i.e, those that
@@ -1451,7 +1565,7 @@ end
 % Remove the variance groups with just 1 observation?
 if plm.nVG > 1 && ~ opts.removevgbysize && (opts.vgdemean || opts.ev4vg) && ...
         any(sum(bsxfun(@eq,plm.VG,unique(plm.VG)'),1) == 1),
-        warning([...
+    warning([...
         'The options ''-vgdemean'' and ''-ev4vg'' require that observations\n' ...
         '         in variance groups of size 1 are removed.\n' ...
         '         Enabling the option ''-removevgsize1''%s.'],'');

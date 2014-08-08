@@ -34,9 +34,17 @@ end
 nargin = numel(varargin);
 
 % Print usage if no inputs are given
-if (nargin == 0) || strcmp(varargin{1},'-q'),
-    palm_help;
+if nargin == 0 || strcmp(varargin{1},'-q'),
+    palm_help('basic');
     return;
+elseif nargin == 1,
+    if any(strcmpi(varargin{1},{'-help','-?','-basic'})),
+        palm_help('basic');
+        return;
+    elseif strcmpi(varargin{1},'-advanced'),
+        palm_help('advanced');
+        return;
+    end
 end
 
 % Now run what matters

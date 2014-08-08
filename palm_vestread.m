@@ -2,7 +2,7 @@ function [M,PPH] = palm_vestread(filename)
 % Read an FSL "vest" file, e.g. design matrix,
 % t-contrasts or f-contrasts.
 %
-% M = vestread(filename);
+% M = palm_vestread(filename);
 %
 % filename : File name.
 % M        : Matrix.

@@ -21,6 +21,8 @@ function Z = palm_gtoz(G,df1,df2)
 % Jan/2014
 % http://brainder.org
 
+% Note that for speed, there's no argument checking.
+
 % If df2 is NaN, this is r or R^2
 if isnan(df2),
     
@@ -31,7 +33,7 @@ if isnan(df2),
     elseif df1 > 1,
         % If rank(C) > 1, i.e., df1 > 1, this is R^2, so
         % use a probit transformation.
-        Z = norminv(G);        
+        Z = erfinv(2*G-1)*sqrt(2); %Z = norminv(G);
     end
 
 else
@@ -43,14 +45,14 @@ else
         % Deal with precision issues working on each
         % tail separately
         idx = G > 0;
-        Z( idx) = -norminv(tcdf(-G( idx),df2( idx)));
-        Z(~idx) =  norminv(tcdf( G(~idx),df2(~idx)));
+        Z( idx) = -erfinv(2*palm_gcdf(-G( idx),1,df2( idx))-1)*sqrt(2);
+        Z(~idx) =  erfinv(2*palm_gcdf( G(~idx),1,df2(~idx))-1)*sqrt(2);
         
     else
         
         % G-vals above the upper half are treated as
         % "upper tail"; otherwise, "lower tail".
-        thr = finv(.5,df1,df2);
+        thr = (1/betainv(.5,df2/2,df1/2)-1)*df2/df1;
         idx = G > thr;
         
         % Convert G-distributed variables to Beta-distributed
@@ -60,8 +62,8 @@ else
         b = df2/2;
         
         % Convert to Z through a Beta incomplete function
-        Z( idx) = -norminv(betainc(1-B( idx),b(idx),a));
-        Z(~idx) =  norminv(betainc(  B(~idx),a,b(~idx)));
+        Z( idx) = -erfinv(2*betainc(1-B( idx),b( idx),a)-1)*sqrt(2);
+        Z(~idx) =  erfinv(2*betainc(  B(~idx),a,b(~idx))-1)*sqrt(2);
         
     end
 end

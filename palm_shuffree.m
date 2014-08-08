@@ -97,27 +97,24 @@ if EE,
     for u = 1:nU,
         nrep(u) = sum(seqS(:,1) == U(u));
     end
-    lmaxP = floor(lfac(N+1) - sum(lfac(nrep+1)));
+    lmaxP = lfac(N+1) - sum(lfac(nrep+1));
     maxP = exp(lmaxP);
-    if maxP > 1.7976931348623158e308,
-        fprintf('Number of possible permutations is >= 1.7976931348623158e308.\n');
+    if isinf(maxP),
+        fprintf('Number of possible permutations is exp(%g) = %d!.\n',lmaxP,N);
     else
-        fprintf('Number of possible permutations is %g.\n',maxP);
+        fprintf('Number of possible permutations is %g = %d!.\n',maxP,N);
     end
 end
 if ISE,
     lmaxS = N * log(2);
     maxS = exp(lmaxS);
-    if maxS >= 2^52,
-        fprintf('Number of possible sign-flips is >= 2^52.\n');
-        if ~ EE && (nP0 == 0 || nP0 > 2^52),
-            error('It''s not possible to run more than 2^52 sign-flips.')
-        end
+    if isinf(maxS),
+        fprintf('Number of possible sign-flips is exp(%g) = 2^%d.\n',lmaxS,N);
     else
-        fprintf('Number of possible sign-flips is %d.\n',maxS);
+        fprintf('Number of possible sign-flips is %g = 2^%d.\n',maxS,N);
     end
 end
-maxB  =  maxP *  double(maxS);
+maxB  =  maxP * maxS;
 lmaxB = lmaxP + lmaxS;
 
 % String for the screen output below
@@ -140,9 +137,9 @@ Sset = ones(N,1);
 
 % Generate the Pset and Sset
 if nP0 == 0 || nP0 >= maxB,
-    % Run exhaustively if the user requests too many permutations.
+    % Run exhaustively if the user requests more permutations than possible.
     % Note that here CMC is irrelevant.
-    fprintf('Running %g shufflings (%s).\n',maxB,whatshuf);
+    fprintf('Generating %g shufflings (%s).\n',maxB,whatshuf);
     if EE,
         Pset = horzcat(Pset,zeros(N,maxP-1));
         for p = 2:maxP,
@@ -151,15 +148,23 @@ if nP0 == 0 || nP0 >= maxB,
         end
     end
     if ISE,
-        Sset = palm_d2b(0:maxS-1,N)';
-        Sset(~~Sset) = -1;
-        Sset( ~Sset) =  1;
+        if N <= 52,
+            Sset = palm_d2b(0:maxS-1,N)';
+            Sset(~~Sset) = -1;
+            Sset( ~Sset) =  1;
+            Sset = flipud(Sset);
+        else
+            Sset = false(N,maxS);
+            for s = 2:maxS,
+                Sset(:,s) = palm_incrbin(Sset(:,s-1));
+            end
+        end
     end
 elseif nP0 < maxB,
     % Or use a subset of possible permutations. The nested conditions
     % are to avoid repetitions, and to compensate fewer flips with more
     % perms or vice versa as needed in the tight situations
-    fprintf('Running %g shufflings (%s).\n',nP0,whatshuf);
+    fprintf('Generating %g shufflings (%s).\n',nP0,whatshuf);
     if EE,
         if nP0 >= maxP,
             Pset = horzcat(Pset,zeros(N,maxP-1));
@@ -285,10 +290,10 @@ end
 
 % Compute some metrics
 if nargout == 3,
-    mtr             = zeros(6,1);
-    mtr(1:2)        = lmaxB;
-    mtr(4)          = 2^nU - 1;
-    [mtr(5),mtr(6)] = palm_metrics(Bset,seq,stype);
+    mtr      = zeros(6,1);
+    mtr(1:2) = lmaxB;
+    mtr(4)   = 2^nU - 1;
+    [mtr(5),mtr(6),mtr(7),mtr(8)] = palm_metrics(Bset,seq,stype);
 end
 
 % If the desired outputs are permutation matrices instead of indices

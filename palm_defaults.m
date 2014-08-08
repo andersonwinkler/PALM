@@ -3,11 +3,12 @@ function opts = palm_defaults
 % Define some defaults and organise all as a struct
 opts.o               = 'palm';          % Default output string
 opts.nP0             = 10000;           % Number of permutations
-opts.SB              = false;           % Whole block shuffling?
+opts.SB              = false;           % Whole block shuffling (for legacy format)?
 opts.lx              = true;            % Lexicographic permutations?
-opts.CMC             = false;           % Use Conditional Monte Carlo?
-opts.igrepx          = false;           % Ignore repeated values in X?
+opts.cmcp            = false;           % Use Conditional Monte Carlo (ignore repeated perms)?
+opts.cmcx            = false;           % Use Conditional Monte Carlo (ignore repeated elements in X)?
 opts.twotail         = false;           % Do a two-tailed t-test for the t-contrasts?
+opts.fonly           = false;           % Run only the F-contrasts?
 opts.pmethod         = 'Beckmann';      % Method to partition the model.
 opts.rmethod         = 'Freedman-Lane'; % Regression/permutation method.
 opts.rfallback       = 'terBraak';      % Regression/permutation method if correcting over contrasts
@@ -40,6 +41,8 @@ opts.useniiclass     = true;            % Use the NIFTI class (saves memory)
 opts.saveperms       = false;           % Save permutation images?
 opts.savemetrics     = false;           % Save permutation metrics?
 opts.inormal         = false;           % Do inverse-normal transformation?
+opts.inormal_meth    = 'Waerden';       % Method for the inverse-normal transformation.
+opts.inormal_quanti  = true;            % Treat inputs as quantitative for the inormal?
 opts.seed            = 0;               % Seed for the random number generator
 opts.demean          = false;           % Mean-center?
 opts.vgdemean        = false;           % Mean-center within VG?
@@ -54,3 +57,6 @@ opts.singlevg        = false;           % use a single VG (overrides automatic V
 opts.transposedata   = false;           % transpose data if 2D?
 opts.highestH        = [];              % fraction of highest Hamming to use
 opts.lowestH         = [];              % fraction of lowest Hamming to use
+
+% Note that there are no adjustable defaults for EE, ISE, whole or within.
+% These are hard coded (EE is default, within is also default).

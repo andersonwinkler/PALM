@@ -125,7 +125,7 @@ nU = size(Ptree,1);
 
 % For each branch of the current node
 for u = 1:nU,
-    if Ptree{u,2}(1) == 1,
+    if isempty(Ptree{u,2}),
         
         % If the branches at this node cannot be considered for
         % flipping, go to the deeper levels, if they exist.
@@ -143,11 +143,11 @@ for u = 1:nU,
         % If the branches at this node are to be considered
         % for sign-flippings (already being done or not)
         
-        if Ptree{u,2}(2) < Ptree{u,2}(1)-1,
+        if sum(Ptree{u,2}) < numel(Ptree{u,2}),
             % If the current branch can be flipped, but haven't
             % reached the last possibility yet, flip and break
             % the loop.
-            Ptree{u,2}(2) = Ptree{u,2}(2) + 1;
+            Ptree{u,2} = palm_incrbin(Ptree{u,2});
             incremented = true;
             if u > 1,
                 Ptree(1:u-1,:) = resetflips(Ptree(1:u-1,:));
@@ -168,10 +168,10 @@ function Ptree = resetflips(Ptree)
 % back to the original state
 
 for u = 1:size(Ptree,1),
-    if Ptree{u,2}(1) == 1 && size(Ptree{u,3},2) > 1,
+    if isempty(Ptree{u,2}) && size(Ptree{u,3},2) > 1,
         Ptree{u,3} = resetflips(Ptree{u,3});
     else
-        Ptree{u,2}(2) = 0;
+        Ptree{u,2} = false(size(Ptree{u,2}));
     end
 end
 
@@ -182,12 +182,12 @@ function Ptree = randomflip(Ptree)
 % For each branch of the current node
 nU = size(Ptree,1);
 for u = 1:nU,
-    if Ptree{u,2}(1) == 1 && size(Ptree{u,3},2) > 1,
+    if isempty(Ptree{u,2}) == 1 && size(Ptree{u,3},2) > 1,
         % Go down more levels
         Ptree{u,3} = randomflip(Ptree{u,3});
     else
         % Or make a random flip if no deeper to go
-        Ptree{u,2}(2) = randi(Ptree{u,2}(1)) - 1;
+        Ptree{u,2} = rand(size(Ptree{u,2})) > .5;
     end
 end
 
@@ -201,12 +201,11 @@ function P = pickflip(Ptree,P,sgn)
 nU = size(Ptree,1);
 if size(Ptree,2) == 3,
     for u = 1:nU,
-        if Ptree{u,2}(1) > 1,
-            bidx = palm_d2b(Ptree{u,2}(2),size(Ptree{u,3},1));
-            bidx(~~bidx) = -1;
-            bidx( ~bidx) =  1;
-        else
+        if isempty(Ptree{u,2}),
             bidx = sgn(u)*ones(size(Ptree{u,3},1),1);
+        else
+            bidx = double(~Ptree{u,2});
+            bidx(Ptree{u,2}) = -1;
         end
         P = pickflip(Ptree{u,3},P,bidx);
     end

@@ -33,9 +33,11 @@ if uselog,
             maxb = lmaxpermnode(Ptree,0);
         case 'flips',
             maxb = lmaxflipnode(Ptree,0);
+            maxb = maxb/log2(exp(1));
         case 'both',
             maxp = lmaxpermnode(Ptree,0);
             maxs = lmaxflipnode(Ptree,0);
+            maxs = maxs/log2(exp(1));
             maxb = maxp + maxs;
     end
 else
@@ -82,7 +84,7 @@ for u = 1:size(Ptree,1),
     if size(Ptree{u,3},2) > 1,
         ns = maxflipnode(Ptree{u,3},ns);
     end
-    ns = ns * Ptree{u,2}(1);
+    ns = ns * 2^length(Ptree{u,2});
 end
 
 % ==============================================================
@@ -113,10 +115,10 @@ np   = lfac(nS+1) - sum(lfac(cnt+1));
 % ==============================================================
 function ns = lmaxflipnode(Ptree,ns)
 % Number of sign-flips per node, recursive and
-% incremental.
+% incremental. Note the in/output are base2 logarithm.
 for u = 1:size(Ptree,1),
     if size(Ptree{u,3},2) > 1,
         ns = lmaxflipnode(Ptree{u,3},ns);
     end
-    ns = ns + log(Ptree{u,2}(1));
+    ns = ns + length(Ptree{u,2});
 end

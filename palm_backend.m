@@ -94,6 +94,9 @@ end
 % For each contrast.
 for c = 1:plm.nC,
     
+    % Counter that will be used when saving this contrast
+    csave = c + opts.conskipcount;
+    
     if ~ opts.evperdat,
         
         % Partition the model, now using the method chosen by the user
@@ -210,7 +213,7 @@ for c = 1:plm.nC,
     end
     
     % Ignore (or not) repeated elements in the design matrix
-    if opts.igrepx,
+    if opts.cmcx,
         plm.tmp.seq = (1:size(plm.tmp.X,1))';
     elseif opts.evperdat,
         plm.tmp.seq = (1:plm.N)';
@@ -251,7 +254,7 @@ for c = 1:plm.nC,
                 plm.Qname{c} = 'tsqstat';
                 fastmv  = @(M,psi,res)fasttsq(M,psi,res,plm);
                 pparamv = @(Q)fasttsqp(Q, ...
-                    plm.N-plm.tmp.rM,plm.nY);
+                    plm.N - plm.tmp.rM,plm.nY);
             elseif plm.rC(c) >  1 && plm.nVG == 1,
                 switch lower(opts.mvstat),
                     case 'wilks',
@@ -369,17 +372,19 @@ for c = 1:plm.nC,
     
     % Define the set of permutations. For ter Braak and Manly, this is
     % defined just for the 1st contrast, not for the others.
-    if c == 1 || ~ ( any(strcmpi(opts.rmethod,{'terbraak','manly'})) || opts.corrcon),
+    if c == 1 || ...
+            ~ (any(strcmpi(opts.rmethod,{'terbraak','manly'})) || ...
+            opts.corrcon),
         if isempty(plm.EB),
             if opts.savemetrics,
                 [plm.tmp.Pset,plm.nP(c),plm.metr{c}] =  ...
                     palm_shuffree(plm.tmp.seq,opts.nP0, ...
-                    opts.CMC,opts.EE,opts.ISE,false,    ...
+                    opts.cmcp,opts.EE,opts.ISE,false,    ...
                     opts.highestH,opts.lowestH);
             else
                 [plm.tmp.Pset,plm.nP(c)] =              ...
                     palm_shuffree(plm.tmp.seq,opts.nP0, ...
-                    opts.CMC,opts.EE,opts.ISE,false,    ...
+                    opts.cmcp,opts.EE,opts.ISE,false,    ...
                     opts.highestH,opts.lowestH);
             end
         else
@@ -404,7 +409,7 @@ for c = 1:plm.nC,
     if opts.saveperms,
         % It's faster to write directly as below than using dlmwrite and
         % palm_swapfmt.m
-        fid = fopen(sprintf('%s_con%d_permidx.csv',opts.o,c),'w');
+        fid = fopen(sprintf('%s_con%d_permidx.csv',opts.o,csave),'w');
         for p = 1:plm.nP(c),
             fprintf(fid,'%d,',palm_perm2idx(plm.tmp.Pset{p})');
             fseek(fid,-1,'eof');
@@ -415,14 +420,16 @@ for c = 1:plm.nC,
     
     % If the user requests, save the permutation metrics
     if opts.savemetrics,
-        fid = fopen(sprintf('%s_con%d_metrics.csv',opts.o,c),'w');
+        fid = fopen(sprintf('%s_con%d_metrics.csv',opts.o,csave),'w');
         fprintf(fid,[ ...
             'Log of max number of permutations given the tree (W),%f\n' ...
             'Log of max number of permutations if unrestricted (W0),%f\n' ...
             'Huberman & Hogg complexity (tree only),%d\n' ...
             'Huberman & Hogg complexity (tree & design),%d\n' ...
             'Average Hamming distance (tree only),%f\n' ...
-            'Average Hamming distance (tree & design),%f\n'], plm.metr{c});
+            'Average Hamming distance (tree & design),%f\n' ...
+            'Average Euclidean distance (tree only),%f\n' ...
+            'Average Euclidean distance (tree & design),%f\n'], plm.metr{c});
         fclose(fid);
     end
     
@@ -513,20 +520,20 @@ for c = 1:plm.nC,
                 if p == 1,
                     palm_quicksave(G{y,c},0,opts,plm,y,c, ...
                         sprintf('%s_%s_%s_mod%d_con%d', ...
-                        opts.o,plm.Ykindstr{y},plm.Gname{c},y,c));
+                        opts.o,plm.Ykindstr{y},plm.Gname{c},y,csave));
                     
                     % Save also the degrees of freedom for the unpermuted
                     if numel(df2{y,c}) == 1,
                         savedof(max(plm.rC(c),plm.rC0(c)),df2{y,c}, ...
                             sprintf('%s_%s_%s_mod%d_con%d_dof.txt', ...
-                            opts.o,plm.Ykindstr{y},plm.Gname{c},y,c));
+                            opts.o,plm.Ykindstr{y},plm.Gname{c},y,csave));
                     else
                         savedof(max(plm.rC(c),plm.rC0(c)),mean(df2{y,c}), ...
-                            sprintf('%s_%s_%s_mod%d_con%d_dof.txt', ...
-                            opts.o,plm.Ykindstr{y},plm.Gname{c},y,c));
+                            sprintf('%s_%s_%s_mod%d_con%d_meandof.txt', ...
+                            opts.o,plm.Ykindstr{y},plm.Gname{c},y,csave));
                         palm_quicksave(df2{y,c},0,opts,plm,y,c, ...
                             sprintf('%s_%s_%s_mod%d_con%d_dof', ...
-                            opts.o,plm.Ykindstr{y},plm.Gname{c},y,c));
+                            opts.o,plm.Ykindstr{y},plm.Gname{c},y,csave));
                     end
                 end
                 
@@ -534,7 +541,7 @@ for c = 1:plm.nC,
                 if opts.saveperms && ~ opts.draft,
                     palm_quicksave(G{y,c},0,opts,plm,y,c, ...
                         sprintf('%s_%s_%s_mod%d_con%d_perm%06d', ...
-                        opts.o,plm.Ykindstr{y},plm.Gname{c},y,c,p));
+                        opts.o,plm.Ykindstr{y},plm.Gname{c},y,csave,p));
                 end
             end
             
@@ -551,14 +558,14 @@ for c = 1:plm.nC,
                     plm.Gname{c} = sprintf('z%s',plm.Gname{c});
                     palm_quicksave(G{y,c},0,opts,plm,y,c, ...
                         sprintf('%s_%s_%s_mod%d_con%d', ...
-                        opts.o,plm.Ykindstr{y},plm.Gname{c},y,c));
+                        opts.o,plm.Ykindstr{y},plm.Gname{c},y,csave));
                 end
                 
                 % Save the stats for each permutation if that was asked
                 if opts.saveperms && ~ opts.draft,
                     palm_quicksave(G{y,c},0,opts,plm,y,c, ...
                         sprintf('%s_%s_%s_mod%d_con%d_perm%06d', ...
-                        opts.o,plm.Ykindstr{y},plm.Gname{c},y,c,p));
+                        opts.o,plm.Ykindstr{y},plm.Gname{c},y,csave,p));
                 end
             end
             
@@ -676,7 +683,7 @@ for c = 1:plm.nC,
             
             % Convert to zstat if that was asked
             if opts.zstat,
-                T{c} = -norminv(Tppara{c});
+                T{c} = -erfinv(2*Tppara{c}-1)*sqrt(2);
                 if p == 1,
                     plm.npcstr = horzcat('z',plm.npcstr);
                 end
@@ -687,7 +694,7 @@ for c = 1:plm.nC,
             if p == 1,
                 palm_quicksave(T{c},0,opts,plm,[],c, ...
                     sprintf('%s_%s_%s%s_con%d', ...
-                    opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,c));
+                    opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,csave));
             end
             
             % If the user wants to save the NPC statistic for each
@@ -695,7 +702,7 @@ for c = 1:plm.nC,
             if opts.saveperms,
                 palm_quicksave(T{c},0,opts,plm,[],c, ...
                     sprintf('%s_%s_%s%s_con%d_perm%06d', ...
-                    opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,c,p));
+                    opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,csave,p));
             end
             
             % Increment counters
@@ -725,7 +732,7 @@ for c = 1:plm.nC,
                 if opts.zstat,
                     Tzstat{c} = T{c};
                 else
-                    Tzstat{c} = -norminv(Tppara{c});
+                    Tzstat{c} = -erfinv(2*Tppara{c}-1)*sqrt(2);
                 end
             end
             
@@ -814,7 +821,7 @@ for c = 1:plm.nC,
             
             % Convert to zstat if that was asked
             if opts.zstat,
-                Q{c} = -norminv(Qppara{c});
+                Q{c} = -erfinv(2*Qppara{c}-1)*sqrt(2);
                 if p == 1,
                     plm.mvstr = horzcat('z',plm.mvstr);
                 end
@@ -824,7 +831,7 @@ for c = 1:plm.nC,
             if p == 1,
                 palm_quicksave(Q{c},0,opts,plm,[],c, ...
                     sprintf('%s_%s_%s%s_con%d', ...
-                    opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},c));
+                    opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},csave));
             end
             
             % In the "draft" mode, the Qpperm variable isn't a counter,
@@ -858,7 +865,7 @@ for c = 1:plm.nC,
                 if opts.saveperms,
                     palm_quicksave(Q{c},0,opts,plm,[],c, ...
                         sprintf('%s_%s_%s%s_con%d_perm%06d', ...
-                        opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},c,p));
+                        opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},csave,p));
                 end
                 if p == 1,
                     % In the first permutation, keep Q and start the counter.
@@ -878,7 +885,8 @@ for c = 1:plm.nC,
                     if opts.zstat,
                         Qzstat{c} = Q{c};
                     else
-                        Qzstat{c} = -norminv(Qppara{c});
+                        Qzstat{c} = -erfinv(2*Qppara{c}-1)*sqrt(2);
+                        
                     end
                 end
                 
@@ -934,13 +942,13 @@ for c = 1:plm.nC,
             P = (Gpperm{y,c}+1)./Gppermp{y,c};
             palm_quicksave(P,1,opts,plm,y,c, ...
                 sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                opts.o,plm.Ykindstr{y},plm.Gname{c},'uncp',y,c));
+                opts.o,plm.Ykindstr{y},plm.Gname{c},'uncp',y,csave));
             
             % Permutation p-value, FDR adjusted
             if opts.FDR,
                 palm_quicksave(fastfdr(P),1,opts,plm,y,c, ...
                     sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,plm.Ykindstr{y},plm.Gname{c},'fdrp',y,c));
+                    opts.o,plm.Ykindstr{y},plm.Gname{c},'fdrp',y,csave));
             end
         else
             
@@ -948,19 +956,19 @@ for c = 1:plm.nC,
             P = Gpperm{y,c}/plm.nP(c);
             palm_quicksave(P,1,opts,plm,y,c, ...
                 sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                opts.o,plm.Ykindstr{y},plm.Gname{c},'uncp',y,c));
+                opts.o,plm.Ykindstr{y},plm.Gname{c},'uncp',y,csave));
             
             % FWER-corrected within modality and contrast.
             palm_quicksave(palm_datapval( ...
                 plm.G{y,c},plm.Gmax{c}(:,y),false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                opts.o,plm.Ykindstr{y},plm.Gname{c},'fwep',y,c));
+                opts.o,plm.Ykindstr{y},plm.Gname{c},'fwep',y,csave));
             
             % Permutation p-value, FDR adjusted
             if opts.FDR,
                 palm_quicksave(fastfdr(P),1,opts,plm,y,c, ...
                     sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,plm.Ykindstr{y},plm.Gname{c},'fdrp',y,c));
+                    opts.o,plm.Ykindstr{y},plm.Gname{c},'fdrp',y,csave));
             end
             
             % Cluster extent results.
@@ -969,13 +977,13 @@ for c = 1:plm.nC,
                 % Cluster extent statistic.
                 palm_quicksave(plm.Gcle{y,c},0,opts,plm,y,c, ...
                     sprintf('%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clustere',plm.Gname{c},y,c));
+                    opts.o,'clustere',plm.Gname{c},y,csave));
                 
                 % Cluster extent FWER p-value
                 palm_quicksave(palm_datapval( ...
                     plm.Gcle{y,c},plm.Gclemax{c}(:,y),false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clustere',plm.Gname{c},'fwep',y,c));
+                    opts.o,'clustere',plm.Gname{c},'fwep',y,csave));
             end
             
             % Cluster mass results.
@@ -984,13 +992,13 @@ for c = 1:plm.nC,
                 % Cluster mass statistic.
                 palm_quicksave(plm.Gclm{y,c},0,opts,plm,y,c, ...
                     sprintf('%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clusterm',plm.Gname{c},y,c));
+                    opts.o,'clusterm',plm.Gname{c},y,csave));
                 
                 % Cluster mass FWER p-value.
                 palm_quicksave(palm_datapval( ...
                     plm.Gclm{y,c},plm.Gclmmax{c}(:,y),false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clusterm',plm.Gname{c},'fwep',y,c));
+                    opts.o,'clusterm',plm.Gname{c},'fwep',y,csave));
             end
             
             % TFCE results
@@ -999,25 +1007,25 @@ for c = 1:plm.nC,
                 % TFCE statistic
                 palm_quicksave(plm.Gtfce{y,c},0,opts,plm,y,c, ...
                     sprintf('%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'tfce',plm.Gname{c},y,c));
+                    opts.o,'tfce',plm.Gname{c},y,csave));
                 
                 % TFCE p-value
                 P = Gtfcepperm{y,c}/plm.nP(c);
                 palm_quicksave(P,1,opts,plm,y,c, ...
                     sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'tfce',plm.Gname{c},'uncp',y,c));
+                    opts.o,'tfce',plm.Gname{c},'uncp',y,csave));
                 
                 % TFCE FWER-corrected within modality and contrast.
                 palm_quicksave(palm_datapval( ...
                     plm.Gtfce{y,c},plm.Gtfcemax{c}(:,y),false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'tfce',plm.Gname{c},'fwep',y,c));
+                    opts.o,'tfce',plm.Gname{c},'fwep',y,csave));
                 
                 % TFCE p-value, FDR adjusted.
                 if opts.FDR,
                     palm_quicksave(fastfdr(P),1,opts,plm,y,c, ...
                         sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                        opts.o,'tfce',plm.Gname{c},'fdrp',y,c));
+                        opts.o,'tfce',plm.Gname{c},'fdrp',y,csave));
                 end
             end
         end
@@ -1026,11 +1034,11 @@ for c = 1:plm.nC,
         if opts.savepara,
             P = palm_quicksave(plm.G{y,c},2, ...
                 opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                opts.o,plm.Ykindstr{y},plm.Gname{c},'uncparap',y,c));
+                opts.o,plm.Ykindstr{y},plm.Gname{c},'uncparap',y,csave));
             if opts.FDR,
                 palm_quicksave(fastfdr(P),1,opts,plm,y,c, ...
                     sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,plm.Ykindstr{y},plm.Gname{c},'fdrparap',y,c));
+                    opts.o,plm.Ykindstr{y},plm.Gname{c},'fdrparap',y,csave));
             end
         end
     end
@@ -1048,25 +1056,25 @@ for c = 1:plm.nC,
         P = Tpperm{c}/numel(plm.Tmax{c});
         palm_quicksave(P,1,opts,plm,[],c, ...
             sprintf('%s_%s_%s%s_%s_con%d', ...
-            opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'uncp',c));
+            opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'uncp',csave));
         
         % NPC FWER-corrected within modality and contrast.
         palm_quicksave(palm_datapval(plm.T{c},plm.Tmax{c},npcrev), ...
             1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-            opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'fwep',c));
+            opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'fwep',csave));
         
         % NPC FDR
         if opts.FDR,
             palm_quicksave(fastfdr(P),1,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'fdrp',c));
+                opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'fdrp',csave));
         end
         
         % Parametric combined pvalue
         if opts.savepara && ~ plm.nonpcppara,
             palm_quicksave(plm.Tppara{c},1,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'uncparap',c));
+                opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'uncparap',csave));
         end
         
         % Cluster extent NPC results.
@@ -1075,13 +1083,13 @@ for c = 1:plm.nC,
             % Cluster extent statistic.
             palm_quicksave(plm.Tcle{c},0,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_con%d', ...
-                opts.o,'clustere',plm.npcstr,plm.Tname,c));
+                opts.o,'clustere',plm.npcstr,plm.Tname,csave));
             
             % Cluster extent FWER p-value
             palm_quicksave(palm_datapval( ...
                 plm.Tcle{c},plm.Tclemax{c},false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'clustere',plm.npcstr,plm.Tname,'fwep',c));
+                opts.o,'clustere',plm.npcstr,plm.Tname,'fwep',csave));
         end
         
         % Cluster mass NPC results.
@@ -1090,13 +1098,13 @@ for c = 1:plm.nC,
             % Cluster mass statistic.
             palm_quicksave(plm.Tclm{c},0,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_con%d', ...
-                opts.o,'clusterm',plm.npcstr,plm.Tname,c));
+                opts.o,'clusterm',plm.npcstr,plm.Tname,csave));
             
             % Cluster mass FWER p-value
             palm_quicksave(palm_datapval( ...
                 plm.Tclm{c},plm.Tclmmax{c},false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'clusterm',plm.npcstr,plm.Tname,'fwep',c));
+                opts.o,'clusterm',plm.npcstr,plm.Tname,'fwep',csave));
         end
         
         % TFCE NPC results.
@@ -1105,13 +1113,13 @@ for c = 1:plm.nC,
             % TFCE statistic.
             palm_quicksave(plm.Ttfce{c},0,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_con%d', ...
-                opts.o,'tfce',plm.npcstr,plm.Tname,c));
+                opts.o,'tfce',plm.npcstr,plm.Tname,csave));
             
             % TFCE FWER p-value
             palm_quicksave(palm_datapval( ...
                 plm.Ttfce{c},plm.Ttfcemax{c},false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'tfce',plm.npcstr,plm.Tname,'fwep',c));
+                opts.o,'tfce',plm.npcstr,plm.Tname,'fwep',csave));
         end
     end
     
@@ -1123,25 +1131,25 @@ for c = 1:plm.nC,
         P = Qpperm{c}/numel(plm.Qmax{c});
         palm_quicksave(P,1,opts,plm,[],c, ...
             sprintf('%s_%s_%s%s_%s_con%d', ...
-            opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'uncp',c));
+            opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'uncp',csave));
         
         % MV FWER-corrected within modality and contrast.
         palm_quicksave(palm_datapval(plm.Q{c},plm.Qmax{c},false), ...
             1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-            opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'fwep',c));
+            opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'fwep',csave));
         
         % MV FDR
         if opts.FDR,
             palm_quicksave(fastfdr(P),1,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'fdrp',c));
+                opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'fdrp',csave));
         end
         
         % Parametric MV pvalue
         if opts.savepara && ~ plm.nomvppara,
             palm_quicksave(plm.Qppara{c},1,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'uncparap',c));
+                opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'uncparap',csave));
         end
         
         % Cluster extent MV results.
@@ -1150,13 +1158,13 @@ for c = 1:plm.nC,
             % Cluster extent statistic.
             palm_quicksave(plm.Qcle{c},0,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_con%d', ...
-                opts.o,'clustere',plm.mvstr,plm.Qname{c},c));
+                opts.o,'clustere',plm.mvstr,plm.Qname{c},csave));
             
             % Cluster extent FWER p-value
             palm_quicksave(palm_datapval( ...
                 plm.Qcle{c},plm.Qclemax{c},false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'clustere',plm.mvstr,plm.Qname{c},'fwep',c));
+                opts.o,'clustere',plm.mvstr,plm.Qname{c},'fwep',csave));
         end
         
         % Cluster mass MV results.
@@ -1165,13 +1173,13 @@ for c = 1:plm.nC,
             % Cluster mass statistic.
             palm_quicksave(plm.Qclm{c},0,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_con%d', ...
-                opts.o,'clusterm',plm.mvstr,plm.Qname{c},c));
+                opts.o,'clusterm',plm.mvstr,plm.Qname{c},csave));
             
             % Cluster mass FWER p-value
             palm_quicksave(palm_datapval( ...
                 plm.Qclm{c},plm.Qclmmax{c},false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'clusterm',plm.mvstr,plm.Qname{c},'fwep',c));
+                opts.o,'clusterm',plm.mvstr,plm.Qname{c},'fwep',csave));
         end
         
         % TFCE MV results.
@@ -1180,13 +1188,13 @@ for c = 1:plm.nC,
             % TFCE statistic.
             palm_quicksave(plm.Qtfce{c},0,opts,plm,[],c, ...
                 sprintf('%s_%s_%s%s_con%d', ...
-                opts.o,'tfce',plm.mvstr,plm.Qname{c},c));
+                opts.o,'tfce',plm.mvstr,plm.Qname{c},csave));
             
             % TFCE FWER p-value
             palm_quicksave(palm_datapval( ...
                 plm.Qtfce{c},plm.Qtfcemax{c},false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'tfce',plm.mvstr,plm.Qname{c},'fwep',c));
+                opts.o,'tfce',plm.mvstr,plm.Qname{c},'fwep',csave));
         end
     end
 end
@@ -1202,7 +1210,7 @@ if opts.corrmod,
         for y = 1:plm.nY,
             palm_quicksave(palm_datapval(plm.G{y,c},distmax,false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                opts.o,plm.Ykindstr{y},plm.Gname{c},'fwemp',y,c));
+                opts.o,plm.Ykindstr{y},plm.Gname{c},'fwemp',y,csave));
         end
     end
     
@@ -1214,7 +1222,7 @@ if opts.corrmod,
             for y = 1:plm.nY,
                 palm_quicksave(palm_datapval(plm.Gcle{y,c},distmax,false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clustere',plm.Gname{c},'fwemp',y,c));
+                    opts.o,'clustere',plm.Gname{c},'fwemp',y,csave));
             end
         end
     end
@@ -1227,7 +1235,7 @@ if opts.corrmod,
             for y = 1:plm.nY,
                 palm_quicksave(palm_datapval(plm.Gclm{y,c},distmax,false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clusterm',plm.Gname{c},'fwemp',y,c));
+                    opts.o,'clusterm',plm.Gname{c},'fwemp',y,csave));
             end
         end
     end
@@ -1240,7 +1248,7 @@ if opts.corrmod,
             for y = 1:plm.nY,
                 palm_quicksave(palm_datapval(plm.Gtfce{y,c},distmax,false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'tfce',plm.Gname{c},'fwemp',y,c));
+                    opts.o,'tfce',plm.Gname{c},'fwemp',y,csave));
             end
         end
     end
@@ -1257,7 +1265,7 @@ if opts.corrcon,
             palm_quicksave(palm_datapval( ...
                 plm.G{y,c},distmax(:,y),false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                opts.o,plm.Ykindstr{y},plm.Gname{c},'fwecp',y,c));
+                opts.o,plm.Ykindstr{y},plm.Gname{c},'fwecp',y,csave));
         end
     end
     
@@ -1269,7 +1277,7 @@ if opts.corrcon,
                 palm_quicksave(palm_datapval( ...
                     plm.Gcle{y,c},distmax(:,y),false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clustere',plm.Gname{c},'fwecp',y,c));
+                    opts.o,'clustere',plm.Gname{c},'fwecp',y,csave));
             end
         end
     end
@@ -1282,7 +1290,7 @@ if opts.corrcon,
                 palm_quicksave(palm_datapval( ...
                     plm.Gclm{y,c},distmax(:,y),false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clusterm',plm.Gname{c},'fwecp',y,c));
+                    opts.o,'clusterm',plm.Gname{c},'fwecp',y,csave));
             end
         end
     end
@@ -1295,7 +1303,7 @@ if opts.corrcon,
                 palm_quicksave(palm_datapval( ...
                     plm.Gtfce{y,c},distmax(:,y),false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'tfce',plm.Gname{c},'fwecp',y,c));
+                    opts.o,'tfce',plm.Gname{c},'fwecp',y,csave));
             end
         end
     end
@@ -1311,7 +1319,7 @@ if opts.corrmod && opts.corrcon,
         for y = 1:plm.nY,
             palm_quicksave(palm_datapval(plm.G{y,c},distmax,false), ...
                 1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                opts.o,plm.Ykindstr{y},plm.Gname{c},'fwecmp',y,c));
+                opts.o,plm.Ykindstr{y},plm.Gname{c},'fwecmp',y,csave));
         end
     end
     
@@ -1323,7 +1331,7 @@ if opts.corrmod && opts.corrcon,
             for y = 1:plm.nY,
                 palm_quicksave(palm_datapval(plm.Gcle{y,c},distmax,false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clustere',plm.Gname{c},'fwecmp',y,c));
+                    opts.o,'clustere',plm.Gname{c},'fwecmp',y,csave));
             end
         end
     end
@@ -1336,7 +1344,7 @@ if opts.corrmod && opts.corrcon,
             for y = 1:plm.nY,
                 palm_quicksave(palm_datapval(plm.Gclm{y,c},distmax,false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'clusterm',plm.Gname{c},'fwecmp',y,c));
+                    opts.o,'clusterm',plm.Gname{c},'fwecmp',y,csave));
             end
         end
     end
@@ -1349,7 +1357,7 @@ if opts.corrmod && opts.corrcon,
             for y = 1:plm.nY,
                 palm_quicksave(palm_datapval(plm.Gtfce{y,c},distmax,false), ...
                     1,opts,plm,y,c,sprintf('%s_%s_%s_%s_mod%d_con%d', ...
-                    opts.o,'tfce',plm.Gname{c},'fwecmp',y,c));
+                    opts.o,'tfce',plm.Gname{c},'fwecmp',y,csave));
             end
         end
     end
@@ -1363,7 +1371,7 @@ if opts.NPC && opts.corrcon,
     for c = 1:plm.nC,
         palm_quicksave(palm_datapval(plm.T{c},distmax,npcrev), ...
             1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-            opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'fwecp',c));
+            opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'fwecp',csave));
     end
     
     % Cluster extent NPC
@@ -1373,7 +1381,7 @@ if opts.NPC && opts.corrcon,
         for c = 1:plm.nC,
             palm_quicksave(palm_datapval(plm.Tcle{c},distmax,false), ...
                 1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'clustere',plm.npcstr,plm.Tname,'fwecp',c));
+                opts.o,'clustere',plm.npcstr,plm.Tname,'fwecp',csave));
         end
     end
     
@@ -1384,7 +1392,7 @@ if opts.NPC && opts.corrcon,
         for c = 1:plm.nC,
             palm_quicksave(palm_datapval(plm.Tclm{c},distmax,false), ...
                 1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'clusterm',plm.npcstr,plm.Tname,'fwecp',c));
+                opts.o,'clusterm',plm.npcstr,plm.Tname,'fwecp',csave));
         end
     end
     
@@ -1395,7 +1403,7 @@ if opts.NPC && opts.corrcon,
         for c = 1:plm.nC,
             palm_quicksave(palm_datapval(plm.Ttfce{c},distmax,false), ...
                 1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'tfce',plm.npcstr,plm.Tname,'fwecp',c));
+                opts.o,'tfce',plm.npcstr,plm.Tname,'fwecp',csave));
         end
     end
 end
@@ -1408,7 +1416,7 @@ if opts.MV && opts.corrcon,
     for c = 1:plm.nC,
         palm_quicksave(palm_datapval(plm.Q{c},distmax,false), ...
             1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-            opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'fwecp',c));
+            opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{c},'fwecp',csave));
     end
     
     % Cluster extent MV
@@ -1418,7 +1426,7 @@ if opts.MV && opts.corrcon,
         for c = 1:plm.nC,
             palm_quicksave(palm_datapval(plm.Qcle{c},distmax,false), ...
                 1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'clustere',plm.mvstr,plm.Qname{c},'fwecp',c));
+                opts.o,'clustere',plm.mvstr,plm.Qname{c},'fwecp',csave));
         end
     end
     
@@ -1429,7 +1437,7 @@ if opts.MV && opts.corrcon,
         for c = 1:plm.nC,
             palm_quicksave(palm_datapval(plm.Qclm{c},distmax,false), ...
                 1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'clusterm',plm.mvstr,plm.Qname{c},'fwecp',c));
+                opts.o,'clusterm',plm.mvstr,plm.Qname{c},'fwecp',csave));
         end
     end
     
@@ -1440,7 +1448,7 @@ if opts.MV && opts.corrcon,
         for c = 1:plm.nC,
             palm_quicksave(palm_datapval(plm.Qtfce{c},distmax,false), ...
                 1,opts,plm,[],c,sprintf('%s_%s_%s%s_%s_con%d', ...
-                opts.o,'tfce',plm.mvstr,plm.Qname{c},'fwecp',c));
+                opts.o,'tfce',plm.mvstr,plm.Qname{c},'fwecp',csave));
         end
     end
 end
@@ -1905,7 +1913,7 @@ function T = stouffer(G,df2,plm,c)
 T = sum(palm_gtoz(G,plm.rC(c),df2))/sqrt(plm.nY);
 
 function P = stoufferp(T)
-P = normcdf(-T);
+P = palm_gpval(T,0);
 
 % ==============================================================
 function T = wilkinson(G,df2,plm,c)
@@ -1927,10 +1935,12 @@ end
 function T = winer(G,df2,plm,c)
 df2 = bsxfun(@times,ones(size(G)),df2);
 cte = sqrt(sum(df2./(df2-2),1));
-T   = -sum(tinv(palm_gpval(G,plm.rC(c),df2),df2))./cte;
+gp  = palm_gpval(G,plm.rC(c),df2);
+gt  = sign(gp-.5).*sqrt(df2./betainv(2*min(gp,1-gp),df2/2,.5)-df2); % =tinv(gp,df2)
+T   = -sum(gt)./cte;
 
 function P = winerp(T)
-P = normcdf(-T);
+P = palm_gcdf(-T,0);
 
 % ==============================================================
 function T = edgington(G,df2,plm,c)
@@ -1956,7 +1966,7 @@ T = mhcte*sum(log(...
     palm_gpval(G,plm.rC(c),df2)),1);
 
 function P = mudholkargeorgep(T,plm)
-P = tcdf(T,5*plm.nY+4);
+P = palm_gcdf(T,1,5*plm.nY+4);
 
 % ==============================================================
 function T = fristonnichols(G,df2,plm,c)
@@ -1977,7 +1987,7 @@ idx     = tmp <= plm.npcparm;
 G       = reshape(G(idx),  [plm.npcparm size(G,2)]);
 df2     = reshape(df2(idx),[plm.npcparm size(df2,2)]);
 P       = palm_gcdf(G,plm.rC(c),df2);
-Z       = norminv(P);
+Z       = erfinv(2*P-1)*sqrt(2);
 T       = mean(Z,1);
 
 % ==============================================================
@@ -2093,7 +2103,7 @@ P = palm_gpval(G,plm.rC(c),df2);
 T = sum(1-P.*(plm.nY+1)./prank)/plm.nY;
 
 function P = taylortibshiranip(T,plm)
-P = normcdf(-T,0,1/sqrt(plm.nY));
+P = palm_gcdf(-T./sqrt(plm.nY),0);
 
 % ==============================================================
 function T = jiang(G,df2,plm,c)

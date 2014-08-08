@@ -12,25 +12,17 @@ function Ptree = palm_tree(B,M)
 %             later.
 %
 % Each node is a cell with 4 elements:
-% N{1,1}    : A 3-column array for whole block in which:
-%             - the 1st is a sequence of indices that indicates the
-%               current lexicographic permutation.
-%             - the 2nd are indices that indicate the current
-%               shuffling in relation to the original
-%             - the 3rd are indices that indicate the current
-%               permutation in relation to the previous
-%             For within-block, this is a NaN.
-% N{1,2}(1) : An integer indicating the largest number of possible
-%             sign-flips for the branches that right at this node
-%             (but not including/multiplying those downwards).
-%             This can be a power of 2 for whole-block permutation,
-%             1 for either within-block (which are shuffled
-%             branches down) or for distal branches of whole-block,
-%             which carry the sign-flip from upper levels.
-% N{1,2}(2) : An integer indicating the current sign-flip for the
-%             branches that begin at this node. This ranges between
-%             0 and N{1,2}(1)-1.
-% N{1,3}    : The branches that begin here.
+% N{1,1}  : A 3-column array for whole block in which:
+%           - the 1st is a sequence of indices that indicates the
+%             current lexicographic permutation.
+%           - the 2nd are indices that indicate the current
+%             shuffling in relation to the original
+%           - the 3rd are indices that indicate the current
+%             permutation in relation to the previous
+%          For within-block, this is a NaN.
+% N{1,2} : A logical vector indicating the current state of sign
+%          flips for the tree. 0 is treated as 1, and 1 as -1.
+% N{1,3} : The branches that begin here.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -40,6 +32,8 @@ function Ptree = palm_tree(B,M)
 
 if nargin == 1 || isempty(M),
     M = (1:size(B,1))';
+elseif size(B,1) ~= size(M,1),
+    error('The two inputs must have the same number of rows.');
 end
 
 % Make an initial sanity check:
@@ -68,11 +62,10 @@ wholeblock = B(1) > 0;
 Ptree = cell(1,3);
 [Ptree{1},Ptree{3}] = maketree( ...
     B(:,2:end),M,O,wholeblock,wholeblock);
-Ptree{2} = [0 0];
 if wholeblock,
-    Ptree{2}(1) = 2^size(Ptree{3},1);
+    Ptree{2} = false(size(Ptree{3},1),1);
 else
-    Ptree{2}(1) = 1;
+    Ptree{2} = [];
 end
 
 % ==============================================================
@@ -113,20 +106,25 @@ for u = 1:nU,
             O(idx),               ...
             wholeblockb,          ...
             wholeblockb || nosf);
-        Ptree{u,2} = [0 0];
+        Ptree{u,2} = [];
         
         % Count the number of possible sign-flips for these branches
         if nosf,
             % If it was flipped at higher levels (whole-block)
-            Ptree{u,2}(1) = 1;
+            Ptree{u,2} = [];
             
         elseif size(Ptree{u,3},2) > 1,
-            % If it might be flipped here, but there are distal branches
-            Ptree{u,2}(1) = 2^(size(Ptree{u,1},1) * ~isnan(Ptree{u,1}(1)));
-            
+            % If it might be flipped here, but there are distal branches:
+            % If this is whole-block, assign a number. If within-block,
+            % no sign-flips allowed at this level.
+            if isnan(Ptree{u,1}(1)),
+                Ptree{u,2} = [];
+            else
+                Ptree{u,2} = false(size(Ptree{u,3},1),1);
+            end            
         else
             % If there are no further branches
-            Ptree{u,2}(1) = 2^(size(Ptree{u,3},1));
+            Ptree{u,2} = false(size(Ptree{u,3},1),1);
         end
         
     else

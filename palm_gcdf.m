@@ -28,28 +28,45 @@ function gcdf = palm_gcdf(G,df1,df2)
 % Aug/2013
 % http://brainder.org
 
-% Make sure the sizes match
-df2 = bsxfun(@times,ones(size(G)),df2);
+% Note that for speed, there's no argument checking,
+% and some lines are repeated inside the conditions.
 
 if df1 > 1,
     
     % G or F
+    df2 = bsxfun(@times,ones(size(G)),df2);
     B = (df1.*G./df2)./(1+df1.*G./df2);
     gcdf = betainc(B,df1/2,df2/2);
 
 elseif df1 == 1,
     
     % Student's t, Aspin's v
-    gcdf = tcdf(G,df2);
-    
+    df2 = bsxfun(@times,ones(size(G)),df2);
+    ic = df2 == 1;
+    in = df2 > 1e7;
+    ig = ~(ic|in);
+    gcdf = zeros(size(G));
+    if any(ig(:)),
+        gcdf(ig) = betainc(1./(1+G(ig).^2./df2(ig)),df2(ig)/2,.5)/2;
+    end
+    ig = G > 0 & ig;
+    gcdf(ig) = 1 - gcdf(ig);
+    if any(ic(:)),
+        gcdf(ic) = .5 + atan(G(ic))/pi;
+    end
+    if any(in(:)),
+        gcdf(ic) = palm_gcdf(G(in),0);
+    end
+
 elseif df1 == 0,
     
     % Normal distribution
-    gcdf = normcdf(G);
+    gcdf = erfc(-G/sqrt(2))/2;
     
 elseif df1 < 0,
     
     % Chi^2, via lower Gamma incomplete for precision and speed
+    df2 = bsxfun(@times,ones(size(G)),df2);
     gcdf = gammainc(G/2,df2/2);
     
 end

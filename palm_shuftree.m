@@ -50,7 +50,7 @@ if nargin == 2,
     EE       = opts.EE;
     ISE      = opts.ISE;
     nP0      = opts.nP0;
-    CMC      = opts.CMC;
+    CMC      = opts.cmcp;
     Ptree    = palm_tree(plm.EB,plm.tmp.seq);
     idxout   = false;
     seq      = plm.tmp.seq;
@@ -85,25 +85,24 @@ end
 maxP = 1;
 maxS = 1;
 if EE,
-    maxP = palm_maxshuf(Ptree,'perms');
-    if maxP > 1.7976931348623158e308,
-        fprintf('Number of possible permutations is >= 1.7976931348623158e308.\n');
+    lmaxP = palm_maxshuf(Ptree,'perms',true);
+    maxP = exp(lmaxP);
+    if isinf(maxP),
+        fprintf('Number of possible permutations is exp(%g).\n',lmaxP);
     else
         fprintf('Number of possible permutations is %g.\n',maxP);
     end
 end
 if ISE,
-    maxS = palm_maxshuf(Ptree,'flips');
-    if maxS > 2^52,
-        fprintf('Number of possible sign-flips is >= 2^52.\n');
-        if ~ EE && (nP0 == 0 || nP0 > 2^52),
-            error('It''s not possible to run more than 2^52 sign-flips.')
-        end
+    lmaxS = palm_maxshuf(Ptree,'flips',true);
+    maxS = exp(lmaxS);
+    if isinf(maxS),
+        fprintf('Number of possible sign-flips is exp(%g).\n',lmaxS);
     else
         fprintf('Number of possible sign-flips is %g.\n',maxS);
     end
 end
-maxB = maxP * double(maxS);
+maxB = maxP * maxS;
 
 % String for the screen output below
 if EE && ~ISE,
@@ -123,28 +122,28 @@ Sset = {};
 if nP0 == 0 || nP0 >= maxB,
     % Run exhaustively if the user requests too many permutations.
     % Note that here CMC is irrelevant.
-    fprintf('Running %g shufflings (%s).\n',maxB,whatshuf);
+    fprintf('Generating %g shufflings (%s).\n',maxB,whatshuf);
     if EE,
-        Pset = palm_permtree(Ptree,maxP,[],false,maxP);
+        Pset = palm_permtree(Ptree,round(maxP),[],false,round(maxP));
     end
     if ISE,
-        Sset = palm_fliptree(Ptree,maxS,[],false,maxS);
+        Sset = palm_fliptree(Ptree,round(maxS),[],false,round(maxS));
     end
 elseif nP0 < maxB,
     % Or use a subset of possible permutations. The nested conditions
     % are to avoid repetitions, and to compensate fewer flips with more
     % perms or vice versa as needed in the tight situations
-    fprintf('Running %g shufflings (%s).\n',nP0,whatshuf);
+    fprintf('Generating %g shufflings (%s).\n',nP0,whatshuf);
     if EE,
         if nP0 >= maxP,
-            Pset = palm_permtree(Ptree,maxP,CMC,false,maxP);
+            Pset = palm_permtree(Ptree,round(maxP),CMC,false,round(maxP));
         else
             Pset = palm_permtree(Ptree,nP0,CMC,false,maxP);
         end
     end
     if ISE,
         if nP0 >= maxS,
-            Sset = palm_fliptree(Ptree,maxS,CMC,false,maxS);
+            Sset = palm_fliptree(Ptree,round(maxS),CMC,false,round(maxS));
         else
             Sset = palm_fliptree(Ptree,nP0,CMC,false,maxS);
         end
@@ -258,7 +257,7 @@ if idxout || ... % indices out instead of a cell array
             palm_metrics(Ptree,seq,whatshuf2);
         [~,~,mtr(3)] = ...
             palm_metrics(Ptree1,ones(size(seq)),whatshuf2);
-        [mtr(5),mtr(6)] = palm_metrics(Bidx,seq);
+        [mtr(5),mtr(6),mtr(7),mtr(8)] = palm_metrics(Bidx,seq,whatshuf2);
     end
     
     % Output as indices if needed

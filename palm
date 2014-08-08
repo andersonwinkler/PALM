@@ -1,12 +1,4 @@
 #!/bin/bash
-# This is a wrapper to call PALM in Octave or Matlab, depending
-# on the user's preferences and what is available in the system.
-# _____________________________________
-# Anderson M. Winkler
-# FMRIB / Univ. of Oxford
-# Mar/2014
-# http://brainder.org
-
 # =========================================================================
 # Do you prefer Matlab or Octave? Octave is free (it doesn't need licences),
 # is faster to load, but somewhat slower to run. Matlab uses licenses (this
@@ -21,10 +13,19 @@ OCTAVEPATH=/usr/bin
 # If Matlab isn't in the path, or to use a specific version,
 # add here the path to the Matlab executable binary:
 #MATLABPATH=/Applications/MATLAB_R2013b.app/bin/
-MATLABPATH=/opt/13a/bin/
+MATLABPATH=/opt/11b/MATLAB_R2011b.app/bin/
+#MATLABPATH=/opt/11b/bin/
 #MATLABPATH=/usr/local/bin/
 
 # =========================================================================
+# This is a wrapper to call PALM in Octave or Matlab, depending
+# on the user's preferences and what is available in the system.
+# 
+# _____________________________________
+# Anderson M. Winkler
+# FMRIB / Univ. of Oxford
+# Mar/2014
+# http://brainder.org
 # Normally there is no need to edit below this line:
 
 # Locate PALM
@@ -52,14 +53,14 @@ RUNCMD="addpath('$PALMDIR'); palm $@ ; exit"
 
 # Call either Octave or Matlab depending on the user's choice
 if [[ ${WHICH_TO_RUN} -eq 1 ]] ; then
-   if [[ ${OCTAVEPATH} == "" ]] ; then
+   if [[ ${OCTAVEPATH} == "" ]] || [[ ! -e ${OCTAVEPATH}/octave ]] ; then
       OCTAVECMD=octave
    else
       OCTAVECMD=${OCTAVEPATH}/octave
    fi
    ${OCTAVECMD} -q --eval "${RUNCMD}"
 elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
-   if [[ ${MATLABPATH} == "" ]] ; then
+   if [[ ${MATLABPATH} == "" ]] || [[ ! -e ${MATLABPATH}/matlab ]]; then
       MATLABCMD=matlab
    else
       MATLABCMD=${MATLABPATH}/matlab
