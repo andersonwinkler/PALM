@@ -36,7 +36,7 @@ elseif size(B,1) ~= size(M,1),
     error('The two inputs must have the same number of rows.');
 end
 
-% Make an initial sanity check:
+% Make some initial sanity checks:
 Bs = sortrows(B);
 warned = checkblk(Bs,Bs(1)>=0,0);
 if warned,
@@ -142,8 +142,8 @@ if wholeblock && nU > 1,
     % Identify repeated sets of rows, which receive then
     % the same index; these repetitions are taken care of
     % later by the Algorithm L.
-    B1M     = sortrows([B1 M]);
-    Ms      = B1M(:,2:end);
+    B1M     = sortrows([B1 M]); % B1 is here to be together with M during sorting
+    Ms      = B1M(:,2:end);     % but its removed here, as it's of no use.
     [~,~,S] = unique(reshape(Ms',[numel(Ms)/nU nU])','rows');
     
     % Put in ascending order, and (un)shuffle the branches

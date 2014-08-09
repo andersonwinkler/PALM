@@ -49,7 +49,7 @@ if nargin < 4,
 end
 
 % Permutation #1 is no permutation, regardless.
-P = cell2mat(pickperm(Ptree,{})');
+P = pickperm(Ptree,[])';
 P = horzcat(P,zeros(length(P),nP-1));
 
 % All other permutations up to nP
@@ -71,7 +71,7 @@ elseif nP == 0 || nP == maxP,
     end
     for p = 2:maxP,
         Ptree  = nextperm(Ptree);
-        P(:,p) = cell2mat(pickperm(Ptree,{})');
+        P(:,p) = pickperm(Ptree,[])';
     end
     
 elseif cmc || nP > maxP,
@@ -79,7 +79,7 @@ elseif cmc || nP > maxP,
     % Conditional Monte Carlo. Repeated permutations allowed.
     for p = 2:nP,
         Ptree  = randomperm(Ptree);
-        P(:,p) = cell2mat(pickperm(Ptree,{})');
+        P(:,p) = pickperm(Ptree,[])';
     end
     
 else
@@ -102,8 +102,8 @@ else
     for p = 2:nP,
         whiletest = true;
         while whiletest,
-            Ptree = randomperm(Ptree);
-            P(:,p) = cell2mat(pickperm(Ptree,{})');
+            Ptree     = randomperm(Ptree);
+            P(:,p)    = pickperm(Ptree,[])';
             whiletest = any(all(bsxfun(@eq,P(:,p),P(:,1:p-1))));
         end
     end
@@ -222,7 +222,7 @@ function P = pickperm(Ptree,P)
 % Take a tree in a given state and return the permutation. This
 % won't permute, only return the indices for the already permuted
 % tree. This function is recursive and for the 1st iteration,
-% P = {}, i.e., a 0x0 cell.
+% P = [], i.e., a 0x0 array.
 
 nU = size(Ptree,1);
 if size(Ptree,2) == 3,
@@ -231,6 +231,6 @@ if size(Ptree,2) == 3,
     end
 elseif size(Ptree,2) == 1,
     for u = 1:nU,
-        P{numel(P)+1} = Ptree{u,1};
+        P(numel(P)+1:numel(P)+numel(Ptree{u,1})) = Ptree{u,1};
     end
 end
