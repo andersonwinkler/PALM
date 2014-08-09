@@ -1444,7 +1444,7 @@ if ~ opts.cmcx && ~ opts.evperdat,
     plm.Xset = cell(plm.nC,1);
     seqtmp = zeros(plm.N,plm.nC);
     for c = 1:plm.nC,
-        plm.Xset{c} = palm_partition(plm.M,plm.Cset{c},'Guttman');
+        plm.Xset{c} = palm_partition(plm.M,plm.Cset{c},'Beckmann');
         [~,~,seqtmp(:,c)] = unique(plm.Xset{c},'rows');
     end
     if opts.corrcon && any(sum(diff(seqtmp,1,2).^2,2) ~= 0) ...

@@ -138,14 +138,14 @@ elseif nP0 < maxB,
         if nP0 >= maxP,
             Pset = palm_permtree(Ptree,round(maxP),CMC,false,round(maxP));
         else
-            Pset = palm_permtree(Ptree,nP0,CMC,false,maxP);
+            Pset = palm_permtree(Ptree,nP0,CMC,false,round(maxP));
         end
     end
     if ISE,
         if nP0 >= maxS,
             Sset = palm_fliptree(Ptree,round(maxS),CMC,false,round(maxS));
         else
-            Sset = palm_fliptree(Ptree,nP0,CMC,false,maxS);
+            Sset = palm_fliptree(Ptree,nP0,CMC,false,round(maxS));
         end
     end
 end

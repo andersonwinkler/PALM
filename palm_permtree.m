@@ -200,8 +200,15 @@ for u = 1:nU,
     
     % Make sure this isn't within-block at 1st level (marked as NaN)
     if ~ isnan(Ptree{u,1}(1)),
+        tmp = Ptree{u,1}(:,1);
         Ptree{u,1} = Ptree{u,1}(randperm(size(Ptree{u,1},1)),:);
-        Ptree{u,3} = Ptree{u,3}(Ptree{u,1}(:,3),:);
+        
+        % Only shuffle if at least one of the branches actually changes
+        % its position (otherwise, repeated branches would be needlessly
+        % shuffled, wasting permutations).
+        if any(tmp ~= Ptree{u,1}(:,1)),
+            Ptree{u,3} = Ptree{u,3}(Ptree{u,1}(:,3),:);
+        end
     end
 
     % Make sure the next isn't the last level.
