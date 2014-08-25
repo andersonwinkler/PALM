@@ -1,9 +1,9 @@
 function palm_miscwrite(X)
 % Write various scalar data formats based on the struct X.
 % 
-% miscwrite(X);
+% palm_miscwrite(X);
 % 
-% See 'miscread.m' for a description of the contents of X.
+% See 'palm_miscread.m' for a description of the contents of X.
 %
 % _____________________________________
 % Anderson M. Winkler

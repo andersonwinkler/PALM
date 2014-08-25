@@ -23,6 +23,8 @@ if palm_isoctave,
     
     % Disable some warnings
     warning('off','Octave:precedence-change');
+    warning('off','Octave:possible-matlab-short-circuit-operator');
+    
 else
     % This line marks the place up to nothing will be printed. It's long as
     % this because if it fails, at least it's not ugly and looks

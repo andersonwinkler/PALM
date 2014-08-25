@@ -45,8 +45,10 @@ else
         % Deal with precision issues working on each
         % tail separately
         idx = G > 0;
-        Z( idx) = -erfinv(2*palm_gcdf(-G( idx),1,df2( idx))-1)*sqrt(2);
-        Z(~idx) =  erfinv(2*palm_gcdf( G(~idx),1,df2(~idx))-1)*sqrt(2);
+        %Z( idx) = -erfinv(2*palm_gcdf(-G( idx),1,df2( idx))-1)*sqrt(2);
+        %Z(~idx) =  erfinv(2*palm_gcdf( G(~idx),1,df2(~idx))-1)*sqrt(2);
+        Z( idx) =  erfcinv(2*palm_gcdf(-G( idx),1,df2( idx)))*sqrt(2);
+        Z(~idx) = -erfcinv(2*palm_gcdf( G(~idx),1,df2(~idx)))*sqrt(2);
         
     else
         
@@ -62,8 +64,10 @@ else
         b = df2/2;
         
         % Convert to Z through a Beta incomplete function
-        Z( idx) = -erfinv(2*betainc(1-B( idx),b( idx),a)-1)*sqrt(2);
-        Z(~idx) =  erfinv(2*betainc(  B(~idx),a,b(~idx))-1)*sqrt(2);
+        %Z( idx) = -erfinv(2*betainc(1-B( idx),b( idx),a)-1)*sqrt(2);
+        %Z(~idx) =  erfinv(2*betainc(  B(~idx),a,b(~idx))-1)*sqrt(2);
+        Z( idx) =  erfcinv(2*betainc(1-B( idx),b( idx),a))*sqrt(2);
+        Z(~idx) = -erfcinv(2*betainc(  B(~idx),a,b(~idx)))*sqrt(2);
         
     end
 end
