@@ -141,9 +141,9 @@ while a <= narginx,
             
             % Get the variance groups file.
             opts.vg = vararginx{a+1};
+            opts.singlevg = false;
             if ischar(opts.vg) && ...
                     ~any(strcmpi(opts.vg,{'auto','automatic','default'})),
-                opts.singlevg = false;
                 opts.vg = 'auto';
             end
             a = a + 2;
@@ -734,24 +734,51 @@ while a <= narginx,
             opts.transposedata = true;
             a = a + 1;
             
-        case '-pmethod', % not in the help
+        case '-pmethod1', % not in the help
             
-            % Which method to use for to partition the model?
+            % Which method to use to partition the model when defining
+            % the permutations?
             if nargin > a,
                 methlist = {    ...
                     'Guttman',  ...
                     'Beckmann', ...
-                    'Ridgway'};
+                    'Winkler',  ...
+                    'Ridgway',  ...
+                    'none'};
                 methidx = strcmpi(vararginx{a+1},methlist);
                 if ~any(methidx);
                     error('Partition method "%s" unknown.',vararginx{a+1});
                 else
                     a = a + 2;
                 end
-                opts.pmethod = methlist{methidx};
+                opts.pmethod1 = methlist{methidx};
             else
                 error([...
-                    'The option -pmethod requires a method to be specified.\n'...
+                    'The option -pmethod1 requires a method to be specified.\n'...
+                    'Consult the documentation.']);
+            end
+            
+        case '-pmethod2', % not in the help
+            
+            % Which method to use to partition the model when defining
+            % doing the actual regression?
+            if nargin > a,
+                methlist = {    ...
+                    'Guttman',  ...
+                    'Beckmann', ...
+                    'Winkler',  ...
+                    'Ridgway',  ...
+                    'none'};
+                methidx = strcmpi(vararginx{a+1},methlist);
+                if ~any(methidx);
+                    error('Partition method "%s" unknown.',vararginx{a+1});
+                else
+                    a = a + 2;
+                end
+                opts.pmethod2 = methlist{methidx};
+            else
+                error([...
+                    'The option -pmethod2 requires a method to be specified.\n'...
                     'Consult the documentation.']);
             end
             
@@ -930,12 +957,12 @@ if opts.pearson && ~ opts.demean,
         '         must be mean centered. Adding option ''-demean''.%s'],'');
     opts.demean = true;
 end
-if opts.pearson && ~ any(strcmpi(opts.pmethod,{'beckmann','ridgway'})),
+if opts.pearson && ~ any(strcmpi(opts.pmethod2,{'beckmann','ridgway'})),
     warning([ ...
         'To compute Pearson''s "r" or the "R^2", the design must be\n' ...
         '         partitioned using the Beckmann or Ridgway schemes.'...
-        '         Adding the option ''-pmethod Beckmann''.%s'],'');
-    opts.pmethod = 'beckmann';
+        '         Adding the option ''-pmethod2 Beckmann''.%s'],'');
+    opts.pmethod2 = 'beckmann';
 end
 if opts.demean && opts.vgdemean && ~ opts.pearson,
     warning([...
@@ -1444,7 +1471,7 @@ if ~ opts.cmcx && ~ opts.evperdat,
     plm.Xset = cell(plm.nC,1);
     seqtmp = zeros(plm.N,plm.nC);
     for c = 1:plm.nC,
-        plm.Xset{c} = palm_partition(plm.M,plm.Cset{c},'Beckmann');
+        plm.Xset{c} = palm_partition(plm.M,plm.Cset{c},opts.pmethod1);
         [~,~,seqtmp(:,c)] = unique(plm.Xset{c},'rows');
     end
     if opts.corrcon && any(sum(diff(seqtmp,1,2).^2,2) ~= 0) ...

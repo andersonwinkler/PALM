@@ -46,7 +46,7 @@ switch lower(meth),
         idx = any(C~=0,2);
         X   = M(:,idx);
         Z   = M(:,~idx);
-        eCm = C;
+        eCm = vertcat(C(idx,:),C(~idx,:));
         
     case 'beckmann'
         C2  = null(C');
@@ -75,6 +75,11 @@ switch lower(meth),
         X     = X-Z*(pinv(Z)*X);
         eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
+        
+    case 'none'
+        X     = M;
+        Z     = [];
+        eCm   = C;
         
     otherwise
         error('''%s'' - Unknown partitioning scheme',meth);

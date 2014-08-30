@@ -101,7 +101,7 @@ for c = 1:plm.nC,
         
         % Partition the model, now using the method chosen by the user
         [plm.tmp.X,plm.tmp.Z,plm.tmp.eCm,plm.tmp.eCx] = ...
-            palm_partition(plm.M,plm.Cset{c},opts.pmethod);
+            palm_partition(plm.M,plm.Cset{c},opts.pmethod2);
         plm.tmp.Mp = [plm.tmp.X plm.tmp.Z]; % partitioned design matrix, joined
 
         % To avoid rank deficiency issues after partitioning, remove
