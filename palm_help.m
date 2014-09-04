@@ -139,8 +139,7 @@ fprintf('	matrix. If the original design had an intercept, the intercept is\n');
 fprintf('	removed.\n\n');
 
 fprintf('-twotail : Run two-tailed tests for all the t-contrasts instead of\n');
-fprintf('	one-tailed. If NPC is used, it also becomes two-tailed for the\n');
-fprintf('	methods which statistic are symmetric around zero under the null.\n\n');
+fprintf('	one-tailed. If NPC is used, it naturally becomes two-tailed\n\n');
 
 fprintf('-advanced : Show advanced options.\n\n');
 

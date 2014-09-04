@@ -55,6 +55,7 @@ elseif df1 == 1,
     if any(in(:)),
         pvals(ic) = palm_gpval(G(in),0);
     end
+    pvals = reshape(pvals,size(G));
     
 elseif df1 == 0,
     

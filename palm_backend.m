@@ -664,7 +664,7 @@ for c = 1:plm.nC,
             % Compute the combined statistic
             Gnpc = cat(1,G{:,c});
             T{c} = fastnpc(Gnpc,cat(1,df2{:,c}));
-            
+
             % Since computing the parametric p-value for some methods
             % can be quite slow, it's faster to run all these checks
             % to ensure that 'pparanpc' runs just once.
