@@ -14,9 +14,13 @@ else
     vararginx = varargin;
     idxa = find(strcmpi(vararginx,'-o'));
     if isempty(idxa),
-        cfgname = horzcat(opts.o,'_palmconfig.txt');
+        cfgname = horzcat(opts.o,'palmconfig.txt');
     else
-        cfgname = horzcat(vararginx{idxa+1},'_palmconfig.txt');
+        otmp = vararginx{idxa+1};
+        if ~strcmp(otmp(end),'_'),
+            otmp = horzcat(otmp,'_');
+        end
+        cfgname = horzcat(otmp,'palmconfig.txt');
     end
     [opth,~,~] = fileparts(cfgname);
     if ~isempty(opth) && ~exist(opth,'dir'),
@@ -29,7 +33,7 @@ end
 Ni = sum(strcmp(vararginx,'-i'));  % number of data inputs
 Nm = sum(strcmp(vararginx,'-m'));  % number of masks
 Ns = sum(strcmp(vararginx,'-s'));  % number of surfaces
-Nd = sum(strcmp(vararginx,'-d'));  % number of design files (currently only one can actually be used)
+Nd = sum(strcmp(vararginx,'-d'));  % number of design files
 Nt = sum(strcmp(vararginx,'-t'));  % number of t-contrast files
 Nf = sum(strcmp(vararginx,'-f'));  % number of F-test files
 opts.i   = cell(Ni,1);  % Input files (to constitute Y later)
@@ -44,7 +48,6 @@ opts.EE       = false;  % To be filled below (don't edit this here!)
 opts.ISE      = false;  % To be filled below (don't edit this here!)
 opts.within   = false;  % To be filled below (don't edit this here!)
 opts.whole    = false;  % To be filled below (don't edit this here!)
-opts.conlist  = [];     % File with the list of contrasts to be performed
 opts.conskipcount = 0;  % When saving the contrasts, skip how many from 1?
 opts.singlevg = true;   % Make sure that sigle VG will be used if nothing is supplied (don't edit this here!)
 
@@ -107,13 +110,6 @@ while a <= narginx,
             % Get the F contrast files.
             opts.f{f} = vararginx{a+1};
             f = f + 1;
-            a = a + 2;
-            
-        case '-conlist',
-            
-            % List of contrasts that will actually be performed, from a
-            % text file
-            opts.conlist = varargin{a+1};
             a = a + 2;
             
         case '-conskipcount',
@@ -295,6 +291,15 @@ while a <= narginx,
             opts.tfce_mv.do  = true;
             a = a + 1;
             
+        case '-tfce1D',
+            
+            % Shortcut for -tfce_H 2 -tfce_E 2 -tfce_C 6,
+            % i.e., parameters for TFCE in 2D mode
+            opts.tfce.H      = 2;
+            opts.tfce.E      = 2;
+            opts.tfce.conn   = 6;
+            a = a + 1;
+            
         case '-tfce2D',
             
             % Shortcut for -tfce_H 2 -tfce_E 1 -tfce_C 26,
@@ -386,8 +391,7 @@ while a <= narginx,
             
         case '-corrcon',
             
-            % Correct over contrasts. In this case, the shuffling method may
-            % need to change to ter Braak or Manly, depending on the contrasts.
+            % Correct over contrasts.
             opts.corrcon = true;
             a = a + 1;
             
@@ -425,7 +429,7 @@ while a <= narginx,
                     'Still-White',     ...
                     'Freedman-Lane',   ...
                     'terBraak',        ...
-                    'Kennedy',         ... % should never be used
+                    'Kennedy',         ... % Kennedy won't be in the help
                     'Manly',           ...
                     'Huh-Jhun',        ...
                     'Smith'};
@@ -447,10 +451,7 @@ while a <= narginx,
             
             % Do the non-parametric combination?
             opts.NPC = true;
-            if nargin == a,
-                a = a + 1;
-                
-            elseif nargin > a && strcmp(vararginx{a+1}(1),'-'),
+            if nargin == a || (nargin > a && strcmp(vararginx{a+1}(1),'-')),
                 a = a + 1;
                 
             elseif nargin > a,
@@ -552,6 +553,20 @@ while a <= narginx,
                 opts.npcmethod = methlist{methidx};
             end
             
+        case '-npcmod',
+            
+            % Correct over modalities.
+            opts.NPC    = true;
+            opts.npcmod = true;
+            a = a + 1;
+            
+        case '-npccon',
+            
+            % Correct over contrasts.
+            opts.NPC    = true;
+            opts.npccon = true;
+            a = a + 1;
+   
         case '-mv',
             
             % Compute classic multivariate statistics
@@ -686,14 +701,6 @@ while a <= narginx,
             opts.ev4vg = true;
             a = a + 1;
             
-        case '-removeignored',
-            
-            % Remove from the analysis observations that are have their own
-            % exclusive regressor and don't belong to any contrast (i.e,
-            % always nuisance.
-            opts.removeignored = true;
-            a = a + 1;
-            
         case '-removevgbysize',
             
             % Remove from the analysis observations that are the only
@@ -734,7 +741,27 @@ while a <= narginx,
             opts.transposedata = true;
             a = a + 1;
             
-        case '-pmethod1', % not in the help
+        case '-verbosefilenames',
+            
+            % Don't simplify filenames when otherwise it would be possible
+            opts.verbosefilenames = true;
+            a = a + 1;
+            
+        case '-syncperms',
+            
+            % Synchronize permutations regardless of other options?
+            opts.syncperms = true;
+            a = a + 1;
+            
+        case '-designperinput',
+            
+            % Use one design matrix for each input dataset? This enables
+            % syncP regardless.
+            opts.oneMperY  = true;
+            opts.syncperms = true;
+            a = a + 1;
+            
+        case '-pmethodp',
             
             % Which method to use to partition the model when defining
             % the permutations?
@@ -751,14 +778,14 @@ while a <= narginx,
                 else
                     a = a + 2;
                 end
-                opts.pmethod1 = methlist{methidx};
+                opts.pmethodp = methlist{methidx};
             else
                 error([...
-                    'The option -pmethod1 requires a method to be specified.\n'...
+                    'The option -pmethodp requires a method to be specified.\n'...
                     'Consult the documentation.']);
             end
             
-        case '-pmethod2', % not in the help
+        case '-pmethodr',
             
             % Which method to use to partition the model when defining
             % doing the actual regression?
@@ -775,52 +802,35 @@ while a <= narginx,
                 else
                     a = a + 2;
                 end
-                opts.pmethod2 = methlist{methidx};
+                opts.pmethodr = methlist{methidx};
             else
                 error([...
-                    'The option -pmethod2 requires a method to be specified.\n'...
+                    'The option -pmethodr requires a method to be specified.\n' ...
                     'Consult the documentation.']);
             end
-            
-        case '-highestH', % not in the help
-            
-            % Use only the perms with the highest Hamming distance?
-            opts.highestH = vararginx{a+1};
-            if ischar(opts.highestH),
-                opts.highestH = str2double(opts.highestH);
-            end
-            a = a + 2;
-            
-        case '-lowestH', % not in the help
-            
-            % Use only the perms with the lowest Hamming distance?
-            opts.lowestH = vararginx{a+1};
-            if ischar(opts.lowestH),
-                opts.lowestH = str2double(opts.lowestH);
-            end
-            a = a + 2;
-            
         otherwise
             error('Unknown option: ''%s''',vararginx{a});
     end
 end
 
-% Until voxelwise regressors are implemented, this should give an error
-if Nd > 1,
-    error('Only one design file is currently allowed.\n');
+% Make sure the NPC options make sense
+% - if -npc only, it's -npcmod
+% - if -npcmod only, it's -npcmod
+% - if -npccon only, it's -npccon
+% - if -npcmod and -npccon, it's both
+if opts.NPC && ~ opts.npcmod && ~ opts.npccon,
+    opts.npcmod = true;
 end
 
-% A quick check for the case of 1 EV per column in Y.
+% A quick check for the case of 1 EV per column of Y.
 if opts.evperdat,
     if any([...
             opts.cmcx
-            opts.removeignored
             opts.ev4vg
             opts.pearson]),
         error([...
             'The option ''-evperdat'' is incompatible with the options listed below:\n' ...
-            '''-igrepx''\n' ...
-            '''-removeignored''\n' ...
+            '''-cmcx''\n' ...
             '''-ev4vg''\n' ...
             '''-pearson''\n' ...
             'None of these can be enaabled with ''-evperdat''.%s'],'');
@@ -828,17 +838,6 @@ if opts.evperdat,
     if strcmpi(opts.rmethod,'terBraak'),
         error('The option ''-evperdat'' cannot be used with the ter Braak method (not implemented)');
     end
-end
-
-% Only highest or lowest Hamming allowed, not both
-if ~isempty(opts.highestH) && ~isempty(opts.lowestH),
-    error('Only one of ''-highestH'' or ''-lowestH'' can be used at any given time.');
-end
-if ~isempty(opts.highestH) && (opts.highestH <= 0 || opts.highestH > 1),
-    error('The value given to ''-highestH'' must be >= 0 or < 1');
-end
-if ~isempty(opts.lowestH)  && (opts.lowestH  <= 0 || opts.lowestH  > 1),
-    error('The value given to ''-lowestH'' must be >= 0 or < 1');
 end
 
 % This simplifies some tests later
@@ -876,7 +875,11 @@ if any([ ...
         opts.spatial_mv = true;
     end
 end
+if opts.spatial_npc && strcmpi(opts.npcmethod,'nichols'),
+    error('The Nichols combination method doesn''t allow spatial statistics (cluster and/or TFCE).')
+end
 
+% Some extra packages for Octave
 if opts.spatial && palm_isoctave,
     pkg load image
 end
@@ -884,23 +887,14 @@ end
 % No FWER or NPC if using draft mode
 if opts.draft,
     if opts.corrmod || opts.corrcon,
-        warning('The draft mode does not allow FWER-correction, only FDR.\n%s',''); %#ok
+        error('The draft mode does not allow FWER-correction, only FDR.');
     end
     if opts.NPC,
-        warning('The draft mode does not allow NPC.\n%s',''); %#ok
+        error('The draft mode does not allow NPC.');
     end
     if opts.clustere_npc.do || opts.clustere_npc.do || opts.tfce_npc.do,
-        warning('The draft mode does not allow spatial statistics (cluster or TFCE).\n%s',''); %#ok
+        error('The draft mode does not allow spatial statistics (cluster or TFCE).'); 
     end
-    opts.corrmod         = false;
-    opts.corrcon         = false;
-    opts.NPC             = false;
-    opts.clustere_npc.do = false;
-    opts.clusterm_npc.do = false;
-    opts.tfce_npc.do     = false;
-    opts.clustere_mv.do  = false;
-    opts.clusterm_mv.do  = false;
-    opts.tfce_mv.do      = false;
 end
 
 % Some NPC methods don't have an analytical form for the parametric p-value
@@ -957,12 +951,12 @@ if opts.pearson && ~ opts.demean,
         '         must be mean centered. Adding option ''-demean''.%s'],'');
     opts.demean = true;
 end
-if opts.pearson && ~ any(strcmpi(opts.pmethod2,{'beckmann','ridgway'})),
+if opts.pearson && ~ any(strcmpi(opts.pmethodr,{'beckmann','ridgway'})),
     warning([ ...
         'To compute Pearson''s "r" or the "R^2", the design must be\n' ...
         '         partitioned using the Beckmann or Ridgway schemes.'...
-        '         Adding the option ''-pmethod2 Beckmann''.%s'],'');
-    opts.pmethod2 = 'beckmann';
+        '         Adding the option ''-pmethodr Beckmann''.%s'],'');
+    opts.pmethodr = 'beckmann';
 end
 if opts.demean && opts.vgdemean && ~ opts.pearson,
     warning([...
@@ -971,10 +965,16 @@ if opts.demean && opts.vgdemean && ~ opts.pearson,
     opts.vgdemean = false;
 end
 if opts.ev4vg && opts.vgdemean,
-    warning([...
-        'Cannot use the option ''-ev4vg'' together with ''-vgdemean''\n'...
-        '         Ignoring the option ''-ev4vg''%s.'],'');
-    opts.ev4vg = false;
+    error('Cannot use the option ''-ev4vg'' together with ''-vgdemean''');
+end
+if opts.oneMperY && opts.MV,
+    error('It''s not possible to use the option ''-onedesignperinput'' together with the option ''-mv''.');
+end
+if opts.oneMperY && Ni ~= Nd,
+    error(['To use the option ''-onedesignperinput'', the number of design files must\n' ...
+        'match the number of inputs.\n%s'],'');
+else
+    opts.syncperms = true;
 end
 
 % Initialize the random number generator
@@ -1072,7 +1072,7 @@ for i = 1:Ni,
         end
     end
     
-    % Now deal with the data
+    % Now deal with the actual data
     if ndims(Ytmp.data) == 2,
         
         % Transpose if that was chosen.
@@ -1134,7 +1134,7 @@ for i = 1:Ni,
                 plm.Yset{i}(n,:) = tmp(tmpmsk);
             end
         else
-            % If not read with the NIFTI class, read all immediately
+            % If not read with the NIFTI class, get all immediately
             plm.Yset{i} = palm_conv4to2(Ytmp.data);
         end
     end
@@ -1185,15 +1185,15 @@ for i = 1:Ni,
         case {'nifticlass','fs_load_nifti','fsl_read_avw',...
                 'spm_spm_vol','nii_load_nii','fs_load_mgh'},
             plm.Yisvol(i)   = true;
-            plm.Ykindstr{i} = 'vox';
+            plm.Ykindstr{i} = '_vox';
         case 'fs_read_curv',
             plm.Yissrf(i)   = true;
-            plm.Ykindstr{i} = 'dpv';
+            plm.Ykindstr{i} = '_dpv';
         case 'dpxread',
             plm.Yissrf(i)   = true;
-            plm.Ykindstr{i} = 'dpx'; % this may be overriden below if a surface file is supplied
+            plm.Ykindstr{i} = '_dpx'; % this may be overriden below if a surface file is supplied
         otherwise
-            plm.Ykindstr{i} = 'dat';
+            plm.Ykindstr{i} = '_dat';
     end
     
     % If this is a DPX/curvature file, and if one of the spatial
@@ -1212,21 +1212,21 @@ for i = 1:Ni,
         if size(plm.srf{s}.data.vtx,1) == size(plm.Yset{i},2);
             plm.Yisvtx(i)   = true;
             plm.Yisfac(i)   = false;
-            plm.Ykindstr{i} = 'vtx';
+            plm.Ykindstr{i} = '_vtx';
         elseif size(plm.srf{s}.data.fac,1) == size(plm.Yset{i},2);
             plm.Yisvtx(i)   = false;
             plm.Yisfac(i)   = true;
-            plm.Ykindstr{i} = 'fac';
+            plm.Ykindstr{i} = '_fac';
         end
         plm.Yarea{i} = palm_calcarea(plm.srf{s},plm.Yisvtx(i));
     end
 end
-plm.nY = numel(plm.Yset);
+plm.nY     = numel(plm.Yset);
 plm.nmasks = numel(plm.masks);
 
 % Create an intersection mask if NPC or MV is to be done, and further apply
 % to the data that was previously masked above, as needed.
-if opts.NPC || opts.MV || opts.evperdat,
+if opts.npcmod || opts.MV || opts.evperdat,
     if plm.nmasks > 1,
         
         % If there is one mask per modality, make an instersection mask.
@@ -1253,12 +1253,17 @@ if opts.NPC || opts.MV || opts.evperdat,
     end
 end
 
+% A variable with the sizes of all modalities will be handy when doing FDR
+plm.Ysiz = zeros(plm.nY,1);
+for y = 1:plm.nY,
+    plm.Ysiz(y) = size(plm.Yset{y},2);
+end
+plm.Ycumsiz = vertcat(0,cumsum(plm.Ysiz));
+
 % Make sure that all data have the same size if NPC or MV are to be done
-if opts.NPC || opts.MV || opts.evperdat,
-    plm.Ysiz = zeros(plm.nY,1);
+if opts.npcmod || opts.MV || opts.evperdat,
     siz1 = size(plm.Yset{1});
     for y = 1:plm.nY,
-        plm.Ysiz(y) = size(plm.Yset{y},2);
         sizy = size(plm.Yset{y});
         if any(siz1 ~= sizy),
             error('The sizes of some of the imaging modalities don''t match');
@@ -1270,19 +1275,17 @@ end
 if opts.savemask,
     for y = 1:plm.nmasks,
         M = plm.masks{y};
-        if plm.nY == 1,
-            M.filename = sprintf('%s_mask',opts.o);
-        elseif plm.nmasks == 1,
-            M.filename = sprintf('%s_mask_allmods',opts.o);
+        if plm.nY == 1 || plm.nmasks == 1,
+            M.filename = sprintf('%smask',opts.o);
         else
-            M.filename = sprintf('%s_mask_mod%d',opts.o,y);
+            M.filename = sprintf('%smask_i%d',opts.o,y);
         end
         M.data = double(M.data);
         palm_miscwrite(M);
     end
-    if plm.nY > 1 && (opts.NPC || opts.MV || opts.evperdat),
+    if plm.nY > 1 && (opts.npcmod || opts.MV || opts.evperdat),
         M          = plm.maskinter;
-        M.filename = sprintf('%s_intersection_mask',opts.o);
+        M.filename = sprintf('%sintersection_mask',opts.o);
         M.data     = double(M.data);
         palm_miscwrite(M);
     end
@@ -1300,8 +1303,7 @@ if opts.MV && ~ opts.noranktest,
         end
     end
     if any(failed),
-        fname = sprintf('%s_%s_mv_illconditioned',...
-            opts.o,plm.Ykindstr{1});
+        fname = sprintf('%smv_illconditioned',opts.o);
         palm_quicksave(double(failed),0,opts,plm,[],[],fname);
         error([
             'One or more datapoints have ill-conditioned data. This makes\n' ...
@@ -1311,8 +1313,7 @@ if opts.MV && ~ opts.noranktest,
     end
 end
 
-% Applies an inverse-normal transformation to all
-% modalities if the user requested
+% Applies an inverse-normal transformation to the modalities if the user requested
 if opts.inormal,
     for y = 1:plm.nY,
         plm.Yset{y} = palm_inormal( ...
@@ -1331,163 +1332,214 @@ if ~opts.EE && ~opts.ISE,
     opts.EE  = true;
 end
 
-% Read and assemble the design matrix.
+% Read and assemble the design matrices.
+plm.Mset = cell(Nm,1);
 if Nd > 0,
     fprintf('Reading design matrix and contrasts.\n');
-    Mtmp = palm_miscread(opts.d{1});
-    if opts.evperdat,
-        if ndims(Mtmp.data) == 2,
-            plm.M = Mtmp.data;
-        elseif ndims(Mtmp.data) == 4,
-            if strcmp(Mtmp.readwith,'nifticlass'),
-                tmpmsk = plm.maskinter.data(:)';
-                plm.M = zeros(plm.N,sum(tmpmsk));
-                for n = 1:plm.N,
-                    tmp = Mtmp.extra.dat(:,:,:,n);
-                    tmp = tmp(:)';
-                    plm.M(n,:) = tmp(tmpmsk);
+    for m = 1:Nd,
+        Mtmp = palm_miscread(opts.d{m});
+        if opts.evperdat,
+            if ndims(Mtmp.data) == 2,
+                plm.Mset{m} = Mtmp.data;
+            elseif ndims(Mtmp.data) == 4,
+                if strcmp(Mtmp.readwith,'nifticlass'),
+                    tmpmsk = plm.maskinter.data(:)';
+                    plm.Mset{m} = zeros(plm.N,sum(tmpmsk));
+                    for n = 1:plm.N,
+                        tmp = Mtmp.extra.dat(:,:,:,n);
+                        tmp = tmp(:)';
+                        plm.Mset{m}(n,:) = tmp(tmpmsk);
+                    end
+                else
+                    plm.Mset{m} = palm_conv4to2(Mtmp.data);
+                    plm.Mset{m} = plm.Mset{m}(:,plm.maskinter.data(:));
                 end
-            else
-                plm.M = palm_conv4to2(Mtmp.data);
-                plm.M = plm.M(:,plm.maskinter.data(:));
             end
+            plm.Mrank{m} = 1;
+        else
+            plm.Mset{m}  = Mtmp.data;
+            plm.Mrank{m} = rank(plm.Mset{m});
         end
-    else
-        plm.M = Mtmp.data;
-    end
-    if size(plm.M,1) ~= plm.N,
-        error([
-            'The number of rows in the design matrix does not\n' ...
-            'match the number of observations in the data.\n' ...
-            '- Rows in the matrix: %d\n' ...
-            '- Observations in the data: %d'],size(plm.M,1),plm.N);
+        if size(plm.Mset{m},1) ~= plm.N,
+            error([
+                'The number of rows in the design matrix does\n' ...
+                'not match the number of observations in the data.\n' ...
+                '- Rows in the matrix: %d\n' ...
+                '- Observations in the data: %d\n' ...
+                'In file %s\n'], ...
+                size(plm.Mset{m},1),plm.N,opts.d{m});
+        end
+        if any(isnan(plm.Mset{m}(:))) || any(isinf(plm.Mset{m}(:))),
+            error([
+                'The design matrix cannot contain NaN or Inf.\n' ...
+                'In file %s\n'],opts.d{m});
+        end
+        if m > 1 && (opts.corrcon || opts.corrmod) && ~opts.evperdat &&  plm.Mrank{m} ~= plm.Mrank{1},
+            error(['Design matrices %d and %d do not have the same rank.\n'...
+                'In files:\n- %s (rank = %d)\n- %s (rank = %d)\n'], ...
+                1,m,opts.d{1},plm.Mrank{1},opts.d{m},plm.Mrank{m})
+        end
     end
 else
     % If a design matrix has not been specified, use a single column of ones and
-    % make sure that ISE only (not EE) is used.
-    plm.M    = ones(plm.N,1);
+    % make sure that only ISE (not EE) is used.
+    plm.Mset{1} = ones(plm.N,1);
     opts.EE  = false;
     opts.ISE = true;
 end
-if any(isnan(plm.M(:))) || any(isinf(plm.M(:))),
-    error('The design matrix cannot contain NaN or Inf.');
+plm.nM = numel(plm.Mset);
+
+% Just in case, to that check again now after having loaded the data & designs
+if opts.oneMperY && plm.nY ~= plm.nM,
+    error(['To use the option ''-onedesignperinput'', the number of design files must\n' ...
+        'match the number of inputs.\n%s'],'');
+else
+    opts.syncperms = true;
 end
 
-% Read and organise the contrasts.
-plm.Cset = cell(0);
+% Read and organise the contrasts for each design.
+plm.Cset = cell(plm.nM,1);
+plm.nC   = zeros(plm.nM,1);
 if Nt || Nf,
     
-    % There can't be more F than t contrast files
+    % Some sanity checks
+    if Nt > plm.nM,
+        error('More t-contrast files (%d) than valid design files (%d) were supplied.',Nt,plm.nM);
+    end
+    if Nt ~= 1 || Nt ~= plm.nM,
+        error(['The number of supplied t-contrast files (option -t) must be 1 or\n',...
+            'the same as the number of valid design files (option -d) (%d).'],plm.nM);
+    end
     if Nf > Nt,
-        warning([...
-            'More F-contrast files than t-contrast files were supplied.\n'...
-            '         The last %d file(s) supplied with -f will be ignored.\n'...
-            Nf-Nt]); %#ok
+        error('More F-contrast files (%d) than t-contrast files (%d) were supplied.',Nf,Nt);
     end
     
-    % Each t contrast is treated separately, even if many are
-    % specified in a VEST or CSV file.
+    % Load t and F contrast files
     tcon = cell(Nt,1);
-    c = 1;
     for t = 1:Nt,
         tmp = palm_miscread(opts.t{t});
         if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
             tcon{t} = tmp.data;
-            for j = 1:size(tcon{t},1),
-                plm.Cset{c} = tcon{t}(j,:)';
-                c = c + 1;
-            end
         else
             error('Invalid t contrast file: %s',opts.t{t});
         end
     end
-    
-    % Each F contrast assembles the t contrast from
-    % the corresponding loaded t contrast VEST file.
+    fcon = cell(Nf,1);
     for f = 1:Nf,
         tmp = palm_miscread(opts.f{f});
         if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
-            for j = 1:size(tmp.data,1),
-                plm.Cset{c} = tcon{f}(logical(tmp.data(j,:)),:)';
+            fcon{f} = tmp.data;
+        else
+            error('Invalid F contrast file: %s',opts.f{f});
+        end
+    end
+    
+    % For each valid design, assemble the contrasts.
+    for m = 1:plm.nM,
+        if Nt == 1;
+            t = 1;
+        else
+            t = m;
+        end
+        c = 1;
+        for j = 1:size(tcon{t},1),
+            plm.Cset{m}{c} = tcon{t}(j,:)';
+            c = c + 1;
+        end
+        if numel(fcon),
+            for j = 1:size(fcon{t},1),
+                plm.Cset{m}{c} = tcon{t}(logical(fcon{t}(j,:)),:)';
                 c = c + 1;
             end
-        else
-            error('Invalid F contrast file: %s',opts.t{t});
         end
-    end
-    nC = numel(plm.Cset);
-    
-    % If only some contrasts are to be run
-    if ~isempty(opts.conlist),
-        conlist = palm_miscread(opts.conlist);
-        if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
-            conlist = unique(conlist.data(:));
-            if min(conlist) < 1 || max(conlist) > nC,
-                error('Contrasts specified with ''-conlist'' are out of bounds.');
-            end
-            plm.Cset = plm.Cset(conlist);
-        else
-            error('Invalid file: %s',opts.conlist);
-        end
-    end
+        plm.nC(m) = numel(plm.Cset{m});
+    end    
 else
     % If no constrasts were at all specified:
-    if size(plm.M,2) == 1 || opts.evperdat,
-        
-        % If there is only 1 regressor, test its effect both
-        % positive and negative.
-        % The statistic will be t or v, depending on the number of VGs.
-        plm.Cset{1} = 1;
-        plm.Cset{2} = -1;
-        
-    else
-        % Otherwise, run an F-test over all regressors in the design matrix.
-        % The statistic will be F or G, depending on the number of VGs.
-        plm.Cset{1} = eye(size(plm.M,2));
-    end
-end
-if opts.fonly,
-    for c = numel(plm.Cset):-1:1,
-        if rank(plm.Cset{c}) <= 1,
-            plm.Cset(c) = [];
+    for m = 1:plm.nM,
+        if size(plm.Mset{m},2) == 1 || opts.evperdat,
+            
+            % If there is only 1 regressor, test its effect both
+            % positive and negative.
+            % The statistic will be t or v, depending on the number of VGs.
+            plm.Cset{m}{1} = 1;
+            plm.Cset{m}{2} = -1;
+            
+        else
+            % Otherwise, run an F-test over all regressors in the design matrix.
+            % The statistic will be F or G, depending on the number of VGs.
+            plm.Cset{m}{1} = eye(size(plm.Mset{m},2));
         end
+        plm.nC(m) = numel(plm.Cset{m});
     end
 end
-plm.nC = numel(plm.Cset);
-for c = 1:plm.nC,
-    if any(isnan(plm.Cset{c}(:))) || any(isinf(plm.Cset{c}(:))),
-        error('The constrasts cannot contain NaN or Inf.');
+
+% If only the F-tests are to be performed
+if opts.fonly,
+    for m = 1:plm.nM,
+        for c = plm.nC(m):-1:1,
+            if rank(plm.Cset{m}{c}) <= 1,
+                plm.Cset{m}(c) = [];
+            end
+        end
+        plm.nC(m) = numel(plm.Cset{m});
     end
-    if opts.evperdat && size(plm.Cset{c},1) ~= 1,
-        error('The contrast file must contain a single element when using the option ''-evperdat''.');
+end
+
+% Some more sanity checks
+for m = 1:plm.nM,
+    for c = 1:plm.nC(m),
+        if any(isnan(plm.Cset{m}{c}(:))) || any(isinf(plm.Cset{m}{c}(:))),
+            error('The constrasts cannot contain NaN or Inf.');
+        end
+        if opts.evperdat && size(plm.Cset{m}{c},1) ~= 1,
+            error('The contrast file must contain a single element when using the option ''-evperdat''.');
+        end
     end
 end
 
 % Partition the model according to the contrasts and design matrix.
-% The partitioning needs to be done now, because some regression methods
-% may not be used if correction over contrasts is needed and the relevant
-% regressors aren't compatible with synchronised permutations/sign-flips
-if ~ opts.cmcx && ~ opts.evperdat,
-    plm.Xset = cell(plm.nC,1);
-    seqtmp = zeros(plm.N,plm.nC);
-    for c = 1:plm.nC,
-        plm.Xset{c} = palm_partition(plm.M,plm.Cset{c},opts.pmethod1);
-        [~,~,seqtmp(:,c)] = unique(plm.Xset{c},'rows');
+% The partitioning needs to be done now, because of the need for
+% synchronised permutations/sign-flips
+opts.syncperms = false;
+if ~ opts.cmcx && ~ opts.evperdat ,
+    seqtmp = zeros(plm.N,sum(plm.nC));
+    j = 1;
+    plm.seq = cell(plm.nM,1);
+    for m = 1:plm.nM,
+        plm.seq{m} = cell(plm.nC(m),1);
+        for c = 1:plm.nC(m),
+            Xtmp = palm_partition(plm.Mset{m},plm.Cset{m}{c},opts.pmethodp);
+            [~,~,plm.seq{m}{c}] = unique(Xtmp,'rows');
+            seqtmp(:,j) = plm.seq{m}{c};
+            j = j + 1;
+        end
     end
-    if opts.corrcon && any(sum(diff(seqtmp,1,2).^2,2) ~= 0) ...
-            && ~ any(strcmpi(opts.rmethod,{'terBraak','Manly'})),
+    tmp = sum(diff(seqtmp,1,2).^2,2);
+    if (opts.corrcon || opts.npccon) && any(tmp(:) ~= 0),
         warning([ ...
-            'You chose to correct over contrasts, but with the contrasts\n' ...
-            '         given, this is not possible using the %s method.\n' ...
-            '         Using instead the %s method.\n' ...
-            '         If, however, you really want to use %s, use the\n' ...
-            '         option -igrepx, which will ignore repeated values in\n' ...
-            '         the rows of X when permuting.'], ...
-            opts.rmethod,opts.rfallback,opts.rmethod);
-        opts.rmethod = opts.rfallback;
+            'You chose to correct over contrasts, or run NPC between contrasts, but with the contrasts\n' ...
+            '         given, it is not possible to run synchronized permutations without ignoring repeated\n' ...
+            '         elements in the design matrix (or matrices).\n' ...
+            '         To solve this, adding the option -cmcx automatically.%s\n'],'');
+        opts.cmcx = true;
     end
-elseif opts.evperdat
-    % FIXME!!
+    if opts.corrcon || opts.npccon,
+        opts.syncperms = true;
+    end
+end
+if opts.cmcx || opts.evperdat,
+    % Currently the -evperdat allows just 1 column, so there's nothing
+    % to be done here. But, if in the future a more generic version
+    % is implemented, then there'll be changes here.
+    % (...)
+    plm.seq = cell(plm.nM,1);
+    for m = 1:plm.nM,
+        plm.seq{m} = cell(plm.nC(m),1);
+        for c = 1:plm.nC(m),
+            plm.seq{m}{c} = (1:plm.N)';
+        end
+    end
 end
 
 % Read the exchangeability blocks. If none is specified, all observations
@@ -1496,10 +1548,9 @@ end
 if isempty(opts.eb),
     plm.EB = [];
     if opts.within || opts.whole,
-        warning([ ...
-            'Options -within and/or -whole ignored, because no file defining\n' ...
-            '         the exchangeability blocks was supplied (option -eb).\n' ...
-            '         Performing free shuffling.']); %#ok
+        error([ ...
+            'Options -within and/or -whole require a file defining\n' ...
+            '         the exchangeability blocks (option -eb).\n%s'],'');
     end
 else
     plm.EB = palm_miscread(opts.eb);
@@ -1550,53 +1601,14 @@ if opts.MV && plm.nVG > 1,
     error('There are more than one variance group. MV cannot be used (but NPC can).');
 end
 
-% Remove observations marked to be ignored, i.e, those that
-% are have their own colum in the design matrix and which
-% aren't part of any contrast
-if opts.removeignored,
-    
-    % Indices of the observations to keep
-    idx = true(plm.N,1);
-    lM  = logical(M);
-    F   = find(sum(lM,1) == 1);
-    for f = numel(F):-1:1,
-        funused = false(plm.nC,1);
-        for c = 1:plm.nC,
-            funused(c) = all(plm.Cset{c}(F(f),:) == 0);
-        end
-        if all(funused),
-            idx(lM(:,F(f))) = false;
-        else
-            F(f) = [];
-        end
-    end
-    
-    % Modify all data as needed
-    for y = 1:plm.nY,
-        plm.Yset{y} = plm.Yset{y}(idx,:);
-    end
-    if ~ isempty(plm.EB),
-        plm.EB = plm.EB(idx,:);
-    end
-    for c = 1:plm.nC,
-        plm.Cset{c}(F,:) = [];
-    end
-    plm.M      = plm.M(idx,:);
-    plm.M(:,F) = [];
-    plm.N      = sum(idx);
-    plm.VG     = plm.VG(idx);
-    [tmp,~,plm.VG] = unique(plm.VG(idx));
-    plm.nVG    = numel(tmp);
-end
-
-% Remove the variance groups with just 1 observation?
+% Remove the variance groups with tiny sample sizes?
 if plm.nVG > 1 && ~ opts.removevgbysize && (opts.vgdemean || opts.ev4vg) && ...
         any(sum(bsxfun(@eq,plm.VG,unique(plm.VG)'),1) == 1),
     warning([...
         'The options ''-vgdemean'' and ''-ev4vg'' require that observations\n' ...
         '         in variance groups of size 1 are removed.\n' ...
-        '         Enabling the option ''-removevgsize1''%s.'],'');
-    opts.removevgbysize = true;
+        '         Enabling the option ''-removevgbysize 1''%s.'],'');
+    opts.removevgbysize = 1;
 end
 if ~ opts.removevgbysize,
     tmpwarned = false;
@@ -1605,7 +1617,7 @@ if ~ opts.removevgbysize,
             if ~ tmpwarned,
                 warning([...
                     'There are variance groups with just one observation.\n' ...
-                    '         Consider using the option ''-removevgsize1'' to improve the\n' ...
+                    '         Consider using the option ''-removevgbysize 1'' to improve the\n' ...
                     '         variance estimates (at the cost of reducing sample size).%s'],'');
                 tmpwarned = true;
             end
@@ -1626,71 +1638,74 @@ if opts.removevgbysize > 0,
     if ~ isempty(plm.EB),
         plm.EB = plm.EB(idx,:);
     end
-    plm.M = plm.M(idx,:);
+    for m = 1:plm.nM,
+        plm.Mset{m} = plm.Mset{m}(idx,:);
+    end
     plm.N = sum(idx);
     [tmp,~,plm.VG] = unique(plm.VG(idx));
     plm.nVG = numel(tmp);
 end
 
-% Add one regressor for each variance group, if requested
+% Add one regressor for each variance group if requested
 if opts.ev4vg,
-    Mvg = zeros(plm.N,plm.nVG);
-    V = unique(plm.VG);
-    for v = 1:plm.nVG,
-        Mvg(plm.VG == V(v),v) = 1;
-    end
-    rM   = round(sum(diag(plm.M*pinv(plm.M))));
-    Mnew = horzcat(plm.M,Mvg);
-    if round(sum(diag(Mnew*pinv(Mnew)))) == (rM + plm.nVG),
-        plm.M = Mnew;
-        nadded = plm.nVG;
-    else
-        Mnew = Mnew(:,1:end-1);
-        if round(sum(diag(Mnew*pinv(Mnew)))) == (rM + plm.nVG - 1),
-            plm.M = Mnew;
-            nadded = plm.nVG - 1;
-        else
-            error([ ...
-                'It was not possible to add one regressor for each variance group\n' ...
-                'perhaps because they already exist in the design. Check your design\n' ...
-                'matrix and maybe consider including these regressors manually.%s'],'');
+    for m = 1:plm.nM,
+        Mvg = zeros(plm.N,plm.nVG);
+        V = unique(plm.VG);
+        for v = 1:plm.nVG,
+            Mvg(plm.VG == V(v),v) = 1;
         end
-    end
-    for c = 1:plm.nC,
-        plm.Cset{c} = vertcat(plm.Cset{c},...
-            zeros(nadded,size(plm.Cset{c},2)));
+        rM   = round(sum(diag(plm.Mset{m}*pinv(plm.Mset{m}))));
+        Mnew = horzcat(plm.Mset{m},Mvg);
+        if round(sum(diag(Mnew*pinv(Mnew)))) == (rM + plm.nVG),
+            plm.Mset{m} = Mnew;
+            nadded      = plm.nVG;
+        else
+            Mnew = Mnew(:,1:end-1);
+            if round(sum(diag(Mnew*pinv(Mnew)))) == (rM + plm.nVG - 1),
+                plm.Mset{m} = Mnew;
+                nadded      = plm.nVG - 1;
+            else
+                error([ ...
+                    'It was not possible to add one regressor for each variance group\n' ...
+                    'perhaps because they already exist in the design. Check your design\n' ...
+                    'matrix and maybe consider including these regressors manually.%s'],'');
+            end
+        end
+        for c = 1:plm.nC(m),
+            plm.Cset{m}{c} = vertcat(plm.Cset{m}{c},...
+                zeros(nadded,size(plm.Cset{m}{c},2)));
+        end
     end
 end
 
 % Remove intercept from the design for the options -demean and -vgdemean
 if opts.demean || opts.vgdemean,
-    intercp = all(bsxfun(@eq,plm.M(1,:),plm.M),1);
-    if any(intercp),
-        for c = 1:plm.nC,
-            if any(intercp*plm.Cset{c} ~= 0,2),
-                error([ ...
-                    'Contrast %d (and perhaps others) tests the intercept. This means\n' ...
-                    'that the options ''-demean'' and ''-vgdemean'' cannot be used.\n' ...
-                    'If ''-demean'' was added to calculate Pearson''s "r" or the "R^2"\n' ...
-                    'note that these statistics cannot be computed for constant variables.%s'],c,'');
-            else
-                plm.Cset{c}(intercp,:) = [];
+    for m = 1:plm.nM,
+        intercp = all(bsxfun(@eq,plm.Mset{m}(1,:),plm.Mset{m}),1);
+        if any(intercp),
+            for c = 1:plm.nC(m),
+                if any(intercp*plm.Cset{m}{c}~=0,2),
+                    error([ ...
+                        'Contrast %d (and perhaps others) tests the intercept. This means\n' ...
+                        'that the options ''-demean'' and ''-vgdemean'' cannot be used.\n' ...
+                        'If ''-demean'' was added to calculate Pearson''s "r" or the "R^2"\n' ...
+                        'note that these statistics cannot be computed for constant variables.%s'],c,'');
+                else
+                    plm.Cset{m}{c}(intercp,:) = [];
+                end
             end
+            plm.Mset{m}(:,intercp) = [];
         end
-        plm.M(:,intercp) = [];
     end
 end
 
-% Mean center data and design
+% Mean center data and design (-demean)
 if opts.demean,
-    
-    % Demean design
-    plm.M = bsxfun(@minus,plm.M,mean(plm.M,1));
-    
-    % Demean data
+    for m = 1:plm.nM,
+        plm.Mset{m} = bsxfun(@minus,plm.Mset{m},mean(plm.Mset{m},1));
+    end
     for y = 1:plm.nY,
-        plm.Yset{y} = bsxfun(@minus,...
-            plm.Yset{y},mean(plm.Yset{y},1));
+        plm.Yset{y} = bsxfun(@minus,plm.Yset{y},mean(plm.Yset{y},1));
     end
 end
 
@@ -1703,7 +1718,10 @@ if opts.vgdemean,
         vidx = plm.VG == V(v);
         
         % Demean design within VG
-        plm.M(vidx,:) = bsxfun(@minus,plm.M(vidx,:),mean(plm.M(vidx),1));
+        for m = 1:plm.nM,
+            plm.Mset{m}(vidx,:) = bsxfun(@minus,...
+                plm.Mset{m}(vidx,:),mean(plm.Mset{m}(vidx,:),1));
+        end
         
         % Demean data within VG
         for y = 1:plm.nY,

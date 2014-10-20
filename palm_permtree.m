@@ -41,7 +41,7 @@ function [Pset,idx] = palm_permtree(Ptree,nP,cmc,idxout,maxP)
 if nargout == 1 && nargin < 5,
     maxP = palm_maxshuf(Ptree,'perms');
     if nP > maxP,
-        nP = maxP;
+        nP = maxP; % the cap is only imposed if maxP isn't supplied
     end
 end
 if nargin < 4,

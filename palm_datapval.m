@@ -11,7 +11,7 @@ function pvals = palm_datapval(G,Gvals,rev)
 % G     : Vector of Nx1 statistics to be converted to p-values
 % Gvals : A Mx1 vector of observed values for the same statistic
 %         from which the empirical cdf is build and p-values
-%         obtained.
+%         obtained. It doesn't have to be sorted.
 % rev   : A boolean indicating that the smallest values in G and
 %         Gvals, rather than the largest, are the most significant.
 %

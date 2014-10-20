@@ -89,6 +89,10 @@ fprintf('	some methods require 1 or 2 additional parameters to be provided.\n');
 fprintf('	All methods except Darlington-Hayes and Jiang can also be used to\n');
 fprintf('	produce parametric p-values and spatial statistics.\n\n');
 
+fprintf('-npcmod : Enable NPC over modalities.\n\n');
+
+fprintf('-npccon : Enable NPC over contrasts.\n\n');
+
 fprintf('-mv <statistic> : Do classical multivariate analysis (MV), such as\n');
 fprintf('	MANOVA and MANCOVA, using the the specified statistic, which can\n');
 fprintf('	be one of: Wilks, Hotelling, Pillai, Roy_ii or Roy_iii. All but\n');
@@ -117,7 +121,10 @@ fprintf('	(partial) tests, with the supplied cluster-forming threshold\n');
 fprintf('	(supplied as the equivalent z-score), as well as for NPC and/or\n');
 fprintf('	MV if these options have been enabled.\n\n');
 
-fprintf('-tfce2D : Set TFCE parameters for 2D data (surface, TBSS) data, i.e.,\n');
+fprintf('-tfce1D : Set TFCE parameters for 1D data (synchronised timeseries) i.e.,\n');
+fprintf('	H = 2, E = 2, C = 6. Use this option together with -T.\n\n');
+
+fprintf('-tfce2D : Set TFCE parameters for 2D data (surface, TBSS)  i.e.,\n');
 fprintf('	H = 2, E = 1, C = 26. Use this option together with -T.\n\n');
 
 fprintf('-corrmod : Apply FWER-correction of p-values over multiple modalities.\n\n');
@@ -145,8 +152,8 @@ fprintf('-advanced : Show advanced options.\n\n');
 
 fprintf('_____________________________________\n');
 fprintf('Anderson M. Winkler\n');
-fprintf('FMRIB / Univ. of Oxford\n');
-fprintf('Aug/2014\n');
+fprintf('FMRIB / University of Oxford\n');
+fprintf('Oct/2014\n');
 fprintf('http://brainder.org\n');
 
 % ==============================================================
@@ -161,6 +168,9 @@ fprintf('	(in which case, use ''-inormal quanti''). There are four different\n')
 fprintf('	methods available, which can be specified as ''-inormal <method>'' or\n');
 fprintf('	''-inormal quanti <method>''. The methods are ''Waerden'' (default),\n');
 fprintf('	''Blom'', ''Tukey'' and ''Bliss''.\n\n');
+
+fprintf('-syncperms : If possible, use synchronized permutations even they wouldn''t\n');
+fprintf('	be used by default.\n\n');
 
 fprintf('-conskipcount <integer> : Normally the contrasts are numbered from 1, but\n');
 fprintf('	this option allows staring the counter from the specified number.\n');
@@ -221,10 +231,20 @@ fprintf('	number, use the word ''twist'' instead of the integer. Note that a\n')
 fprintf('	given seed used in Matlab isn''t equivalent to the same seed used\n');
 fprintf('	in Octave.\n\n');
 
+fprintf('-designperinput : Use one design file for each input modality.\n\n');
+
 fprintf('-ev4vg : Add to the design one EV modelling the mean of each VG.\n\n');
 
 fprintf('-vgdemean : Mean center the data, as well as all columns of the design\n');
 fprintf('	matrix, within each VG. Intercepts are removed.\n\n');
+
+fprintf('-pmethodp : Partition method used when defining the set of permutations.\n');
+fprintf('	Cab be ''Guttman'', ''Beckmann'', ''Ridgway'' or ''None''.\n');
+fprintf('	Default is ''Beckmann''\n\n');
+
+fprintf('-pmethodr : Partition method used during the regression. Valid values\n');
+fprintf('	are ''Guttman'', ''Beckmann'', ''Ridgway'' or ''None''.\n\n');
+fprintf('	Default is ''Beckmann''\n\n');
 
 fprintf('-cmcp : Ignore the possibility of repeated permutations. This option\n');
 fprintf('	will be ignored if the number of shufflings chosen is larger than the\n');
@@ -234,10 +254,6 @@ fprintf('	shufflings will be performed.\n\n');
 fprintf('-cmcx : Ignore the possibility of repeated rows in X when\n');
 fprintf('	constructing the set of permutations, such that each row is\n');
 fprintf('	treated as unique, regardless of potential repetitions (ties).\n\n');
-
-fprintf('-removeignored : Remove from the data and design those observations\n');
-fprintf('	that have their own, exclusive regressor, but which don''t belong\n');
-fprintf('	to any contrast.\n\n');
 
 fprintf('-removevgbysize <integer> : Remove from the data and design those\n');
 fprintf('	observations that are in VGs of size smaller or equal than specified.\n');
@@ -256,10 +272,13 @@ fprintf('	enables voxelwise/facewise/vertexwise regressors.\n\n');
 fprintf('-transposedata : For input data (-i) that are csv tables (2D), transpose\n');
 fprintf('	rows and columns.\n\n');
 
+fprintf('-verbosefilenames : Use lengthy filenames, even if the indices go up\n');
+fprintf('	to 1 only.\n\n');
+
 fprintf('_____________________________________\n');
 fprintf('Anderson M. Winkler\n');
-fprintf('FMRIB / Univ. of Oxford\n');
-fprintf('Aug/2014\n');
+fprintf('FMRIB / University of Oxford\n');
+fprintf('Oct/2014\n');
 fprintf('http://brainder.org\n');
 
 % ==============================================================

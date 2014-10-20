@@ -38,7 +38,7 @@ function Pset = palm_fliptree(Ptree,nP,cmc,idxout,maxP)
 if nargin < 5,
     maxP = palm_maxshuf(Ptree,'flips');
     if nP > maxP,
-        nP = maxP;
+        nP = maxP; % the cap is only imposed if maxP isn't supplied
     end
 end
 if nargin < 4,

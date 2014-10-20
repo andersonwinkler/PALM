@@ -44,18 +44,16 @@ function [Bset,nB,mtr] = palm_shuftree(varargin)
 % http://brainder.org
 
 % Take arguments
-if nargin == 2,
+if nargin == 2 || nargin == 4,
     opts     = varargin{1};
     plm      = varargin{2};
     EE       = opts.EE;
     ISE      = opts.ISE;
     nP0      = opts.nP0;
     CMC      = opts.cmcp;
-    Ptree    = palm_tree(plm.EB,plm.tmp.seq);
+    seq      = plm.seq{varargin{3}}{varargin{4}};
+    Ptree    = palm_tree(plm.EB,seq);
     idxout   = false;
-    seq      = plm.tmp.seq;
-    highestH = opts.highestH;
-    lowestH  = opts.lowestH;
 elseif nargin == 3 || nargin == 5 || nargin == 6,
     Ptree    = varargin{1};
     nP0      = varargin{2};
@@ -72,8 +70,6 @@ elseif nargin == 3 || nargin == 5 || nargin == 6,
     else
         idxout = false;
     end
-    highestH  = [];
-    lowestH   = [];
 else
     error('Incorrect number of input arguments');
 end
@@ -218,46 +214,20 @@ end
 % If the desired outputs are permutation indices instead
 % of permutation matrices, output them
 if idxout || ... % indices out instead of a cell array
-        (nargout == 3 && nargin == 2) || ...  % save metrics
-        (~isempty(highestH) || ~isempty(lowestH)), % select by Hamming
+        (nargout == 3 && nargin == 4), % save metrics
     
     % Convert formats
     Bidx = palm_swapfmt(Bset);
-    
-    % Select permutation according to the Hamming distance
-    % If the user wants only highest or lowest Hamming distances
-    Hamm = sum(bsxfun(@ne,Bidx(:,1),Bidx),1);
-    if ~ isempty(highestH),
-        nB = ceil(nB.*highestH);
-        [~,idx] = sort(Hamm(:),'descend');
-        [~,idxback] = sort(idx);
-        Hidx = false(size(idx));
-        Hidx(1:nB-1) = true;
-        Hidx = Hidx(idxback);
-        Hidx(1) = true;
-        Bidx = Bidx(:,Hidx);
-        Bset = Bset(Hidx);
-    end
-    if ~ isempty(lowestH),
-        nB = ceil(nB.*lowestH);
-        [~,idx] = sort(Hamm(:),'ascend');
-        [~,idxback] = sort(idx);
-        Hidx = false(size(idx));
-        Hidx(1:nB) = true;
-        Hidx = Hidx(idxback);
-        Bidx = Bidx(:,Hidx);
-        Bset = Bset(Hidx);
-    end
-    
+        
     % Compute some metrics
     if nargout == 3,
         Ptree1 = palm_tree(plm.EB,ones(size(seq)));
-        mtr = zeros(6,1);
+        mtr = zeros(9,1);
         [mtr(1),mtr(2),mtr(4)] = ...
             palm_metrics(Ptree,seq,whatshuf2);
         [~,~,mtr(3)] = ...
             palm_metrics(Ptree1,ones(size(seq)),whatshuf2);
-        [mtr(5),mtr(6),mtr(7),mtr(8)] = palm_metrics(Bidx,seq,whatshuf2);
+        [mtr(5),mtr(6),mtr(7),mtr(8),mtr(9)] = palm_metrics(Bidx,seq,whatshuf2);
     end
     
     % Output as indices if needed

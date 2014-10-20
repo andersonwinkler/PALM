@@ -4,8 +4,8 @@ function varargout = palm_metrics(varargin)
 % - For sets of permutations, return the average Hamming distance.
 % 
 % Usage:
-% [lW,lW0,C]   = palm_metrics(Ptree,X,stype)
-% [Hamm,HammX,Eucl,EuclX] = palm_metrics(Pset,X)
+% [lW,lW0,C] = palm_metrics(Ptree,X,stype)
+% [Hamm,HammX,Eucl,EuclX,Spear] = palm_metrics(Pset,X)
 % 
 % Inputs:
 % - Ptree : Permutation tree.
@@ -40,11 +40,13 @@ function varargout = palm_metrics(varargin)
 %           set, Hamm and HammX are the same.
 % - Eucl  : Same as Hamm, but using the Euclidean distance.
 % - EuclX : Same as HammX, but using the Euclidean distance.
+% - Spear : Same as Hamm, but using the Spearman correlation. X is always
+%           taken into account.
 %
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
-% Feb/2014
+% Feb/2014 (updated Oct/2014)
 % http://brainder.org
 
 % Take args and decide what to do
@@ -126,15 +128,21 @@ switch dowhat,
         
         % Average Euclidean distance per permutation.
         varargout{3} = mean(sum(bsxfun(@minus,Pset(:,1),Pset).^2,1).^.5,2);
-
-        % Now take ties in X into account:
+        
+        % For the Hamming and Euclidean, now take ties in X into account.
+        % Also, compute the Spearman for each case
         if strcmpi(stype,'perms'),
             XP = X(Pset);
+            varargout{5} = mean(1-6*sum(bsxfun(@minus,Pset(:,1),Pset).^2,1)/N/(N^2-1),2);
         elseif strcmpi(stype,'flips'),
             XP = bsxfun(@times,X,Pset);
+            [~,iXP] = sort(XP);
+            varargout{5} = mean(1-6*sum(bsxfun(@minus,iXP(:,1),iXP).^2,1)/N/(N^2-1),2);
         elseif strcmpi(stype,'both'),
             XP = X(abs(Pset));
             XP = sign(Pset).*XP;
+            [~,iXP] = sort(XP);
+            varargout{5} = mean(1-6*sum(bsxfun(@minus,iXP(:,1),iXP).^2,1)/N/(N^2-1),2);
         end
         varargout{2} = mean(sum(bsxfun(@ne,XP(:,1),XP),1),2);
         varargout{4} = mean(sum(bsxfun(@minus,XP(:,1),XP).^2,1).^.5,2);
