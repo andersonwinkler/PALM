@@ -38,23 +38,24 @@ elseif nargin == 2,
     else
         envrun = 'MATLAB';
     end
-    fprintf('Running PALM using %s with the following user supplied options:',envrun);
+    fprintf('Running PALM using %s with the following options:',envrun);
     for c = 1:numel(cfg),
         if strcmp(cfg{c}(1),'-'),
-            fprintf('\n%s',cfg{c});
+            fprintf(    '\n%s',cfg{c});
             fprintf(fid,'\n%s',cfg{c});
         else
             if ischar(cfg{c}),
-                fprintf(' %s',cfg{c});
+                fprintf(    ' %s',cfg{c});
                 fprintf(fid,' %s',cfg{c});
             else
-                fprintf(' %s',num2str(cfg{c}));
+                fprintf(    ' %s',num2str(cfg{c}));
                 fprintf(fid,' %s',num2str(cfg{c}));
             end
         end
     end
+    fprintf(    '\n');
+    fprintf(fid,'\n');
     fclose(fid);
-    fprintf('\n');
 else
     error('Incorrect number of input arguments.');
 end

@@ -54,7 +54,7 @@ else
         
         % G-vals above the upper half are treated as
         % "upper tail"; otherwise, "lower tail".
-        thr = (1/betainv(.5,df2/2,df1/2)-1)*df2/df1;
+        thr = (1./betainv(.5,df2/2,df1/2)-1).*df2/df1;
         idx = G > thr;
         
         % Convert G-distributed variables to Beta-distributed

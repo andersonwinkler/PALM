@@ -83,7 +83,8 @@ switch lower(X.readwith),
         if ~ isfield(X.extra,'vtype'),
             X.extra.vtype = 'd'; % for now, save everything as double
         end
-        save_avw(X.data,X.filename,X.extra.vtype,X.extra.voxsize);
+        % The evalc is needed until that empty 'disp' goes away
+        [~] = evalc('save_avw(X.data,X.filename,X.extra.vtype,X.extra.voxsize)');
         
     case 'nii_load_nii',
         

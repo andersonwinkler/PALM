@@ -1,4 +1,11 @@
 function [opts,plm] = palm_takeargs(varargin)
+% Handle the inputs for PALM.
+% 
+% _____________________________________
+% Anderson M. Winkler
+% FMRIB / University of Oxford
+% Oct/2014
+% http://brainder.org
 
 % Load the defaults
 opts = palm_defaults;
@@ -753,12 +760,12 @@ while a <= narginx,
             opts.syncperms = true;
             a = a + 1;
             
-        case '-designperinput',
+        case {'-designperinput','-erie'},
             
             % Use one design matrix for each input dataset? This enables
             % syncP regardless.
-            opts.oneMperY  = true;
-            opts.syncperms = true;
+            opts.designperinput = true;
+            opts.syncperms      = true;
             a = a + 1;
             
         case '-pmethodp',
@@ -967,12 +974,12 @@ end
 if opts.ev4vg && opts.vgdemean,
     error('Cannot use the option ''-ev4vg'' together with ''-vgdemean''');
 end
-if opts.oneMperY && opts.MV,
+if opts.designperinput && opts.MV,
     error('It''s not possible to use the option ''-onedesignperinput'' together with the option ''-mv''.');
 end
-if opts.oneMperY && Ni ~= Nd,
+if opts.designperinput && (Ni ~= Nd) || (Nt > 1),
     error(['To use the option ''-onedesignperinput'', the number of design files must\n' ...
-        'match the number of inputs.\n%s'],'');
+        'match the number of inputs, and just one t-contrast file must be supplied.\n%s'],'');
 else
     opts.syncperms = true;
 end
@@ -1390,7 +1397,7 @@ end
 plm.nM = numel(plm.Mset);
 
 % Just in case, to that check again now after having loaded the data & designs
-if opts.oneMperY && plm.nY ~= plm.nM,
+if opts.designperinput && plm.nY ~= plm.nM,
     error(['To use the option ''-onedesignperinput'', the number of design files must\n' ...
         'match the number of inputs.\n%s'],'');
 else
@@ -1406,7 +1413,7 @@ if Nt || Nf,
     if Nt > plm.nM,
         error('More t-contrast files (%d) than valid design files (%d) were supplied.',Nt,plm.nM);
     end
-    if Nt ~= 1 || Nt ~= plm.nM,
+    if Nt ~= 1 && Nt ~= plm.nM,
         error(['The number of supplied t-contrast files (option -t) must be 1 or\n',...
             'the same as the number of valid design files (option -d) (%d).'],plm.nM);
     end
@@ -1501,7 +1508,6 @@ end
 % Partition the model according to the contrasts and design matrix.
 % The partitioning needs to be done now, because of the need for
 % synchronised permutations/sign-flips
-opts.syncperms = false;
 if ~ opts.cmcx && ~ opts.evperdat ,
     seqtmp = zeros(plm.N,sum(plm.nC));
     j = 1;

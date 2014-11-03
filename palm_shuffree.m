@@ -81,7 +81,7 @@ if EE,
         nrep(u) = sum(seqS(:,1) == U(u));
     end
     lmaxP = lfac(N+1) - sum(lfac(nrep+1));
-    maxP = exp(lmaxP);
+    maxP  = round(exp(lmaxP));
     if isinf(maxP),
         fprintf('Number of possible permutations is exp(%g) = %d!.\n',lmaxP,N);
     else
@@ -90,7 +90,7 @@ if EE,
 end
 if ISE,
     lmaxS = N * log(2);
-    maxS = exp(lmaxS);
+    maxS  = 2^N;
     if isinf(maxS),
         fprintf('Number of possible sign-flips is exp(%g) = 2^%d.\n',lmaxS,N);
     else

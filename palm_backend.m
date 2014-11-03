@@ -1,4 +1,11 @@
 function palm_backend(varargin)
+% This is the core PALM function.
+% 
+% _____________________________________
+% Anderson M. Winkler
+% FMRIB / University of Oxford
+% Oct/2014
+% http://brainder.org
 
 % Take the arguments. Save a small log if needed.
 %clear global plm opts % comment for debugging
@@ -60,7 +67,7 @@ for y = 1:plm.nY,
     plm.G      {y} = cell(plm.nM,1);
     plm.df2    {y} = cell(plm.nM,1);
     plm.Gmax   {y} = cell(plm.nM,1);
-    if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
     for m = loopM,
         G         {y}{m} = cell(plm.nC(m),1);
         df2       {y}{m} = cell(plm.nC(m),1);
@@ -87,7 +94,7 @@ if opts.clustere_uni.do,
     for y = 1:plm.nY,
         plm.Gcle   {y} = cell(plm.nM,1);
         plm.Gclemax{y} = cell(plm.nM,1);
-        if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
         for m = loopM,
             plm.Gcle   {y}{m} = cell(plm.nC(m),1);
             plm.Gclemax{y}{m} = cell(plm.nC(m),1);
@@ -100,7 +107,7 @@ if opts.clusterm_uni.do,
     for y = 1:plm.nY,
         plm.Gclm   {y} = cell(plm.nM,1);
         plm.Gclmmax{y} = cell(plm.nM,1);
-        if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
         for m = loopM,
             plm.Gclm   {y}{m} = cell(plm.nC(m),1);
             plm.Gclmmax{y}{m} = cell(plm.nC(m),1);
@@ -117,7 +124,7 @@ if opts.tfce_uni.do,
         plm.Gtfcepperm{y} = cell(plm.nM,1);
         plm.Gtfce     {y} = cell(plm.nM,1);
         plm.Gtfcemax  {y} = cell(plm.nM,1);
-        if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
         for m = loopM,
             Gtfce         {y}{m} = cell(plm.nC(m),1);
             plm.Gtfcepperm{y}{m} = cell(plm.nC(m),1);
@@ -142,7 +149,7 @@ if opts.NPC,
     elseif  ~ opts.npcmod &&   opts.npccon,
         Gnpc          = cell(plm.nY,1);
         df2npc        = cell(plm.nY,1);
-        if opts.oneMperY,
+        if opts.designperinput,
             for y = 1:plm.nY,
                 Gnpc  {y} = zeros(plm.nC(y),plm.Ysiz(y));
                 df2npc{y} = zeros(plm.nC(y),plm.Ysiz(y));
@@ -160,7 +167,7 @@ if opts.NPC,
     elseif   opts.npcmod &&   opts.npccon,
         Gnpc          = cell(1);
         df2npc        = cell(1);
-        if opts.oneMperY,
+        if opts.designperinput,
             Gnpc  {1} = zeros(plm.nY*plm.nC(1),plm.Ysiz(1));
             df2npc{1} = zeros(plm.nY*plm.nC(1),plm.Ysiz(1));
         else
@@ -225,7 +232,7 @@ end
 % Inital strings to save the file names later.
 ystr = cell(plm.nY,1); for y = 1:plm.nY; ystr{y} = ''; end
 mstr = cell(plm.nM,1); for m = 1:plm.nM; mstr{m} = ''; end
-cstr = cell(plm.nC,1); for c = 1:plm.nC; cstr{c} = ''; end
+cstr = cell(max(plm.nC),1); for c = 1:max(plm.nC); cstr{c} = ''; end
 
 % Create the function handles for the NPC.
 if opts.NPC,
@@ -338,7 +345,11 @@ end
 % To calculate progress
 if opts.syncperms,
     ProgressNum = 0;
-    ProgressDen = plm.nY * sum(plm.nC) * plm.nP{1}(1);
+    if opts.designperinput,
+        ProgressDen = sum(plm.nC) * plm.nP{1}(1);
+    else
+        ProgressDen = sum(plm.nC) * plm.nP{1}(1) * plm.nY;
+    end
 else
     ProgressCon = 0;
 end
@@ -635,7 +646,7 @@ for po = P_outer,
             for p = P_inner,
                 
                 % For each input dataset
-                if opts.oneMperY, loopY = m; else loopY = 1:plm.nY; end
+                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                 for y = loopY,
                     
                     % Some feedback
@@ -723,8 +734,9 @@ for po = P_outer,
                         end
                     end
                     
-                    % Convert to Z
-                    if p == 1 && y == 1,
+                    % Convert to Z, but make sure that the rank is changed
+                    % just once, regardless
+                    if p == 1 && (opts.designperinput || y == 1),
                         plm.rC0{m}(c) = plm.rC{m}(c);
                         plm.rC {m}(c) = 0;
                     end
@@ -1111,7 +1123,7 @@ for po = P_outer,
             fprintf('\t [Combining modalities and contrasts]\n');
             j = 1;
             for y = 1:plm.nY,
-                if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         Gnpc  {1}(j,:) = G  {y}{m}{c};
@@ -1129,7 +1141,7 @@ for po = P_outer,
             fprintf('\t [Combining contrasts]\n');
             for y = 1:plm.nY,
                 j = 1;
-                if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         Gnpc  {y}(j,:) = G  {y}{m}{c};
@@ -1275,7 +1287,7 @@ fprintf('Computing p-values.\n');
 % Start with the uncorrected, but don't save them yet.
 % They'll be used later for the FDR.
 for y = 1:plm.nY,
-    if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
     for m = loopM,
         for c = 1:plm.nC(m),
             if opts.draft,
@@ -1332,7 +1344,7 @@ end
 % Save uncorrected & FWER-corrected within modality for this contrast.
 fprintf('Saving p-values (uncorrected and corrected within modality and within contrast).\n');
 for y = 1:plm.nY,
-    if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
     for m = loopM,
         for c = 1:plm.nC(m),
             
@@ -1436,7 +1448,7 @@ if opts.corrmod,
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
             distmax = zeros(plm.nP{m}(c),plm.nY);
-            if opts.oneMperY, loopY = m; else loopY = 1:plm.nY; end
+            if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
             for y = loopY,
                 distmax(:,y) = plm.Gmax{y}{m}{c};
             end
@@ -1454,7 +1466,7 @@ if opts.corrmod,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 pmerged = zeros(sum(plm.Ysiz),1);
-                if opts.oneMperY, loopY = m; else loopY = 1:plm.nY; end
+                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                 for y = loopY,
                     pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
                 end
@@ -1473,7 +1485,7 @@ if opts.corrmod,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 distmax = zeros(plm.nP{m}(c),plm.nY);
-                if opts.oneMperY, loopY = m; else loopY = 1:plm.nY; end
+                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                 for y = loopY,
                     distmax(:,y) = plm.Gclemax{y}{m}{c};
                 end
@@ -1493,7 +1505,7 @@ if opts.corrmod,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 distmax = zeros(plm.nP{m}(c),plm.nY);
-                if opts.oneMperY, loopY = m; else loopY = 1:plm.nY; end
+                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                 for y = loopY,
                     distmax(:,y) = plm.Gclmmax{y}{m}{c};
                 end
@@ -1513,14 +1525,14 @@ if opts.corrmod,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 distmax = zeros(plm.nP{m}(c),plm.nY);
-                if opts.oneMperY, loopY = m; else loopY = 1:plm.nY; end
+                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                 for y = loopY,
                     distmax(:,y) = plm.Gtfcemax{y}{m}{c};
                 end
                 distmax = max(distmax,[],2);
                 for y = loopY,
                     palm_quicksave( ...
-                        palm_datapval(plm.Gtfce{y,c},distmax,false),1,opts,plm,y,m,c, ...
+                        palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
                 end
             end
@@ -1529,7 +1541,7 @@ if opts.corrmod,
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
                     pmerged = zeros(sum(plm.Ysiz),1);
-                    if opts.oneMperY, loopY = m; else loopY = 1:plm.nY; end
+                    if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                     for y = loopY,
                         pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
                     end
@@ -1552,7 +1564,7 @@ if opts.corrcon,
     for y = 1:plm.nY,
         distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
-        if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
         for m = loopM,
             for c = 1:plm.nC(m),
                 distmax(:,j) = plm.Gmax{y}{m}{c};
@@ -1574,7 +1586,7 @@ if opts.corrcon,
         for y = 1:plm.nY,
             pmerged = zeros(sum(plm.nC),plm.Ysiz(y));
             j = 1;
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     pmerged(:,j) = plm.Gpperm{y}{m}{c};
@@ -1598,7 +1610,7 @@ if opts.corrcon,
         for y = 1:plm.nY,
             distmax = zeros(opts.nP{1}(1),sum(plm.nC));
             j = 1;
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gclemax{y}{m}{c};
@@ -1621,7 +1633,7 @@ if opts.corrcon,
         for y = 1:plm.nY,
             distmax = zeros(opts.nP{1}(1),sum(plm.nC));
             j = 1;
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gclmmax{y}{m}{c};
@@ -1644,7 +1656,7 @@ if opts.corrcon,
         for y = 1:plm.nY,
             distmax = zeros(opts.nP{1}(1),sum(plm.nC));
             j = 1;
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gtfcemax{y}{m}{c};
@@ -1664,7 +1676,7 @@ if opts.corrcon,
             for y = 1:plm.nY,
                 pmerged = zeros(sum(plm.nC),plm.Ysiz(y));
                 j = 1;
-                if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         pmerged(:,j) = plm.Gtfcepperm{y}{m}{c};
@@ -1693,7 +1705,7 @@ if opts.corrmod && opts.corrcon,
     distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
     j = 1;
     for y = 1:plm.nY,
-        if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
         for m = loopM,
             for c = 1:plm.nC(m),
                 distmax(:,j) = plm.Gmax{y}{m}{c};
@@ -1703,7 +1715,7 @@ if opts.corrmod && opts.corrcon,
     end
     distmax = max(distmax,[],2);
     for y = 1:plm.nY,
-        if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
         for m = loopM,
             for c = 1:plm.nC(m),
                 palm_quicksave( ...
@@ -1718,7 +1730,7 @@ if opts.corrmod && opts.corrcon,
         pmerged = zeros(sum(plm.nY)*sum(plm.nC),1);
         j = 1;
         for y = 1:plm.nY,
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     pmerged(plm.Ycumsiz(y)*sum(plm.nC)+1:plm.Ycumsiz(y+1)*sum(plm.nC)) = plm.Gpperm{y}{m}{c};
@@ -1728,7 +1740,7 @@ if opts.corrmod && opts.corrcon,
         end
         pfdradj = fastfdr(pmerged);
         for y = 1:plm.nY,
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave(pfdradj(plm.Ycumsiz(y)*sum(plm.nC)+1:plm.Ycumsiz(y+1)*sum(plm.nC)),1,opts,plm,y,m,c, ...
@@ -1743,7 +1755,7 @@ if opts.corrmod && opts.corrcon,
         distmax = zeros(opts.nP{1}(1),plm.nY*sum(plm.nC));
         j = 1;
         for y = 1:plm.nY,
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gclemax{y}{m}{c};
@@ -1753,7 +1765,7 @@ if opts.corrmod && opts.corrcon,
         end
         distmax = max(distmax,[],2);
         for y = 1:plm.nY,
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave( ...
@@ -1769,7 +1781,7 @@ if opts.corrmod && opts.corrcon,
         distmax = zeros(opts.nP{1}(1),plm.nY*sum(plm.nC));
         j = 1;
         for y = 1:plm.nY,
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gclmmax{y}{m}{c};
@@ -1794,7 +1806,7 @@ if opts.corrmod && opts.corrcon,
         distmax = zeros(opts.nP{1}(1),plm.nY*sum(plm.nC));
         j = 1;
         for y = 1:plm.nY,
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gtfcemax{y}{m}{c};
@@ -1804,7 +1816,7 @@ if opts.corrmod && opts.corrcon,
         end
         distmax = max(distmax,[],2);
         for y = 1:plm.nY,
-            if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave( ...
@@ -1817,7 +1829,7 @@ if opts.corrmod && opts.corrcon,
             pmerged = zeros(sum(plm.nY)*sum(plm.nC),1);
             j = 1;
             for y = 1:plm.nY,
-                if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         pmerged(plm.Ycumsiz(y)*sum(plm.nC)+1:plm.Ycumsiz(y+1)*sum(plm.nC)) = plm.Gtfcepperm{y}{m}{c};
@@ -1827,7 +1839,7 @@ if opts.corrmod && opts.corrcon,
             end
             pfdradj = fastfdr(pmerged);
             for y = 1:plm.nY,
-                if opts.oneMperY, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         palm_quicksave(pfdradj(plm.Ycumsiz(y)*sum(plm.nC)+1:plm.Ycumsiz(y+1)*sum(plm.nC)),1,opts,plm,y,m,c, ...

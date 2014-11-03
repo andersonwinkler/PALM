@@ -1,4 +1,11 @@
 function opts = palm_defaults
+% Set up PALM defaults.
+% 
+% _____________________________________
+% Anderson M. Winkler
+% FMRIB / University of Oxford
+% Oct/2014
+% http://brainder.org
 
 % Define some defaults and organise all as a struct
 opts.o                = 'palm';             % Default output string
@@ -59,7 +66,7 @@ opts.singlevg         = false;              % use a single VG (overrides automat
 opts.transposedata    = false;              % transpose data if 2D?
 opts.verbosefilenames = false;              % use filenames with _i%d, _c%d, etc when there are more than one?
 opts.syncperms        = false;              % synchronize permutations (this only affects designs that can actually be synced
-opts.oneMperY         = false;              % use one design for each input?
+opts.designperinput   = false;              % use one design for each input?
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within is also default).
