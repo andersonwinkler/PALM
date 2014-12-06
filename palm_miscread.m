@@ -1,7 +1,7 @@
 function X = palm_miscread(filename,useniiclass)
 % Read various scalar data formats based on the file extension.
 %
-% X = miscread(filename);
+% X = miscread(filename,useniiclass);
 %
 % X is a struct that contains the fields:
 % X.filename : Contains the name of the file.
@@ -177,6 +177,7 @@ switch lower(fext),
         if extern.fs,
             X.readwith = 'fs_read_surf';
             [X.data.vtx,X.data.fac] = read_surf(X.filename);
+            X.data.fac = X.data.fac + 1;
         else
             error([
                 'FreeSurfer was not found. To use this data, make sure\n' ...

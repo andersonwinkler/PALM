@@ -8,8 +8,8 @@ function palm_backend(varargin)
 % http://brainder.org
 
 % Take the arguments. Save a small log if needed.
-%clear global plm opts % comment for debugging
-global plm opts; % uncomment for debugging
+% clear global plm opts % comment for debugging
+% global plm opts; % uncomment for debugging
 [opts,plm] = palm_takeargs(varargin{:});
                     
 % Variables to store stuff for later.
@@ -522,30 +522,29 @@ for po = P_outer,
                     if     plm.rC{m}(c) == 1 && plm.nVG == 1,
                         plm.Qname{m}{c} = '_tsqstat';
                         fastmv   {m}{c} = @(M,psi,res)fasttsq(M,psi,res,m,c,plm);
-                        pparamv  {m}{c} = @(Q)fasttsqp(Q, ...
-                            plm.N - plm.rM{m}(c),plm.nY);
+                        pparamv  {m}{c} = @(Q)fasttsqp(Q,plm.N-plm.rM{m}(c),plm.nY);
                     elseif plm.rC{m}(c) >  1 && plm.nVG == 1,
                         switch lower(opts.mvstat),
                             case 'wilks',
                                 plm.Qname{m}{c} = '_wilksstat';
                                 plm.qfun        = @(H,E)wilks(H,E);
                                 pparamv{m}{c}   = @(Q)wilksp(Q, ...
-                                    plm.rC{m}(c),plm.rC{m}(c),plm.nY);
-                            case 'hotelling',
-                                plm.Qname{m}{c} = '_hotellstat';
-                                plm.qfun        = @(H,E)hotelling(H,E);
-                                pparamv{m}{c}   = @(Q)hotellingp(Q, ...
-                                    plm.rC{m}(c),plm.rC{m}(c),plm.nY);
+                                    plm.rC{m}(c),plm.N-plm.rM{m}(c),plm.nY);
+                            case 'lawley',
+                                plm.Qname{m}{c} = '_lawleystat';
+                                plm.qfun        = @(H,E)lawley(H,E);
+                                pparamv{m}{c}   = @(Q)lawleyp(Q, ...
+                                    plm.rC{m}(c),plm.N-plm.rM{m}(c),plm.nY);
                             case 'pillai',
                                 plm.Qname{m}{c} = '_pillaistat';
                                 plm.qfun        = @(H,E)pillai(H,E);
                                 pparamv{m}{c}   = @(Q)pillaip(Q, ...
-                                    plm.rC{m}(c),plm.rC{m}(c),plm.nY);
+                                    plm.rC{m}(c),plm.N-plm.rM{m}(c),plm.nY);
                             case {'roy_ii','roy'},
                                 plm.Qname{m}{c} = '_roystat';
                                 plm.qfun        = @(H,E)roy_ii(H,E);
                                 pparamv{m}{c}   = @(Q)roy_iip(Q, ...
-                                    plm.rC{m}(c),plm.rC{m}(c),plm.nY);
+                                    plm.rC{m}(c),plm.N-plm.rM{m}(c),plm.nY);
                             case 'roy_iii',
                                 plm.Qname{m}{c} = '_roy3stat';
                                 plm.qfun        = @(H,E)roy_iii(H,E);
@@ -797,10 +796,10 @@ for po = P_outer,
                         if opts.clustere_uni.do,
                             if p == 1,
                                 plm.Gclemax{y}{m}{c} = zeros(plm.nP{m}(c),1);
-                                [plm.Gclemax{m}{c}(p),plm.Gcle{y}{m}{c}] = palm_clustere( ...
+                                [plm.Gclemax{y}{m}{c}(p),plm.Gcle{y}{m}{c}] = palm_clustere( ...
                                     G{y}{m}{c},y,opts.clustere_uni.thr,opts,plm);
                             else
-                                plm.Gclemax{m}{c}(p) = palm_clustere( ...
+                                plm.Gclemax{y}{m}{c}(p) = palm_clustere( ...
                                     G{y}{m}{c},y,opts.clustere_uni.thr,opts,plm);
                             end
                         end
@@ -809,10 +808,10 @@ for po = P_outer,
                         if opts.clusterm_uni.do,
                             if p == 1,
                                 plm.Gclmmax{y}{m}{c} = zeros(plm.nP{m}(c),1);
-                                [plm.Gclmmax{m}{c}(p),plm.Gclm{y}{m}{c}] = palm_clusterm( ...
+                                [plm.Gclmmax{y}{m}{c}(p),plm.Gclm{y}{m}{c}] = palm_clusterm( ...
                                     G{y}{m}{c},y,opts.clusterm_uni.thr,opts,plm);
                             else
-                                plm.Gclmmax{m}{c}(p) = palm_clusterm( ...
+                                plm.Gclmmax{y}{m}{c}(p) = palm_clusterm( ...
                                     G{y}{m}{c},y,opts.clusterm_uni.thr,opts,plm);
                             end
                         end
@@ -903,7 +902,7 @@ for po = P_outer,
                     end
                     if isnichols,
                         plm.Tpperm{m}{c} = plm.Tpperm{m}{c} + ...
-                            sum(bsxfun(npcrel,Gnpc,plm.T{m}{c}),1);
+                            sum(bsxfun(npcrel,Gnpc{1},plm.T{m}{c}),1);
                         plm.Tmax{m}{c}(p,:) = npcextr(Gnpcppara,[],2)';
                     else
                         plm.Tpperm{m}{c} = plm.Tpperm{m}{c} + ...
@@ -985,7 +984,7 @@ for po = P_outer,
                     
                     % Since computing the parametric p-value for some methods
                     % can be quite slow, it's faster to run all these checks
-                    % to ensure that 'pparanpc' runs just once.
+                    % to ensure that 'pparamv' runs just once.
                     if opts.zstat            || ...
                             opts.spatial_mv  || ...
                             (p == 1          && ...
@@ -1222,7 +1221,7 @@ for po = P_outer,
             end
             if isnichols,
                 plm.Tpperm{j} = plm.Tpperm{j} + ...
-                    sum(bsxfun(npcrel,Gnpcp,plm.T{j}),1);
+                    sum(bsxfun(npcrel,Gnpc{j},plm.T{j}),1);
                 plm.Tmax{j}(po,:) = npcextr(Gnpcppara,[],2)';
             else
                 plm.Tpperm{j} = plm.Tpperm{j} + ...
@@ -1342,7 +1341,7 @@ if opts.MV,
 end
 
 % Save uncorrected & FWER-corrected within modality for this contrast.
-fprintf('Saving p-values (uncorrected and corrected within modality and within contrast).\n');
+fprintf('Saving p-values (uncorrected, and corrected within modality and within contrast).\n');
 for y = 1:plm.nY,
     if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
     for m = loopM,
@@ -1366,7 +1365,7 @@ for y = 1:plm.nY,
                 palm_quicksave(plm.Gpperm{y}{m}{c},1,opts,plm,y,m,c, ...
                     sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',ystr{y},mstr{m},cstr{c}));
                 
-                % FWER-corrected within modality and contrast.
+                % FWER-corrected
                 palm_quicksave( ...
                     palm_datapval(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false),1,opts,plm,y,m,c,...
                     sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
@@ -1445,35 +1444,66 @@ if opts.corrmod,
     fprintf('Saving p-values (corrected across modalities).\n')
     
     % FWER correction (non-spatial stats)
-    for m = 1:plm.nM,
-        for c = 1:plm.nC(m),
-            distmax = zeros(plm.nP{m}(c),plm.nY);
-            if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-            for y = loopY,
+    if opts.designperinput,
+        for c = 1:plm.nC(1),
+            distmax = zeros(plm.nP{1}(c),plm.nY);
+            for y = 1:plm.nY,
+                m = y;
                 distmax(:,y) = plm.Gmax{y}{m}{c};
             end
             distmax = max(distmax,[],2);
-            for y = loopY,
+            for y = 1:plm.nY,
+                m = y;
                 palm_quicksave( ...
                     palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
                     sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+            end
+        end
+    else
+        for m = 1:plm.nM,
+            for c = 1:plm.nC(m),
+                distmax = zeros(plm.nP{m}(c),plm.nY);
+                for y = 1:plm.nY,
+                    distmax(:,y) = plm.Gmax{y}{m}{c};
+                end
+                distmax = max(distmax,[],2);
+                for y = 1:plm.nY,
+                    palm_quicksave( ...
+                        palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                end
             end
         end
     end
     
     % FDR correction (non-spatial stats)
     if opts.FDR,
-        for m = 1:plm.nM,
-            for c = 1:plm.nC(m),
+        if opts.designperinput,
+            for c = 1:plm.nC(1),
                 pmerged = zeros(sum(plm.Ysiz),1);
-                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-                for y = loopY,
+                for y = 1:plm.nY,
+                    m = y;
                     pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
                 end
                 pfdradj = fastfdr(pmerged);
-                for y = loopY,
+                for y = 1:plm.nY,
+                    m = y;
                     palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
+                end
+            end
+        else
+            for m = 1:plm.nM,
+                for c = 1:plm.nC(m),
+                    pmerged = zeros(sum(plm.Ysiz),1);
+                    for y = 1:plm.nY,
+                        pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
+                    end
+                    pfdradj = fastfdr(pmerged);
+                    for y = 1:plm.nY,
+                        palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
+                    end
                 end
             end
         end
@@ -1482,18 +1512,34 @@ if opts.corrmod,
     % Cluster extent
     if opts.clustere_uni.do && ...
             (all(plm.Yisvol) || all(plm.Yissrf)),
-        for m = 1:plm.nM,
-            for c = 1:plm.nC(m),
-                distmax = zeros(plm.nP{m}(c),plm.nY);
-                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-                for y = loopY,
+        if opts.designperinput,
+            for c = 1:plm.nC(1),
+                distmax = zeros(plm.nP{1}(c),plm.nY);
+                for y = 1:plm.nY,
+                    m = y;
                     distmax(:,y) = plm.Gclemax{y}{m}{c};
                 end
                 distmax = max(distmax,[],2);
-                for y = loopY,
+                for y = 1:plm.nY,
+                    m = y;
                     palm_quicksave( ...
                         palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                end
+            end
+        else
+            for m = 1:plm.nM,
+                for c = 1:plm.nC(m),
+                    distmax = zeros(plm.nP{m}(c),plm.nY);
+                    for y = 1:plm.nY,
+                        distmax(:,y) = plm.Gclemax{y}{m}{c};
+                    end
+                    distmax = max(distmax,[],2);
+                    for y = 1:plm.nY,
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                    end
                 end
             end
         end
@@ -1502,18 +1548,34 @@ if opts.corrmod,
     % Cluster mass
     if opts.clusterm_uni.do && ...
             (all(plm.Yisvol) || all(plm.Yissrf)),
-        for m = 1:plm.nM,
-            for c = 1:plm.nC(m),
-                distmax = zeros(plm.nP{m}(c),plm.nY);
-                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-                for y = loopY,
+        if opts.designperinput,
+            for c = 1:plm.nC(1),
+                distmax = zeros(plm.nP{1}(c),plm.nY);
+                for y = 1:plm.nY,
+                    m = y;
                     distmax(:,y) = plm.Gclmmax{y}{m}{c};
                 end
                 distmax = max(distmax,[],2);
-                for y = loopY,
+                for y = 1:plm.nY,
+                    m = y;
                     palm_quicksave( ...
                         palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                end
+            end
+        else
+            for m = 1:plm.nM,
+                for c = 1:plm.nC(m),
+                    distmax = zeros(plm.nP{m}(c),plm.nY);
+                    for y = 1:plm.nY,
+                        distmax(:,y) = plm.Gclmmax{y}{m}{c};
+                    end
+                    distmax = max(distmax,[],2);
+                    for y = 1:plm.nY,
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                    end
                 end
             end
         end
@@ -1522,33 +1584,64 @@ if opts.corrmod,
     % TFCE
     if opts.tfce_uni.do && ...
             (all(plm.Yisvol) || all(plm.Yissrf)),
-        for m = 1:plm.nM,
-            for c = 1:plm.nC(m),
-                distmax = zeros(plm.nP{m}(c),plm.nY);
-                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-                for y = loopY,
+        if opts.designperinput,
+            for c = 1:plm.nC(1),
+                distmax = zeros(plm.nP{1}(c),plm.nY);
+                for y = 1:plm.nY,
+                    m = y;
                     distmax(:,y) = plm.Gtfcemax{y}{m}{c};
                 end
                 distmax = max(distmax,[],2);
-                for y = loopY,
+                for y = 1:plm.nY,
+                    m = y;
                     palm_quicksave( ...
                         palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
                 end
             end
-        end
-        if opts.FDR,
+        else
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
+                    distmax = zeros(plm.nP{m}(c),plm.nY);
+                    for y = 1:plm.nY,
+                        distmax(:,y) = plm.Gtfcemax{y}{m}{c};
+                    end
+                    distmax = max(distmax,[],2);
+                    for y = 1:plm.nY,
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            end
+        end
+        if opts.FDR,
+            if opts.designperinput,
+                for c = 1:plm.nC(1),
                     pmerged = zeros(sum(plm.Ysiz),1);
-                    if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-                    for y = loopY,
+                    for y = 1:plm.nY,
+                        m = y;
                         pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
                     end
                     pfdradj = fastfdr(pmerged);
-                    for y = loopY,
+                    for y = 1:plm.nY,
+                        m = y;
                         palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            else
+                for m = 1:plm.nM,
+                    for c = 1:plm.nC(m),
+                        pmerged = zeros(sum(plm.Ysiz),1);
+                        for y = 1:plm.nY,
+                            pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
+                        end
+                        pfdradj = fastfdr(pmerged);
+                        for y = 1:plm.nY,
+                            palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
+                        end
                     end
                 end
             end
@@ -1562,9 +1655,14 @@ if opts.corrcon,
     
     % FWER correction (non-spatial stats)
     for y = 1:plm.nY,
-        distmax = zeros(plm.nP{1}(1),sum(plm.nC));
+        if opts.designperinput,
+            loopM = y;
+            distmax = zeros(plm.nP{1}(1),plm.nC(1));
+        else
+            loopM = 1:plm.nM;
+            distmax = zeros(plm.nP{1}(1),sum(plm.nC));
+        end
         j = 1;
-        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
         for m = loopM,
             for c = 1:plm.nC(m),
                 distmax(:,j) = plm.Gmax{y}{m}{c};
@@ -1572,7 +1670,7 @@ if opts.corrcon,
             end
         end
         distmax = max(distmax,[],2);
-        for m = 1:loopM,
+        for m = loopM,
             for c = 1:plm.nC(m),
                 palm_quicksave( ...
                     palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
@@ -1584,20 +1682,25 @@ if opts.corrcon,
     % FDR correction (non-spatial stats)
     if opts.FDR,
         for y = 1:plm.nY,
-            pmerged = zeros(sum(plm.nC),plm.Ysiz(y));
+            if opts.designperinput,
+                loopM = y;
+                pmerged = zeros(plm.nC(1),plm.Ysiz(y));
+            else
+                loopM = 1:plm.nM;
+                pmerged = zeros(sum(plm.nC),plm.Ysiz(y));
+            end
             j = 1;
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
-                    pmerged(:,j) = plm.Gpperm{y}{m}{c};
+                    pmerged(j,:) = plm.Gpperm{y}{m}{c};
                     j = j + 1;
                 end
             end
-            pfdradj = reshape(fastfdr(pmerged(:)),sum(plm.nC),plm.Ysiz(y));
+            pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
             j = 1;
             for m = loopM,
                 for c = 1:plm.nC(m),
-                    palm_quicksave(pfdradj(:,j),1,opts,plm,y,m,c, ...
+                    palm_quicksave(pfdradj(j,:),1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfdrp',ystr{y},mstr{m},cstr{c}));
                     j = j + 1;
                 end
@@ -1608,9 +1711,14 @@ if opts.corrcon,
     % Cluster extent
     if opts.clustere_uni.do,
         for y = 1:plm.nY,
-            distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+            if opts.designperinput,
+                loopM = y;
+                distmax = zeros(plm.nP{1}(1),plm.nC(1));
+            else
+                loopM = 1:plm.nM;
+                distmax = zeros(plm.nP{1}(1),sum(plm.nC));
+            end
             j = 1;
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gclemax{y}{m}{c};
@@ -1618,7 +1726,7 @@ if opts.corrcon,
                 end
             end
             distmax = max(distmax,[],2);
-            for m = 1:loopM,
+            for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave( ...
                         palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
@@ -1631,9 +1739,14 @@ if opts.corrcon,
     % Cluster mass
     if opts.clusterm_uni.do,
         for y = 1:plm.nY,
-            distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+            if opts.designperinput,
+                loopM = y;
+                distmax = zeros(plm.nP{1}(1),plm.nC(1));
+            else
+                loopM = 1:plm.nM;
+                distmax = zeros(plm.nP{1}(1),sum(plm.nC));
+            end
             j = 1;
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gclmmax{y}{m}{c};
@@ -1654,9 +1767,14 @@ if opts.corrcon,
     % TFCE
     if opts.tfce_uni.do,
         for y = 1:plm.nY,
-            distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+            if opts.designperinput,
+                loopM = y;
+                distmax = zeros(plm.nP{1}(1),plm.nC(1));
+            else
+                loopM = 1:plm.nM;
+                distmax = zeros(plm.nP{1}(1),sum(plm.nC));
+            end
             j = 1;
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     distmax(:,j) = plm.Gtfcemax{y}{m}{c};
@@ -1674,20 +1792,25 @@ if opts.corrcon,
         end
         if opts.FDR,
             for y = 1:plm.nY,
-                pmerged = zeros(sum(plm.nC),plm.Ysiz(y));
+                if opts.designperinput,
+                    loopM = y;
+                    pmerged = zeros(plm.nC(1),plm.Ysiz(y));
+                else
+                    loopM = 1:plm.nM;
+                    pmerged = zeros(sum(plm.nC),plm.Ysiz(y));
+                end
                 j = 1;
-                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
-                        pmerged(:,j) = plm.Gtfcepperm{y}{m}{c};
+                        pmerged(j,:) = plm.Gtfcepperm{y}{m}{c};
                         j = j + 1;
                     end
                 end
-                pfdradj = reshape(fastfdr(pmerged(:)),sum(plm.nC),plm.Ysiz(y));
+                pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
                 j = 1;
                 for m = loopM,
                     for c = 1:plm.nC(m),
-                        palm_quicksave(pfdradj(:,j),1,opts,plm,y,m,c, ...
+                        palm_quicksave(pfdradj(j,:),1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_cfdrp',ystr{y},mstr{m},cstr{c}));
                         j = j + 1;
                     end
@@ -1702,7 +1825,11 @@ if opts.corrmod && opts.corrcon,
     fprintf('Saving p-values (corrected across modalities and contrasts).\n')
     
     % FWER correction (non-spatial stats)
-    distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
+    if opts.designperinput,
+        distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
+    else
+        distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
+    end
     j = 1;
     for y = 1:plm.nY,
         if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
@@ -1727,23 +1854,27 @@ if opts.corrmod && opts.corrcon,
     
     % FDR correction (non-spatial stats)
     if opts.FDR,
-        pmerged = zeros(sum(plm.nY)*sum(plm.nC),1);
+        if opts.designperinput,
+            pmerged = zeros(plm.nC(1),sum(plm.Ysiz));
+        else
+            pmerged = zeros(sum(plm.nC),sum(plm.Ysiz));
+        end
         j = 1;
         for y = 1:plm.nY,
             if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
-                    pmerged(plm.Ycumsiz(y)*sum(plm.nC)+1:plm.Ycumsiz(y+1)*sum(plm.nC)) = plm.Gpperm{y}{m}{c};
+                    pmerged(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
                     j = j + 1;
                 end
             end
         end
-        pfdradj = fastfdr(pmerged);
+        pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
         for y = 1:plm.nY,
             if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
-                    palm_quicksave(pfdradj(plm.Ycumsiz(y)*sum(plm.nC)+1:plm.Ycumsiz(y+1)*sum(plm.nC)),1,opts,plm,y,m,c, ...
+                    palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfdrp',ystr{y},mstr{m},cstr{c}));
                 end
             end
@@ -1752,7 +1883,11 @@ if opts.corrmod && opts.corrcon,
     
     % Cluster extent
     if opts.clustere_uni.do,
-        distmax = zeros(opts.nP{1}(1),plm.nY*sum(plm.nC));
+        if opts.designperinput,
+            distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
+        else
+            distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
+        end
         j = 1;
         for y = 1:plm.nY,
             if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
@@ -1778,7 +1913,11 @@ if opts.corrmod && opts.corrcon,
     
     % Cluster mass
     if opts.clusterm_uni.do,
-        distmax = zeros(opts.nP{1}(1),plm.nY*sum(plm.nC));
+        if opts.designperinput,
+            distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
+        else
+            distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
+        end
         j = 1;
         for y = 1:plm.nY,
             if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
@@ -1791,6 +1930,7 @@ if opts.corrmod && opts.corrcon,
         end
         distmax = max(distmax,[],2);
         for y = 1:plm.nY,
+            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave( ...
@@ -1803,7 +1943,11 @@ if opts.corrmod && opts.corrcon,
     
     % TFCE
     if opts.tfce_uni.do,
-        distmax = zeros(opts.nP{1}(1),plm.nY*sum(plm.nC));
+        if opts.designperinput,
+            distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
+        else
+            distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
+        end
         j = 1;
         for y = 1:plm.nY,
             if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
@@ -1826,24 +1970,28 @@ if opts.corrmod && opts.corrcon,
             end
         end
         if opts.FDR,
-            pmerged = zeros(sum(plm.nY)*sum(plm.nC),1);
+            if opts.designperinput,
+                pmerged = zeros(plm.nC(1),sum(plm.Ysiz));
+            else
+                pmerged = zeros(sum(plm.nC),sum(plm.Ysiz));
+            end
             j = 1;
             for y = 1:plm.nY,
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
-                        pmerged(plm.Ycumsiz(y)*sum(plm.nC)+1:plm.Ycumsiz(y+1)*sum(plm.nC)) = plm.Gtfcepperm{y}{m}{c};
+                        pmerged(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
                         j = j + 1;
                     end
                 end
             end
-            pfdradj = fastfdr(pmerged);
+            pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
             for y = 1:plm.nY,
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
-                        palm_quicksave(pfdradj(plm.Ycumsiz(y)*sum(plm.nC)+1:plm.Ycumsiz(y+1)*sum(plm.nC)),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfdrp',ystr{y},mstr{m},cstr{c}));
+                        palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mcfdrp',ystr{y},mstr{m},cstr{c}));
                     end
                 end
             end
@@ -1866,7 +2014,7 @@ if opts.npcmod && ~ opts.npccon,
             palm_quicksave(plm.Tpperm{m}{c},1,opts,plm,[],m,c, ...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',mstr{m},cstr{c}));
             
-            % NPC FWER-corrected within modality and contrast.
+            % NPC FWER-corrected
             palm_quicksave( ...
                 palm_datapval(plm.T{m}{c},plm.Tmax{m}{c},npcrev),1,opts,plm,[],m,c, ...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',mstr{m},cstr{c}));
@@ -1940,7 +2088,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     fprintf('Saving p-values for NPC between modalities (corrected across contrasts).\n');
     
     % FWER correction (non-spatial stats)
-    distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+    distmax = zeros(plm.nP{1}(1),sum(plm.nC));
     j = 1;
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
@@ -1980,7 +2128,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     
     % Cluster extent NPC
     if opts.clustere_npc.do,
-        distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+        distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
@@ -2000,7 +2148,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     
     % Cluster mass NPC
     if opts.clustere_npc.do,
-        distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+        distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
@@ -2020,7 +2168,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     
     % TFCE NPC
     if opts.tfce_npc.do,
-        distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+        distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
@@ -2073,7 +2221,7 @@ if opts.npccon,
         palm_quicksave(plm.Tpperm{j},1,opts,plm,j,[],[], ...
             sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',jstr{j}));
         
-        % NPC FWER-corrected within modality and contrast.
+        % NPC FWER-corrected
         palm_quicksave( ...
             palm_datapval(plm.T{j},plm.Tmax{j},npcrev),1,opts,plm,j,[],[], ...
             sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',jstr{j}));
@@ -2331,7 +2479,7 @@ if opts.MV && opts.corrcon,
     fprintf('Saving p-values for MANOVA/MANCOVA (corrected across contrasts).\n')
     
     % FWER correction (non-spatial stats)
-    distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+    distmax = zeros(plm.nP{1}(1),sum(plm.nC));
     j = 1;
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
@@ -2371,7 +2519,7 @@ if opts.MV && opts.corrcon,
     
     % Cluster extent MV
     if opts.clustere_mv.do,
-        distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+        distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
@@ -2391,7 +2539,7 @@ if opts.MV && opts.corrcon,
     
     % Cluster mass MV
     if opts.clusterm_mv.do,
-        distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+        distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
@@ -2413,7 +2561,7 @@ if opts.MV && opts.corrcon,
     if opts.tfce_mv.do,
         
         % FWER correction
-        distmax = zeros(opts.nP{1}(1),sum(plm.nC));
+        distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
@@ -2823,11 +2971,11 @@ Fdf2 = r*t-2*u;
 P = palm_gpval(F,Fdf1,Fdf2);
 
 % ==============================================================
-function Q = hotelling(E,H)
+function Q = lawley(E,H)
 % Lawley-Hotelling's trace.
 Q = trace(H/E);
 
-function P = hotellingp(Q,df1,df2,p)
+function P = lawleyp(Q,df1,df2,p)
 m = (abs(p-df1)-1)/2;
 n = (df2-p-1)/2;
 s = min(p,df1);
@@ -2961,7 +3109,7 @@ end
 % ==============================================================
 function T = mudholkargeorge(G,df1,df2)
 nG = size(G,1);
-mhcte = sqrt(3*(5*nG+4)/nY/(5*nG+2))/pi;
+mhcte = sqrt(3*(5*nG+4)/nG/(5*nG+2))/pi;
 T = mhcte*sum(log(...
     palm_gcdf(G,df1,df2)./...
     palm_gpval(G,df1,df2)),1);
@@ -3192,7 +3340,6 @@ else
 end
 
 function sp = way1(X)
-% This is still part of the spr function.
 % Way 1: this tends to be faster for Octave and if
 % the number of levels in X is smaller than about 5.
 [~,nY,nT] = size(X);
@@ -3207,7 +3354,6 @@ for y1 = 1:nY,
 end
 
 function sp = way2(X)
-% This is still part of the spr function.
 % Way 2: This tends to be faster in Matlab or if
 % there are many levels in X, e.g., more than about 7.
 [~,nY,nT] = size(X);

@@ -24,7 +24,7 @@ function Z = palm_gtoz(G,df1,df2)
 % Note that for speed, there's no argument checking.
 
 % If df2 is NaN, this is r or R^2
-if isnan(df2),
+if isnan(df2(1)),
     
     if df1 == 1,
         % If rank(C) = 1, i.e., df1 = 1, this is r, so
@@ -49,6 +49,12 @@ else
         %Z(~idx) =  erfinv(2*palm_gcdf( G(~idx),1,df2(~idx))-1)*sqrt(2);
         Z( idx) =  erfcinv(2*palm_gcdf(-G( idx),1,df2( idx)))*sqrt(2);
         Z(~idx) = -erfcinv(2*palm_gcdf( G(~idx),1,df2(~idx)))*sqrt(2);
+        
+    elseif df1 == 0,
+        
+        % If df1 is zero, this is already a z-stat (this is here more for
+        % compatibility.
+        Z = G;
         
     else
         

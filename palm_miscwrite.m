@@ -116,6 +116,7 @@ switch lower(X.readwith),
     case 'fs_load_mgh',
         
         % Write a FreeSurfer MGH file
+        X.filename = horzcat(X.filename,'.mgz');
         save_mgh(X.data,X.filename,X.extra.M,X.extra.mr_parms);
         
 end

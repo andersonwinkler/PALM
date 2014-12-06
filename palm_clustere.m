@@ -51,16 +51,17 @@ if plm.Yisvol(y),
 elseif plm.Yisvtx(y),
     
     % Vertexwise surface data
-    dpxl = vtxlabel(D,plm.srf{y}.data.fac);
+    dpxl = palm_vtxlabel(D,plm.srf{y}.data.fac);
 
 elseif plm.Yisfac(y),
     
     % Facewise surface data
-    dpxl = faclabel(D,plm.srf{y}.data.fac);
+    dpxl = palm_faclabel(D,plm.srf{y}.data.fac);
     
 end
 
 % Compute the sizes and the statistic
+sizes = [];
 if plm.Yisvol(y),
     
     % Here cellfun is ~30% faster than doing as a loop

@@ -57,7 +57,7 @@ elseif plm.Yisvtx(y),
     % Vertexwise surface data
     tfcestat = zeros(size(D));
     for h = dh:dh:max(D(:));
-        dpxl  = vtxlabel(D>=h,plm.srf{y}.data.fac);
+        dpxl  = palm_vtxlabel(D>=h,plm.srf{y}.data.fac);
         U     = unique(dpxl(dpxl>0))';
         for u = 1:numel(U),
             idx = dpxl == U(u);
@@ -71,7 +71,7 @@ elseif plm.Yisfac(y),
     % Facewise surface data
     tfcestat = zeros(size(D));
     for h = dh:dh:max(D(:));
-        dpxl  = faclabel(D>=h,plm.srf{y}.data.fac);
+        dpxl  = palm_faclabel(D>=h,plm.srf{y}.data.fac);
         U     = unique(dpxl(dpxl>0))';
         for u = 1:numel(U),
             idx = dpxl == U(u);

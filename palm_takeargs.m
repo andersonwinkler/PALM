@@ -21,14 +21,14 @@ else
     vararginx = varargin;
     idxa = find(strcmpi(vararginx,'-o'));
     if isempty(idxa),
-        cfgname = horzcat(opts.o,'palmconfig.txt');
+        otmp = opts.o;
     else
         otmp = vararginx{idxa+1};
-        if ~strcmp(otmp(end),'_'),
-            otmp = horzcat(otmp,'_');
-        end
-        cfgname = horzcat(otmp,'palmconfig.txt');
     end
+    if ~strcmp(otmp(end),'_'),
+        otmp = horzcat(otmp,'_');
+    end
+    cfgname = horzcat(otmp,'palmconfig.txt');
     [opth,~,~] = fileparts(cfgname);
     if ~isempty(opth) && ~exist(opth,'dir'),
         mkdir(opth);
@@ -37,6 +37,7 @@ else
 end
 
 % Number of input images/masks/surfaces
+% These are NOT meant to be edited. Don't edit this!
 Ni = sum(strcmp(vararginx,'-i'));  % number of data inputs
 Nm = sum(strcmp(vararginx,'-m'));  % number of masks
 Ns = sum(strcmp(vararginx,'-s'));  % number of surfaces
@@ -51,12 +52,12 @@ opts.t   = cell(Nt,1);  % t contrast file(s)
 opts.f   = cell(Nf,1);  % F contrast file(s)
 opts.eb       = [];     % File with definition of exchangeability blocks
 opts.vg       = [];     % File with definition of variance groups
-opts.EE       = false;  % To be filled below (don't edit this here!)
-opts.ISE      = false;  % To be filled below (don't edit this here!)
-opts.within   = false;  % To be filled below (don't edit this here!)
-opts.whole    = false;  % To be filled below (don't edit this here!)
+opts.EE       = false;  % To be filled below (don't edit this!)
+opts.ISE      = false;  % To be filled below (don't edit this!)
+opts.within   = false;  % To be filled below (don't edit this!)
+opts.whole    = false;  % To be filled below (don't edit this!)
 opts.conskipcount = 0;  % When saving the contrasts, skip how many from 1?
-opts.singlevg = true;   % Make sure that sigle VG will be used if nothing is supplied (don't edit this here!)
+opts.singlevg = true;   % Make sure that sigle VG will be used if nothing is supplied (this is NOT a "default" setting, and it's not a setting at all, but hard coded. Don't edit it!)
 
 % These are to be incremented below
 a = 1; i = 1; m = 1; d = 1;
@@ -587,12 +588,12 @@ while a <= narginx,
             elseif nargin > a,
                 
                 % Which multivariate statistic to use?
-                methlist = {     ...
-                    'Wilks',     ...
-                    'Hotelling', ...
-                    'Pillai',    ...
-                    'Roy',       ...
-                    'Roy_ii',    ...
+                methlist = {  ...
+                    'Wilks',  ...
+                    'Lawley', ...
+                    'Pillai', ...
+                    'Roy',    ...
+                    'Roy_ii', ...
                     'Roy_iii'};
                 methidx = strcmpi(vararginx{a+1},methlist);
                 
@@ -974,6 +975,9 @@ end
 if opts.ev4vg && opts.vgdemean,
     error('Cannot use the option ''-ev4vg'' together with ''-vgdemean''');
 end
+if opts.MV && ~ opts.singlevg,
+    error('Currently MV is only allowed with a single VG, that is, assuming homoscedasticity.');
+end
 if opts.designperinput && opts.MV,
     error('It''s not possible to use the option ''-onedesignperinput'' together with the option ''-mv''.');
 end
@@ -984,17 +988,19 @@ else
     opts.syncperms = true;
 end
 
-% Initialize the random number generator
-if palm_isoctave,
-    if any(strcmpi(opts.seed,{'reset','shuffle','twist'})),
-        opts.seed = 'reset';
+% Initialize the random number generator (if nP = 0, no need for that)
+if opts.nP0,
+    if palm_isoctave,
+        if any(strcmpi(opts.seed,{'reset','shuffle','twist'})),
+            opts.seed = 'reset';
+        end
+        rand('state',opts.seed); %#ok
+    else
+        if any(strcmpi(opts.seed,{'reset','shuffle','twist'})),
+            opts.seed = 'shuffle';
+        end
+        rng(opts.seed);
     end
-    rand('state',opts.seed); %#ok
-else
-    if any(strcmpi(opts.seed,{'reset','shuffle','twist'})),
-        opts.seed = 'shuffle';
-    end
-    rng(opts.seed);
 end
 
 % Read and organise the surfaces. If no surfaces have been loaded, but the
@@ -1190,7 +1196,7 @@ for i = 1:Ni,
     % i.e., voxel for volumetric data,
     switch Ytmp.readwith,
         case {'nifticlass','fs_load_nifti','fsl_read_avw',...
-                'spm_spm_vol','nii_load_nii','fs_load_mgh'},
+                'spm_spm_vol','nii_load_nii'},
             plm.Yisvol(i)   = true;
             plm.Ykindstr{i} = '_vox';
         case 'fs_read_curv',
@@ -1199,6 +1205,16 @@ for i = 1:Ni,
         case 'dpxread',
             plm.Yissrf(i)   = true;
             plm.Ykindstr{i} = '_dpx'; % this may be overriden below if a surface file is supplied
+        case 'fs_load_mgh',
+            if ndims(Ytmp.data) == 4 && ...
+                    size(Ytmp.data,2) == 1 && ...
+                    size(Ytmp.data,3) == 1,
+                plm.Yissrf(i)   = true;
+                plm.Ykindstr{i} = '_dpx'; % this may be overriden below if a surface file is supplied
+            else
+                plm.Yisvol(i)   = true;
+                plm.Ykindstr{i} = '_vox';
+            end
         otherwise
             plm.Ykindstr{i} = '_dat';
     end
@@ -1216,16 +1232,18 @@ for i = 1:Ni,
         else
             s = i;
         end
-        if size(plm.srf{s}.data.vtx,1) == size(plm.Yset{i},2);
+        if size(plm.srf{s}.data.vtx,1) == ...
+                max(size(plm.masks{i}.data));
             plm.Yisvtx(i)   = true;
             plm.Yisfac(i)   = false;
-            plm.Ykindstr{i} = '_vtx';
-        elseif size(plm.srf{s}.data.fac,1) == size(plm.Yset{i},2);
+            plm.Ykindstr{i} = '_dpx';
+        elseif size(plm.srf{s}.data.fac,1) == ...
+                max(size(plm.masks{i}.data));
             plm.Yisvtx(i)   = false;
             plm.Yisfac(i)   = true;
-            plm.Ykindstr{i} = '_fac';
+            plm.Ykindstr{i} = '_dpf';
         end
-        plm.Yarea{i} = palm_calcarea(plm.srf{s},plm.Yisvtx(i));
+        plm.Yarea{i} = palm_calcarea(plm.srf{s}.data,plm.Yisvtx(i));
     end
 end
 plm.nY     = numel(plm.Yset);
@@ -1259,6 +1277,7 @@ if opts.npcmod || opts.MV || opts.evperdat,
         end
     end
 end
+clear Ytmp
 
 % A variable with the sizes of all modalities will be handy when doing FDR
 plm.Ysiz = zeros(plm.nY,1);
@@ -1283,16 +1302,16 @@ if opts.savemask,
     for y = 1:plm.nmasks,
         M = plm.masks{y};
         if plm.nY == 1 || plm.nmasks == 1,
-            M.filename = sprintf('%smask',opts.o);
+            M.filename = sprintf('%s_mask',opts.o);
         else
-            M.filename = sprintf('%smask_i%d',opts.o,y);
+            M.filename = sprintf('%s_mask_i%d',opts.o,y);
         end
         M.data = double(M.data);
         palm_miscwrite(M);
     end
     if plm.nY > 1 && (opts.npcmod || opts.MV || opts.evperdat),
         M          = plm.maskinter;
-        M.filename = sprintf('%sintersection_mask',opts.o);
+        M.filename = sprintf('%s_intersection_mask',opts.o);
         M.data     = double(M.data);
         palm_miscwrite(M);
     end
@@ -1310,7 +1329,7 @@ if opts.MV && ~ opts.noranktest,
         end
     end
     if any(failed),
-        fname = sprintf('%smv_illconditioned',opts.o);
+        fname = sprintf('%s_mv_illconditioned',opts.o);
         palm_quicksave(double(failed),0,opts,plm,[],[],fname);
         error([
             'One or more datapoints have ill-conditioned data. This makes\n' ...
@@ -1524,9 +1543,9 @@ if ~ opts.cmcx && ~ opts.evperdat ,
     tmp = sum(diff(seqtmp,1,2).^2,2);
     if (opts.corrcon || opts.npccon) && any(tmp(:) ~= 0),
         warning([ ...
-            'You chose to correct over contrasts, or run NPC between contrasts, but with the contrasts\n' ...
-            '         given, it is not possible to run synchronized permutations without ignoring repeated\n' ...
-            '         elements in the design matrix (or matrices).\n' ...
+            'You chose to correct over contrasts, or run NPC between contrasts, but with\n' ...
+            '         the design(s) contrasts given, it is not possible to run synchronized permutations\n' ...
+            '         without ignoring repeated elements in the design matrix (or matrices).\n' ...
             '         To solve this, adding the option -cmcx automatically.%s\n'],'');
         opts.cmcx = true;
     end

@@ -8,6 +8,8 @@ function B = palm_incrbin(B)
 %      significant digits first.
 % Bi : Incremented B.
 % 
+% If the highest has been reached, Bi = B.
+% 
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
