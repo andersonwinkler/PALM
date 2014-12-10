@@ -136,7 +136,7 @@ end
 
 % Variables for NPC
 if opts.NPC,
-    plm.npcstr = '_npc';                      % default string for the filenames.
+    plm.npcstr = '_npc_';                      % default string for the filenames.
     if       opts.npcmod && ~ opts.npccon,
         Gnpc          = cell(1);              % to store the G-stats ready for NPC
         df2npc        = cell(1);              % to store the df2 ready for NPC
@@ -338,6 +338,7 @@ if opts.syncperms,
         end
     end
     P_outer = 1:plm.nP{1}(1);
+    fprintf('Building null distribution.\n');
 else
     P_outer = 1;
 end
@@ -518,35 +519,37 @@ for po = P_outer,
                     % Make the 3D dataset
                     plm.Yq = cat(3,plm.Yset{:});
                     
-                    % Define the functions for the stats
+                    % Define the functions for the stats. Note that none is
+                    % available if nVG > 1, and this should have been
+                    % checked when taking the arguments.
                     if     plm.rC{m}(c) == 1 && plm.nVG == 1,
-                        plm.Qname{m}{c} = '_tsqstat';
+                        plm.Qname{m}{c} = '_hotelling'; % this is T^2
                         fastmv   {m}{c} = @(M,psi,res)fasttsq(M,psi,res,m,c,plm);
                         pparamv  {m}{c} = @(Q)fasttsqp(Q,plm.N-plm.rM{m}(c),plm.nY);
                     elseif plm.rC{m}(c) >  1 && plm.nVG == 1,
                         switch lower(opts.mvstat),
                             case 'wilks',
-                                plm.Qname{m}{c} = '_wilksstat';
+                                plm.Qname{m}{c} = '_wilks'; % This is Wilks' Lambda
                                 plm.qfun        = @(H,E)wilks(H,E);
                                 pparamv{m}{c}   = @(Q)wilksp(Q, ...
                                     plm.rC{m}(c),plm.N-plm.rM{m}(c),plm.nY);
                             case 'lawley',
-                                plm.Qname{m}{c} = '_lawleystat';
+                                plm.Qname{m}{c} = '_lawley'; % This is Lawley-Hotelling
                                 plm.qfun        = @(H,E)lawley(H,E);
                                 pparamv{m}{c}   = @(Q)lawleyp(Q, ...
                                     plm.rC{m}(c),plm.N-plm.rM{m}(c),plm.nY);
                             case 'pillai',
-                                plm.Qname{m}{c} = '_pillaistat';
+                                plm.Qname{m}{c} = '_pillai';
                                 plm.qfun        = @(H,E)pillai(H,E);
                                 pparamv{m}{c}   = @(Q)pillaip(Q, ...
                                     plm.rC{m}(c),plm.N-plm.rM{m}(c),plm.nY);
                             case {'roy_ii','roy'},
-                                plm.Qname{m}{c} = '_roystat';
+                                plm.Qname{m}{c} = '_roy';
                                 plm.qfun        = @(H,E)roy_ii(H,E);
                                 pparamv{m}{c}   = @(Q)roy_iip(Q, ...
                                     plm.rC{m}(c),plm.N-plm.rM{m}(c),plm.nY);
                             case 'roy_iii',
-                                plm.Qname{m}{c} = '_roy3stat';
+                                plm.Qname{m}{c} = '_roy3';
                                 plm.qfun        = @(H,E)roy_iii(H,E);
                         end
                         fastmv{m}{c} = @(M,psi,res)fastq(M,psi,res,m,c,plm);
@@ -580,6 +583,7 @@ for po = P_outer,
                     end
                 end
                 P_inner = 1:plm.nP{m}(c);
+                fprintf('Building null distribution.\n');
             end
             
             if po == 1,
@@ -650,14 +654,16 @@ for po = P_outer,
                     
                     % Some feedback
                     ProgressNum = ProgressNum + 1;
-                    if opts.syncperms,
-                        fprintf('%0.3g%%\t [Shuffling %d/%d, Design %d/%d, Contrast %d/%d, Modality %d/%d]\n', ...
-                            100*ProgressNum/ProgressDen,...
-                            p,plm.nP{m}(c),m,plm.nM,c,plm.nC(m),y,plm.nY);
-                    else
-                        fprintf('%0.3g%%\t [Design %d/%d, Contrast %d/%d, Shuffling %d/%d, Modality %d/%d]\n', ...
-                            100*(ProgressNum/plm.nP{m}(c)/plm.nY + ProgressCon)/sum(plm.nC),...
-                            m,plm.nM,c,plm.nC(m),p,plm.nP{m}(c),y,plm.nY);
+                    if opts.showprogress,
+                        if opts.syncperms,
+                            fprintf('%0.3g%%\t [Shuffling %d/%d, Design %d/%d, Contrast %d/%d, Modality %d/%d]\n', ...
+                                100*ProgressNum/ProgressDen,...
+                                p,plm.nP{m}(c),m,plm.nM,c,plm.nC(m),y,plm.nY);
+                        else
+                            fprintf('%0.3g%%\t [Design %d/%d, Contrast %d/%d, Shuffling %d/%d, Modality %d/%d]\n', ...
+                                100*(ProgressNum/plm.nP{m}(c)/plm.nY + ProgressCon)/sum(plm.nC),...
+                                m,plm.nM,c,plm.nC(m),p,plm.nP{m}(c),y,plm.nY);
+                        end
                     end
                     
                     % String for the modality index:
@@ -833,10 +839,13 @@ for po = P_outer,
                 
                 % NPC for Y only is here
                 if opts.npcmod && ~ opts.npccon, % && ~ opts.syncperms,
-                    fprintf('\t [Combining modalities]\n');
+                    if opts.showprogress,
+                        fprintf('\t [Combining modalities]\n');
+                    end
                     
                     % Just a feedback message for some situations.
-                    if ~ opts.zstat && ...
+                    if opts.showprogress && ...
+                            ~ opts.zstat && ...
                             p == 1 && ...
                             opts.savepara && ...
                             ~ plm.nonpcppara && ...
@@ -956,7 +965,9 @@ for po = P_outer,
                 
                 % MANOVA/MANCOVA is here
                 if opts.MV,
-                    fprintf('\t [Doing multivariate analysis]\n');
+                    if opts.showprogress,
+                        fprintf('\t [Doing multivariate analysis]\n');
+                    end
                     
                     % Shuffle the data and/or design.
                     if opts.draft,
@@ -1106,7 +1117,8 @@ for po = P_outer,
     if opts.npccon,
         
         % Just a feedback message for some situations.
-        if ~ opts.zstat && ...
+        if opts.showprogress && ...
+                ~ opts.zstat && ...
                 po == 1 && ...
                 opts.savepara && ...
                 ~ plm.nonpcppara && ...
@@ -1119,7 +1131,9 @@ for po = P_outer,
         
         % Assemble the stats for the combination
         if opts.npcmod,
-            fprintf('\t [Combining modalities and contrasts]\n');
+            if opts.showprogress,
+                fprintf('\t [Combining modalities and contrasts]\n');
+            end
             j = 1;
             for y = 1:plm.nY,
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
@@ -1137,7 +1151,9 @@ for po = P_outer,
                 plm.Tmax{1} = zeros(plm.nP{1}(1),1);
             end
         else
-            fprintf('\t [Combining contrasts]\n');
+            if opts.showprogress,
+                fprintf('\t [Combining contrasts]\n');
+            end
             for y = 1:plm.nY,
                 j = 1;
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end

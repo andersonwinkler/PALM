@@ -769,6 +769,12 @@ while a <= narginx,
             opts.syncperms      = true;
             a = a + 1;
             
+        case '-quiet',
+            
+            % Don't print lines indicating progress
+            opts.showprogress = false;
+            a = a + 1;
+            
         case '-pmethodp',
             
             % Which method to use to partition the model when defining
@@ -1242,6 +1248,13 @@ for i = 1:Ni,
             plm.Yisvtx(i)   = false;
             plm.Yisfac(i)   = true;
             plm.Ykindstr{i} = '_dpf';
+        else
+            error([...
+                    'Surface file does not match the input data:\n' ...
+                    '- Surface file %d has %d vertices and %d faces (%s)\n' ...
+                    '- Input data file %d has %d points (%s)'],...
+                    s,size(plm.srf{s}.data.vtx,1),size(plm.srf{s}.data.fac,1),opts.s{s},...
+                    i,max(size(plm.masks{i}.data),opts.i{i}));
         end
         plm.Yarea{i} = palm_calcarea(plm.srf{s}.data,plm.Yisvtx(i));
     end

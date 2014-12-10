@@ -67,6 +67,7 @@ opts.transposedata    = false;              % transpose data if 2D?
 opts.verbosefilenames = false;              % use filenames with _i%d, _c%d, etc when there are more than one?
 opts.syncperms        = false;              % synchronize permutations (this only affects designs that can actually be synced
 opts.designperinput   = false;              % use one design for each input?
+opts.showprogress     = true;               % print progress as the permutations are performed? (use -quiet to disable)
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within is also default).
