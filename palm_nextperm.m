@@ -1,4 +1,4 @@
-function [a,sucs] = palm_nextperm(a)
+function [a,succ] = palm_nextperm(a)
 % Given a sequence of integers "a", returns the next lexicographic
 % permutation of this sequence. If "a" is already the last possible
 % permutation, returns a vector of zeros of size(a).
@@ -6,15 +6,15 @@ function [a,sucs] = palm_nextperm(a)
 % column vectors (N by 1).
 % 
 % Usage:
-% a1 = palm_nextperm(a)
+% [a1,succ] = palm_nextperm(a)
 % 
 % a    : 2D array to be shuffled. Only the 1st column is
 %        considered for the permutations. The rows as a whole
 %        are shuffled together.
 % a1   : Permuted sequence of values that corresponds to the
 %        next lexicographic permutation.
-% sucs : If a is already the last possible permutation,
-%        a1 = flipud(a) and sucs is false.
+% succ : If a is already the last possible permutation,
+%        a1 = flipud(a) and succ is false.
 %        Otherwise sucs is true.
 % 
 % This function is an implementation of the "Algorithm L",
@@ -62,12 +62,12 @@ if j > 0,
     end
     
     % Was the permutation successful?
-    sucs = true;
+    succ = true;
     
 else
     % If the input is the last permutation, then there is no next.
     % Return then the first shuffle and a successful flag "false"
     % that can be tested outside.
     a    = flipud(a);
-    sucs = false;
+    succ = false;
 end

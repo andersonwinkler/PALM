@@ -24,6 +24,7 @@ if palm_isoctave,
     % Disable some warnings
     warning('off','Octave:precedence-change');
     warning('off','Octave:possible-matlab-short-circuit-operator');
+    warning('off','Octave:function-name-clash');
     
 else
     % This line marks the place up to nothing will be printed. It's long as

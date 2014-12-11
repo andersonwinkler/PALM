@@ -11,7 +11,7 @@ function [Bset,nB,mtr] = palm_shuffree(varargin)
 % Inputs:
 % - M        : Design matrix.
 % - nP0      : Requested number of permutations.
-% - CMC      : Use Conditional Monte Carlo.
+% - CMC      : Use Conditional Monte Carlo?
 % - EE       : Allow permutations?
 % - ISE      : Allow sign-flips?
 %              If you supply the EE argument, you must

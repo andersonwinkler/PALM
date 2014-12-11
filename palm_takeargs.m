@@ -1005,6 +1005,7 @@ if opts.nP0,
         if any(strcmpi(opts.seed,{'reset','shuffle','twist'})),
             opts.seed = 'shuffle';
         end
+        rng('default');
         rng(opts.seed);
     end
 end
@@ -1254,7 +1255,7 @@ for i = 1:Ni,
                     '- Surface file %d has %d vertices and %d faces (%s)\n' ...
                     '- Input data file %d has %d points (%s)'],...
                     s,size(plm.srf{s}.data.vtx,1),size(plm.srf{s}.data.fac,1),opts.s{s},...
-                    i,max(size(plm.masks{i}.data),opts.i{i}));
+                    i,max(size(plm.masks{i}.data)),opts.i{i});
         end
         plm.Yarea{i} = palm_calcarea(plm.srf{s}.data,plm.Yisvtx(i));
     end
