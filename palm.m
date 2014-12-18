@@ -47,6 +47,9 @@ elseif nargin == 1,
     elseif strcmpi(varargin{1},'-advanced'),
         palm_help('advanced');
         return;
+    elseif strcmpi(varargin{1},'-checkprogs'),
+        palm_checkprogs;
+        return;
     end
 end
 

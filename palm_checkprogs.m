@@ -30,6 +30,7 @@ if isempty(palm_extern),
     if ~isempty(fsldir),
         palm_extern.fsl = true;
         addpath(fullfile(fsldir,'etc','matlab'));
+        fprintf('Found FSL in %s\n',fsldir);
     end
     
     % Check for FreeSurfer
@@ -38,6 +39,7 @@ if isempty(palm_extern),
     if ~isempty(fshome),
         palm_extern.fs = true;
         addpath(fullfile(fshome,'matlab'));
+        fprintf('Found FreeSurfer in %s\n',fshome);
     end
     
     % Check for the NIFTI toolbox
@@ -51,6 +53,9 @@ if isempty(palm_extern),
     try %#ok
         spm_check_installation('basic');
         palm_extern.spm = true;
+        spmpath = which('spm');
+        spmpath = fileparts(which('spm'));
+        fprintf('Found SPM in %s\n',spmpath);
     end
 end
 ext = palm_extern;

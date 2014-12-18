@@ -775,6 +775,12 @@ while a <= narginx,
             opts.showprogress = false;
             a = a + 1;
             
+        case '-savepartial',
+            
+            % Save the partial tests even if using NPC or MV
+            opts.savepartial = true;
+            a = a + 1;
+            
         case '-pmethodp',
             
             % Which method to use to partition the model when defining
@@ -826,6 +832,9 @@ while a <= narginx,
             error('Unknown option: ''%s''',vararginx{a});
     end
 end
+
+% Check for the existance of other programs for input/output
+palm_checkprogs;
 
 % Make sure the NPC options make sense
 % - if -npc only, it's -npcmod

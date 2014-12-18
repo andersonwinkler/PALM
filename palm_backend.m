@@ -717,18 +717,20 @@ for po = P_outer,
                     % Save the unpermuted statistic if not z-score
                     if ~ opts.zstat
                         if p == 1,
-                            palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
-                            
-                            % Save also the degrees of freedom for the unpermuted
-                            if numel(df2{y}{m}{c}) == 1,
-                                savedof(plm.rC{m}(c),df2{y}{m}{c}, ...
-                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}),'_dof.txt'));
-                            else
-                                savedof(plm.rC{m}(c),mean(df2{y}{m}{c}), ...
-                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}),'_meandof.txt'));
-                                palm_quicksave(df2{y}{m}{c},0,opts,plm,y,m,c, ...
-                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}),'_dof'));
+                            if (~opts.NPC && ~opts.MV) || opts.savepartial,
+                                palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
+                                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
+                                
+                                % Save also the degrees of freedom for the unpermuted
+                                if numel(df2{y}{m}{c}) == 1,
+                                    savedof(plm.rC{m}(c),df2{y}{m}{c}, ...
+                                        horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}),'_dof.txt'));
+                                else
+                                    savedof(plm.rC{m}(c),mean(df2{y}{m}{c}), ...
+                                        horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}),'_meandof.txt'));
+                                    palm_quicksave(df2{y}{m}{c},0,opts,plm,y,m,c, ...
+                                        horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}),'_dof'));
+                                end
                             end
                         end
                         
@@ -764,7 +766,7 @@ for po = P_outer,
                     
                     % Remove the sign if this is a two-tailed test. This
                     % makes no difference if rank(C) > 1
-                    if opts.twotail && plm.rC0(c) == 1,
+                    if opts.twotail && plm.rC0{m}(c) == 1,
                         G{y}{m}{c} = abs(G{y}{m}{c});
                     end
                     
@@ -1358,6 +1360,7 @@ end
 
 % Save uncorrected & FWER-corrected within modality for this contrast.
 fprintf('Saving p-values (uncorrected, and corrected within modality and within contrast).\n');
+if (~opts.NPC && ~opts.MV) || opts.savepartial,
 for y = 1:plm.nY,
     if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
     for m = loopM,
@@ -1453,6 +1456,7 @@ for y = 1:plm.nY,
             end
         end
     end
+end
 end
 
 % Save FWER & FDR corrected across modalities.
