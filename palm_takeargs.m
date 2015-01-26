@@ -38,30 +38,37 @@ end
 
 % Number of input images/masks/surfaces
 % These are NOT meant to be edited. Don't edit this!
-Ni = sum(strcmp(vararginx,'-i'));  % number of data inputs
-Nm = sum(strcmp(vararginx,'-m'));  % number of masks
-Ns = sum(strcmp(vararginx,'-s'));  % number of surfaces
-Nd = sum(strcmp(vararginx,'-d'));  % number of design files
-Nt = sum(strcmp(vararginx,'-t'));  % number of t-contrast files
-Nf = sum(strcmp(vararginx,'-f'));  % number of F-test files
-opts.i   = cell(Ni,1);  % Input files (to constitute Y later)
-opts.m   = cell(Nm,1);  % Mask file(s)
-opts.s   = cell(Ns,1);  % Surface file(s)
-opts.d   = cell(Nd,1);  % Design file(s)
-opts.t   = cell(Nt,1);  % t contrast file(s)
-opts.f   = cell(Nf,1);  % F contrast file(s)
-opts.eb       = [];     % File with definition of exchangeability blocks
-opts.vg       = [];     % File with definition of variance groups
-opts.EE       = false;  % To be filled below (don't edit this!)
-opts.ISE      = false;  % To be filled below (don't edit this!)
-opts.within   = false;  % To be filled below (don't edit this!)
-opts.whole    = false;  % To be filled below (don't edit this!)
-opts.conskipcount = 0;  % When saving the contrasts, skip how many from 1?
-opts.singlevg = true;   % Make sure that sigle VG will be used if nothing is supplied (this is NOT a "default" setting, and it's not a setting at all, but hard coded. Don't edit it!)
+Ni = sum(strcmp(vararginx,'-i'));   % number of data inputs
+Nm = sum(strcmp(vararginx,'-m'));   % number of masks
+Ns = sum(strcmp(vararginx,'-s'));   % number of surfaces
+Nd = sum(strcmp(vararginx,'-d'));   % number of design files
+Nt = sum(strcmp(vararginx,'-t'));   % number of t-contrast files
+Nf = sum(strcmp(vararginx,'-f'));   % number of F-test files
+Ntmv     = sum(strcmp(vararginx,'-tmv')); % number of t (MV) files
+Nfmv     = sum(strcmp(vararginx,'-fmv')); % number of F (MV) files
+opts.i   = cell(Ni,1);   % Input files (to constitute Y later)
+opts.m   = cell(Nm,1);   % Mask file(s)
+opts.s   = cell(Ns,1);   % Surface file(s)
+opts.d   = cell(Nd,1);   % Design file(s)
+opts.t   = cell(Nt,1);   % t contrast file(s)
+opts.f   = cell(Nf,1);   % F contrast file(s)
+opts.tmv = cell(Ntmv,1); % tmv contrast file(s)
+opts.fmv = cell(Nfmv,1); % Fmv contrast file(s)
+opts.eb       = [];      % File with definition of exchangeability blocks
+opts.vg       = [];      % File with definition of variance groups
+opts.EE       = false;   % To be filled below (don't edit this!)
+opts.ISE      = false;   % To be filled below (don't edit this!)
+opts.within   = false;   % To be filled below (don't edit this!)
+opts.whole    = false;   % To be filled below (don't edit this!)
+opts.conskipcount = 0;   % When saving the contrasts, skip how many from 1?
+opts.singlevg = true;    % Make sure that sigle VG will be used if nothing is supplied (this is NOT a "default" setting, and it's not a setting at all, but hard coded. Don't edit it!)
+opts.subjidx  = [];      % Filename of the indices of subjects to keep
+plm.subjidx   = [];      % Indices of subjects to keep
 
 % These are to be incremented below
 a = 1; i = 1; m = 1; d = 1;
 t = 1; f = 1; s = 1;
+tmv = 1; fmv = 1;
 
 % Remove trailing empty arguments. This is useful for some Octave versions.
 while numel(vararginx) > 0 && isempty(vararginx{1}),
@@ -120,6 +127,20 @@ while a <= narginx,
             f = f + 1;
             a = a + 2;
             
+        case '-tmv',
+            
+            % Get the t-equivalent multivariate contrast files.
+            opts.tmv{tmv} = vararginx{a+1};
+            tmv = tmv + 1;
+            a   = a + 2;
+            
+        case '-fmv',
+            
+            % Get the F-equivalent multivariate contrast files.
+            opts.fmv{fmv} = vararginx{a+1};
+            fmv = fmv + 1;
+            a   = a + 2;
+
         case '-conskipcount',
             
             % Numbers to skip when saving the contrasts
@@ -578,11 +599,12 @@ while a <= narginx,
         case '-mv',
             
             % Compute classic multivariate statistics
-            opts.MV = true;
             if nargin == a,
+                opts.MV = true;
                 a = a + 1;
                 
             elseif nargin > a && strcmp(vararginx{a+1}(1),'-'),
+                opts.MV = true;
                 a = a + 1;
                 
             elseif nargin > a,
@@ -594,16 +616,33 @@ while a <= narginx,
                     'Pillai', ...
                     'Roy',    ...
                     'Roy_ii', ...
-                    'Roy_iii'};
+                    'Roy_iii',...
+                    'CCA'};
                 methidx = strcmpi(vararginx{a+1},methlist);
                 
                 % Check if method exists, and load extra parameters if needed
-                if any(methidx);
-                    opts.mvstat = methlist{methidx};
-                    a = a + 2;
-                else
+                if ~any(methidx);
                     error('Multivariate statistic "%s" unknown.',vararginx{a+1});
+                elseif strcmpi(vararginx{a+1},'CCA'),
+                    opts.MV  = false;
+                    opts.CCA = true;
+                    if nargin == a + 1 || ...
+                            ischar(vararginx{a+2}) && ...
+                            strcmpi(vararginx{a+2}(1),'-'),
+                        opts.ccaparm = 1;
+                        a = a + 2;
+                    elseif ischar(vararginx{a+2}),
+                        opts.ccaparm = eval(vararginx{a+2});
+                        a = a + 3;
+                    else
+                        opts.ccaparm = vararginx{a+2};
+                        a = a + 3;
+                    end
+                else
+                    opts.MV = true;
+                    a = a + 2;
                 end
+                opts.mvstat = methlist{methidx};
             end
             
         case '-fdr',
@@ -769,16 +808,22 @@ while a <= narginx,
             opts.syncperms      = true;
             a = a + 1;
             
+        case '-subjidx',
+                        
+            % Indices of the subjects to keep in the design
+            opts.subjidx = vararginx{a+1};
+            a = a + 2;
+            
         case '-quiet',
             
             % Don't print lines indicating progress
             opts.showprogress = false;
             a = a + 1;
             
-        case '-savepartial',
+        case '-nounivariate',
             
-            % Save the partial tests even if using NPC or MV
-            opts.savepartial = true;
+            % Save or not univariate tests? Useful with MV/NPC/CCA
+            opts.saveunivariate = false;
             a = a + 1;
             
         case '-pmethodp',
@@ -981,7 +1026,20 @@ if opts.pearson && ~ any(strcmpi(opts.pmethodr,{'beckmann','ridgway'})),
         '         Adding the option ''-pmethodr Beckmann''.%s'],'');
     opts.pmethodr = 'beckmann';
 end
-if opts.demean && opts.vgdemean && ~ opts.pearson,
+if opts.CCA && ~ opts.demean,
+    warning([ ...
+        'To perform CCA, the data and the design\n' ...
+        '         must be mean centered. Adding option ''-demean''.%s'],'');
+    opts.demean = true;
+end
+if opts.CCA && ~ any(strcmpi(opts.pmethodr,{'beckmann','ridgway'})),
+    warning([ ...
+        'To perform CCA, the design must be\n' ...
+        '         partitioned using the Beckmann or Ridgway schemes.'...
+        '         Adding the option ''-pmethodr Beckmann''.%s'],'');
+    opts.pmethodr = 'beckmann';
+end
+if opts.demean && opts.vgdemean && ~opts.pearson && ~opts.CCA,
     warning([...
         'Cannot use the option ''-demean'' together with ''-vgdemean''\n'...
         '         Ignoring the option ''-vgdemean''.%s'],'');
@@ -1001,6 +1059,12 @@ if opts.designperinput && (Ni ~= Nd) || (Nt > 1),
         'match the number of inputs, and just one t-contrast file must be supplied.\n%s'],'');
 else
     opts.syncperms = true;
+end
+if ~opts.saveunivariate && ~opts.MV && opts.NPC && ~opts.CCA,
+    error('The option "-nounivariate" can only be used with "-mv" or "-npc".');
+end
+if opts.MV && opts.CCA,
+    error('Cannot do classical MANOVA at the same time as CCA.');
 end
 
 % Initialize the random number generator (if nP = 0, no need for that)
@@ -1060,6 +1124,12 @@ if Nm == 1,
     end
 end
 
+% Indices of the subjects that will be kept
+if ~isempty(opts.subjidx),
+    plm.subjidx = palm_miscread(opts.subjidx);
+    plm.subjidx = round(plm.subjidx.data);
+end
+
 % Read and organise the data.
 plm.Yset     = cell(Ni,1);  % Regressands (Y)
 plm.Yisvol   = false(Ni,1); % Is Y a volume image?
@@ -1109,6 +1179,11 @@ for i = 1:Ni,
             Ytmp.data = Ytmp.data';
         end
         
+        % Select subjects
+        if ~isempty(plm.subjidx),
+            Ytmp.data = Ytmp.data(plm.subjidx,:);
+        end
+        
         % For the first input data, keep the size to
         % compare with the others, then check the size
         if i == 1,
@@ -1135,6 +1210,11 @@ for i = 1:Ni,
         plm.Yset{i} = Ytmp.data;
         
     elseif ndims(Ytmp.data) == 4,
+        
+        % Select subjects
+        if ~isempty(plm.subjidx),
+            Ytmp.data = Ytmp.data(:,:,:,plm.subjidx);
+        end
         
         % For the first input data, keep the size to
         % compare with the others, then check the size
@@ -1543,6 +1623,79 @@ for m = 1:plm.nM,
         end
         if opts.evperdat && size(plm.Cset{m}{c},1) ~= 1,
             error('The contrast file must contain a single element when using the option ''-evperdat''.');
+        end
+    end
+end
+
+% Read and organise the contrasts for each design.
+plm.Dset = cell(plm.nM,1);
+plm.nD   = zeros(plm.nM,1);
+if Ntmv || Nfmv,
+    
+    % Some sanity checks
+    if Ntmv > plm.nM,
+        error('More tmv-contrast files (%d) than valid design files (%d) were supplied.',Ntmv,plm.nM);
+    end
+    if Ntmv ~= 1 && Ntmv ~= plm.nM,
+        error(['The number of supplied t-contrast files (option -t) must be 1 or\n',...
+            'the same as the number of valid design files (option -d) (%d).'],plm.nM);
+    end
+    if Nfmv > Ntmv,
+        error('More F-contrast files (%d) than t-contrast files (%d) were supplied.',Nfmv,Ntmv);
+    end
+    
+    % Load t and F contrast files
+    tmvcon = cell(Ntmv,1);
+    for tmv = 1:Ntmv,
+        tmp = palm_miscread(opts.tmv{tmv});
+        if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
+            tmvcon{tmv} = tmp.data;
+        else
+            error('Invalid tmv contrast file: %s',opts.tmv{tmv});
+        end
+    end
+    fmvcon = cell(Nfmv,1);
+    for fmv = 1:Nfmv,
+        tmp = palm_miscread(opts.fmv{fmv});
+        if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
+            fmvcon{fmv} = tmp.data;
+        else
+            error('Invalid Fmv contrast file: %s',opts.fmv{fmv});
+        end
+    end
+    
+    % For each valid design, assemble the contrasts.
+    for m = 1:plm.nM,
+        if Ntmv == 1;
+            tmv = 1;
+        else
+            tmv = m;
+        end
+        d = 1;
+        for j = 1:size(tmvcon{tmv},1),
+            plm.Dset{m}{d} = tmvcon{tmv}(j,:)';
+            d = d + 1;
+        end
+        if numel(fmvcon),
+            for j = 1:size(fmvcon{tmv},1),
+                plm.Dset{m}{c} = tmvcon{tmv}(logical(fmvcon{tmv}(j,:)),:)';
+                d = d + 1;
+            end
+        end
+        plm.nD(m) = numel(plm.Dset{m});
+    end
+end
+
+% Sanity checks
+if opts.MV
+    if any(plm.nC ~= plm.nD),
+        error('The number of contrasts on the L and R sides of the GLM must be the same');
+    end
+    for m = 1:plm.nM,
+        for d = 1:plm.nD(m),
+            if size(plm.D{m}{d},1) ~= plm.nY,
+                error('The size of the MV contrasts don''t match the number of modalities.');
+            end
         end
     end
 end

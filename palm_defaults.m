@@ -22,6 +22,7 @@ opts.rmethod          = 'Freedman-Lane';    % Regression/permutation method.
 opts.rfallback        = 'terBraak';         % Regression/permutation method if correcting over contrasts
 opts.NPC              = false;              % Do non-parametric combination?
 opts.MV               = false;              % Do classical multivariate inference? (MANOVA/MANCOVA)
+opts.CCA              = false;              % Do canonical correlation analysis? (CCA)
 opts.mvstat           = 'Wilks';            % Default method for MANOVA/MANCOVA
 opts.npcmethod        = 'Tippett';          % Combination method.
 opts.cfallback        = 'Fisher';           % (not currently used)
@@ -69,6 +70,7 @@ opts.syncperms        = false;              % synchronize permutations (this onl
 opts.designperinput   = false;              % use one design for each input?
 opts.showprogress     = true;               % print progress as the permutations are performed? (use -quiet to disable)
 opts.savepartial      = false;              % If running NPC or MV, save partial tests?
+opts.saveunivariate   = true;               % Save univariate stats when using multivariate stats?
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within is also default).

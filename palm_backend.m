@@ -1,6 +1,6 @@
 function palm_backend(varargin)
 % This is the core PALM function.
-% 
+%
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
@@ -11,7 +11,7 @@ function palm_backend(varargin)
 % clear global plm opts % comment for debugging
 % global plm opts; % uncomment for debugging
 [opts,plm] = palm_takeargs(varargin{:});
-                    
+
 % Variables to store stuff for later.
 plm.X        = cell(plm.nM,1); % effective regressors
 plm.Z        = cell(plm.nM,1); % nuisance regressors
@@ -357,7 +357,7 @@ end
 
 % For each permutation (outer loop)
 for po = P_outer,
-
+    
     % For each design matrix
     for m = 1:plm.nM,
         
@@ -512,18 +512,28 @@ for po = P_outer,
                     end
                 end
                 
-                % MANOVA/MANCOVA
+                % MANOVA/MANCOVA/CCA
                 %%% DOUBLE-CHECK THE DEGREES-OF-FREEDOM!!
                 if opts.MV,
                     
                     % Make the 3D dataset
                     plm.Yq = cat(3,plm.Yset{:});
+                    if isfield(plm,'Dset'),
+                        tmp = plm.Dset{m}{c} - eye(plm.nY);
+                        if any(tmp(:) > eps),
+                            plm.Yq = permute(plm.Yq,[1 3 2]);
+                            for t = 1:plm.Ysiz(1),
+                                plm.Yq(:,:,t) = plm.Yq(:,:,t)*plm.Dset{m}{c};
+                            end
+                            plm.Yq = permute(plm.Yq,[1 3 2]);
+                        end
+                    end
                     
                     % Define the functions for the stats. Note that none is
                     % available if nVG > 1, and this should have been
                     % checked when taking the arguments.
-                    if     plm.rC{m}(c) == 1 && plm.nVG == 1,
-                        plm.Qname{m}{c} = '_hotelling'; % this is T^2
+                    if plm.rC{m}(c) == 1 && plm.nVG == 1,
+                        plm.Qname{m}{c} = '_hotelling'; % this is Hotelling's T^2
                         fastmv   {m}{c} = @(M,psi,res)fasttsq(M,psi,res,m,c,plm);
                         pparamv  {m}{c} = @(Q)fasttsqp(Q,plm.N-plm.rM{m}(c),plm.nY);
                     elseif plm.rC{m}(c) >  1 && plm.nVG == 1,
@@ -554,6 +564,27 @@ for po = P_outer,
                         end
                         fastmv{m}{c} = @(M,psi,res)fastq(M,psi,res,m,c,plm);
                     end
+                    
+                elseif opts.CCA,
+                    
+                    % Output string
+                    plm.Qname{m}{c} = sprintf('_cca%d',opts.ccaparm);
+                    
+                    % Residual forming matrix (Z only)
+                    if strcmpi(plm.rmethod{m}{c},'noz'),
+                        plm.Rz{m}{c} = eye(plm.N);
+                    elseif ~any(strcmpi(plm.rmethod{m}{c},{ ...
+                            'still-white','freedman-lane',  ...
+                            'kennedy','huh-jhun','smith'})),
+                        plm.Rz{m}{c} = eye(plm.N) - plm.Z{m}{c}*pinv(plm.Z{m}{c});
+                    end
+                    
+                    % Make the 3D dataset & residualise wrt Z
+                    plm.Yq = cat(3,plm.Yset{:});
+                    for y = 1:plm.nY,
+                        plm.Yq(:,:,y) = plm.Rz{m}{c}*plm.Yq(:,:,y);
+                    end
+                    plm.Yq = permute(plm.Yq,[1 3 2]);
                 end
             end
             
@@ -717,7 +748,7 @@ for po = P_outer,
                     % Save the unpermuted statistic if not z-score
                     if ~ opts.zstat
                         if p == 1,
-                            if (~opts.NPC && ~opts.MV) || opts.savepartial,
+                            if opts.saveunivariate,
                                 palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
                                     sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
                                 
@@ -753,8 +784,10 @@ for po = P_outer,
                     if opts.zstat
                         if p == 1,
                             plm.Gname{m}{c} = sprintf('_z%s',plm.Gname{m}{c}(2:end));
-                            palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
+                            if opts.saveunivariate,
+                                palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
+                                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
+                            end
                         end
                         
                         % Save the stats for each permutation if that was asked
@@ -921,7 +954,7 @@ for po = P_outer,
                         plm.Tmax{m}{c}(p) = npcextr(T{m}{c},[],2);
                     end
                     
-                    % Be sure to use z-scores for the spatial statistics, converting 
+                    % Be sure to use z-scores for the spatial statistics, converting
                     % it if not already.
                     if opts.spatial_npc,
                         if ~ opts.zstat,
@@ -976,8 +1009,8 @@ for po = P_outer,
                         if p == 1,
                             yselq = true(1,size(plm.Yq,2),1);
                         end
-                        [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yq(:,yselq,:));
                         for y = 1:plm.nY,
+                            [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yq(:,yselq,y));
                             psiq(:,:,y) = M\Y(:,:,y);
                             resq(:,:,y) = Y(:,:,y) - M*psiq(:,:,y);
                         end
@@ -1065,11 +1098,125 @@ for po = P_outer,
                         plm.Qpperm{m}{c}     = plm.Qpperm{m}{c} + (Q{m}{c} >= plm.Q{m}{c});
                         plm.Qmax  {m}{c}(p)  = max(Q{m}{c},[],2);
                         
-                        % Now compute the MV spatial statistics, converting to z-score
+                        % Now compute the spatial statistics, converting to z-score
                         % if not already.
                         if opts.spatial_mv,
                             if ~ opts.zstat,
                                 Q{m}{c} = -erfinv(2*Qppara{m}{c}-1)*sqrt(2);
+                            end
+                        end
+                        
+                        % Cluster extent is here
+                        if opts.clustere_mv.do,
+                            if p == 1,
+                                [plm.Qclemax{m}{c}(p),plm.Qcle{m}{c}] = ...
+                                    palm_clustere(Q{m}{c},1,opts.clustere_mv.thr,opts,plm);
+                            else
+                                plm.Qclemax{m}{c}(p) = ...
+                                    palm_clustere(Q{m}{c},1,opts.clustere_mv.thr,opts,plm);
+                            end
+                        end
+                        
+                        % Cluster mass is here
+                        if opts.clusterm_mv.do,
+                            if p == 1,
+                                [plm.Qclmmax{m}{c}(p),plm.Qclm{m}{c}] = ...
+                                    palm_clusterm(Q{m}{c},1,opts.clusterm_mv.thr,opts,plm);
+                            else
+                                plm.Qclmmax{m}{c}(p) = ...
+                                    palm_clusterm(Q{m}{c},1,opts.clusterm_mv.thr,opts,plm);
+                            end
+                        end
+                        
+                        % TFCE is here
+                        if opts.tfce_mv.do,
+                            Qtfce{m}{c} = palm_tfce(Q{m}{c},1,opts,plm);
+                            if p == 1,
+                                plm.Qtfce     {m}{c} = Qtfce{m}{c};
+                                plm.Qtfcepperm{m}{c} = zeros(size(Q{m}{c}));
+                            end
+                            plm.Qtfcepperm{m}{c} = plm.Qtfcepperm{m}{c} + ...
+                                (Qtfce{m}{c} >= plm.Qtfce{m}{c});
+                            plm.Qtfcemax{m}{c}(p) = max(Qtfce{m}{c},[],2);
+                        end
+                    end
+                    
+                elseif opts.CCA,
+                    if opts.showprogress,
+                        fprintf('\t [Doing CCA]\n');
+                    end
+                    
+                    if opts.draft && p == 1,
+                        yselq = true(1,1,size(plm.Yq,3));
+                    end
+                    
+                    % Compute the CC coefficient
+                    if p == 1,
+                        Q{m}{c} = zeros(1,plm.Ysiz(1));
+                    end
+                    M = plm.Pset{p}*plm.Rz{m}{c}*plm.X{m}{c};
+                    for t = find(ysel)',
+                        Q{m}{c}(t) = cca(plm.Yq(:,:,t),M,opts.ccaparm);
+                    end
+                    
+                    % Convert to zstat if that was asked
+                    if opts.zstat,
+                        Q{m}{c} = atanh(Q{m}{c});
+                        if p == 1,
+                            plm.mvstr = horzcat('_z',plm.mvstr(2:end));
+                        end
+                    end
+                    
+                    % Save the CCA statistic
+                    if p == 1,
+                        palm_quicksave(Q{m}{c},0,opts,plm,[],m,c, ...
+                            sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},mstr{m},cstr{c}));
+                    end
+                    
+                    % In the "draft" mode, the plm.Qpperm variable isn't a counter,
+                    % but the number of permutations until a statistic larger than
+                    % the unpermuted was found.
+                    if opts.draft,
+                        if p == 1,
+                            % In the first permutation, keep Q and Qdf2,
+                            % and start the counter.
+                            plm.Q      {m}{c} = Q{m}{c};
+                            plm.Qpperm {m}{c} = zeros(size(Q{m}{c}));
+                            plm.Qppermp{m}{c} = zeros(size(Q{m}{c}));
+                            
+                        else
+                            % Otherwise, store the permutation in which a larger
+                            % statistic happened, and remove this voxel/vertex/face
+                            % from further runs.
+                            plm.Qpperm{m}{c}(yselq) = plm.Qpperm{m}{c}(yselq) + ...
+                                (Q{m}{c} >= plm.Q{m}{c}(yselq));
+                            plm.Qppermp{m}{c}(yselq) = p;
+                            yselq = plm.Qpperm{m}{c} < opts.draft;
+                        end
+                    else
+                        
+                        % If the user wants to save the statistic for each
+                        % permutation, save it now. This isn't obviously allowed
+                        % in draft mode, as the images are not complete. Also,
+                        % this is inside the loop to allow the two-tailed option
+                        % not to use to much memory
+                        if opts.saveperms,
+                            palm_quicksave(Q{m}{c},0,opts,plm,[],m,c, ...
+                                horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},mstr{m},cstr{c}),sprintf('_perm%06d',p)));
+                        end
+                        if p == 1,
+                            % In the first permutation, keep Q and start the counter.
+                            plm.Q     {m}{c} = Q{m}{c};
+                            plm.Qpperm{m}{c} = zeros(size(Q{m}{c}));
+                        end
+                        plm.Qpperm{m}{c}     = plm.Qpperm{m}{c} + (Q{m}{c} >= plm.Q{m}{c});
+                        plm.Qmax  {m}{c}(p)  = max(Q{m}{c},[],2);
+                        
+                        % Now compute the MV spatial statistics, converting to z-score
+                        % if not already.
+                        if opts.spatial_mv,
+                            if ~ opts.zstat,
+                                Q{m}{c} = atanh(Q{m}{c});
                             end
                         end
                         
@@ -1343,7 +1490,7 @@ if opts.NPC,
         end
     end
 end
-if opts.MV,
+if opts.MV || opts.CCA,
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
             if opts.draft,
@@ -1359,295 +1506,156 @@ if opts.MV,
 end
 
 % Save uncorrected & FWER-corrected within modality for this contrast.
-fprintf('Saving p-values (uncorrected, and corrected within modality and within contrast).\n');
-if (~opts.NPC && ~opts.MV) || opts.savepartial,
-for y = 1:plm.nY,
-    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-    for m = loopM,
-        for c = 1:plm.nC(m),
-            
-            % Only permutation p-value and its FDR ajustment are saved in the draft mode.
-            if opts.draft,
+if opts.saveunivariate,
+    fprintf('Saving p-values (uncorrected, and corrected within modality and within contrast).\n');
+    for y = 1:plm.nY,
+        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+        for m = loopM,
+            for c = 1:plm.nC(m),
                 
-                % Permutation p-value, uncorrected
-                palm_quicksave(plm.Gpperm{y}{m}{c},1,opts,plm,y,m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',ystr{y},mstr{m},cstr{c}));
-                
-                % Permutation p-value, FDR adjusted
-                if opts.FDR,
-                    palm_quicksave(fastfdr(plm.Gpperm{y}{m}{c}),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrp',ystr{y},mstr{m},cstr{c}));
-                end
-            else
-                
-                % Permutation p-value
-                palm_quicksave(plm.Gpperm{y}{m}{c},1,opts,plm,y,m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',ystr{y},mstr{m},cstr{c}));
-                
-                % FWER-corrected
-                palm_quicksave( ...
-                    palm_datapval(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false),1,opts,plm,y,m,c,...
-                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
-                
-                % Permutation p-value, FDR adjusted
-                if opts.FDR,
-                    palm_quicksave(fastfdr(plm.Gpperm{y}{m}{c}),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrp',ystr{y},mstr{m},cstr{c}));
-                end
-                
-                % Cluster extent results.
-                if opts.clustere_uni.do,
+                % Only permutation p-value and its FDR ajustment are saved in the draft mode.
+                if opts.draft,
                     
-                    % Cluster extent statistic.
-                    palm_quicksave(plm.Gcle{y}{m}{c},0,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
+                    % Permutation p-value, uncorrected
+                    palm_quicksave(plm.Gpperm{y}{m}{c},1,opts,plm,y,m,c, ...
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',ystr{y},mstr{m},cstr{c}));
                     
-                    % Cluster extent FWER p-value
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gcle{y}{m}{c},plm.Gclemax{y}{m}{c},false),1,opts,plm,y,m,c,...
-                        sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
-                end
-                
-                % Cluster mass results.
-                if opts.clusterm_uni.do,
-                    
-                    % Cluster mass statistic.
-                    palm_quicksave(plm.Gclm{y}{m}{c},0,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
-                    
-                    % Cluster mass FWER p-value.
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gclm{y}{m}{c},plm.Gclmmax{y}{m}{c},false),1,opts,plm,y,m,c,...
-                        sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
-                end
-                
-                % TFCE results
-                if opts.tfce_uni.do,
-                    
-                    % TFCE statistic
-                    palm_quicksave(plm.Gtfce{y}{m}{c},0,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
-                    
-                    % TFCE p-value
-                    palm_quicksave(plm.Gtfcepperm{y}{m}{c},1,opts,plm,y,m,c,...
-                        sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_uncp',ystr{y},mstr{m},cstr{c}));
-                    
-                    % TFCE FWER-corrected within modality and contrast.
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false),1,opts,plm,y,m,c,...
-                        sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
-                    
-                    % TFCE p-value, FDR adjusted.
+                    % Permutation p-value, FDR adjusted
                     if opts.FDR,
-                        palm_quicksave(fastfdr(plm.Gtfcepperm{y}{m}{c}),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_fdrp',ystr{y},mstr{m},cstr{c}));
+                        palm_quicksave(fastfdr(plm.Gpperm{y}{m}{c}),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrp',ystr{y},mstr{m},cstr{c}));
+                    end
+                else
+                    
+                    % Permutation p-value
+                    palm_quicksave(plm.Gpperm{y}{m}{c},1,opts,plm,y,m,c, ...
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',ystr{y},mstr{m},cstr{c}));
+                    
+                    % FWER-corrected
+                    palm_quicksave( ...
+                        palm_datapval(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false),1,opts,plm,y,m,c,...
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
+                    
+                    % Permutation p-value, FDR adjusted
+                    if opts.FDR,
+                        palm_quicksave(fastfdr(plm.Gpperm{y}{m}{c}),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrp',ystr{y},mstr{m},cstr{c}));
+                    end
+                    
+                    % Cluster extent results.
+                    if opts.clustere_uni.do,
+                        
+                        % Cluster extent statistic.
+                        palm_quicksave(plm.Gcle{y}{m}{c},0,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
+                        
+                        % Cluster extent FWER p-value
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gcle{y}{m}{c},plm.Gclemax{y}{m}{c},false),1,opts,plm,y,m,c,...
+                            sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                    
+                    % Cluster mass results.
+                    if opts.clusterm_uni.do,
+                        
+                        % Cluster mass statistic.
+                        palm_quicksave(plm.Gclm{y}{m}{c},0,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
+                        
+                        % Cluster mass FWER p-value.
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gclm{y}{m}{c},plm.Gclmmax{y}{m}{c},false),1,opts,plm,y,m,c,...
+                            sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                    
+                    % TFCE results
+                    if opts.tfce_uni.do,
+                        
+                        % TFCE statistic
+                        palm_quicksave(plm.Gtfce{y}{m}{c},0,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},ystr{y},mstr{m},cstr{c}));
+                        
+                        % TFCE p-value
+                        palm_quicksave(plm.Gtfcepperm{y}{m}{c},1,opts,plm,y,m,c,...
+                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_uncp',ystr{y},mstr{m},cstr{c}));
+                        
+                        % TFCE FWER-corrected within modality and contrast.
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false),1,opts,plm,y,m,c,...
+                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_fwep',ystr{y},mstr{m},cstr{c}));
+                        
+                        % TFCE p-value, FDR adjusted.
+                        if opts.FDR,
+                            palm_quicksave(fastfdr(plm.Gtfcepperm{y}{m}{c}),1,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_fdrp',ystr{y},mstr{m},cstr{c}));
+                        end
                     end
                 end
-            end
-            
-            % Parametric p-value and its FDR adjustment
-            if opts.savepara,
-                P = palm_quicksave(plm.G{y}{m}{c},2,opts,plm,y,m,c,...
-                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncparap',ystr{y},mstr{m},cstr{c}));
-                if opts.FDR,
-                    palm_quicksave(fastfdr(P),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrparap',ystr{y},mstr{m},cstr{c}));
+                
+                % Parametric p-value and its FDR adjustment
+                if opts.savepara,
+                    P = palm_quicksave(plm.G{y}{m}{c},2,opts,plm,y,m,c,...
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncparap',ystr{y},mstr{m},cstr{c}));
+                    if opts.FDR,
+                        palm_quicksave(fastfdr(P),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrparap',ystr{y},mstr{m},cstr{c}));
+                    end
                 end
             end
         end
     end
-end
-end
-
-% Save FWER & FDR corrected across modalities.
-if opts.corrmod,
-    fprintf('Saving p-values (corrected across modalities).\n')
     
-    % FWER correction (non-spatial stats)
-    if opts.designperinput,
-        for c = 1:plm.nC(1),
-            distmax = zeros(plm.nP{1}(c),plm.nY);
-            for y = 1:plm.nY,
-                m = y;
-                distmax(:,y) = plm.Gmax{y}{m}{c};
-            end
-            distmax = max(distmax,[],2);
-            for y = 1:plm.nY,
-                m = y;
-                palm_quicksave( ...
-                    palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
-            end
-        end
-    else
-        for m = 1:plm.nM,
-            for c = 1:plm.nC(m),
-                distmax = zeros(plm.nP{m}(c),plm.nY);
+    % Save FWER & FDR corrected across modalities.
+    if opts.corrmod,
+        fprintf('Saving p-values (corrected across modalities).\n')
+        
+        % FWER correction (non-spatial stats)
+        if opts.designperinput,
+            for c = 1:plm.nC(1),
+                distmax = zeros(plm.nP{1}(c),plm.nY);
                 for y = 1:plm.nY,
+                    m = y;
                     distmax(:,y) = plm.Gmax{y}{m}{c};
                 end
                 distmax = max(distmax,[],2);
                 for y = 1:plm.nY,
+                    m = y;
                     palm_quicksave( ...
                         palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
                 end
             end
-        end
-    end
-    
-    % FDR correction (non-spatial stats)
-    if opts.FDR,
-        if opts.designperinput,
-            for c = 1:plm.nC(1),
-                pmerged = zeros(sum(plm.Ysiz),1);
-                for y = 1:plm.nY,
-                    m = y;
-                    pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
-                end
-                pfdradj = fastfdr(pmerged);
-                for y = 1:plm.nY,
-                    m = y;
-                    palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
-                end
-            end
-        else
-            for m = 1:plm.nM,
-                for c = 1:plm.nC(m),
-                    pmerged = zeros(sum(plm.Ysiz),1);
-                    for y = 1:plm.nY,
-                        pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
-                    end
-                    pfdradj = fastfdr(pmerged);
-                    for y = 1:plm.nY,
-                        palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
-                    end
-                end
-            end
-        end
-    end
-    
-    % Cluster extent
-    if opts.clustere_uni.do && ...
-            (all(plm.Yisvol) || all(plm.Yissrf)),
-        if opts.designperinput,
-            for c = 1:plm.nC(1),
-                distmax = zeros(plm.nP{1}(c),plm.nY);
-                for y = 1:plm.nY,
-                    m = y;
-                    distmax(:,y) = plm.Gclemax{y}{m}{c};
-                end
-                distmax = max(distmax,[],2);
-                for y = 1:plm.nY,
-                    m = y;
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
-                end
-            end
         else
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
                     distmax = zeros(plm.nP{m}(c),plm.nY);
                     for y = 1:plm.nY,
-                        distmax(:,y) = plm.Gclemax{y}{m}{c};
+                        distmax(:,y) = plm.Gmax{y}{m}{c};
                     end
                     distmax = max(distmax,[],2);
                     for y = 1:plm.nY,
                         palm_quicksave( ...
-                            palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                            palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
                     end
                 end
             end
         end
-    end
-    
-    % Cluster mass
-    if opts.clusterm_uni.do && ...
-            (all(plm.Yisvol) || all(plm.Yissrf)),
-        if opts.designperinput,
-            for c = 1:plm.nC(1),
-                distmax = zeros(plm.nP{1}(c),plm.nY);
-                for y = 1:plm.nY,
-                    m = y;
-                    distmax(:,y) = plm.Gclmmax{y}{m}{c};
-                end
-                distmax = max(distmax,[],2);
-                for y = 1:plm.nY,
-                    m = y;
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
-                end
-            end
-        else
-            for m = 1:plm.nM,
-                for c = 1:plm.nC(m),
-                    distmax = zeros(plm.nP{m}(c),plm.nY);
-                    for y = 1:plm.nY,
-                        distmax(:,y) = plm.Gclmmax{y}{m}{c};
-                    end
-                    distmax = max(distmax,[],2);
-                    for y = 1:plm.nY,
-                        palm_quicksave( ...
-                            palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
-                    end
-                end
-            end
-        end
-    end
-    
-    % TFCE
-    if opts.tfce_uni.do && ...
-            (all(plm.Yisvol) || all(plm.Yissrf)),
-        if opts.designperinput,
-            for c = 1:plm.nC(1),
-                distmax = zeros(plm.nP{1}(c),plm.nY);
-                for y = 1:plm.nY,
-                    m = y;
-                    distmax(:,y) = plm.Gtfcemax{y}{m}{c};
-                end
-                distmax = max(distmax,[],2);
-                for y = 1:plm.nY,
-                    m = y;
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
-                end
-            end
-        else
-            for m = 1:plm.nM,
-                for c = 1:plm.nC(m),
-                    distmax = zeros(plm.nP{m}(c),plm.nY);
-                    for y = 1:plm.nY,
-                        distmax(:,y) = plm.Gtfcemax{y}{m}{c};
-                    end
-                    distmax = max(distmax,[],2);
-                    for y = 1:plm.nY,
-                        palm_quicksave( ...
-                            palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
-                    end
-                end
-            end
-        end
+        
+        % FDR correction (non-spatial stats)
         if opts.FDR,
             if opts.designperinput,
                 for c = 1:plm.nC(1),
                     pmerged = zeros(sum(plm.Ysiz),1);
                     for y = 1:plm.nY,
                         m = y;
-                        pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
+                        pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
                     end
                     pfdradj = fastfdr(pmerged);
                     for y = 1:plm.nY,
                         m = y;
                         palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
                     end
                 end
             else
@@ -1655,81 +1663,163 @@ if opts.corrmod,
                     for c = 1:plm.nC(m),
                         pmerged = zeros(sum(plm.Ysiz),1);
                         for y = 1:plm.nY,
-                            pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
+                            pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
                         end
                         pfdradj = fastfdr(pmerged);
                         for y = 1:plm.nY,
                             palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
+                        end
+                    end
+                end
+            end
+        end
+        
+        % Cluster extent
+        if opts.clustere_uni.do && ...
+                (all(plm.Yisvol) || all(plm.Yissrf)),
+            if opts.designperinput,
+                for c = 1:plm.nC(1),
+                    distmax = zeros(plm.nP{1}(c),plm.nY);
+                    for y = 1:plm.nY,
+                        m = y;
+                        distmax(:,y) = plm.Gclemax{y}{m}{c};
+                    end
+                    distmax = max(distmax,[],2);
+                    for y = 1:plm.nY,
+                        m = y;
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            else
+                for m = 1:plm.nM,
+                    for c = 1:plm.nC(m),
+                        distmax = zeros(plm.nP{m}(c),plm.nY);
+                        for y = 1:plm.nY,
+                            distmax(:,y) = plm.Gclemax{y}{m}{c};
+                        end
+                        distmax = max(distmax,[],2);
+                        for y = 1:plm.nY,
+                            palm_quicksave( ...
+                                palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                        end
+                    end
+                end
+            end
+        end
+        
+        % Cluster mass
+        if opts.clusterm_uni.do && ...
+                (all(plm.Yisvol) || all(plm.Yissrf)),
+            if opts.designperinput,
+                for c = 1:plm.nC(1),
+                    distmax = zeros(plm.nP{1}(c),plm.nY);
+                    for y = 1:plm.nY,
+                        m = y;
+                        distmax(:,y) = plm.Gclmmax{y}{m}{c};
+                    end
+                    distmax = max(distmax,[],2);
+                    for y = 1:plm.nY,
+                        m = y;
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            else
+                for m = 1:plm.nM,
+                    for c = 1:plm.nC(m),
+                        distmax = zeros(plm.nP{m}(c),plm.nY);
+                        for y = 1:plm.nY,
+                            distmax(:,y) = plm.Gclmmax{y}{m}{c};
+                        end
+                        distmax = max(distmax,[],2);
+                        for y = 1:plm.nY,
+                            palm_quicksave( ...
+                                palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                        end
+                    end
+                end
+            end
+        end
+        
+        % TFCE
+        if opts.tfce_uni.do && ...
+                (all(plm.Yisvol) || all(plm.Yissrf)),
+            if opts.designperinput,
+                for c = 1:plm.nC(1),
+                    distmax = zeros(plm.nP{1}(c),plm.nY);
+                    for y = 1:plm.nY,
+                        m = y;
+                        distmax(:,y) = plm.Gtfcemax{y}{m}{c};
+                    end
+                    distmax = max(distmax,[],2);
+                    for y = 1:plm.nY,
+                        m = y;
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            else
+                for m = 1:plm.nM,
+                    for c = 1:plm.nC(m),
+                        distmax = zeros(plm.nP{m}(c),plm.nY);
+                        for y = 1:plm.nY,
+                            distmax(:,y) = plm.Gtfcemax{y}{m}{c};
+                        end
+                        distmax = max(distmax,[],2);
+                        for y = 1:plm.nY,
+                            palm_quicksave( ...
+                                palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',ystr{y},mstr{m},cstr{c}));
+                        end
+                    end
+                end
+            end
+            if opts.FDR,
+                if opts.designperinput,
+                    for c = 1:plm.nC(1),
+                        pmerged = zeros(sum(plm.Ysiz),1);
+                        for y = 1:plm.nY,
+                            m = y;
+                            pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
+                        end
+                        pfdradj = fastfdr(pmerged);
+                        for y = 1:plm.nY,
+                            m = y;
+                            palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
                                 sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
+                        end
+                    end
+                else
+                    for m = 1:plm.nM,
+                        for c = 1:plm.nC(m),
+                            pmerged = zeros(sum(plm.Ysiz),1);
+                            for y = 1:plm.nY,
+                                pmerged(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
+                            end
+                            pfdradj = fastfdr(pmerged);
+                            for y = 1:plm.nY,
+                                palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
+                                    sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfdrp',ystr{y},mstr{m},cstr{c}));
+                            end
                         end
                     end
                 end
             end
         end
     end
-end
-
-% Save FWER & FDR corrected across contrasts.
-if opts.corrcon,
-    fprintf('Saving p-values (corrected across contrasts).\n');
     
-    % FWER correction (non-spatial stats)
-    for y = 1:plm.nY,
-        if opts.designperinput,
-            loopM = y;
-            distmax = zeros(plm.nP{1}(1),plm.nC(1));
-        else
-            loopM = 1:plm.nM;
-            distmax = zeros(plm.nP{1}(1),sum(plm.nC));
-        end
-        j = 1;
-        for m = loopM,
-            for c = 1:plm.nC(m),
-                distmax(:,j) = plm.Gmax{y}{m}{c};
-                j = j + 1;
-            end
-        end
-        distmax = max(distmax,[],2);
-        for m = loopM,
-            for c = 1:plm.nC(m),
-                palm_quicksave( ...
-                    palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfwep',ystr{y},mstr{m},cstr{c}));
-            end
-        end
-    end
-    
-    % FDR correction (non-spatial stats)
-    if opts.FDR,
-        for y = 1:plm.nY,
-            if opts.designperinput,
-                loopM = y;
-                pmerged = zeros(plm.nC(1),plm.Ysiz(y));
-            else
-                loopM = 1:plm.nM;
-                pmerged = zeros(sum(plm.nC),plm.Ysiz(y));
-            end
-            j = 1;
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    pmerged(j,:) = plm.Gpperm{y}{m}{c};
-                    j = j + 1;
-                end
-            end
-            pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
-            j = 1;
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    palm_quicksave(pfdradj(j,:),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfdrp',ystr{y},mstr{m},cstr{c}));
-                    j = j + 1;
-                end
-            end
-        end
-    end
-    
-    % Cluster extent
-    if opts.clustere_uni.do,
+    % Save FWER & FDR corrected across contrasts.
+    if opts.corrcon,
+        fprintf('Saving p-values (corrected across contrasts).\n');
+        
+        % FWER correction (non-spatial stats)
         for y = 1:plm.nY,
             if opts.designperinput,
                 loopM = y;
@@ -1741,7 +1831,7 @@ if opts.corrcon,
             j = 1;
             for m = loopM,
                 for c = 1:plm.nC(m),
-                    distmax(:,j) = plm.Gclemax{y}{m}{c};
+                    distmax(:,j) = plm.Gmax{y}{m}{c};
                     j = j + 1;
                 end
             end
@@ -1749,67 +1839,13 @@ if opts.corrcon,
             for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave( ...
-                        palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_cfwep',ystr{y},mstr{m},cstr{c}));
+                        palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfwep',ystr{y},mstr{m},cstr{c}));
                 end
             end
         end
-    end
-    
-    % Cluster mass
-    if opts.clusterm_uni.do,
-        for y = 1:plm.nY,
-            if opts.designperinput,
-                loopM = y;
-                distmax = zeros(plm.nP{1}(1),plm.nC(1));
-            else
-                loopM = 1:plm.nM;
-                distmax = zeros(plm.nP{1}(1),sum(plm.nC));
-            end
-            j = 1;
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    distmax(:,j) = plm.Gclmmax{y}{m}{c};
-                    j = j + 1;
-                end
-            end
-            distmax = max(distmax,[],2);
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_cfwep',ystr{y},mstr{m},cstr{c}));
-                end
-            end
-        end
-    end
-    
-    % TFCE
-    if opts.tfce_uni.do,
-        for y = 1:plm.nY,
-            if opts.designperinput,
-                loopM = y;
-                distmax = zeros(plm.nP{1}(1),plm.nC(1));
-            else
-                loopM = 1:plm.nM;
-                distmax = zeros(plm.nP{1}(1),sum(plm.nC));
-            end
-            j = 1;
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    distmax(:,j) = plm.Gtfcemax{y}{m}{c};
-                    j = j + 1;
-                end
-            end
-            distmax = max(distmax,[],2);
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_cfwep',ystr{y},mstr{m},cstr{c}));
-                end
-            end
-        end
+        
+        % FDR correction (non-spatial stats)
         if opts.FDR,
             for y = 1:plm.nY,
                 if opts.designperinput,
@@ -1822,7 +1858,7 @@ if opts.corrcon,
                 j = 1;
                 for m = loopM,
                     for c = 1:plm.nC(m),
-                        pmerged(j,:) = plm.Gtfcepperm{y}{m}{c};
+                        pmerged(j,:) = plm.Gpperm{y}{m}{c};
                         j = j + 1;
                     end
                 end
@@ -1831,138 +1867,130 @@ if opts.corrcon,
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         palm_quicksave(pfdradj(j,:),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_cfdrp',ystr{y},mstr{m},cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfdrp',ystr{y},mstr{m},cstr{c}));
                         j = j + 1;
                     end
                 end
             end
         end
-    end
-end
-
-% Save FWER & FDR corrected across modalities and contrasts.
-if opts.corrmod && opts.corrcon,
-    fprintf('Saving p-values (corrected across modalities and contrasts).\n')
-    
-    % FWER correction (non-spatial stats)
-    if opts.designperinput,
-        distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
-    else
-        distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
-    end
-    j = 1;
-    for y = 1:plm.nY,
-        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-        for m = loopM,
-            for c = 1:plm.nC(m),
-                distmax(:,j) = plm.Gmax{y}{m}{c};
-                j = j + 1;
-            end
-        end
-    end
-    distmax = max(distmax,[],2);
-    for y = 1:plm.nY,
-        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-        for m = loopM,
-            for c = 1:plm.nC(m),
-                palm_quicksave( ...
-                    palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfwep',ystr{y},mstr{m},cstr{c}));
-            end
-        end
-    end
-    
-    % FDR correction (non-spatial stats)
-    if opts.FDR,
-        if opts.designperinput,
-            pmerged = zeros(plm.nC(1),sum(plm.Ysiz));
-        else
-            pmerged = zeros(sum(plm.nC),sum(plm.Ysiz));
-        end
-        j = 1;
-        for y = 1:plm.nY,
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    pmerged(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
-                    j = j + 1;
+        
+        % Cluster extent
+        if opts.clustere_uni.do,
+            for y = 1:plm.nY,
+                if opts.designperinput,
+                    loopM = y;
+                    distmax = zeros(plm.nP{1}(1),plm.nC(1));
+                else
+                    loopM = 1:plm.nM;
+                    distmax = zeros(plm.nP{1}(1),sum(plm.nC));
+                end
+                j = 1;
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        distmax(:,j) = plm.Gclemax{y}{m}{c};
+                        j = j + 1;
+                    end
+                end
+                distmax = max(distmax,[],2);
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_cfwep',ystr{y},mstr{m},cstr{c}));
+                    end
                 end
             end
         end
-        pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
-        for y = 1:plm.nY,
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfdrp',ystr{y},mstr{m},cstr{c}));
+        
+        % Cluster mass
+        if opts.clusterm_uni.do,
+            for y = 1:plm.nY,
+                if opts.designperinput,
+                    loopM = y;
+                    distmax = zeros(plm.nP{1}(1),plm.nC(1));
+                else
+                    loopM = 1:plm.nM;
+                    distmax = zeros(plm.nP{1}(1),sum(plm.nC));
+                end
+                j = 1;
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        distmax(:,j) = plm.Gclmmax{y}{m}{c};
+                        j = j + 1;
+                    end
+                end
+                distmax = max(distmax,[],2);
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_cfwep',ystr{y},mstr{m},cstr{c}));
+                    end
                 end
             end
         end
-    end
-    
-    % Cluster extent
-    if opts.clustere_uni.do,
-        if opts.designperinput,
-            distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
-        else
-            distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
-        end
-        j = 1;
-        for y = 1:plm.nY,
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    distmax(:,j) = plm.Gclemax{y}{m}{c};
-                    j = j + 1;
+        
+        % TFCE
+        if opts.tfce_uni.do,
+            for y = 1:plm.nY,
+                if opts.designperinput,
+                    loopM = y;
+                    distmax = zeros(plm.nP{1}(1),plm.nC(1));
+                else
+                    loopM = 1:plm.nM;
+                    distmax = zeros(plm.nP{1}(1),sum(plm.nC));
+                end
+                j = 1;
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        distmax(:,j) = plm.Gtfcemax{y}{m}{c};
+                        j = j + 1;
+                    end
+                end
+                distmax = max(distmax,[],2);
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_cfwep',ystr{y},mstr{m},cstr{c}));
+                    end
                 end
             end
-        end
-        distmax = max(distmax,[],2);
-        for y = 1:plm.nY,
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mcfwep',ystr{y},mstr{m},cstr{c}));
-                end
-            end
-        end
-    end
-    
-    % Cluster mass
-    if opts.clusterm_uni.do,
-        if opts.designperinput,
-            distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
-        else
-            distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
-        end
-        j = 1;
-        for y = 1:plm.nY,
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    distmax(:,j) = plm.Gclmmax{y}{m}{c};
-                    j = j + 1;
-                end
-            end
-        end
-        distmax = max(distmax,[],2);
-        for y = 1:plm.nY,
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
-            for m = loopM,
-                for c = 1:plm.nC(m),
-                    palm_quicksave( ...
-                        palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mcfwep',ystr{y},mstr{m},cstr{c}));
+            if opts.FDR,
+                for y = 1:plm.nY,
+                    if opts.designperinput,
+                        loopM = y;
+                        pmerged = zeros(plm.nC(1),plm.Ysiz(y));
+                    else
+                        loopM = 1:plm.nM;
+                        pmerged = zeros(sum(plm.nC),plm.Ysiz(y));
+                    end
+                    j = 1;
+                    for m = loopM,
+                        for c = 1:plm.nC(m),
+                            pmerged(j,:) = plm.Gtfcepperm{y}{m}{c};
+                            j = j + 1;
+                        end
+                    end
+                    pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
+                    j = 1;
+                    for m = loopM,
+                        for c = 1:plm.nC(m),
+                            palm_quicksave(pfdradj(j,:),1,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_cfdrp',ystr{y},mstr{m},cstr{c}));
+                            j = j + 1;
+                        end
+                    end
                 end
             end
         end
     end
     
-    % TFCE
-    if opts.tfce_uni.do,
+    % Save FWER & FDR corrected across modalities and contrasts.
+    if opts.corrmod && opts.corrcon,
+        fprintf('Saving p-values (corrected across modalities and contrasts).\n')
+        
+        % FWER correction (non-spatial stats)
         if opts.designperinput,
             distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
         else
@@ -1973,7 +2001,7 @@ if opts.corrmod && opts.corrcon,
             if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
-                    distmax(:,j) = plm.Gtfcemax{y}{m}{c};
+                    distmax(:,j) = plm.Gmax{y}{m}{c};
                     j = j + 1;
                 end
             end
@@ -1984,11 +2012,13 @@ if opts.corrmod && opts.corrcon,
             for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave( ...
-                        palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mcfwep',ystr{y},mstr{m},cstr{c}));
+                        palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfwep',ystr{y},mstr{m},cstr{c}));
                 end
             end
         end
+        
+        % FDR correction (non-spatial stats)
         if opts.FDR,
             if opts.designperinput,
                 pmerged = zeros(plm.nC(1),sum(plm.Ysiz));
@@ -2000,7 +2030,7 @@ if opts.corrmod && opts.corrcon,
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
-                        pmerged(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
+                        pmerged(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
                         j = j + 1;
                     end
                 end
@@ -2011,7 +2041,124 @@ if opts.corrmod && opts.corrcon,
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mcfdrp',ystr{y},mstr{m},cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfdrp',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            end
+        end
+        
+        % Cluster extent
+        if opts.clustere_uni.do,
+            if opts.designperinput,
+                distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
+            else
+                distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
+            end
+            j = 1;
+            for y = 1:plm.nY,
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        distmax(:,j) = plm.Gclemax{y}{m}{c};
+                        j = j + 1;
+                    end
+                end
+            end
+            distmax = max(distmax,[],2);
+            for y = 1:plm.nY,
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mcfwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            end
+        end
+        
+        % Cluster mass
+        if opts.clusterm_uni.do,
+            if opts.designperinput,
+                distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
+            else
+                distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
+            end
+            j = 1;
+            for y = 1:plm.nY,
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        distmax(:,j) = plm.Gclmmax{y}{m}{c};
+                        j = j + 1;
+                    end
+                end
+            end
+            distmax = max(distmax,[],2);
+            for y = 1:plm.nY,
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mcfwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            end
+        end
+        
+        % TFCE
+        if opts.tfce_uni.do,
+            if opts.designperinput,
+                distmax = zeros(plm.nP{1}(1),plm.nY*plm.nC(1));
+            else
+                distmax = zeros(plm.nP{1}(1),plm.nY*sum(plm.nC));
+            end
+            j = 1;
+            for y = 1:plm.nY,
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        distmax(:,j) = plm.Gtfcemax{y}{m}{c};
+                        j = j + 1;
+                    end
+                end
+            end
+            distmax = max(distmax,[],2);
+            for y = 1:plm.nY,
+                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                for m = loopM,
+                    for c = 1:plm.nC(m),
+                        palm_quicksave( ...
+                            palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mcfwep',ystr{y},mstr{m},cstr{c}));
+                    end
+                end
+            end
+            if opts.FDR,
+                if opts.designperinput,
+                    pmerged = zeros(plm.nC(1),sum(plm.Ysiz));
+                else
+                    pmerged = zeros(sum(plm.nC),sum(plm.Ysiz));
+                end
+                j = 1;
+                for y = 1:plm.nY,
+                    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                    for m = loopM,
+                        for c = 1:plm.nC(m),
+                            pmerged(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
+                            j = j + 1;
+                        end
+                    end
+                end
+                pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
+                for y = 1:plm.nY,
+                    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                    for m = loopM,
+                        for c = 1:plm.nC(m),
+                            palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mcfdrp',ystr{y},mstr{m},cstr{c}));
+                        end
                     end
                 end
             end
@@ -2096,7 +2243,7 @@ if opts.npcmod && ~ opts.npccon,
                 % TFCE FDR p-value
                 if opts.FDR,
                     palm_quicksave(fastfdr(plm.Ttfcepperm{m}{c}),1,opts,plm,[],m,c,...
-                    sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,'_uncp',mstr{m},cstr{c}));
+                        sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,'_uncp',mstr{m},cstr{c}));
                 end
             end
         end
@@ -2417,7 +2564,7 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
 end
 
 % Save the MV results for each contrast
-if opts.MV,
+if opts.MV || opts.CCA,
     fprintf('Saving p-values for classical multivariate (uncorrected and corrected within contrast).\n')
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
@@ -2495,7 +2642,7 @@ if opts.MV,
 end
 
 % Save FWER corrected across contrasts for MV.
-if opts.MV && opts.corrcon,
+if ( opts.MV  || opts.CCA ) && opts.corrcon,
     fprintf('Saving p-values for MANOVA/MANCOVA (corrected across contrasts).\n')
     
     % FWER correction (non-spatial stats)
@@ -3042,6 +3189,22 @@ function Q = roy_iii(E,H)
 % Roy's (iii) largest root (analogous to R^2).
 % No p-vals for this (not even approximate or bound).
 Q = max(eig(H/(E+H)));
+
+% ==============================================================
+function cc = cca(Y,X,k)
+% Do CCA via QR & SVD.
+% The ranks of X and Y aren't checked for speed.
+% Inputs are assumed to have been mean-centered and be free
+% of nuisance (partial CCA) via Y=Rz*Y and X=Rz*X.
+% k is the k-th CC (typically we want the 1st).
+% Based on the algorithm proposed by:
+% Bjorck A, Golub GH. Numerical methods for
+% computing angles between linear subspaces.
+% Math Comput. 1973;27(123):579-579.
+[Qy,~]  = qr(Y,0);
+[Qx,~]  = qr(X,0);
+[~,D,~] = svd(Qy'*Qx,0);
+cc      = max(min(D(k,k),1),0);
 
 % ==============================================================
 % Below are the functions to combine statistics:
