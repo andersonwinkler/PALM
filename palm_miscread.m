@@ -58,6 +58,12 @@ switch lower(fext),
         X.readwith = 'vestread';
         [X.data,X.extra.PPH] = palm_vestread(X.filename);
         
+    case '.mset',
+        
+        % Set of matrices
+        X.readwidth = 'mset';
+        X.data = palm_msetread(X.filename);
+        
     case '.gz',
         [~,~,fext0] = fileparts(fnam);
         

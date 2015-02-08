@@ -9,7 +9,7 @@ function palm_backend(varargin)
 
 % Take the arguments. Save a small log if needed.
 % clear global plm opts % comment for debugging
-% global plm opts; % uncomment for debugging
+%global plm opts; % uncomment for debugging
 [opts,plm] = palm_takeargs(varargin{:});
 
 % Variables to store stuff for later.
@@ -199,34 +199,59 @@ end
 
 % Variables for MV
 if opts.MV,
-    plm.mvstr    = '_mv';                      % default string for the filenames.
-    Q            = cell(plm.nM,plm.nC);        % to store MV G at each permutation
-    plm.Qname    = cell(plm.nM,plm.nC);
-    Qdf2         = cell(plm.nM,plm.nC);        % to store MV df2 at each permutation
-    plm.Qpperm   = cell(plm.nM,plm.nC);        % counter, for the MV permutation p-value
-    Qppara       = cell(plm.nM,plm.nC);        % for the MV parametric p-value
-    fastmv       = cell(plm.nM,plm.nC);
-    pparamv      = cell(plm.nM,plm.nC);
-    if opts.draft,
-        plm.Qppermp  = plm.Qpperm;             % number of perms done, for the draft mode
-    end
-    plm.Qmax         = cell(plm.nM,plm.nC);    % to store the max multivariate statistic
+    plm.mvstr          = '_mv';           % default string for the filenames.
+    Q                  = cell(plm.nM,1);  % to store MV G at each permutation
+    plm.Qname          = cell(plm.nM,1);
+    Qdf2               = cell(plm.nM,1);  % to store MV df2 at each permutation
+    plm.Qpperm         = cell(plm.nM,1);  % counter, for the MV permutation p-value
+    Qppara             = cell(plm.nM,1);  % for the MV parametric p-value
+    fastmv             = cell(plm.nM,1);
+    pparamv            = cell(plm.nM,1);
+    plm.Qmax           = cell(plm.nM,1);  % to store the max multivariate statistic
     
     % Spatial stats, multivariate
     if opts.clustere_mv.do,
-        plm.Qcle       = cell(plm.nM,plm.nC);  % to store cluster extent NPC statistic
-        plm.Qclemax    = cell(plm.nM,plm.nC);  % for the max cluster extent NPC
+        plm.Qcle       = cell(plm.nM,1);  % to store cluster extent NPC statistic
+        plm.Qclemax    = cell(plm.nM,1);  % for the max cluster extent NPC
     end
     if opts.clusterm_mv.do,
-        plm.Qclm       = cell(plm.nM,plm.nC);  % to store cluster mass NPC statistic
-        plm.Qclmmax    = cell(plm.nM,plm.nC);  % for the max cluster mass NPC
+        plm.Qclm       = cell(plm.nM,1);  % to store cluster mass NPC statistic
+        plm.Qclmmax    = cell(plm.nM,1);  % for the max cluster mass NPC
     end
     if opts.tfce_mv.do,
-        Qtfce          = cell(plm.nM,plm.nC);  % to store TFCE at each permutation
-        plm.Qtfcepperm = cell(plm.nM,plm.nC);  % counter, for the TFCE p-value
-        plm.Qtfce      = cell(plm.nM,plm.nC);  % for the unpermuted TFCE
-        plm.Qtfcemax   = cell(plm.nM,plm.nC);  % to store the max TFCE statistic
+        Qtfce          = cell(plm.nM,1);  % to store TFCE at each permutation
+        plm.Qtfcepperm = cell(plm.nM,1);  % counter, for the TFCE p-value
+        plm.Qtfce      = cell(plm.nM,1);  % for the unpermuted TFCE
+        plm.Qtfcemax   = cell(plm.nM,1);  % to store the max TFCE statistic
     end
+    
+    % Lower levels of these variables
+    for m = 1:plm.nM,
+        Q{m} = cell(plm.nC(m),1);
+        plm.Qname{m}      = cell(plm.nC(m),1);
+        Qdf2{m}           = cell(plm.nC(m),1);
+        plm.Qpperm{m}     = cell(plm.nC(m),1);
+        Qppara{m}         = cell(plm.nC(m),1);
+        fastmv{m}         = cell(plm.nC(m),1);
+        pparamv{m}        = cell(plm.nC(m),1);
+        plm.Qmax{m}       = cell(plm.nC(m),1);
+        plm.Qcle{m}       = cell(plm.nC(m),1);
+        plm.Qclemax{m}    = cell(plm.nC(m),1);
+        plm.Qclm{m}       = cell(plm.nC(m),1);
+        plm.Qclmmax{m}    = cell(plm.nC(m),1);
+        Qtfce{m}          = cell(plm.nC(m),1);
+        plm.Qtfcepperm{m} = cell(plm.nC(m),1);
+        plm.Qtfce{m}      = cell(plm.nC(m),1);
+        plm.Qtfcemax{m}   = cell(plm.nC(m),1);
+    end
+    if opts.draft,
+        plm.Qppermp  = plm.Qpperm;        % number of perms done, for the draft mode
+    end
+end
+
+% Variables for CCA
+if opts.CCA,
+    plm.mvstr    = '';                         % default string for the filenames.
 end
 
 % Inital strings to save the file names later.
@@ -508,26 +533,16 @@ for po = P_outer,
                         fastpiv  {m}{c} = @(M,psi,res)fastv(M,psi,res,m,c,plm);
                     elseif plm.rC{m}(c) >  1 && plm.nVG >  1,
                         plm.Gname{m}{c} = '_gstat';
-                        fastpiv{  m}{c} = @(M,psi,res)fastg(M,psi,res,m,c,plm);
+                        fastpiv  {m}{c} = @(M,psi,res)fastg(M,psi,res,m,c,plm);
                     end
                 end
                 
-                % MANOVA/MANCOVA/CCA
+                % MV/CCA
                 %%% DOUBLE-CHECK THE DEGREES-OF-FREEDOM!!
                 if opts.MV,
                     
                     % Make the 3D dataset
-                    plm.Yq = cat(3,plm.Yset{:});
-                    if isfield(plm,'Dset'),
-                        tmp = plm.Dset{m}{c} - eye(plm.nY);
-                        if any(tmp(:) > eps),
-                            plm.Yq = permute(plm.Yq,[1 3 2]);
-                            for t = 1:plm.Ysiz(1),
-                                plm.Yq(:,:,t) = plm.Yq(:,:,t)*plm.Dset{m}{c};
-                            end
-                            plm.Yq = permute(plm.Yq,[1 3 2]);
-                        end
-                    end
+                    plm.Yq{m}{c} = cat(3,plm.Yset{:});
                     
                     % Define the functions for the stats. Note that none is
                     % available if nVG > 1, and this should have been
@@ -580,11 +595,11 @@ for po = P_outer,
                     end
                     
                     % Make the 3D dataset & residualise wrt Z
-                    plm.Yq = cat(3,plm.Yset{:});
+                    plm.Yq{m}{c} = cat(3,plm.Yset{:});
                     for y = 1:plm.nY,
-                        plm.Yq(:,:,y) = plm.Rz{m}{c}*plm.Yq(:,:,y);
+                        plm.Yq{m}{c}(:,:,y) = plm.Rz{m}{c}*plm.Yq{m}{c}(:,:,y);
                     end
-                    plm.Yq = permute(plm.Yq,[1 3 2]);
+                    plm.Yq{m}{c} = permute(plm.Yq{m}{c},[1 3 2]);
                 end
             end
             
@@ -1007,10 +1022,10 @@ for po = P_outer,
                     % Shuffle the data and/or design.
                     if opts.draft,
                         if p == 1,
-                            yselq = true(1,size(plm.Yq,2),1);
+                            yselq = true(1,size(plm.Yq{m}{c},2),1);
                         end
                         for y = 1:plm.nY,
-                            [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yq(:,yselq,y));
+                            [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yq{m}{c}(:,yselq,y));
                             psiq(:,:,y) = M\Y(:,:,y);
                             resq(:,:,y) = Y(:,:,y) - M*psiq(:,:,y);
                         end
@@ -1147,7 +1162,7 @@ for po = P_outer,
                     end
                     
                     if opts.draft && p == 1,
-                        yselq = true(1,1,size(plm.Yq,3));
+                        yselq = true(1,1,size(plm.Yq{m}{c},3));
                     end
                     
                     % Compute the CC coefficient
@@ -1156,7 +1171,7 @@ for po = P_outer,
                     end
                     M = plm.Pset{p}*plm.Rz{m}{c}*plm.X{m}{c};
                     for t = find(ysel)',
-                        Q{m}{c}(t) = cca(plm.Yq(:,:,t),M,opts.ccaparm);
+                        Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M,opts.ccaparm);
                     end
                     
                     % Convert to zstat if that was asked
@@ -3067,23 +3082,28 @@ function Q = fasttsq(M,psi,res,m,c,plm)
 % Outputs:
 % Q    : Hotelling's T^2 statistic.
 
-nT  = size(res,2);
+% Swap dimensions so that dims 1 and 2 are subjects and variables
+% leaving the voxels/tests as the 3rd.
+res = permute(res,[1 3 2]);
+psi = permute(psi,[1 3 2]);
+
+nT  = size(res,3);
 df0 = plm.N-plm.rM{m}(c);
 S = spr(res)/df0;
 if plm.evperdat{m}{c},
-    cte1 = permute(psi,[1 3 2]);
+    cte1 = psi;
     cte2 = sum(M.*M,1);
 else
-    cte1 = zeros(nT,plm.nY);
-    for y = 1:plm.nY,
-        cte1(:,y) = plm.eC{m}{c}'*psi(:,:,y);
+    cte1 = zeros(nT,size(plm.Dset{m}{c},2));
+    for t = 1:nT,
+        cte1(t,:) = plm.eC{m}{c}'*psi(:,:,t)*plm.Dset{m}{c};
     end
     cte2 = plm.eC{m}{c}'/(M'*M)*plm.eC{m}{c};
 end
 
 Q = zeros(1,nT);
 for t = 1:nT,
-    Q(1,t) = cte1(t,:)/S(:,:,t)/cte2*cte1(t,:)';
+    Q(1,t) = cte1(t,:)/(plm.Dset{m}{c}'*S(:,:,t)*plm.Dset{m}{c})/cte2*cte1(t,:)';
 end
 
 function P = fasttsqp(Q,df2,p)
@@ -3107,15 +3127,19 @@ function Q = fastq(M,psi,res,m,c,plm)
 % Outputs:
 % Q    : Multivariate (yet scalar) statistic.
 
-nT   = size(res,2);
-psi  = permute(psi,[1 3 2]);
+% Swap dimensions so that dims 1 and 2 are subjects and variables
+% leaving the voxels/tests as the 3rd.
+res = permute(res,[1 3 2]);
+psi = permute(psi,[1 3 2]);
+
+nT   = size(res,3);
 cte2 = plm.eC{m}{c}'/(M'*M)*plm.eC{m}{c};
 E    = spr(res);
 Q    = zeros(1,nT);
 for t = 1:nT,
-    cte1   = psi(:,:,t)'*plm.eC{m}{c};
+    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{m}{c};
     H      = cte1/cte2*cte1';
-    Q(1,t) = plm.qfun(E(:,:,t),H);
+    Q(1,t) = plm.qfun(plm.Dset{m}{c}'*E(:,:,t)*plm.Dset{m}{c},H);
 end
 
 % ==============================================================
@@ -3483,16 +3507,13 @@ function S = spr(X)
 % Compute the matrix with the sum of products.
 % X is a 3D array, with the resilduals of the GLM.
 % - 1st dimension are the subjects
-% - 2nd dimension would tipically be voxels
-% - 3rd dimension the modalities.
+% - 2nd dimension the modalities.
+% - 3rd dimension would tipically be voxels
 %
 % S is the sum of products that make up the covariance
 % matrix:
 % - 1st and 3rd dimension have the same size as the number of
 %   modalities and the 2nd dimension are typically the voxels.
-
-% Swap dimensions of voxels by modalities
-X = permute(X,[1 3 2]);
 
 % To make it faster, the check should be made just once, and
 % the result kept throughout runs.
@@ -3544,6 +3565,7 @@ sp = zeros(nY,nY,nT);
 for t = 1:nT,
     sp(:,:,t) = (X(:,:,t)'*X(:,:,t));
 end
+
 
 % ==============================================================
 function C = pascaltri(K)

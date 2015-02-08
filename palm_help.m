@@ -159,6 +159,10 @@ function advanced_help
 
 fprintf('\nThe advanced or less commonly used options are:\n\n');
 
+fprintf('-con <file1> <file2> : Contrast file(s) in .mset format. For hypotheses\n');
+fprintf('	of the form H0: C''*Psi*D, file1 contains a set of C contrasts, and\n');
+fprintf('	file2 (optional) contains a set of D contrasts.\n\n')
+
 fprintf('-cmcp : Ignore the possibility of repeated permutations. This option\n');
 fprintf('	will be ignored if the number of shufflings chosen is larger than the\n');
 fprintf('	maximum number of possible shufflings, in which case all possible\n');
@@ -207,6 +211,10 @@ fprintf('	methods available, which can be specified as ''-inormal <method>'' or\
 fprintf('	''-inormal quanti <method>''. The methods are ''Waerden'' (default),\n');
 fprintf('	''Blom'', ''Tukey'' and ''Bliss''.\n\n');
 
+fprintf('-inputmv : Treat the (sole) input as multivariate, that is, each column is\n');
+fprintf('	a variable in a multivariate model, as opposed to independent univariate\n');
+fprintf('	tests. Useful with non-imaging data.\n\n');
+
 fprintf('-noranktest : For MV, don''t check the rank of the data before trying to\n');
 fprintf('	compute the multivariate statistics.\n\n');
 
@@ -244,14 +252,16 @@ fprintf('	index per column; sign-flips are represented by the negative\n');
 fprintf('	indices). Use cautiously, as this may consume large amounts of\n');
 fprintf('	disk space.\n\n');
 
-fprintf('-syncperms : If possible, use synchronized permutations even they wouldn''t\n');
-fprintf('	be used by default.\n\n');
-
 fprintf('-seed <positive> : Seed used for the random number generator. Use a\n');
 fprintf('	positive integer up to 2^32. Default is 0. To start with a random\n');
 fprintf('	number, use the word ''twist'' instead of the integer. Note that a\n');
 fprintf('	given seed used in Matlab isn''t equivalent to the same seed used\n');
 fprintf('	in Octave.\n\n');
+
+fprintf('-syncperms : If possible, use synchronized permutations even they wouldn''t\n');
+fprintf('	be used by default.\n\n');
+
+fprintf('-subjidx <file> : Indices of input data to keep in the design.\n\n');
 
 fprintf('-Tuni : Enable TFCE inference for univariate (partial) tests.\n\n');
 

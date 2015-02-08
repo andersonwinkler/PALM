@@ -37,7 +37,12 @@ switch lower(X.readwith),
     case 'vestread',
         
         % Write an FSL "VEST" file
-        vestwrite(X.filename,X.data);
+        palm_vestwrite(X.filename,X.data);
+        
+    case 'msetread',
+        
+        % Write an MSET (matrix set) file
+        palm_msetwrite(X.filename,X.data);
         
     case 'nifticlass',
         

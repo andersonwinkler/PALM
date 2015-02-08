@@ -64,7 +64,7 @@ end
 N = size(M,1);
 [~,~,seq] = unique(M,'rows');
 seqS = sortrows(horzcat(seq,(1:N)'));
-U    = unique(seqS(:,1));
+U    = unique(seq);
 nU   = numel(U);
 
 % Logs, to help later
@@ -82,10 +82,18 @@ if EE,
     end
     lmaxP = lfac(N+1) - sum(lfac(nrep+1));
     maxP  = round(exp(lmaxP));
-    if isinf(maxP),
-        fprintf('Number of possible permutations is exp(%g) = %d!.\n',lmaxP,N);
+    if nU == N,
+        if isinf(maxP),
+            fprintf('Number of possible permutations is exp(%g) = %d!.\n',lmaxP,N);
+        else
+            fprintf('Number of possible permutations is %g = %d!.\n',maxP,N);
+        end
     else
-        fprintf('Number of possible permutations is %g = %d!.\n',maxP,N);
+        if isinf(maxP),
+            fprintf('Number of possible permutations is exp(%g).\n',lmaxP);
+        else
+            fprintf('Number of possible permutations is %g.\n',maxP);
+        end
     end
 end
 if ISE,

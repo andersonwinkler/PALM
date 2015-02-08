@@ -71,6 +71,7 @@ opts.designperinput   = false;              % use one design for each input?
 opts.showprogress     = true;               % print progress as the permutations are performed? (use -quiet to disable)
 opts.savepartial      = false;              % If running NPC or MV, save partial tests?
 opts.saveunivariate   = true;               % Save univariate stats when using multivariate stats?
+opts.inputmv          = false;              % treat each column of the sole input as a separate input for MV/NPC/CCA?
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within is also default).
