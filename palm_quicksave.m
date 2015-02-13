@@ -63,20 +63,29 @@ if opts.savelogp && any(flg == [1 2]),
     X = -log10(X);
 end
 
-% Choose an appropriate mask struct.
-if opts.npcmod || opts.MV,
-    S = plm.maskinter;
+% Prepare struct to save
+if opts.inputmv,
+    S.filename = filename;
+    S.readwith = 'load';
+    S.data     = X;
 else
-    if plm.nmasks == 1,
-        S = plm.masks{1};
+    % Choose an appropriate mask struct.
+    if opts.npcmod || opts.MV,
+        S = plm.maskinter;
     else
-        S = plm.masks{y};
+        if plm.nmasks == 1,
+            S = plm.masks{1};
+        else
+            S = plm.masks{y};
+        end
     end
+    
+    % Inject the data.
+    mask         = S.data;
+    S.data       = double(S.data);
+    S.data(mask) = X;
+    S.filename   = filename;
 end
 
-% Inject the data and save.
-mask         = S.data;
-S.data       = double(S.data);
-S.data(mask) = X;
-S.filename   = filename;
+% Save
 palm_miscwrite(S);

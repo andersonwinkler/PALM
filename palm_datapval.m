@@ -56,5 +56,4 @@ else % if large G are significant (typical case)
         pvals(G <= cdfG(g)) = distp(g);
     end
     pvals(G > cdfG(end)) = 0;
-    
 end

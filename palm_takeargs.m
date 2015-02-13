@@ -38,13 +38,14 @@ end
 
 % Number of input images/masks/surfaces
 % These are NOT meant to be edited. Don't edit this!
-Ni   = sum(strcmp(vararginx,'-i'));    % number of data inputs
-Nm   = sum(strcmp(vararginx,'-m'));    % number of masks
-Ns   = sum(strcmp(vararginx,'-s'));    % number of surfaces
-Nd   = sum(strcmp(vararginx,'-d'));    % number of design files
-Nt   = sum(strcmp(vararginx,'-t'));    % number of t-contrast files
-Nf   = sum(strcmp(vararginx,'-f'));    % number of F-test files
-Ncon = sum(strcmp(vararginx,'-con'));  % number of contrast files (t or F, mset format)
+Ni   = sum(strcmp(vararginx,'-i'));         % number of data inputs
+Nm   = sum(strcmp(vararginx,'-m'));         % number of masks
+Ns   = sum(strcmp(vararginx,'-s'));         % number of surfaces
+Nd   = sum(strcmp(vararginx,'-d'));         % number of design files
+Nt   = sum(strcmp(vararginx,'-t'));         % number of t-contrast files
+Nf   = sum(strcmp(vararginx,'-f'));         % number of F-test files
+Ncon = sum(strcmp(vararginx,'-con'));       % number of contrast files (t or F, mset format)
+Nevd  = sum(strcmp(vararginx,'-evperdat')); % number of EV per datum inputs
 opts.i    = cell(Ni,1);   % Input files (to constitute Y later)
 opts.m    = cell(Nm,1);   % Mask file(s)
 opts.s    = cell(Ns,1);   % Surface file(s)
@@ -66,7 +67,8 @@ plm.subjidx   = [];       % Indices of subjects to keep
 
 % These are to be incremented below
 a = 1; i = 1; m = 1; d = 1;
-t = 1; f = 1; s = 1; con = 1;
+t = 1; f = 1; s = 1;
+con = 1; ev = 1;
 
 % Remove trailing empty arguments. This is useful for some Octave versions.
 while numel(vararginx) > 0 && isempty(vararginx{1}),
@@ -110,6 +112,33 @@ while a <= narginx,
             opts.d{d} = vararginx{a+1};
             d = d + 1;
             a = a + 2;
+            
+        case '-evperdat',
+            
+            % Use one EV per datum?
+            opts.evperdat = true;
+            opts.evdatfile{ev} = vararginx{a+1};
+            if nargin == a + 1 || ...
+                    ischar(vararginx{a+2}) && ...
+                    strcmpi(vararginx{a+2}(1),'-'),
+                opts.evpos{ev}(1,1) = 1; % EV position
+                opts.evpos{ev}(1,2) = 1; % Design number
+                opts.evpos{ev}(1,3) = ev; % File index (this isn't redundant)
+                a = a + 2;
+            elseif nargin == a + 2 || ...
+                    ischar(vararginx{a+3}) && ...
+                    strcmpi(vararginx{a+3}(1),'-'),
+                opts.evpos{ev}(1,1) = eval(vararginx{a+2}); % EV position
+                opts.evpos{ev}(1,2) = 1; % Design number
+                opts.evpos{ev}(1,3) = ev; % File index (this isn't redundant)
+                a = a + 3;
+            else
+                opts.evpos{ev}(1,1) = eval(vararginx{a+2}); % EV position
+                opts.evpos{ev}(1,2) = eval(vararginx{a+3}); % Design number
+                opts.evpos{ev}(1,3) = ev; % File index (this isn't redundant)
+                a = a + 4;
+            end
+            ev = ev + 1;
             
         case '-t',
             
@@ -611,13 +640,16 @@ while a <= narginx,
             elseif nargin > a,
                 
                 % Which multivariate statistic to use?
-                methlist = {  ...
-                    'Wilks',  ...
-                    'Lawley', ...
-                    'Pillai', ...
-                    'Roy',    ...
-                    'Roy_ii', ...
-                    'Roy_iii',...
+                methlist = {            ...
+                    'auto',             ...
+                    'HotellingTsq',     ...
+                    'Wilks',            ...
+                    'Lawley',           ...
+                    'Lawley-Hotelling', ...
+                    'Pillai',           ...
+                    'Roy',              ...
+                    'Roy-ii',           ...
+                    'Roy-iii',          ...
                     'CCA'};
                 methidx = strcmpi(vararginx{a+1},methlist);
                 
@@ -776,17 +808,20 @@ while a <= narginx,
             % Don't test the rank(Y) before doing MANOVA/MANCOVA.
             opts.noranktest = true;
             a = a + 1;
-            
-        case '-evperdat',
-            
-            % Use one (single) EV per datum
-            opts.evperdat = true;
-            a = a + 1;
-            
+        
         case '-transposedata',
             
             % Transpose the data if it's 2D?
             opts.transposedata = true;
+            a = a + 1;
+            
+        case '-inputmv',
+            
+            % Treat the (sole) input as multivariate, that is,
+            % each column is a variable in a multivariate model,
+            % as opposed to independent univariate tests.
+            % Useful with non-imaging data.
+            opts.inputmv = true;
             a = a + 1;
             
         case '-verbosefilenames',
@@ -827,15 +862,12 @@ while a <= narginx,
             opts.saveunivariate = false;
             a = a + 1;
             
-        case '-inputmv',
+        case '-savedof',
             
-            % Treat the (sole) input as multivariate, that is,
-            % each column is a variable in a multivariate model,
-            % as opposed to independent univariate tests.
-            % Useful with non-imaging data.
-            opts.inputmv = true;
+            % Save a file with the degrees of freedom?
+            opts.savedof = true;
             a = a + 1;
-            
+
         case '-pmethodp',
             
             % Which method to use to partition the model when defining
@@ -911,7 +943,7 @@ if opts.evperdat,
             '"-cmcx"\n' ...
             '"-ev4vg"\n' ...
             '"-pearson"\n' ...
-            'None of these can be enaabled with "-evperdat".%s'],'');
+            'None of these can be enabled with "-evperdat".%s'],'');
     end
     if strcmpi(opts.rmethod,'terBraak'),
         error('The option "-evperdat" cannot be used with the ter Braak method (not implemented)');
@@ -1087,12 +1119,6 @@ end
 if opts.designperinput && opts.MV,
     error('It''s not possible to use the option "-onedesignperinput" together with the option "-mv".');
 end
-if opts.designperinput && (Ni ~= Nd) || (Nt > 1 || Ncon > 1),
-    error(['To use the option "-onedesignperinput", the number of design files must\n' ...
-        'match the number of inputs, and just one t-contrast file must be supplied.\n%s'],'');
-else
-    opts.syncperms = true;
-end
 if ~opts.saveunivariate && ~opts.MV && ~opts.NPC && ~opts.CCA,
     error('The option "-nounivariate" can only be used with "-mv", "-npc" or "-cca".');
 end
@@ -1102,7 +1128,12 @@ end
 if Ni > 1 && opts.inputmv,
     error('Option "-inputmv" cannot be used with more than one "-i".')
 end
-
+if opts.inputmv,
+    opts.saveunivariate = false;
+end
+if opts.corrcon,
+    opts.zstat = true;
+end
 % Initialize the random number generator (if nP = 0, no need for that)
 if opts.nP0,
     if palm_isoctave,
@@ -1310,7 +1341,7 @@ for i = 1:Ni,
     end
     
     % Now apply the mask created above and the one supplied by the user
-    % for each modality. If no masks were supplied, create them, except
+    % for this modality. If no masks were supplied, create them, except
     % for the NIFTI class, which should have been created above
     if strcmp(Ytmp.readwith,'nifticlass'),
         plm.masks{i}.data(plm.masks{i}.data) = maskydat(:);
@@ -1385,16 +1416,161 @@ for i = 1:Ni,
         plm.Yarea{i} = palm_calcarea(plm.srf{s}.data,plm.Yisvtx(i));
     end
 end
-if opts.inputmv,
-    tmp = plm.Yset{1};
-    nY = size(tmp,2);
-    plm.Yset = cell(nY,1);
-    for y = 1:nY,
-        plm.Yset{y} = tmp(:,y);
+plm.nY = numel(plm.Yset); % this is redefined below if opts.inputmv is set.
+
+% Read and organise the EV per datum.
+if opts.evperdat,
+    plm.EVset = cell(Nevd,1);
+    for ev = 1:Nevd,
+        
+        % Read an initial version
+        fprintf('Reading EV for each datum %d/%d: %s\n',ev,Nevd,opts.i{ev});
+        EVtmp = palm_miscread(opts.evdatfile{ev},opts.useniiclass);
+        
+        % If this is 4D read with the NIFTI class, it needs a mask now
+        if strcmp(EVtmp.readwith,'nifticlass') && ndims(EVtmp.data) == 4,
+            if Nm == 0,
+                % If a mask hasn't been supplied, make one
+                tmpmsk = false(EVtmp.extra.dat.dim(1:3));
+                for a = 1:EVtmp.extra.dat.dim(2), % y coords
+                    for b = 1:EVtmp.extra.dat.dim(3), % z coords
+                        I = squeeze(EVtmp.extra.dat(:,a,b,:));
+                        inan = any(isnan(I),2);
+                        iinf = any(isinf(I),2);
+                        icte = sum(diff(I,1,2).^2,2) == 0;
+                        tmpmsk(:,a,b) = ~ (inan | iinf | icte);
+                    end
+                end
+                tmpmsk = tmpmsk(:)';
+                plm.masks{ev} = palm_maskstruct(tmpmsk,EVtmp.readwith,EVtmp.extra);
+            else
+                % If a mask was supplied, check its size
+                if any(EVtmp.extra.dat.dim(1:3) ~= size(plm.masks{ev}.data)),
+                    error([...
+                        'The size of the data does not match the size of the mask:\n' ...
+                        '- Data file %d (%s)\n' ...
+                        '- Mask file %d (%s)'],ev,opts.evdatfile{ev},ev,opts.m{ev})
+                end
+            end
+        end
+        
+        % Now deal with the actual data
+        if ndims(EVtmp.data) == 2,
+            
+            % Transpose if that was chosen.
+            if opts.transposedata,
+                EVtmp.data = EVtmp.data';
+            end
+            
+            % Select subjects
+            if ~isempty(plm.subjidx),
+                EVtmp.data = EVtmp.data(plm.subjidx,:);
+            end
+            
+            % Compare size with the others
+            if size(EVtmp.data,1) ~= plm.N,
+                error([
+                    'At least two of the input data files do not have\n' ...
+                    'compatible sizes:\n' ...
+                    '- File %d (%s) has %d observations\n'   ...
+                    '- File %d (%s) has %d observations'], ...
+                    1,opts.evdatfile{1},plm.N, ...
+                    ev,opts.evdatfile{ev},size(EVtmp.data,1));
+            end
+            
+            % Not all later functions are defined for file_array class,
+            % so convert to double
+            if strcmp(EVtmp.readwith,'nifticlass'),
+                EVtmp.data = double(EVtmp.data);
+            end
+            
+            % This should cover the CSV files and DPX 4D files that
+            % were converted to CSV with 'dpx2csv' and then transposed.
+            plm.EVset{ev} = EVtmp.data;
+            
+        elseif ndims(EVtmp.data) == 4,
+            
+            % Select subjects
+            if ~isempty(plm.subjidx),
+                EVtmp.data = EVtmp.data(:,:,:,plm.subjidx);
+            end
+            
+            % Compare size with the others
+            if size(EVtmp.data,4) ~= plm.N,
+                error([
+                    'At least two of the input data files do not have\n' ...
+                    'compatible sizes:\n' ...
+                    '- File %d (%s) has %d observations\n'   ...
+                    '- File %d (%s) has %d observations'], ...
+                    1,opts.evdatfile{1},plm.N, ...
+                    ev,opts.evdatfile{ev},size(EVtmp.data,4));
+            end
+            
+            % Sort out loading for the NIFTI class
+            if strcmp(EVtmp.readwith,'nifticlass'),
+                tmpmsk = plm.masks{ev}.data(:)';
+                
+                % Read each volume, reshape and apply the mask
+                plm.EVset{ev} = zeros(plm.N,sum(tmpmsk));
+                for n = 1:plm.N,
+                    tmp = EVtmp.extra.dat(:,:,:,n);
+                    tmp = tmp(:)';
+                    plm.EVset{ev}(n,:) = tmp(tmpmsk);
+                end
+            else
+                % If not read with the NIFTI class, get all immediately
+                plm.EVset{ev} = palm_conv4to2(EVtmp.data);
+            end
+        end
+        
+        % Check if the size of data is compatible with size of mask.
+        % If read with the NIFTI class, this was already taken care of
+        % and can be skipped.
+        if ~ strcmp(EVtmp.readwith,'nifticlass'),
+            if Nm > 0 && size(plm.EVset{ev},2) ~= numel(plm.masks{ev}.data),
+                error([...
+                    'The size of the data does not match the size of the mask:\n' ...
+                    '- Data file %d (%s)\n' ...
+                    '- Mask file %d (%s)'],ev,opts.evdatfile{ev},ev,opts.m{ev})
+            end
+        end
+        
+        % Make mask that removes constant values, Inf and NaN. This will be
+        % merged with the user-supplied mask, if any, or will be the sole mask
+        % available to select the datapoints of interest.
+        if Nm == 0 && ndims(EVtmp.data) == 4 ...
+                && strcmp(EVtmp.readwith,'nifticlass'),
+            maskydat = true(1,size(plm.EVset{ev},2));
+        else
+            ynan = any(isnan(plm.EVset{ev}),1);
+            yinf = any(isinf(plm.EVset{ev}),1);
+            ycte = sum(diff(plm.EVset{ev},1,1).^2) == 0;
+            maskydat = ~ (ynan | yinf | ycte);
+        end
+        
+        % Now apply the mask created above and the one supplied by the user
+        % for this modality. If no masks were supplied, create them, except
+        % for the NIFTI class, which should have been created above
+        if strcmp(EVtmp.readwith,'nifticlass'),
+            plm.masks{Ni+ev}.data(plm.masks{Ni+ev}.data) = maskydat(:);
+        else
+            if Nm == 0,
+                plm.masks{Ni+ev} = palm_maskstruct(maskydat,EVtmp.readwith,EVtmp.extra);
+            else
+                maskydat = plm.masks{Ni+ev}.data(:) & maskydat(:);
+                plm.masks{Ni+ev}.data = reshape(maskydat,size(plm.masks{Ni+ev}.data));
+            end
+        end
+        plm.EVset{ev} = plm.EVset{ev}(:,maskydat);
     end
-    clear tmp nY;
+    plm.nEVdat = numel(plm.EVset);
+    
+    % Sizes of EV per datum arrays
+    plm.EVsiz = zeros(plm.nEVdat,1);
+    for ev = 1:plm.nEVdat,
+        plm.EVsiz(ev) = size(plm.EVset{ev},2);
+    end
 end
-plm.nY     = numel(plm.Yset);
 plm.nmasks = numel(plm.masks);
 
 % Create an intersection mask if NPC or MV is to be done, and further apply
@@ -1416,6 +1592,11 @@ if opts.npcmod || opts.MV || opts.evperdat,
         for y = 1:plm.nY,
             plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{y}.data));
         end
+        if opts.evperdat,
+            for ev = 1:plm.nEVdat,
+                plm.EVset{ev} = plm.EVset{ev}(:,plm.maskinter.data(plm.masks{plm.nY+ev}.data));
+            end
+        end
     else
         
         % If only one mask was given.
@@ -1423,11 +1604,32 @@ if opts.npcmod || opts.MV || opts.evperdat,
         for y = 1:plm.nY,
             plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{1}.data));
         end
+        if opts.evperdat,
+            for ev = 1:plm.nEVdat,
+                plm.EVset{ev} = plm.EVset{ev}(:,plm.maskinter.data(plm.masks{1}.data));
+            end
+        end
     end
 end
-clear Ytmp
+clear Ytmp EVtmp
 
-% A variable with the sizes of all modalities will be handy when doing FDR
+% If the multiple columns of the (sole) input are to be treated
+% in a multivariate fashion
+if opts.inputmv,
+    tmp1 = plm.Yset{1};
+    tmp2 = plm.Ykindstr{1};
+    nY  = size(tmp1,2);
+    plm.Yset     = cell(nY,1);
+    plm.Ykindstr = cell(nY,1);
+    for y = 1:nY,
+        plm.Yset{y}     = tmp1(:,y);
+        plm.Ykindstr{y} = tmp2;
+    end
+    clear tmp1 tmp2 nY;
+    plm.nY = numel(plm.Yset);
+end
+
+% A variable with the sizes of all modalities will be handy later
 plm.Ysiz = zeros(plm.nY,1);
 for y = 1:plm.nY,
     plm.Ysiz(y) = size(plm.Yset{y},2);
@@ -1480,8 +1682,8 @@ if opts.MV && ~ opts.noranktest,
         fname = sprintf('%s_mv_illconditioned',opts.o);
         palm_quicksave(double(failed),0,opts,plm,[],[],fname);
         error([
-            'One or more datapoints have ill-conditioned data. This makes\n' ...
-            'it impossible to run multivariate analyses as MANOVA/MANCOVA.\n' ...
+            'One or more datapoints have ill-conditioned data. It is\n' ...
+            'not possible to run multivariate analyses as MANOVA/MANCOVA.\n' ...
             'Please, see these datapoints marked as 1 in the file:\n' ...
             '%s.*\n'],fname); %#ok
     end
@@ -1507,33 +1709,25 @@ if ~opts.EE && ~opts.ISE,
 end
 
 % Read and assemble the design matrices.
-plm.Mset = cell(Nm,1);
+if opts.evperdat,
+    evpos = cat(1,opts.evpos{:});
+    if size(unique(evpos(:,1:2),'rows'),1) ~= size(evpos,1);
+        error(['Some EV per datum have been defined for the same\n'...
+            'position in the same design matrices.%s'],'');
+    end
+    desidx = unique(evpos(:,2));
+    Ndev = desidx(end);
+else
+    Ndev = 0;
+end
+plm.Mset = cell(max(Nd,Ndev),1);
+plm.nM = numel(plm.Mset);
+% Read & assemble each design matrix
 if Nd > 0,
     fprintf('Reading design matrix and contrasts.\n');
     for m = 1:Nd,
         Mtmp = palm_miscread(opts.d{m});
-        if opts.evperdat,
-            if ndims(Mtmp.data) == 2,
-                plm.Mset{m} = Mtmp.data;
-            elseif ndims(Mtmp.data) == 4,
-                if strcmp(Mtmp.readwith,'nifticlass'),
-                    tmpmsk = plm.maskinter.data(:)';
-                    plm.Mset{m} = zeros(plm.N,sum(tmpmsk));
-                    for n = 1:plm.N,
-                        tmp = Mtmp.extra.dat(:,:,:,n);
-                        tmp = tmp(:)';
-                        plm.Mset{m}(n,:) = tmp(tmpmsk);
-                    end
-                else
-                    plm.Mset{m} = palm_conv4to2(Mtmp.data);
-                    plm.Mset{m} = plm.Mset{m}(:,plm.maskinter.data(:));
-                end
-            end
-            plm.Mrank{m} = 1;
-        else
-            plm.Mset{m}  = Mtmp.data;
-            plm.Mrank{m} = rank(plm.Mset{m});
-        end
+        plm.Mset{m} = Mtmp.data;
         if size(plm.Mset{m},1) ~= plm.N,
             error([
                 'The number of rows in the design matrix does\n' ...
@@ -1548,27 +1742,55 @@ if Nd > 0,
                 'The design matrix cannot contain NaN or Inf.\n' ...
                 'In file %s\n'],opts.d{m});
         end
-        if m > 1 && (opts.corrcon || opts.corrmod) && ~opts.evperdat &&  plm.Mrank{m} ~= plm.Mrank{1},
-            error(['Design matrices %d and %d do not have the same rank.\n'...
-                'In files:\n- %s (rank = %d)\n- %s (rank = %d)\n'], ...
-                1,m,opts.d{1},plm.Mrank{1},opts.d{m},plm.Mrank{m})
-        end
     end
-else
-    % If a design matrix has not been specified, use a single column of ones and
-    % make sure that only ISE (not EE) is used.
+end
+% Include the EV per datum
+if Ndev > 0,
+    for m = desidx',
+        evposm = evpos(evpos(:,2) == m,:);
+        if isempty(plm.Mset{m}),
+            tmp = zeros(plm.N,size(evposm,1),plm.EVsiz(evposm(1,3)));
+            for ev = 1:size(evposm,1),
+                tmp(:,ev,:) = permute(plm.EVset{evposm(ev,3)},[1 3 2]);
+            end
+        else
+            tmp = zeros(plm.N,size(evposm,1)+size(plm.Mset{m},2),plm.EVsiz(evposm(1,3)));
+            idx = true(1,size(evposm,1)+size(plm.Mset{m},2));
+            idx(evposm(:,1)) = false;
+            tmp(:,idx,:) = repmat(plm.Mset{m},[1 1 plm.EVsiz(evposm(1,3))]);
+            for ev = 1:size(evposm,1),
+                tmp(:,find(~idx,ev),:) = permute(plm.EVset{evposm(ev,3)},[1 3 2]);
+                plm.EVset{evposm(ev,3)} = [];
+                plm.EVsiz(evposm(1,3)) = NaN;
+            end
+        end
+        plm.Mset{m} = tmp;
+    end
+    plm = rmfield(plm,{'EVset','EVsiz'});
+    plm.evperdat = false(plm.nM,1);
+    plm.evperdat(desidx) = true;
+end
+% If no design was specified
+if Nd == 0 && Ndev == 0,
     plm.Mset{1} = ones(plm.N,1);
     opts.EE  = false;
     opts.ISE = true;
 end
-plm.nM = numel(plm.Mset);
-
-% Just in case, to that check again now after having loaded the data & designs
+% Some related sanity checks
 if opts.designperinput && plm.nY ~= plm.nM,
     error(['To use the option "-onedesignperinput", the number of design files must\n' ...
         'match the number of inputs.\n%s'],'');
-else
-    opts.syncperms = true;
+end
+if opts.evperdat,
+    for m = 1:plm.nM,
+        if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
+        for y = loopY,
+            if size(plm.Yset{y},2) ~= size(plm.Mset{m},3),
+                error(['The size of the data and the size of the EV per datum\n' ...
+                    'don''t match.%s'],'')
+            end
+        end
+    end
 end
 
 % Read and organise the contrasts for each design.
@@ -1632,14 +1854,24 @@ elseif Ncon,
     Dcon = cell(Ncon,1);
     for con = 1:Ncon,
         tmp = palm_miscread(opts.Ccon{con});
-        Ccon{con} = tmp.data;
+        if strcmpi(tmp.readwith,'mset'),
+            Ccon{con} = tmp.data;
+        else
+            error(['Files given to the option "-con" must be in .mset format.' ...
+                'For .csv or .con files, use "-t"; for .fts files, use "-f".%s'],'');
+        end
         if isempty(opts.Dcon{con}),
             for c = 1:numel(Ccon{con}),
                 Dcon{con}{c} = eye(plm.nY);
             end
         else
-        tmp = palm_miscread(opts.Dcon{con});
-        Dcon{con} = tmp.data;
+            tmp = palm_miscread(opts.Dcon{con});
+            if strcmpi(tmp.readwith,'mset'),
+                Dcon{con} = tmp.data;
+            else
+                error(['Files given to the option "-con" must be in .mset format.' ...
+                    'For .csv or .con files, use "-t"; for .fts files, use "-f".%s'],'');
+            end
         end
     end
     
@@ -1664,7 +1896,7 @@ elseif Ncon,
 else
     % If no constrasts were at all specified:
     for m = 1:plm.nM,
-        if size(plm.Mset{m},2) == 1 || opts.evperdat,
+        if size(plm.Mset{m},2) == 1,
             
             % If there is only 1 regressor, test its effect both
             % positive and negative.
@@ -1704,8 +1936,8 @@ for m = 1:plm.nM,
         if any(isnan(plm.Cset{m}{c}(:))) || any(isinf(plm.Cset{m}{c}(:))),
             error('The constrasts cannot contain NaN or Inf.');
         end
-        if opts.evperdat && size(plm.Cset{m}{c},1) ~= 1,
-            error('The contrast file must contain a single element when using the option ''-evperdat''.');
+        if size(plm.Cset{m}{c},1) ~= size(plm.Mset{m},2),
+            error('The size of one or more contrasts don''t match the size of the respective design matrix.')
         end
     end
     for c = 1:plm.nD(m),
@@ -1721,7 +1953,7 @@ if opts.MV
     for m = 1:plm.nM,
         for d = 1:plm.nD(m),
             if size(plm.Dset{m}{d},1) ~= plm.nY,
-                error('The size of one or more MV contrast don''t match the number of modalities.');
+                error('The size of one or more MV contrasts don''t match the number of modalities.');
             end
         end
     end
@@ -1730,14 +1962,22 @@ end
 % Partition the model according to the contrasts and design matrix.
 % The partitioning needs to be done now, because of the need for
 % synchronised permutations/sign-flips
-if ~ opts.cmcx && ~ opts.evperdat ,
+if opts.cmcx,
+    plm.seq = cell(plm.nM,1);
+    for m = 1:plm.nM,
+        plm.seq{m} = cell(plm.nC(m),1);
+        for c = 1:plm.nC(m),
+            plm.seq{m}{c} = (1:plm.N)';
+        end
+    end
+else
     seqtmp = zeros(plm.N,sum(plm.nC));
     j = 1;
     plm.seq = cell(plm.nM,1);
     for m = 1:plm.nM,
         plm.seq{m} = cell(plm.nC(m),1);
         for c = 1:plm.nC(m),
-            Xtmp = palm_partition(plm.Mset{m},plm.Cset{m}{c},opts.pmethodp);
+            Xtmp = palm_partition(plm.Mset{m}(:,:,1),plm.Cset{m}{c},opts.pmethodp);
             [~,~,plm.seq{m}{c}] = unique(Xtmp,'rows');
             seqtmp(:,j) = plm.seq{m}{c};
             j = j + 1;
@@ -1754,18 +1994,6 @@ if ~ opts.cmcx && ~ opts.evperdat ,
     end
     if opts.corrcon || opts.npccon,
         opts.syncperms = true;
-    end
-elseif opts.cmcx || opts.evperdat,
-    % Currently the -evperdat allows just 1 column, so there's nothing
-    % to be done here. But, if in the future a more generic version
-    % is implemented, then there'll be changes here.
-    % (...)
-    plm.seq = cell(plm.nM,1);
-    for m = 1:plm.nM,
-        plm.seq{m} = cell(plm.nC(m),1);
-        for c = 1:plm.nC(m),
-            plm.seq{m}{c} = (1:plm.N)';
-        end
     end
 end
 

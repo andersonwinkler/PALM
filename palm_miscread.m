@@ -61,7 +61,7 @@ switch lower(fext),
     case '.mset',
         
         % Set of matrices
-        X.readwidth = 'mset';
+        X.readwith = 'mset';
         X.data = palm_msetread(X.filename);
         
     case '.gz',

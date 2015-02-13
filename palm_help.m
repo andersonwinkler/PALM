@@ -33,7 +33,7 @@ fprintf('	option is needed when the input data is a scalar field over a\n');
 fprintf('	surface and spatial statistics (cluster extent, cluster mass or\n');
 fprintf('	TFCE) have been enabled.\n\n');
 
-fprintf('-d <file> : Design matrix. It can be in csv format, or in fsl''s vest\n');
+fprintf('-d <file> : Design matrix. It can be in csv format, or in fsl"s vest\n');
 fprintf('	format. For information on how to construct the design matrix,\n');
 fprintf('	see the FSL GLM manual.\n\n');
 
@@ -58,10 +58,10 @@ fprintf('	omitted, all observations are treated as exchangeable and\n');
 fprintf('	belonging to a single large exchangeability block.\n\n');
 
 fprintf('-within : If the file supplied with -eb has a single column, this option\n');
-fprintf('	runs within-block permutation (default). Can be used with ''-whole''.\n\n');
+fprintf('	runs within-block permutation (default). Can be used with "-whole".\n\n');
 
 fprintf('-whole : If the file supplied with -eb has a single column, this option\n');
-fprintf('	runs whole-block permutation. Can be used with ''-within''.\n\n');
+fprintf('	runs whole-block permutation. Can be used with "-within".\n\n');
 
 fprintf('-ee : Assume exchangeable errors (EE), to allow permutations.\n\n');
 
@@ -70,7 +70,7 @@ fprintf('	sign-flipping.\n\n');
 
 fprintf('-vg <file> : Variance groups file, in csv or vest format. If omitted,\n');
 fprintf('	all observations are assumed to belong to the same variance group (i.e.\n');
-fprintf('	the data is treated as homoscedastic. Use ''-vg auto'' to define the\n');
+fprintf('	the data is treated as homoscedastic. Use "-vg auto" to define the\n');
 fprintf('	automatically using a structure that is compatible with the\n');
 fprintf('	exchangeability blocks (option -eb).\n\n');
 
@@ -94,7 +94,7 @@ fprintf('	be one of: Wilks, Hotelling, Pillai, Roy_ii or Roy_iii. All but\n');
 fprintf('	the last can also be used to calculate parametric p-values and\n');
 fprintf('	spatial statistics.\n\n');
 
-fprintf('-pearson : Instead of t, F, v or G, compute either the Pearson''s\n');
+fprintf('-pearson : Instead of t, F, v or G, compute either the Pearson"s\n');
 fprintf('	correlation coefficient, r (if the constrast has rank=1), or the\n');
 fprintf('	coefficient of determination R2 (if the constrast has rank>1).\n');
 fprintf('	For the contrasts in which some EVs are zeroed out, this option\n');
@@ -121,7 +121,9 @@ fprintf('	H = 2, E = 1, C = 26. Use this option together with -T.\n\n');
 
 fprintf('-corrmod : Apply FWER-correction of p-values over multiple modalities.\n\n');
 
-fprintf('-corrcon : Apply FWER-correction of p-values over multiple contrasts.\n\n');
+fprintf('-corrcon : Apply FWER-correction of p-values over multiple contrasts.\n');
+fprintf('	Because multivariate and F-stats can have different df, this option\n');
+fprintf('	automatically enables "-zstat".\n\n');
 
 fprintf('-fdr : Produce FDR-adjusted p-values.\n\n');
 
@@ -160,7 +162,7 @@ function advanced_help
 fprintf('\nThe advanced or less commonly used options are:\n\n');
 
 fprintf('-con <file1> <file2> : Contrast file(s) in .mset format. For hypotheses\n');
-fprintf('	of the form H0: C''*Psi*D, file1 contains a set of C contrasts, and\n');
+fprintf('	of the form H0: C"*Psi*D, file1 contains a set of C contrasts, and\n');
 fprintf('	file2 (optional) contains a set of D contrasts.\n\n')
 
 fprintf('-cmcp : Ignore the possibility of repeated permutations. This option\n');
@@ -174,7 +176,7 @@ fprintf('	treated as unique, regardless of potential repetitions (ties).\n\n');
 
 fprintf('-conskipcount <integer> : Normally the contrasts are numbered from 1, but\n');
 fprintf('	this option allows staring the counter from the specified number.\n');
-fprintf('	This option doesn''t affect which contrasts are performed.\n\n');
+fprintf('	This option doesn"t affect which contrasts are performed.\n\n');
 
 fprintf('-cuni <real> : Enable cluster extent for t contrasts for univariate\n');
 fprintf('	(partial) tests, with the supplied cluster-forming threshold (as\n');
@@ -206,32 +208,35 @@ fprintf('	enables voxelwise/facewise/vertexwise regressors.\n\n');
 
 fprintf('-inormal : Apply an inverse-normal transformation to the data.\n');
 fprintf('	This procedure can go faster if the data is known to be quantitative\n');
-fprintf('	(in which case, use ''-inormal quanti''). There are four different\n');
-fprintf('	methods available, which can be specified as ''-inormal <method>'' or\n');
-fprintf('	''-inormal quanti <method>''. The methods are ''Waerden'' (default),\n');
-fprintf('	''Blom'', ''Tukey'' and ''Bliss''.\n\n');
+fprintf('	(in which case, use "-inormal quanti"). There are four different\n');
+fprintf('	methods available, which can be specified as "-inormal <method>" or\n');
+fprintf('	"-inormal quanti <method>". The methods are "Waerden" (default),\n');
+fprintf('	"Blom", "Tukey" and "Bliss".\n\n');
 
 fprintf('-inputmv : Treat the (sole) input as multivariate, that is, each column is\n');
 fprintf('	a variable in a multivariate model, as opposed to independent univariate\n');
-fprintf('	tests. Useful with non-imaging data.\n\n');
-
-fprintf('-noranktest : For MV, don''t check the rank of the data before trying to\n');
-fprintf('	compute the multivariate statistics.\n\n');
+fprintf('	tests. Useful with non-imaging data. When used, the option "-nounivariate"\n');
+fprintf('	is automatically set.\n\n');
 
 fprintf('-noniiclass : Do not use the NIFTI class (use this option only if you\n');
 fprintf('	have problems and even so, only for small datasets).\n\n');
 
+fprintf('-noranktest : For MV, don''t check the rank of the data before trying to\n');
+fprintf('	compute the multivariate statistics.\n\n');
+
+fprintf('-nounivariate : Don''t save univariate resuts.\n\n')
+
 fprintf('-pmethodp : Partition method used when defining the set of permutations.\n');
-fprintf('	Cab be ''Guttman'', ''Beckmann'', ''Ridgway'' or ''None''.\n');
-fprintf('	Default is ''Beckmann''\n\n');
+fprintf('	Cab be "Guttman", "Beckmann", "Ridgway" or "None".\n');
+fprintf('	Default is "Beckmann"\n\n');
 
 fprintf('-pmethodr : Partition method used during the regression. Valid values\n');
-fprintf('	are ''Guttman'', ''Beckmann'', ''Ridgway'' or ''None''.\n\n');
-fprintf('	Default is ''Beckmann''\n\n');
+fprintf('	are "Guttman", "Beckmann", "Ridgway" or "None".\n\n');
+fprintf('	Default is "Beckmann"\n\n');
 
 fprintf('-removevgbysize <integer> : Remove from the data and design those\n');
 fprintf('	observations that are in VGs of size smaller or equal than specified.\n');
-fprintf('	This is specially useful with the option ''-vg auto''.\n\n')
+fprintf('	This is specially useful with the option "-vg auto".\n\n')
 
 fprintf('-rmethod <string> : Method for regression/permutation. It can be one of\n');
 fprintf('	Freedman-Lane, Smith, terBraak, Manly, Draper-Stoneman,\n');
@@ -254,11 +259,11 @@ fprintf('	disk space.\n\n');
 
 fprintf('-seed <positive> : Seed used for the random number generator. Use a\n');
 fprintf('	positive integer up to 2^32. Default is 0. To start with a random\n');
-fprintf('	number, use the word ''twist'' instead of the integer. Note that a\n');
-fprintf('	given seed used in Matlab isn''t equivalent to the same seed used\n');
+fprintf('	number, use the word "twist" instead of the integer. Note that a\n');
+fprintf('	given seed used in Matlab isn"t equivalent to the same seed used\n');
 fprintf('	in Octave.\n\n');
 
-fprintf('-syncperms : If possible, use synchronized permutations even they wouldn''t\n');
+fprintf('-syncperms : If possible, use synchronized permutations even they wouldn"t\n');
 fprintf('	be used by default.\n\n');
 
 fprintf('-subjidx <file> : Indices of input data to keep in the design.\n\n');

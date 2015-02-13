@@ -23,7 +23,7 @@ opts.rfallback        = 'terBraak';         % Regression/permutation method if c
 opts.NPC              = false;              % Do non-parametric combination?
 opts.MV               = false;              % Do classical multivariate inference? (MANOVA/MANCOVA)
 opts.CCA              = false;              % Do canonical correlation analysis? (CCA)
-opts.mvstat           = 'Wilks';            % Default method for MANOVA/MANCOVA
+opts.mvstat           = 'auto';             % Default method for MANOVA/MANCOVA
 opts.npcmethod        = 'Tippett';          % Combination method.
 opts.cfallback        = 'Fisher';           % (not currently used)
 opts.npcmod           = false;              % FWER correction over input modalities?
@@ -71,6 +71,7 @@ opts.designperinput   = false;              % use one design for each input?
 opts.showprogress     = true;               % print progress as the permutations are performed? (use -quiet to disable)
 opts.savepartial      = false;              % If running NPC or MV, save partial tests?
 opts.saveunivariate   = true;               % Save univariate stats when using multivariate stats?
+opts.savedof          = false;              % save a file with the degrees of freedom?
 opts.inputmv          = false;              % treat each column of the sole input as a separate input for MV/NPC/CCA?
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
