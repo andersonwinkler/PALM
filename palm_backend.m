@@ -8,7 +8,7 @@ function palm_backend(varargin)
 % http://brainder.org
 
 % Take the arguments. Save a small log if needed.
-% clear global plm opts % comment for debugging
+%clear global plm opts % comment for debugging
 global plm opts; % uncomment for debugging
 [opts,plm] = palm_takeargs(varargin{:});
 
@@ -245,13 +245,13 @@ if opts.MV,
         plm.Qtfcemax{m}   = cell(plm.nC(m),1);
     end
     if opts.draft,
-        plm.Qppermp  = plm.Qpperm;        % number of perms done, for the draft mode
+        plm.Qppermp       = plm.Qpperm; % number of perms done, for the draft mode
     end
 end
 
 % Variables for CCA
 if opts.CCA,
-    plm.mvstr    = '';                         % default string for the filenames.
+    plm.mvstr = ''; % default string for the filenames.
 end
 
 % Inital strings to save the file names later.
@@ -262,73 +262,146 @@ plm.cstr = cell(max(plm.nC),1); for c = 1:max(plm.nC); plm.cstr{c} = ''; end
 % Create the function handles for the NPC.
 if opts.NPC,
     
-    nG = size(Gnpc{1},2);
-    plm.isnichols = false;
     plm.Tname = lower(opts.npcmethod);
     switch plm.Tname,
         case 'tippett',
-            fastnpc    = @(G,df1,df2)tippett(G,df1,df2);
-            pparanpc   = @(T,nG)tippettp(T,nG);
-            plm.npcrev = true;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)min( ...
+                    tippett( G,df1,df2),   ...
+                    tippett(-G,df1,df2));
+            else
+                fastnpc = @(G,df1,df2)tippett(G,df1,df2);
+            end
+            pparanpc    = @(T,nG)tippettp(T,nG);
+            plm.npcrev  = true;
         case 'fisher',
-            fastnpc    = @(G,df1,df2)fisher(G,df1,df2);
-            pparanpc   = @(T)fisherp(T,nG);
-            plm.npcrev = false;
-        case 'pearson-david',
-            fastnpc    = @(G,df1,df2)pearsondavid(G,df1,df2);
-            pparanpc   = @(T,nG)pearsondavidp(T,nG);
-            plm.npcrev = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max( ...
+                    fisher( G,df1,df2),    ...
+                    fisher(-G,df1,df2));
+            else
+                fastnpc = @(G,df1,df2)fisher(G,df1,df2);
+            end
+            pparanpc    = @(T,nG)fisherp(T,nG);
+            plm.npcrev  = false;
         case 'stouffer',
-            fastnpc    = @(G,df1,df2)stouffer(G,df1,df2);
-            pparanpc   = @(T,nG)stoufferp(T,nG);
-            plm.npcrev = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max( ...
+                    stouffer( G,df1,df2),  ...
+                    stouffer(-G,df1,df2));
+            else
+                fastnpc = @(G,df1,df2)stouffer(G,df1,df2);
+            end
+            pparanpc    = @(T,nG)stoufferp(T,nG);
+            plm.npcrev  = false;
         case 'wilkinson',
-            fastnpc    = @(G,df1,df2)wilkinson(G,df1,df2,plm.npcparm);
-            pparanpc   = @(T,nG)wilkinsonp(T,nG,plm.npcparm);
-            plm.npcrev = false;
-        case 'winer'
-            fastnpc    = @(G,df1,df2)winer(G,df1,df2);
-            pparanpc   = @(T,nG)winerp(T,nG);
-            plm.npcrev     = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max(             ...
+                    wilkinson( G,df1,df2,plm.npcparm), ...
+                    wilkinson(-G,df1,df2,plm.npcparm));
+            else
+                fastnpc = @(G,df1,df2)wilkinson(G,df1,df2,plm.npcparm);
+            end
+            pparanpc    = @(T,nG)wilkinsonp(T,nG,plm.npcparm);
+            plm.npcrev  = false;
+        case 'winer',
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max( ...
+                    winer( G,df1,df2),     ...
+                    winer(-G,df1,df2));
+            else
+                fastnpc = @(G,df1,df2)winer(G,df1,df2);
+            end
+            pparanpc    = @(T,nG)winerp(T,nG);
+            plm.npcrev  = false;
         case 'edgington',
-            fastnpc    = @(G,df1,df2)edgington(G,df1,df2);
-            pparanpc   = @(T,nG)edgingtonp(T,nG);
-            plm.npcrev = true;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)min( ...
+                    edgington( G,df1,df2), ...
+                    edgington(-G,df1,df2));
+            else
+                fastnpc = @(G,df1,df2)edgington(G,df1,df2);
+            end
+            pparanpc    = @(T,nG)edgingtonp(T,nG);
+            plm.npcrev  = true;
         case 'mudholkar-george',
-            fastnpc    = @(G,df1,df2)mudholkargeorge(G,df1,df2);
-            pparanpc   = @(T,nG)mudholkargeorgep(T,nG);
-            plm.npcrev = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max(       ...
+                    mudholkargeorge( G,df1,df2), ...
+                    mudholkargeorge(-G,df1,df2));
+            else
+                fastnpc = @(G,df1,df2)mudholkargeorge(G,df1,df2);
+            end
+            pparanpc    = @(T,nG)mudholkargeorgep(T,nG);
+            plm.npcrev  = false;
         case 'friston',
-            fastnpc    = @(G,df1,df2)fristonnichols(G,df1,df2);
-            pparanpc   = @(T,nG)fristonp(T,nG,plm.npcparm);
-            plm.npcrev     = true;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)min( ...
+                    friston( G,df1,df2),   ...
+                    friston(-G,df1,df2));
+            else
+                fastnpc = @(G,df1,df2)friston(G,df1,df2);
+            end
+            pparanpc    = @(T,nG)fristonp(T,nG,plm.npcparm);
+            plm.npcrev  = true;
         case 'darlington-hayes',
-            fastnpc    = @(G,df1,df2)darlingtonhayes(G,df1,df2,plm.npcparm);
-            plm.npcrev = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max(                   ...
+                    darlingtonhayes( G,df1,df2,plm.npcparm), ...
+                    darlingtonhayes(-G,df1,df2,plm.npcparm));
+            else
+                fastnpc = @(G,df1,df2)darlingtonhayes(G,df1,df2,plm.npcparm);
+            end
+            plm.npcrev  = false;
         case 'zaykin',
-            fastnpc    = @(G,df1,df2)zaykin(G,df1,df2,plm.npcparm);
-            pparanpc   = @(T,nG)zaykinp(T,nG,plm.npcparm);
-            plm.npcrev = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max(          ...
+                    zaykin( G,df1,df2,plm.npcparm), ...
+                    zaykin(-G,df1,df2,plm.npcparm));
+            else
+                fastnpc = @(G,df1,df2)zaykin(G,df1,df2,plm.npcparm);
+            end
+            pparanpc    = @(T,nG)zaykinp(T,nG,plm.npcparm);
+            plm.npcrev  = false;
         case 'dudbridge-koeleman',
-            fastnpc    = @(G,df1,df2)dudbridgekoeleman(G,df1,df2,plm.npcparm);
-            pparanpc   = @(T,nG)dudbridgekoelemanp(T,nG,plm.npcparm);
-            plm.npcrev = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max(                     ...
+                    dudbridgekoeleman( G,df1,df2,plm.npcparm), ...
+                    dudbridgekoeleman(-G,df1,df2,plm.npcparm));
+            else
+                fastnpc = @(G,df1,df2)dudbridgekoeleman(G,df1,df2,plm.npcparm);
+            end
+            pparanpc    = @(T,nG)dudbridgekoelemanp(T,nG,plm.npcparm);
+            plm.npcrev  = false;
         case 'dudbridge-koeleman2',
-            fastnpc    = @(G,df1,df2)dudbridgekoeleman2(G,df1,df2,plm.npcparm,plm.npcparm2);
-            pparanpc   = @(T,nG)dudbridgekoeleman2p(T,nG,plm.npcparm,plm.npcparm2);
-            plm.npcrev = false;
-        case 'nichols',
-            fastnpc    = @(G,df1,df2)fristonnichols(G,df1,df2);
-            pparanpc   = @(T,nG)nicholsp(T,nG);
-            plm.npcrev = true;
-            plm.isnichols  = true;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max(                                   ...
+                    dudbridgekoeleman2( G,df1,df2,plm.npcparm,plm.npcparm2), ...
+                    dudbridgekoeleman2(-G,df1,df2,plm.npcparm,plm.npcparm2));
+            else
+                fastnpc = @(G,df1,df2)dudbridgekoeleman2(G,df1,df2,plm.npcparm,plm.npcparm2);
+            end
+            pparanpc    = @(T,nG)dudbridgekoeleman2p(T,nG,plm.npcparm,plm.npcparm2);
+            plm.npcrev  = false;
         case 'taylor-tibshirani',
-            fastnpc    = @(G,df1,df2)taylortibshirani(G,df1,df2);
-            pparanpc   = @(T,nG)taylortibshiranip(T,nG);
-            plm.npcrev = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max(        ...
+                    taylortibshirani( G,df1,df2), ...
+                    taylortibshirani(-G,df1,df2));
+            else
+                fastnpc = @(G,df1,df2)taylortibshirani(G,df1,df2);
+            end
+            pparanpc    = @(T,nG)taylortibshiranip(T,nG);
+            plm.npcrev  = false;
         case 'jiang',
-            fastnpc    = @(G,df1,df2)jiang(G,df1,df2,plm.npcparm);
-            plm.npcrev = false;
+            if opts.concordant,
+                fastnpc = @(G,df1,df2)max(         ...
+                    jiang( G,df1,df2,plm.npcparm), ...
+                    jiang(-G,df1,df2,plm.npcparm));
+            else
+                fastnpc = @(G,df1,df2)jiang(G,df1,df2,plm.npcparm);
+            end
+            plm.npcrev  = false;
     end
     
     % For the NPC methods in which the most significant stats are the
@@ -553,65 +626,65 @@ for po = P_outer,
                     % Pick the regression/permutation method
                     switch lower(plm.rmethod{m}{c}),
                         case 'noz',
-                            prepglm{m}{c}      = @(P,Y)noz3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCx{m}{c};
+                            prepglm{m}{c}   = @(P,Y)noz3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCx{m}{c};
                         case 'exact',
-                            prepglm{m}{c}      = @(P,Y)exact3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCx{m}{c};
+                            prepglm{m}{c}   = @(P,Y)exact3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCx{m}{c};
                         case 'draper-stoneman',
-                            prepglm{m}{c}      = @(P,Y)draperstoneman3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCm{m}{c};
+                            prepglm{m}{c}   = @(P,Y)draperstoneman3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCm{m}{c};
                         case 'still-white',
-                            plm.Rz {m}{c}      = zeros(plm.N,plm.N,size(plm.Mset{m},3));
+                            plm.Rz {m}{c}   = zeros(plm.N,plm.N,size(plm.Mset{m},3));
                             for t = 1:size(plm.Mset{m},3),
                                 plm.Rz{m}{c}(:,:,t) = eye(plm.N) - plm.Z{m}{c}(:,:,t)*pinv(plm.Z{m}{c}(:,:,t));
                             end
-                            prepglm{m}{c}      = @(P,Y)stillwhite3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCx{m}{c};
+                            prepglm{m}{c}   = @(P,Y)stillwhite3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCx{m}{c};
                         case 'freedman-lane',
-                            plm.Hz {m}{c}      = zeros(plm.N,plm.N,size(plm.Mset{m},3));
-                            plm.Rz {m}{c}      = plm.Hz{m}{c};
+                            plm.Hz {m}{c}   = zeros(plm.N,plm.N,size(plm.Mset{m},3));
+                            plm.Rz {m}{c}   = plm.Hz{m}{c};
                             for t = 1:size(plm.Mset{m},3),
                                 plm.Hz{m}{c}(:,:,t) = plm.Z{m}{c}(:,:,t)*pinv(plm.Z{m}{c}(:,:,t));
                                 plm.Rz{m}{c}(:,:,t) = eye(plm.N) - plm.Hz{m}{c}(:,:,t);
                             end
-                            prepglm{m}{c}      = @(P,Y)freedmanlane3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCm{m}{c};
+                            prepglm{m}{c}   = @(P,Y)freedmanlane3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCm{m}{c};
                         case 'terbraak',
-                            isterbraak         = true;
-                            prepglm{m}{c}      = @(P,Y)terbraak3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCm{m}{c};
+                            isterbraak      = true;
+                            prepglm{m}{c}   = @(P,Y)terbraak3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCm{m}{c};
                         case 'kennedy',
-                            plm.Rz {m}{c}      = zeros(plm.N,plm.N,size(plm.Mset{m},3));
+                            plm.Rz {m}{c}   = zeros(plm.N,plm.N,size(plm.Mset{m},3));
                             for t = 1:size(plm.Mset{m},3),
                                 plm.Rz{m}{c}(:,:,t) = eye(plm.N) - plm.Z{m}{c}(:,:,t)*pinv(plm.Z{m}{c}(:,:,t));
                             end
-                            prepglm{m}{c}      = @(P,Y)kennedy3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCx{m}{c};
+                            prepglm{m}{c}   = @(P,Y)kennedy3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCx{m}{c};
                         case 'manly',
-                            prepglm{m}{c}      = @(P,Y)manly(P,Y,m,c,plm); % same as the usual Manly
-                            plm.eC {m}{c}      = plm.eCm{m}{c};
+                            prepglm{m}{c}   = @(P,Y)manly(P,Y,m,c,plm); % same as the usual Manly
+                            plm.eC {m}{c}   = plm.eCm{m}{c};
                         case 'huh-jhun',
-                            plm.Rz {m}{c}      = zeros(plm.N,plm.N,size(plm.Mset{m},3));
+                            plm.Rz {m}{c}   = zeros(plm.N,plm.N,size(plm.Mset{m},3));
                             for t = 1:size(plm.Mset{m},3),
                                 plm.Rz{m}{c}(:,:,t) = eye(plm.N) - plm.Z{m}{c}(:,:,t)*pinv(plm.Z{m}{c}(:,:,t));
-                                [Q,D]          = schur(plm.Rz{m}{c}(:,:,t));
-                                D              = abs(diag(D)) < 10*eps;
-                                Q(:,D)         = [];
+                                [Q,D]       = schur(plm.Rz{m}{c}(:,:,t));
+                                D           = abs(diag(D)) < 10*eps;
+                                Q(:,D)      = [];
                                 if t == 1,
                                     plm.hj{m}{c} = zeros([size(Q) size(plm.Mset{m},3)]);
                                 end
                                 plm.hj{m}{c}(:,:,t) = Q;
                             end
-                            prepglm{m}{c}      = @(P,Y)huhjhun3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCx{m}{c};
+                            prepglm{m}{c}   = @(P,Y)huhjhun3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCx{m}{c};
                         case 'smith',
-                            plm.Rz {m}{c}      = zeros(plm.N,plm.N,size(plm.Mset{m},3));
+                            plm.Rz {m}{c}   = zeros(plm.N,plm.N,size(plm.Mset{m},3));
                             for t = 1:size(plm.Mset{m},3),
                                 plm.Rz{m}{c}(:,:,t) = eye(plm.N) - plm.Z{m}{c}(:,:,t)*pinv(plm.Z{m}{c}(:,:,t));
                             end
-                            prepglm{m}{c}      = @(P,Y)smith3d(P,Y,m,c,plm);
-                            plm.eC {m}{c}      = plm.eCm{m}{c};
+                            prepglm{m}{c}   = @(P,Y)smith3d(P,Y,m,c,plm);
+                            plm.eC {m}{c}   = plm.eCm{m}{c};
                     end
                     
                     % Pick a name for the function that will compute the statistic
@@ -847,11 +920,7 @@ for po = P_outer,
                 if opts.draft, ysel = cell(plm.nY,1); end
                 plm.Gmax{y}{m}{c} = zeros(plm.nP{m}(c),1);
                 if opts.npcmod && ~ opts.npccon,
-                    if plm.isnichols,
-                        plm.Tmax{m}{c} = zeros(plm.nP{m}(c),plm.nY);
-                    else
-                        plm.Tmax{m}{c} = zeros(plm.nP{m}(c),1);
-                    end
+                    plm.Tmax{m}{c} = zeros(plm.nP{m}(c),1);
                 end
                 if opts.MV,
                     plm.Qmax{m}{c} = zeros(plm.nP{m}(c),1);
@@ -978,7 +1047,7 @@ for po = P_outer,
 
                     % Save the unpermuted statistic if z-score
                     if opts.zstat
-                        if p == 1,
+                        if p == 1 && y == 1 && m == 1 && c == 1,
                             plm.Gname{m}{c} = sprintf('_z%s',plm.Gname{m}{c}(2:end));
                             if opts.saveunivariate,
                                 palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
@@ -995,7 +1064,7 @@ for po = P_outer,
                     
                     % Remove the sign if this is a two-tailed test. This
                     % makes no difference if rank(C) > 1
-                    if opts.twotail && plm.rC0{m}(c) == 1,
+                    if opts.twotail,
                         G{y}{m}{c} = abs(G{y}{m}{c});
                     end
                     
@@ -1095,11 +1164,7 @@ for po = P_outer,
                         Gnpc  {1}(y,:) = G  {y}{m}{c};
                         df2npc{1}(y,:) = df2{y}{m}{c};
                     end
-                    if plm.isnichols,
-                        [T{m}{c},Gnpcppara] = fastnpc(Gnpc{1},0,df2npc{1});
-                    else
-                        T{m}{c} = fastnpc(Gnpc{1},0,df2npc{1});
-                    end
+                    T{m}{c} = fastnpc(Gnpc{1},0,df2npc{1});
                     
                     % Since computing the parametric p-value for some methods
                     % can be quite slow, it's faster to run all these checks
@@ -1107,7 +1172,14 @@ for po = P_outer,
                     if opts.zstat || ...
                             opts.spatial_npc || ...
                             (p == 1 && opts.savepara && ~ plm.nonpcppara),
-                        Tppara{m}{c} = pparanpc(T{m}{c});
+                        Tppara{m}{c} = pparanpc(T{m}{c},plm.nY);
+                        
+                        % Adjust the concordant signs for the concordant
+                        % test. This is the same as 1-(1-P)^2, but
+                        % preserves the precision.
+                        if opts.concordant,
+                            Tppara{m}{c} = 2*Tppara{m}{c}-Tppara{m}{c}.^2;
+                        end
                         
                         % Reserve the p-parametric to save later.
                         if p == 1,
@@ -1119,7 +1191,7 @@ for po = P_outer,
                     % G was already converted to z before making T).
                     if opts.zstat,
                         T{m}{c} = -erfinv(2*Tppara{m}{c}-1)*sqrt(2);
-                        if p == 1,
+                        if p == 1 && m == 1 && c == 1,
                             plm.npcstr = horzcat('_z',plm.npcstr(2:end));
                         end
                     end
@@ -1143,15 +1215,9 @@ for po = P_outer,
                         plm.T{m}{c} = T{m}{c};
                         plm.Tpperm{m}{c} = zeros(size(T{m}{c}));
                     end
-                    if plm.isnichols,
-                        plm.Tpperm{m}{c} = plm.Tpperm{m}{c} + ...
-                            sum(bsxfun(npcrel,Gnpc{1},plm.T{m}{c}),1);
-                        plm.Tmax{m}{c}(p,:) = npcextr(Gnpcppara,[],2)';
-                    else
-                        plm.Tpperm{m}{c} = plm.Tpperm{m}{c} + ...
-                            bsxfun(npcrel,T{m}{c},plm.T{m}{c});
-                        plm.Tmax{m}{c}(p) = npcextr(T{m}{c},[],2);
-                    end
+                    plm.Tpperm{m}{c} = plm.Tpperm{m}{c} + ...
+                        bsxfun(npcrel,T{m}{c},plm.T{m}{c});
+                    plm.Tmax{m}{c}(p) = npcextr(T{m}{c},[],2);
                     
                     % Be sure to use z-scores for the spatial statistics, converting
                     % it if not already.
@@ -1246,7 +1312,7 @@ for po = P_outer,
                     % Convert to zstat if that was asked
                     if opts.zstat,
                         Q{m}{c} = -erfinv(2*Qppara{m}{c}-1)*sqrt(2);
-                        if p == 1,
+                        if p == 1 && m == 1 && c == 1,
                             plm.mvstr = horzcat('_z',plm.mvstr(2:end));
                         end
                     end
@@ -1368,7 +1434,7 @@ for po = P_outer,
                     % Convert to zstat if that was asked
                     if opts.zstat,
                         Q{m}{c} = atanh(Q{m}{c});
-                        if p == 1,
+                        if p == 1 && m == 1 && c == 1,
                             plm.mvstr = horzcat('_z',plm.mvstr(2:end));
                         end
                     end
@@ -1501,11 +1567,7 @@ for po = P_outer,
                 end
             end
             if po == 1,
-                if plm.isnichols,
-                    plm.Tmax{1} = zeros(plm.nP{1}(1),plm.nY);
-                else
-                    plm.Tmax{1} = zeros(plm.nP{1}(1),1);
-                end
+                plm.Tmax{1} = zeros(plm.nP{1}(1),1);
             end
         else
             if opts.showprogress,
@@ -1522,11 +1584,7 @@ for po = P_outer,
                     end
                 end
                 if po == 1,
-                    if plm.isnichols,
-                        plm.Tmax{y} = zeros(plm.nP{1}(1),sum(plm.nC));
-                    else
-                        plm.Tmax{y} = zeros(plm.nP{1}(1),1);
-                    end
+                    plm.Tmax{y} = zeros(plm.nP{1}(1),1);
                 end
             end
             
@@ -1546,11 +1604,7 @@ for po = P_outer,
             end
             
             % Compute the combined statistic
-            if plm.isnichols,
-                [T{j},Gnpcppara] = fastnpc(Gnpc{j},0,df2npc{j});
-            else
-                T{j} = fastnpc(Gnpc{j},0,df2npc{j});
-            end
+            T{j} = fastnpc(Gnpc{j},0,df2npc{j});
             
             % Since computing the parametric p-value for some methods
             % can be quite slow, it's faster to run all these checks
@@ -1559,6 +1613,13 @@ for po = P_outer,
                     opts.spatial_npc || ...
                     (po == 1 && opts.savepara && ~ plm.nonpcppara),
                 Tppara{j} = pparanpc(T{j});
+                
+                % Adjust the concordant signs for the concordant
+                % test. This is the same as 1-(1-P)^2, but
+                % preserves the precision.
+                if opts.concordant,
+                    Tppara{j} = 2*Tppara{j}-Tppara{j}.^2;
+                end
                 
                 % Reserve the p-parametric to save later.
                 if po == 1,
@@ -1570,7 +1631,7 @@ for po = P_outer,
             % G was already converted to z before making T).
             if opts.zstat,
                 T{j} = -erfinv(2*Tppara{j}-1)*sqrt(2);
-                if po == 1,
+                if po == 1 && j == 1,
                     plm.npcstr = horzcat('_z',plm.npcstr(2:end));
                 end
             end
@@ -1594,15 +1655,9 @@ for po = P_outer,
                 plm.T{j} = T{j};
                 plm.Tpperm{j} = zeros(size(T{j}));
             end
-            if plm.isnichols,
-                plm.Tpperm{j} = plm.Tpperm{j} + ...
-                    sum(bsxfun(npcrel,Gnpc{j},plm.T{j}),1);
-                plm.Tmax{j}(po,:) = npcextr(Gnpcppara,[],2)';
-            else
-                plm.Tpperm{j} = plm.Tpperm{j} + ...
-                    bsxfun(npcrel,T{j},plm.T{j});
-                plm.Tmax{j}(po) = npcextr(T{j},[],2);
-            end
+            plm.Tpperm{j} = plm.Tpperm{j} + ...
+                bsxfun(npcrel,T{j},plm.T{j});
+            plm.Tmax{j}(po) = npcextr(T{j},[],2);
             
             % Be sure to use z-scores for the spatial statistics, converting
             % it if not already.
@@ -2250,15 +2305,6 @@ function P = fisherp(T,nG)
 P = palm_gpval(T,-1,2*nG);
 
 % ==============================================================
-function T = pearsondavid(G,df1,df2)
-T = -2*min(...
-    sum(log(palm_gpval(G,df1,df2)),1),...
-    sum(log(palm_gcdf(G,df1,df2)),1));
-
-function P = pearsondavidp(T,nG)
-P = palm_gpval(T,-1,2*nG);
-
-% ==============================================================
 function T = stouffer(G,df1,df2)
 T = sum(palm_gtoz(G,df1,df2),1)/sqrt(size(G,1));
 
@@ -2320,15 +2366,12 @@ function P = mudholkargeorgep(T,nG)
 P = palm_gcdf(T,1,5*nG+4);
 
 % ==============================================================
-function [T,Gpval] = fristonnichols(G,df1,df2)
+function [T,Gpval] = friston(G,df1,df2)
 Gpval = palm_gpval(G,df1,df2);
 T = max(Gpval,[],1);
 
 function P = fristonp(T,nG,parmu)
 P = T.^(nG - parmu + 1);
-
-function T = nicholsp(T,~)
-% T itself is P, so there is nothing to do.
 
 % ==============================================================
 function T = darlingtonhayes(G,df1,df2,parmr)

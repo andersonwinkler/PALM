@@ -39,9 +39,6 @@ if opts.NPC,
     if opts.npcmod && ~ opts.npccon,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
-                if plm.isnichols,
-                    plm.Tmax{m}{c} = plm.Tmax{m}{c}(:);
-                end
                 plm.Tpperm{m}{c} = plm.Tpperm{m}{c}/numel(plm.Tmax{m}{c});
                 if opts.tfce_npc.do,
                     plm.Ttfcepperm{m}{c} = plm.Ttfcepperm{m}{c}/plm.nP{m}(c);
@@ -50,9 +47,6 @@ if opts.NPC,
         end
     elseif opts.npccon,
         for j = 1:numel(plm.Tmax),
-            if plm.isnichols,
-                plm.Tmax{j} = plm.Tmax{j}(:);
-            end
             plm.Tpperm{j} = plm.Tpperm{j}/numel(plm.Tmax{j});
             if opts.tfce_npc.do,
                 plm.Ttfcepperm{j} = plm.Ttfcepperm{j}/numel(plm.Tmax{j});
@@ -741,12 +735,7 @@ if opts.npcmod && ~ opts.npccon,
     fprintf('Saving p-values for NPC between modalities (uncorrected and corrected within contrasts).\n');
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
-            
-            % For the Nichols method, the maxima for all modalities are pooled
-            if plm.isnichols,
-                plm.Tmax{m}{c} = plm.Tmax{m}{c}(:);
-            end
-            
+
             % NPC p-value
             palm_quicksave(plm.Tpperm{m}{c},1,opts,plm,[],m,c, ...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{c}));
@@ -948,11 +937,6 @@ if opts.npccon,
     fprintf('Saving p-values for NPC between contrasts (uncorrected and corrected within modality).\n');
     
     for j = 1:numel(plm.Tmax),
-        
-        % For the Nichols method, the maxima for all modalities are pooled
-        if plm.isnichols,
-            plm.Tmax{j} = plm.Tmax{j}(:);
-        end
         
         % NPC p-value
         palm_quicksave(plm.Tpperm{j},1,opts,plm,j,[],[], ...

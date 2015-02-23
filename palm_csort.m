@@ -6,13 +6,13 @@ function [unsrtR,S,srtR] = palm_csort(X,ord,mod)
 % their original order as well as sorted.
 % 
 % Usage:
-% [unsrtR,S,srtR] = csort(X,ord,mod)
+% [unsrtR,S,srtR] = palm_csort(X,ord,mod)
 % 
 % Inputs:
 % - X      : 2D array with the original data. The
 %            function operates on columns. To operate
 %            on rows or other dimensions, use transpose
-%            or permute array higher dimensions.
+%            or permute the array's higher dimensions.
 % - ord    : Sort as 'ascend' (default) or 'descend'.
 % - mod    : If true, returns the modified competition
 %            ranks, i.e., 1334. This is the
@@ -26,9 +26,9 @@ function [unsrtR,S,srtR] = palm_csort(X,ord,mod)
 %
 % Examples:
 % - To obtain the empirical cdf of a dataset in X, use:
-%   cdf   = csort(X,'ascend',true)/size(X,1);
+%   cdf   = palm_csort(X,'ascend',true)/size(X,1);
 % - To obtain the empirical p-values for each value in X, use:
-%   pvals = csort(X,'descend',true)/size(X,1);
+%   pvals = palm_csort(X,'descend',true)/size(X,1);
 % 
 % _____________________________________
 % Anderson M. Winkler

@@ -180,6 +180,12 @@ while a <= narginx,
             end
             a = a + 2;
             
+        case '-tonly',
+            
+            % Run only the t-contrasts
+            opts.tonly = true;
+            a = a + 1;
+            
         case '-fonly',
             
             % Run only the F-contrasts
@@ -442,6 +448,12 @@ while a <= narginx,
             opts.twotail = true;
             a = a + 1;
             
+        case '-concordant',
+            
+            % For the NPC, favour alternatives with the same sign?
+            opts.concordant = true;
+            a = a + 1;
+            
         case '-corrmod',
             
             % Correct over modalities.
@@ -530,7 +542,6 @@ while a <= narginx,
                     'Zaykin',              ...
                     'Dudbridge-Koeleman',  ...
                     'Dudbridge-Koeleman2', ...
-                    'Nichols',             ...
                     'Taylor-Tibshirani',   ...
                     'Jiang'};
                 methidx = strcmpi(vararginx{a+1},methlist);
@@ -985,9 +996,9 @@ if any([ ...
         opts.spatial_mv = true;
     end
 end
-if opts.spatial_npc && strcmpi(opts.npcmethod,'nichols'),
-    error('The Nichols combination method doesn''t allow spatial statistics (cluster and/or TFCE).')
-end
+% if opts.spatial_npc && strcmpi(opts.npcmethod,'nichols'),
+%     error('The Nichols combination method doesn''t allow spatial statistics (cluster and/or TFCE).')
+% end
 
 % Some extra packages for Octave
 if opts.spatial && palm_isoctave,
@@ -1134,6 +1145,17 @@ end
 if opts.corrcon,
     opts.zstat = true;
 end
+if opts.concordant && ~ opts.NPC,
+    error('The option "-concordant" is for use with NPC only.');
+end
+if opts.concordant && opts.twotail,
+    error(['Cannot use "-concordant" together with "-twotail" (inadmissible).\n'...
+        'Use either of these, but not both together.%s'],'');
+end
+if opts.tonly && opts.fonly,
+    error('Cannot use "-tonly" together with "-fonly".');
+end
+
 % Initialize the random number generator (if nP = 0, no need for that)
 if opts.nP0,
     if palm_isoctave,
@@ -1721,7 +1743,6 @@ else
     Ndev = 0;
 end
 plm.Mset = cell(max(Nd,Ndev),1);
-plm.nM = numel(plm.Mset);
 % Read & assemble each design matrix
 if Nd > 0,
     fprintf('Reading design matrix and contrasts.\n');
@@ -1744,6 +1765,7 @@ if Nd > 0,
         end
     end
 end
+plm.nM = numel(plm.Mset);
 % Include the EV per datum
 if Ndev > 0,
     for m = desidx',
@@ -1775,6 +1797,7 @@ if Nd == 0 && Ndev == 0,
     plm.Mset{1} = ones(plm.N,1);
     opts.EE  = false;
     opts.ISE = true;
+    plm.nM = numel(plm.Mset);
 end
 % Some related sanity checks
 if opts.designperinput && plm.nY ~= plm.nM,
@@ -1903,8 +1926,8 @@ else
             % The statistic will be t or v, depending on the number of VGs.
             plm.Cset{m}{1} = 1;
             plm.Cset{m}{2} = -1;
-            plm.Dset{m}{1} = 1;
-            plm.Dset{m}{2} = 1;
+            plm.Dset{m}{1} = eye(plm.nY);
+            plm.Dset{m}{2} = eye(plm.nY);
         else
             % Otherwise, run an F-test over all regressors in the design matrix.
             % The statistic will be F or G, depending on the number of VGs.
@@ -1916,8 +1939,19 @@ else
     end
 end
 
-% If only the F-tests are to be performed
-if opts.fonly,
+% If only the t or F tests are to be performed
+if opts.tonly,
+    for m = 1:plm.nM,
+        for c = plm.nC(m):-1:1,
+            if rank(plm.Cset{m}{c}) > 1,
+                plm.Cset{m}(c) = [];
+                plm.Dset{m}(c) = [];
+            end
+        end
+        plm.nC(m) = numel(plm.Cset{m});
+        plm.nD(m) = numel(plm.Dset{m});
+    end
+elseif opts.fonly,
     for m = 1:plm.nM,
         for c = plm.nC(m):-1:1,
             if rank(plm.Cset{m}{c}) <= 1,
@@ -1958,6 +1992,15 @@ if opts.MV
         end
     end
 end
+for m = 1:plm.nM,
+    for c = 1:plm.nC(m),
+        if opts.concordant && rank(plm.Cset{m}{c}) > 1,
+            error(['Cannot use the "-concordant" option with F-tests (inadmissible).\n'...
+                'Use "-tonly" to run just the t-tests.%s'],'');
+        end
+    end
+end
+
 
 % Partition the model according to the contrasts and design matrix.
 % The partitioning needs to be done now, because of the need for
