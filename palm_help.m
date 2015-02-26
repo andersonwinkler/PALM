@@ -1,5 +1,28 @@
 function palm_help(varargin)
 % Shows a help text. Call palm_help('logo') to show just the logo.
+% _____________________________________
+% Anderson M. Winkler
+% FMRIB / Univ. of Oxford
+% Mar/2014
+% http://brainder.org
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% PALM -- Permutation Analysis of Linear Models
+% Copyright (C) 2015 Anderson M. Winkler
+% 
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% any later version.
+% 
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 if nargin == 0 || strcmpi(varargin{1},'basic'),
     showlogo;
@@ -162,7 +185,7 @@ function advanced_help
 fprintf('\nThe advanced or less commonly used options are:\n\n');
 
 fprintf('-con <file1> <file2> : Contrast file(s) in .mset format. For hypotheses\n');
-fprintf('	of the form H0: C"*Psi*D, file1 contains a set of C contrasts, and\n');
+fprintf('	of the form H0: C''*Psi*D, file1 contains a set of C contrasts, and\n');
 fprintf('	file2 (optional) contains a set of D contrasts.\n\n')
 
 fprintf('-cmcp : Ignore the possibility of repeated permutations. This option\n');
@@ -242,6 +265,8 @@ fprintf('-rmethod <string> : Method for regression/permutation. It can be one of
 fprintf('	Freedman-Lane, Smith, terBraak, Manly, Draper-Stoneman,\n');
 fprintf('	Still-White and Huh-Jhun. Default, and recommended, is\n');
 fprintf('	Freedman-Lane.\n\n');
+
+fprintf('-savedof : Save file with degrees of freedom.\n\n');
 
 fprintf('-savemask : Save the effective masks used for each modality, as well as\n');
 fprintf('	an intersection mask used for NPC and/or MV of these have been\n');
