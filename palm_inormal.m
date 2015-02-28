@@ -70,7 +70,7 @@ elseif nargin > 1 && ischar(varargin{2}),
         case 'blom'
             c = 3/8;
         case 'tukey'
-            c = 1/2;
+            c = 1/3;
         case 'bliss'
             c = 1/2;
         case 'waerden'

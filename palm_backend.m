@@ -1319,7 +1319,7 @@ for po = P_outer,
                             (p == 1          && ...
                             opts.savepara    && ...
                             ~ plm.nomvppara),
-                        Qppara{m}{c} = pparamv(Q{m}{c});
+                        Qppara{m}{c} = pparamv{m}{c}(Q{m}{c});
                         
                         % Reserve the p-parametric to save later.
                         if p == 1,

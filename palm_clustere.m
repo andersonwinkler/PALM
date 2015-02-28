@@ -42,7 +42,7 @@ function [maxsize,clstat,sizes] = palm_clustere(X,y,thr,opts,plm)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Choose an appropriate mask struct.
-if opts.NPC,
+if opts.NPC || opts.MV,
     S = plm.maskinter;
 else
     if plm.nmasks == 1,

@@ -39,7 +39,7 @@ function tfcestat = palm_tfce(X,y,opts,plm)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Choose an appropriate mask struct.
-if opts.NPC,
+if opts.NPC || opts.MV,
     S = plm.maskinter;
 else
     if plm.nmasks == 1,

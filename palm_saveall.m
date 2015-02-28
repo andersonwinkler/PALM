@@ -1196,7 +1196,7 @@ if opts.MV || opts.CCA,
                 
                 % TFCE p-value
                 palm_quicksave(plm.Qtfcepperm{m}{c},1,opts,plm,[],[],[],...
-                    sprintf('%s',opts.o,'_tfce',plm.mvstr,plm.Qname,'_uncp',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,'_tfce',plm.mvstr,plm.Qname{m}{c},'_uncp',plm.mstr{m},plm.cstr{c}));
                 
                 % TFCE FWER p-value
                 palm_quicksave(palm_datapval( ...

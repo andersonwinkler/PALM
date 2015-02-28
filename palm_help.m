@@ -168,6 +168,9 @@ fprintf('	removed.\n\n');
 fprintf('-twotail : Run two-tailed tests for all the t-contrasts instead of\n');
 fprintf('	one-tailed. If NPC is used, it naturally becomes two-tailed.\n\n');
 
+fprintf('-concordant : For the NPC, favour alternative hypotheses with concordant\n');
+fprintf('	signs. Cannot be used with "-twotail".\n\n');
+
 fprintf('-quiet : Don''t shown progress as the shufflings are performed.\n\n');
 
 fprintf('-advanced : Show advanced options.\n\n');
