@@ -780,6 +780,12 @@ while a <= narginx,
                 end
             end
             
+        case '-probit',
+            
+            % Probit transformation?
+            opts.probit = true;
+            a = a + 1;
+            
         case '-seed'
             
             % Seed for the random number generator
@@ -1160,9 +1166,6 @@ end
 if opts.inputmv,
     opts.saveunivariate = false;
 end
-if opts.corrcon,
-    opts.zstat = true;
-end
 if opts.concordant && ~ opts.NPC,
     error('The option "-concordant" is for use with NPC only.');
 end
@@ -1172,6 +1175,9 @@ if opts.concordant && opts.twotail,
 end
 if opts.tonly && opts.fonly,
     error('Cannot use "-tonly" together with "-fonly".');
+end
+if opts.probit && opts.inormal,
+    error('Cannot use "-probit" together with "-inormal".');
 end
 
 % Initialize the random number generator (if nP = 0, no need for that)
@@ -1739,6 +1745,13 @@ if opts.inormal,
     end
 end
 
+% Applies a probit transformation to the modalities if the user requested
+if opts.probit,
+    for y = 1:plm.nY,
+        plm.Yset{y} = erfinv(2*(plm.Yset{y}*0.999999999999999 + 1e-15)-1)*sqrt(2);
+    end
+end
+
 % Make the adjustments for the EE and ISE options.
 % - if the user gives nothing, its EE by default.
 % - if the user gives ISE only, it's ISE only
@@ -2019,6 +2032,25 @@ for m = 1:plm.nM,
     end
 end
 
+% Check if the contrasts have all the same rank for correction over
+% contrasts. If not, convert to zstat.
+if opts.corrcon,
+    rC1 = rank(plm.Cset{1}{1});
+    rD1 = rank(plm.Dset{1}{1});
+    for m = 1:plm.nM,
+        brflag = false;
+        for c = 1:plm.nC(m),
+            if rC1 ~= rank(plm.Cset{m}{c}) || rD1 ~= rank(plm.Dset{m}{c});
+                opts.zstat = true;
+                brflag = true;
+                break;
+            end
+        end
+        if brflag,
+            break;
+        end
+    end
+end
 
 % Partition the model according to the contrasts and design matrix.
 % The partitioning needs to be done now, because of the need for

@@ -178,8 +178,8 @@ fprintf('-advanced : Show advanced options.\n\n');
 fprintf('_____________________________________\n');
 fprintf('Anderson M. Winkler\n');
 fprintf('FMRIB / University of Oxford\n');
-fprintf('Oct/2014\n');
-fprintf('http://brainder.org\n');
+fprintf('Mar/2015\n');
+fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
 
 % ==============================================================
 function advanced_help
@@ -277,7 +277,9 @@ fprintf('	selected.\n\n');
 
 fprintf('-savemetrics : Save a csv file with various permutation metrics.\n\n');
 
-fprintf('-saveparametric : Save also uncorrected parametric p-values.\n\n');
+fprintf('-saveparametric : Save also uncorrected parametric p-values. These are only\n');
+fprintf('	valid if all assumptions are met, including iid and normality.\n');
+fprintf('	Currently the option "-twotail" doesn''t affect "-saveparametric".\n\n');
 
 fprintf('-saveperms : Save one statistic image per permutation, as well as a csv\n');
 fprintf('	file with the permutation indices (one permutation per row, one\n');
@@ -323,8 +325,8 @@ fprintf('	the MV statistics) to a normally distributed, z-statistic.\n\n');
 fprintf('_____________________________________\n');
 fprintf('Anderson M. Winkler\n');
 fprintf('FMRIB / University of Oxford\n');
-fprintf('Oct/2014\n');
-fprintf('http://brainder.org\n');
+fprintf('Mar/2015\n');
+fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
 
 % ==============================================================
 function showlogo

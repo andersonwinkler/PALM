@@ -1065,7 +1065,7 @@ for po = P_outer,
 
                     % Save the unpermuted statistic if z-score
                     if opts.zstat
-                        if p == 1 && y == 1 && m == 1 && c == 1,
+                        if p == 1 && y == 1,
                             plm.Gname{m}{c} = sprintf('_z%s',plm.Gname{m}{c}(2:end));
                             if opts.saveunivariate,
                                 palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
@@ -1183,7 +1183,7 @@ for po = P_outer,
                         df2npc{1}(y,:) = df2{y}{m}{c};
                     end
                     T{m}{c} = fastnpc(Gnpc{1},0,df2npc{1});
-                    
+
                     % Since computing the parametric p-value for some methods
                     % can be quite slow, it's faster to run all these checks
                     % to ensure that 'pparanpc' runs just once.
@@ -1241,7 +1241,10 @@ for po = P_outer,
                     % it if not already.
                     if opts.spatial_npc,
                         if ~ opts.zstat,
-                            T{m}{c} = -erfinv(2*Tppara{m}{c}-1)*sqrt(2);
+                            
+                            % Avoid infinities
+                            Tppara{m}{c} = Tppara{m}{c}*0.999999999999999 + 1e-15;
+                            T{m}{c}      = -erfinv(2*Tppara{m}{c}-1)*sqrt(2);
                         end
                     end
                     
@@ -1385,7 +1388,10 @@ for po = P_outer,
                         % if not already.
                         if opts.spatial_mv,
                             if ~ opts.zstat,
-                                Q{m}{c} = -erfinv(2*Qppara{m}{c}-1)*sqrt(2);
+                                
+                                % Avoid infinities
+                                Qppara{m}{c} = Qppara{m}{c}*0.999999999999999 + 1e-15;
+                                Q{m}{c}      = -erfinv(2*Qppara{m}{c}-1)*sqrt(2);
                             end
                         end
                         
@@ -1681,7 +1687,10 @@ for po = P_outer,
             % it if not already.
             if opts.spatial_npc,
                 if ~ opts.zstat,
-                    T{j} = -erfinv(2*Tppara{j}-1)*sqrt(2);
+                    
+                    % Avoid infinities
+                    Tppara{j} = Tppara{j}*0.999999999999999 + 1e-15;
+                    T{j}      = -erfinv(2*Tppara{j}-1)*sqrt(2);
                 end
             end
             
@@ -2304,6 +2313,7 @@ cc      = max(min(D(k,k),1),0);
 function T = tippett(G,df1,df2)
 T = min(palm_gpval(G,df1,df2),[],1);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = tippettp(T,nG)
 %P = T.^plm.nY;
 % Note it can't be simply P = 1-(1-T)^K when implementing
@@ -2319,6 +2329,7 @@ P   = sgn.*cf*bsxfun(@power,T,pw');
 function T = fisher(G,df1,df2)
 T = -2*sum(log(palm_gpval(G,df1,df2)),1);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = fisherp(T,nG)
 P = palm_gpval(T,-1,2*nG);
 
@@ -2326,6 +2337,7 @@ P = palm_gpval(T,-1,2*nG);
 function T = stouffer(G,df1,df2)
 T = sum(palm_gtoz(G,df1,df2),1)/sqrt(size(G,1));
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = stoufferp(T,~)
 P = palm_gpval(T,0);
 
@@ -2333,6 +2345,7 @@ P = palm_gpval(T,0);
 function T = wilkinson(G,df1,df2,parma)
 T = sum(palm_gpval(G,df1,df2) <= parma);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = wilkinsonp(T,nG,parma)
 lfac    = palm_factorial(nG);
 lalpha  = log(parma);
@@ -2353,6 +2366,7 @@ gp  = palm_gpval(G,df1,df2);
 gt  = sign(gp-.5).*sqrt(df2./betainv(2*min(gp,1-gp),df2/2,.5)-df2); % =tinv(gp,df2)
 T   = -sum(gt)./cte;
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = winerp(T,~)
 P = palm_gcdf(-T,0);
 
@@ -2360,6 +2374,7 @@ P = palm_gcdf(-T,0);
 function T = edgington(G,df1,df2)
 T = sum(palm_gpval(G,df1,df2),1);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = edgingtonp(T,nG)
 lfac = palm_factorial(nG);
 fT   = floor(T);
@@ -2380,14 +2395,16 @@ T = mhcte*sum(log(...
     palm_gcdf(G,df1,df2)./...
     palm_gpval(G,df1,df2)),1);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = mudholkargeorgep(T,nG)
-P = palm_gcdf(T,1,5*nG+4);
+P = palm_gpval(T,1,5*nG+4);
 
 % ==============================================================
 function [T,Gpval] = friston(G,df1,df2)
 Gpval = palm_gpval(G,df1,df2);
 T = max(Gpval,[],1);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = fristonp(T,nG,parmu)
 P = T.^(nG - parmu + 1);
 
@@ -2409,6 +2426,7 @@ P = -log10(palm_gpval(G,df1,df2));
 P(P < -log10(parma)) = 0;
 T = sum(P,1);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = zaykinp(T,nG,parma)
 lT      = -T;
 lfac    = palm_factorial(nG);
@@ -2442,6 +2460,7 @@ df2     = reshape(df2(idx),horzcat(parmr,size(df2,2)));
 P       = -log10(palm_gpval(G,df1,df2));
 T       = sum(P,1);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = dudbridgekoelemanp(T,nG,parmr)
 lT = -T;
 lfac = palm_factorial(nG);
@@ -2465,6 +2484,7 @@ P(tmp > parmr) = 0;
 P(P < -log10(parma)) = 0;
 T = sum(P,1);
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = dudbridgekoeleman2p(T,nG,parmr,parma)
 lT = -T;
 lfac = palm_factorial(nG);
@@ -2501,6 +2521,7 @@ L2  = real(lp1 + repmat(lp2,[r 1]) + lp3);
 s2  = (lT <= ltr).*sum(exp(L2));
 q   = s1 + s2;
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function A = awtk(lw,t,k,lfac)
 ltk = k.*log(t);
 tk = real(exp(ltk));
