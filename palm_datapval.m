@@ -5,7 +5,7 @@ function pvals = palm_datapval(G,Gvals,rev)
 % generated, or using a custom cdf.
 %
 % Usage:
-% pvals = datapval(G,Gvals,rev)
+% pvals = palm_datapval(G,Gvals,rev)
 %
 % Inputs:
 % G     : Vector of Nx1 statistics to be converted to p-values

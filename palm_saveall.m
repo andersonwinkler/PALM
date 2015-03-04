@@ -10,17 +10,17 @@ function palm_saveall(plm,opts)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % PALM -- Permutation Analysis of Linear Models
 % Copyright (C) 2015 Anderson M. Winkler
-% 
+%
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation, either version 3 of the License, or
 % any later version.
-% 
+%
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-% 
+%
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -114,8 +114,13 @@ if opts.saveunivariate,
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     
                     % FWER-corrected
+                    if opts.pareto,
+                        Ptosave = palm_pareto  (plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false,opts.paretothr);
+                    else
+                        Ptosave = palm_datapval(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false);
+                    end
                     palm_quicksave( ...
-                        palm_datapval(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false),1,opts,plm,y,m,c,...
+                        Ptosave,1,opts,plm,y,m,c,...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     
                     % Permutation p-value, FDR adjusted
@@ -132,8 +137,13 @@ if opts.saveunivariate,
                             sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                         
                         % Cluster extent FWER p-value
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gcle{y}{m}{c},plm.Gclemax{y}{m}{c},false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gcle{y}{m}{c},plm.Gclemax{y}{m}{c},false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gcle{y}{m}{c},plm.Gclemax{y}{m}{c},false),1,opts,plm,y,m,c,...
+                            Ptosave,1,opts,plm,y,m,c,...
                             sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                     
@@ -145,8 +155,13 @@ if opts.saveunivariate,
                             sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                         
                         % Cluster mass FWER p-value.
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gclm{y}{m}{c},plm.Gclmmax{y}{m}{c},false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gclm{y}{m}{c},plm.Gclmmax{y}{m}{c},false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gclm{y}{m}{c},plm.Gclmmax{y}{m}{c},false),1,opts,plm,y,m,c,...
+                            Ptosave,1,opts,plm,y,m,c,...
                             sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                     
@@ -162,8 +177,13 @@ if opts.saveunivariate,
                             sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                         
                         % TFCE FWER-corrected within modality and contrast.
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false),1,opts,plm,y,m,c,...
+                            Ptosave,1,opts,plm,y,m,c,...
                             sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                         
                         % TFCE p-value, FDR adjusted.
@@ -202,8 +222,13 @@ if opts.saveunivariate,
                 distmax = max(distmax,[],2);
                 for y = 1:plm.nY,
                     m = y;
+                    if opts.pareto,
+                        Ptosave = palm_pareto  (plm.G{y}{m}{c},distmax,false,opts.paretothr);
+                    else
+                        Ptosave = palm_datapval(plm.G{y}{m}{c},distmax,false);
+                    end
                     palm_quicksave( ...
-                        palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                        Ptosave,1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                 end
             end
@@ -216,8 +241,13 @@ if opts.saveunivariate,
                     end
                     distmax = max(distmax,[],2);
                     for y = 1:plm.nY,
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.G{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.G{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -270,8 +300,13 @@ if opts.saveunivariate,
                     distmax = max(distmax,[],2);
                     for y = 1:plm.nY,
                         m = y;
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gcle{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gcle{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -284,8 +319,13 @@ if opts.saveunivariate,
                         end
                         distmax = max(distmax,[],2);
                         for y = 1:plm.nY,
+                            if opts.pareto,
+                                Ptosave = palm_pareto  (plm.Gcle{y}{m}{c},distmax,false,opts.paretothr);
+                            else
+                                Ptosave = palm_datapval(plm.Gcle{y}{m}{c},distmax,false);
+                            end
                             palm_quicksave( ...
-                                palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                                Ptosave,1,opts,plm,y,m,c, ...
                                 sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                         end
                     end
@@ -306,8 +346,13 @@ if opts.saveunivariate,
                     distmax = max(distmax,[],2);
                     for y = 1:plm.nY,
                         m = y;
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gclm{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gclm{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -320,8 +365,13 @@ if opts.saveunivariate,
                         end
                         distmax = max(distmax,[],2);
                         for y = 1:plm.nY,
+                            if opts.pareto,
+                                Ptosave = palm_pareto  (plm.Gclm{y}{m}{c},distmax,false,opts.paretothr);
+                            else
+                                Ptosave = palm_datapval(plm.Gclm{y}{m}{c},distmax,false);
+                            end
                             palm_quicksave( ...
-                                palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                                Ptosave,1,opts,plm,y,m,c, ...
                                 sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                         end
                     end
@@ -342,8 +392,13 @@ if opts.saveunivariate,
                     distmax = max(distmax,[],2);
                     for y = 1:plm.nY,
                         m = y;
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gtfce{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -356,8 +411,13 @@ if opts.saveunivariate,
                         end
                         distmax = max(distmax,[],2);
                         for y = 1:plm.nY,
+                            if opts.pareto,
+                                Ptosave = palm_pareto  (plm.Gtfce{y}{m}{c},distmax,false,opts.paretothr);
+                            else
+                                Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},distmax,false);
+                            end
                             palm_quicksave( ...
-                                palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                                Ptosave,1,opts,plm,y,m,c, ...
                                 sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                         end
                     end
@@ -420,8 +480,13 @@ if opts.saveunivariate,
             distmax = max(distmax,[],2);
             for m = loopM,
                 for c = 1:plm.nC(m),
+                    if opts.pareto,
+                        Ptosave = palm_pareto  (plm.G{y}{m}{c},distmax,false,opts.paretothr);
+                    else
+                        Ptosave = palm_datapval(plm.G{y}{m}{c},distmax,false);
+                    end
                     palm_quicksave( ...
-                        palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                        Ptosave,1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                 end
             end
@@ -476,8 +541,13 @@ if opts.saveunivariate,
                 distmax = max(distmax,[],2);
                 for m = loopM,
                     for c = 1:plm.nC(m),
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gcle{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gcle{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -504,8 +574,13 @@ if opts.saveunivariate,
                 distmax = max(distmax,[],2);
                 for m = loopM,
                     for c = 1:plm.nC(m),
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gclm{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gclm{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -532,8 +607,13 @@ if opts.saveunivariate,
                 distmax = max(distmax,[],2);
                 for m = loopM,
                     for c = 1:plm.nC(m),
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gtfce{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -593,8 +673,13 @@ if opts.saveunivariate,
             if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
+                    if opts.pareto,
+                        Ptosave = palm_pareto  (plm.G{y}{m}{c},distmax,false,opts.paretothr);
+                    else
+                        Ptosave = palm_datapval(plm.G{y}{m}{c},distmax,false);
+                    end
                     palm_quicksave( ...
-                        palm_datapval(plm.G{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                        Ptosave,1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                 end
             end
@@ -651,8 +736,13 @@ if opts.saveunivariate,
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gcle{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gcle{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gcle{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_clustere',plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -681,8 +771,13 @@ if opts.saveunivariate,
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gclm{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gclm{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gclm{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_clusterm',plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -711,8 +806,13 @@ if opts.saveunivariate,
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
+                        if opts.pareto,
+                            Ptosave = palm_pareto  (plm.Gtfce{y}{m}{c},distmax,false,opts.paretothr);
+                        else
+                            Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},distmax,false);
+                        end
                         palm_quicksave( ...
-                            palm_datapval(plm.Gtfce{y}{m}{c},distmax,false),1,opts,plm,y,m,c, ...
+                            Ptosave,1,opts,plm,y,m,c, ...
                             sprintf('%s',opts.o,'_tfce',plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
                     end
                 end
@@ -753,14 +853,19 @@ if opts.npcmod && ~ opts.npccon,
     fprintf('Saving p-values for NPC between modalities (uncorrected and corrected within contrasts).\n');
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
-
+            
             % NPC p-value
             palm_quicksave(plm.Tpperm{m}{c},1,opts,plm,[],m,c, ...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{c}));
             
             % NPC FWER-corrected
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev);
+            end
             palm_quicksave( ...
-                palm_datapval(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev),1,opts,plm,[],m,c, ...
+                Ptosave,1,opts,plm,[],m,c, ...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{c}));
             
             % NPC FDR
@@ -783,8 +888,13 @@ if opts.npcmod && ~ opts.npccon,
                     sprintf('%s',opts.o,'_clustere',plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{c}));
                 
                 % Cluster extent FWER p-value
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Tcle{m}{c},plm.Tclemax{m}{c},false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Tcle{m}{c},plm.Tclemax{m}{c},false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Tcle{m}{c},plm.Tclemax{m}{c},false),1,opts,plm,y,m,c,...
+                    Ptosave,1,opts,plm,y,m,c,...
                     sprintf('%s',opts.o,'_clustere',plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{c}));
             end
             
@@ -796,8 +906,13 @@ if opts.npcmod && ~ opts.npccon,
                     sprintf('%s',opts.o,'_clusterm',plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{c}));
                 
                 % Cluster mass FWER p-value
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Tclm{m}{c},plm.Tclmmax{m}{c},false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Tclm{m}{c},plm.Tclmmax{m}{c},false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Tclm{m}{c},plm.Tclmmax{m}{c},false),1,opts,plm,y,m,c,...
+                    Ptosave,1,opts,plm,y,m,c,...
                     sprintf('%s',opts.o,'_clusterm',plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{c}));
             end
             
@@ -813,8 +928,13 @@ if opts.npcmod && ~ opts.npccon,
                     sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{c}));
                 
                 % TFCE FWER p-value
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false),1,opts,plm,[],m,c,...
+                    Ptosave,1,opts,plm,[],m,c,...
                     sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{c}));
                 
                 % TFCE FDR p-value
@@ -843,8 +963,13 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     distmax = max(distmax,[],2);
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.T{m}{c},distmax,plm.npcrev,opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.T{m}{c},distmax,plm.npcrev);
+            end
             palm_quicksave( ...
-                palm_datapval(plm.T{m}{c},distmax,plm.npcrev),1,opts,plm,[],m,c,...
+                Ptosave,1,opts,plm,[],m,c,...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{c}));
         end
     end
@@ -883,8 +1008,13 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         distmax = max(distmax,[],2);
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Tcle{m}{c},distmax,false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Tcle{m}{c},distmax,false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Tcle{m}{c},distmax,false),1,opts,plm,[],m,c,...
+                    Ptosave,1,opts,plm,[],m,c,...
                     sprintf('%s',opts.o,'_clustere',plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{c}));
             end
         end
@@ -903,8 +1033,13 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         distmax = max(distmax,[],2);
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Tclm{m}{c},distmax,false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Tclm{m}{c},distmax,false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Tclm{m}{c},distmax,false),1,opts,plm,[],m,c,...
+                    Ptosave,1,opts,plm,[],m,c,...
                     sprintf('%s',opts.o,'_clusterm',plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{c}));
             end
         end
@@ -923,8 +1058,13 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         distmax = max(distmax,[],2);
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Ttfce{m}{c},distmax,false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Ttfce{m}{c},distmax,false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Ttfce{m}{c},distmax,false),1,opts,plm,[],m,c,...
+                    Ptosave,1,opts,plm,[],m,c,...
                     sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{c}));
             end
         end
@@ -961,8 +1101,13 @@ if opts.npccon,
             sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',plm.jstr{j}));
         
         % NPC FWER-corrected
+        if opts.pareto,
+            Ptosave = palm_pareto  (plm.T{j},plm.Tmax{j},plm.npcrev,opts.paretothr);
+        else
+            Ptosave = palm_datapval(plm.T{j},plm.Tmax{j},plm.npcrev);
+        end
         palm_quicksave( ...
-            palm_datapval(plm.T{j},plm.Tmax{j},plm.npcrev),1,opts,plm,j,[],[], ...
+            Ptosave,1,opts,plm,j,[],[], ...
             sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',plm.jstr{j}));
         
         % NPC FDR
@@ -985,8 +1130,13 @@ if opts.npccon,
                 sprintf('%s',opts.o,'_clustere',plm.npcstr,plm.Tname,plm.jstr{j}));
             
             % Cluster extent FWER p-value
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.Tcle{j},plm.Tclemax{j},false,opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.Tcle{j},plm.Tclemax{j},false);
+            end
             palm_quicksave( ...
-                palm_datapval(plm.Tcle{j},plm.Tclemax{j},false),1,opts,plm,j,[],[],...
+                Ptosave,1,opts,plm,j,[],[],...
                 sprintf('%s',opts.o,'_clustere',plm.npcstr,plm.Tname,'_fwep',plm.jstr{j}));
         end
         
@@ -998,8 +1148,13 @@ if opts.npccon,
                 sprintf('%s',opts.o,'_clusterm',plm.npcstr,plm.Tname,plm.jstr{j}));
             
             % Cluster mass FWER p-value
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.Tclm{j},plm.Tclmmax{j},false,opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.Tclm{j},plm.Tclmmax{j},false);
+            end
             palm_quicksave( ...
-                palm_datapval(plm.Tclm{j},plm.Tclmmax{j},false),1,opts,plm,j,[],[],...
+                Ptosave,1,opts,plm,j,[],[],...
                 sprintf('%s',opts.o,'_clusterm',plm.npcstr,plm.Tname,'_fwep',plm.jstr{j}));
         end
         
@@ -1015,8 +1170,13 @@ if opts.npccon,
                 sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,'_uncp',plm.jstr{j}));
             
             % TFCE FWER p-value
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.Ttfce{j},plm.Ttfcemax{j},false,opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.Ttfce{j},plm.Ttfcemax{j},false);
+            end
             palm_quicksave( ...
-                palm_datapval(plm.Ttfce{j},plm.Ttfcemax{j},false),1,opts,plm,j,[],[],...
+                Ptosave,1,opts,plm,j,[],[],...
                 sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,'_fwep',plm.jstr{j}));
             
             % TFCE FDR p-value
@@ -1035,8 +1195,13 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
     % NPC FWER-corrected across modalities.
     distmax = npcextr(cat(2,plm.Tmax{:}),2);
     for y = 1:numel(plm.nY),
+        if opts.pareto,
+            Ptosave = palm_pareto  (plm.T{y},distmax,plm.npcrev,opts.paretothr);
+        else
+            Ptosave = palm_datapval(plm.T{y},distmax,plm.npcrev);
+        end
         palm_quicksave( ...
-            palm_datapval(plm.T{y},distmax,plm.npcrev),1,opts,plm,[],[],[], ...
+            Ptosave,1,opts,plm,[],[],[], ...
             sprintf('%s',opts.o,plm.Ykindstr{y},plm.npcstr,plm.Tname,'_mfwep',plm.ystr{y}));
         
         % Parametric combined pvalue
@@ -1062,8 +1227,13 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
     % NPC FDR-corrected across modalities.
     distmax = npcextr(cat(2,plm.Tmax{:}),2);
     for y = 1:numel(plm.nY),
+        if opts.pareto,
+            Ptosave = palm_pareto  (plm.T{y},distmax,plm.npcrev,opts.paretothr);
+        else
+            Ptosave = palm_datapval(plm.T{y},distmax,plm.npcrev);
+        end
         palm_quicksave( ...
-            palm_datapval(plm.T{y},distmax,plm.npcrev),1,opts,plm,[],[],[], ...
+            Ptosave,1,opts,plm,[],[],[], ...
             sprintf('%s',opts.o,plm.Ykindstr{y},plm.npcstr,plm.Tname,'_mfwep',plm.ystr{y}));
         
         % Parametric combined pvalue
@@ -1083,8 +1253,13 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
                 sprintf('%s',opts.o,'_clustere',plm.npcstr,plm.Tname,plm.ystr{y}));
             
             % Cluster extent FWER p-value
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.Tcle{y},distmax,false,opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.Tcle{y},distmax,false);
+            end
             palm_quicksave( ...
-                palm_datapval(plm.Tcle{y},distmax,false),1,opts,plm,y,[],[],...
+                Ptosave,1,opts,plm,y,[],[],...
                 sprintf('%s',opts.o,'_clustere',plm.npcstr,plm.Tname,'_mfwep',plm.ystr{y}));
         end
     end
@@ -1099,8 +1274,13 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
                 sprintf('%s',opts.o,'_clusterm',plm.npcstr,plm.Tname,plm.ystr{y}));
             
             % Cluster extent FWER p-value
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.Tclm{y},distmax,false,opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.Tclm{y},distmax,false);
+            end
             palm_quicksave( ...
-                palm_datapval(plm.Tclm{y},distmax,false),1,opts,plm,y,[],[],...
+                Ptosave,1,opts,plm,y,[],[],...
                 sprintf('%s',opts.o,'_clusterm',plm.npcstr,plm.Tname,'_mfwep',plm.ystr{y}));
         end
     end
@@ -1115,8 +1295,13 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
                 sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,plm.ystr{y}));
             
             % Cluster extent FWER p-value
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.Ttfce{y},distmax,false,opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.Ttfce{y},distmax,false);
+            end
             palm_quicksave( ...
-                palm_datapval(plm.Ttfce{y},distmax,false),1,opts,plm,y,[],[],...
+                Ptosave,1,opts,plm,y,[],[],...
                 sprintf('%s',opts.o,'_tfce',plm.npcstr,plm.Tname,'_mfwep',plm.ystr{y}));
         end
         
@@ -1145,8 +1330,13 @@ if opts.MV || opts.CCA,
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_uncp',plm.mstr{m},plm.cstr{c}));
             
             % MV FWER-corrected within modality and contrast.
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.Q{m}{c},plm.Qmax{m}{c},plm.mvrev{m}{c},opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.Q{m}{c},plm.Qmax{m}{c},plm.mvrev{m}{c});
+            end
             palm_quicksave( ...
-                palm_datapval(plm.Q{m}{c},plm.Qmax{m}{c},plm.mvrev{m}{c}),1,opts,plm,[],[],[], ...
+                Ptosave,1,opts,plm,[],[],[], ...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{c}));
             
             % MV FDR
@@ -1169,8 +1359,13 @@ if opts.MV || opts.CCA,
                     sprintf('%s',opts.o,'_clustere',plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}));
                 
                 % Cluster extent FWER p-value
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Qcle{m}{c},plm.Qclemax{m}{c},false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Qcle{m}{c},plm.Qclemax{m}{c},false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Qcle{m}{c},plm.Qclemax{m}{c},false),1,opts,plm,[],[],[],...
+                    Ptosave,1,opts,plm,[],[],[],...
                     sprintf('%s',opts.o,'_clustere',plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{c}));
             end
             
@@ -1182,8 +1377,13 @@ if opts.MV || opts.CCA,
                     sprintf('%s',opts.o,'_clusterm',plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}));
                 
                 % Cluster mass FWER p-value
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Qclm{m}{c},plm.Qclmmax{m}{c},false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Qclm{m}{c},plm.Qclmmax{m}{c},false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Qclm{m}{c},plm.Qclmmax{m}{c},false),1,opts,plm,[],[],[],...
+                    Ptosave,1,opts,plm,[],[],[],...
                     sprintf('%s',opts.o,'_clusterm',plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{c}));
             end
             
@@ -1199,8 +1399,13 @@ if opts.MV || opts.CCA,
                     sprintf('%s',opts.o,'_tfce',plm.mvstr,plm.Qname{m}{c},'_uncp',plm.mstr{m},plm.cstr{c}));
                 
                 % TFCE FWER p-value
-                palm_quicksave(palm_datapval( ...
-                    plm.Qtfce{m}{c},plm.Qtfcemax{m}{c},false),1,opts,plm,[],[],[], ...
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Qtfce{m}{c},plm.Qtfcemax{m}{c},false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Qtfce{m}{c},plm.Qtfcemax{m}{c},false);
+                end
+                palm_quicksave( ...
+                    Ptosave,1,opts,plm,[],[],[], ...
                     sprintf('%s',opts.o,'_tfce',plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{c}));
                 
                 % TFCE MV FDR
@@ -1230,8 +1435,13 @@ if ( opts.MV  || opts.CCA ) && opts.corrcon,
     distmax = mvextr(distmax,[],2);
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
+            if opts.pareto,
+                Ptosave = palm_pareto  (plm.Q{m}{c},distmax,plm.mvrev{m}{c},opts.paretothr);
+            else
+                Ptosave = palm_datapval(plm.Q{m}{c},distmax,plm.mvrev{m}{c});
+            end
             palm_quicksave( ...
-                palm_datapval(plm.Q{m}{c},distmax,plm.mvrev{m}{c}),1,opts,plm,[],m,c,...
+                Ptosave,1,opts,plm,[],m,c,...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{c}));
         end
     end
@@ -1270,8 +1480,13 @@ if ( opts.MV  || opts.CCA ) && opts.corrcon,
         distmax = max(distmax,[],2);
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Qcle{m}{c},distmax,false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Qcle{m}{c},distmax,false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Qcle{m}{c},distmax,false),1,opts,plm,[],m,c,...
+                    Ptosave,1,opts,plm,[],m,c,...
                     sprintf('%s',opts.o,'_clustere',plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{c}));
             end
         end
@@ -1290,8 +1505,13 @@ if ( opts.MV  || opts.CCA ) && opts.corrcon,
         distmax = max(distmax,[],2);
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Qclm{m}{c},distmax,false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Qclm{m}{c},distmax,false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Qclm{m}{c},distmax,false),1,opts,plm,[],m,c,...
+                    Ptosave,1,opts,plm,[],m,c,...
                     sprintf('%s',opts.o,'_clusterm',plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{c}));
             end
         end
@@ -1312,8 +1532,13 @@ if ( opts.MV  || opts.CCA ) && opts.corrcon,
         distmax = max(distmax,[],2);
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
+                if opts.pareto,
+                    Ptosave = palm_pareto  (plm.Qtfce{m}{c},distmax,false,opts.paretothr);
+                else
+                    Ptosave = palm_datapval(plm.Qtfce{m}{c},distmax,false);
+                end
                 palm_quicksave( ...
-                    palm_datapval(plm.Qtfce{m}{c},distmax,false),1,opts,plm,[],m,c,...
+                    Ptosave,1,opts,plm,[],m,c,...
                     sprintf('%s',opts.o,'_tfce',plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{c}));
             end
         end

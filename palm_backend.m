@@ -936,7 +936,6 @@ for po = P_outer,
                 % Some vars for later
                 if isterbraak, psi0 = cell(plm.nY,1); end
                 if opts.draft, ysel = cell(plm.nY,1); end
-                plm.Gmax{y}{m}{c} = zeros(plm.nP{m}(c),1);
                 if opts.npcmod && ~ opts.npccon,
                     plm.Tmax{m}{c} = zeros(plm.nP{m}(c),1);
                 end
@@ -974,9 +973,12 @@ for po = P_outer,
                         end
                     end
                     
-                    % String for the modality index:
-                    if p == 1 && (plm.nY > 1 || opts.verbosefilenames),
-                        plm.ystr{y} = sprintf('_m%d',y);
+                    % String for the modality index & var for the max:
+                    if p == 1,
+                        plm.Gmax{y}{m}{c} = zeros(plm.nP{m}(c),1);
+                        if (plm.nY > 1 || opts.verbosefilenames),
+                            plm.ystr{y} = sprintf('_m%d',y);
+                        end
                     end
                     
                     % Shuffle the data and/or design.
@@ -1115,7 +1117,7 @@ for po = P_outer,
                         end
                         plm.Gpperm{y}{m}{c}    = plm.Gpperm{y}{m}{c} + (G{y}{m}{c} >= plm.G{y}{m}{c});
                         plm.Gmax  {y}{m}{c}(p) = max(G{y}{m}{c},[],2);
-                        
+
                         % Cluster extent is here
                         if opts.clustere_uni.do,
                             if p == 1,

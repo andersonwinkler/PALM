@@ -722,6 +722,13 @@ while a <= narginx,
             end
             a = a + 2;
             
+        case '-tailapproximation',
+            
+            % Do a tail approximation based on a
+            % Generalised Pareto Distribution
+            opts.pareto = true;
+            a = a + 1;
+            
         case '-noniiclass',
             
             % Disable using the NIFTI class
@@ -1748,7 +1755,12 @@ end
 % Applies a probit transformation to the modalities if the user requested
 if opts.probit,
     for y = 1:plm.nY,
-        plm.Yset{y} = erfinv(2*(plm.Yset{y}*0.999999999999999 + 1e-15)-1)*sqrt(2);
+        if min(plm.Yset{y}(:)) < 0 || max(plm.Yset{y}(:)) > 1,
+            error([
+                'Probit transformation can only be used with data in the interval [0 1].\n' ...
+                'This fails for at least modality #%d.'],y);
+        end
+        plm.Yset{y} = erfinv(2*(plm.Yset{y}*0.999999999999999 + .5e-15)-1)*sqrt(2);
     end
 end
 

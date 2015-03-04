@@ -298,6 +298,8 @@ fprintf('	be used by default.\n\n');
 
 fprintf('-subjidx <file> : Indices of input data to keep in the design.\n\n');
 
+fprintf('-tailapproximation : Compute a tail approximation for P-values <= 0.10.\n\n');
+
 fprintf('-Tuni : Enable TFCE inference for univariate (partial) tests.\n\n');
 
 fprintf('-Tnpc : Enable TFCE inference for NPC.\n\n');
