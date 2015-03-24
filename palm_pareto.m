@@ -38,7 +38,7 @@ function P = palm_pareto(G,Gvals,rev,Pthr)
 % 
 % _____________________________________
 % Anderson M. Winkler
-% FMRIB / Univ. of Oxford
+% FMRIB / University of Oxford
 % Mar/2015
 % http://brainder.org
 
@@ -109,6 +109,9 @@ if any(Pidx),
         
         % Check if the fitness is good
         A2pval = andersondarling(gpdpvals(z,a,k),k);
+        
+        % If yes, keep. If not, try again with the
+        % next quantile.
         if A2pval > .05;
             Ptail = cte*gpdpvals(Gdiff,a,k);
         else
@@ -142,7 +145,8 @@ function A2pval = andersondarling(p,k)
 %   for the Generalized Pareto Distribution. Technometrics.
 %   2001;43(4):478-484.
 
-% This is Table 2 of the paper (for Case 3, a and k unknown, bold values only)
+% This is Table 2 of the paper (for Case 3, in which 
+% a and k are unknown, bold values only)
 ktable = [0.9 0.5 0.2 0.1 0 -0.1 -0.2 -0.3 -0.4 -0.5]';
 ptable = [0.5 0.25 0.1 0.05 0.025 0.01 0.005 0.001];
 A2table = [ ...

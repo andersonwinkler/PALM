@@ -58,20 +58,35 @@ if flg == 1 && opts.savecdf,
 elseif flg == 2,
     
     % Convert a statistic to a P-value
+    X0 = X;
     if opts.savecdf,
         
         % CDF (1-P)
-        X = palm_gcdf(X,plm.rC{m}(c),plm.df2{y}{m}{c});
+        X = palm_gcdf(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
         
         % Even saving the CDF, the true p-vals may be needed
         if nargout > 0,
-            P = palm_gpval(X,plm.rC{m}(c),plm.df2{y}{m}{c});
+            P = palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
+        end
+        
+        % Double the p-vals for parametric 2-tailed
+        if opts.twotail && plm.rC{m}(c) <= 1,
+            upp     = X <= .5;
+            X( upp) = 2*X;
+            X(~upp) = 2*palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
         end
     else
         % Just P
-        X = palm_gpval(X,plm.rC{m}(c),plm.df2{y}{m}{c});
+        X = palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
         if nargout > 0,
             P = X;
+        end
+        
+        % Double the p-vals for parametric 2-tailed
+        if opts.twotail && plm.rC{m}(c) <= 1,
+            upp     = X <= .5;
+            X( upp) = 2*X;
+            X(~upp) = 2*palm_gcdf(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
         end
     end
 end

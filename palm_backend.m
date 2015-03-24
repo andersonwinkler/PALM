@@ -1892,11 +1892,11 @@ function G = fastr(M,psi,Y,m,c,plm)
 %
 % Outputs:
 % G   : Pearson's correlation coefficient (r).
-G = fastrsq(M,psi,Y,plm);
+G = fastrsq(M,psi,Y,m,c,plm);
 G = sign(plm.eC{m}{c}'*psi).*G.^.5;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function G = fastr3d(M,psi,Y,m,c,plm)
-G = fastrsq3d(M,psi,Y,plm);
+G = fastrsq3d(M,psi,Y,m,c,plm);
 G = sign(plm.eC{m}{c}'*psi).*G.^.5;
 
 % ==============================================================
