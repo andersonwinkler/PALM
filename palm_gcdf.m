@@ -1,12 +1,7 @@
 function gcdf = palm_gcdf(G,df1,df2)
-% Wrapper to convert a pivotal statistic computed with
-% 'pivotal.m' (or simplifications) to a parametric p-value.
+% Convert a pivotal statistic computed with 'pivotal.m'
+% (or simplifications) to a parametric p-value.
 % The output is 1-p, i.e. the CDF.
-% 
-% Note that this doesn't try to deal with precision
-% issues when the value of the cdf is close to 1. Use
-% instead palm_gpval to get these values right, i.e., the
-% p-vals *that usually matter* are then close to zero.
 % 
 % Usage:
 % cdf = palm_gcdf(G,df1,df2)

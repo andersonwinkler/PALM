@@ -1,11 +1,6 @@
 function pvals = palm_gpval(G,df1,df2)
-% Wrapper to convert a pivotal statistic computed with
-% 'pivotal.m' (or simplifications) to a parametric p-value.
-%
-% Note that this doesn't try to deal with precision
-% issues when the p-value is close to 1. Use
-% instead palm_gcdf to get these values right, i.e., the
-% p-vals that *don't usually matter* are then close to zero.
+% Convert a pivotal statistic computed with 'pivotal.m'
+% (or simplifications) to a parametric p-value.
 %
 % Usage:
 % pvals = palm_gpval(G,df1,df2)

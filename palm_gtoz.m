@@ -3,7 +3,7 @@ function Z = palm_gtoz(G,df1,df2)
 % to a z-statistic (normally distributed).
 %
 % Usage:
-% Z = gstat2pval(G,df1,df2)
+% Z = palm_gtoz(G,df1,df2)
 %
 % Inputs:
 % G        : G statistic.

@@ -74,9 +74,14 @@ switch lower(X.readwith),
             size(X.data),  ...
             'FLOAT32-LE',  ...
             ceil(348/8)*8);
-        nii     = nifti;
-        nii.dat = dat;
-        nii.mat = X.extra.mat;
+        nii      = nifti;
+        nii.dat  = dat;
+        nii.mat  = X.extra.mat;
+        if isfield(X.extra,'mat0')
+            nii.mat0 = X.extra.mat0;
+        else
+            nii.mat0 = X.extra.mat;
+        end
         create(nii);
         nii.dat(:,:,:) = X.data(:,:,:);
         

@@ -27,7 +27,7 @@ function palm_backend(varargin)
 
 % Take the arguments. Save a small log if needed.
 %clear global plm opts % comment for debugging
-%global plm opts; % uncomment for debugging
+% global plm opts; % uncomment for debugging
 [opts,plm] = palm_takeargs(varargin{:});
 
 % Variables to store stuff for later.
