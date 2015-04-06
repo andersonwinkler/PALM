@@ -14,7 +14,7 @@ function [data,extra] = palm_ciftiread(varargin)
 % Outputs:
 % - data        : Array with the actual data.
 % - extra       : Extra information needed to save back as CIFTI.
-% 
+%
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
@@ -24,17 +24,17 @@ function [data,extra] = palm_ciftiread(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % PALM -- Permutation Analysis of Linear Models
 % Copyright (C) 2015 Anderson M. Winkler
-% 
+%
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation, either version 3 of the License, or
 % any later version.
-% 
+%
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-% 
+%
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -51,6 +51,15 @@ if nargin == 3,
     wb_command  = varargin{3};
 else
     wb_command  = 'wb_command';
+end
+
+% Test the wb_command
+try  %#ok
+    [status,wb_output] = system(wb_command);
+end
+if status ~= 0,
+    disp(wb_output);
+    error('Test failed for your architecture. CIFTI will not be read.');
 end
 
 % Deal with the location of the temporary files

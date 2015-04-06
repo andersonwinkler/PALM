@@ -194,7 +194,7 @@ while a <= narginx,
             % Numbers to skip when saving the contrasts
             opts.conskipcount = vararginx{a+1};
             if ischar(opts.conskipcount),
-                opts.conskipcount = str2double(opts.concountskip);
+                opts.conskipcount = str2double(opts.conskipcount);
             end
             a = a + 2;
             
@@ -970,7 +970,7 @@ palm_checkprogs;
 % - if -npcmod only, it's -npcmod
 % - if -npccon only, it's -npccon
 % - if -npcmod and -npccon, it's both
-if opts.NPC && ~ opts.npcmod && ~ opts.npccon,
+if opts.NPC && ~ opts.npccon,
     opts.npcmod = true;
 end
 
@@ -1027,9 +1027,6 @@ if any([ ...
         opts.spatial_mv = true;
     end
 end
-% if opts.spatial_npc && strcmpi(opts.npcmethod,'nichols'),
-%     error('The Nichols combination method doesn''t allow spatial statistics (cluster and/or TFCE).')
-% end
 
 % Some extra packages for Octave
 if opts.spatial && palm_isoctave,

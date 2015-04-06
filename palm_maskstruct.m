@@ -114,6 +114,13 @@ switch lower(readwith),
         S.data  = palm_conv2to4(mask,extra.volsz(1:3));
         S.extra = extra;
         
+    case 'gifti',
+        
+        % If the original data is a GIFTI file.
+        S.data  = mask';
+        S.extra = extra;
+        S.extra.data = S.extra.data(1);
+
     otherwise
         error('Unknown format.')
 end

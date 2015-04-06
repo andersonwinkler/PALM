@@ -253,6 +253,18 @@ switch lower(fext{end}),
                 'File: %s\n'],X.filename);
         end
         
+    case 'gii',
+        
+        % Read a GIFTI file (no mapped file arrays)
+        palm_checkprogs; % ensure GIFTI toolbox in the path
+        X.readwith = 'gifti';
+        gii = gifti(X.filename);
+        X.data  = gii.cdata';
+        for d = numel(gii.private.data):-1:1,
+            gii.private.data{d}.data = [];
+        end
+        X.extra = gii.private;
+        
     otherwise
         error('File extension %s not known. Data cannot be loaded\n',fext);
 end
@@ -260,10 +272,10 @@ end
 % ==============================================================
 function spl = strdotsplit(str)
 % Split a string using the dots '.' as separators.
-idx = find(str == '.');
+idx  = find(str == '.');
 idxb = [1 idx+1];
 idxe = [idx-1 numel(str)];
-spl = cell(numel(idxb),1);
+spl  = cell(numel(idxb),1);
 for s = 1:numel(idxb),
     spl{s} = str(idxb(s):idxe(s));
 end

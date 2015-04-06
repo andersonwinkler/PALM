@@ -72,21 +72,10 @@ if isempty(palm_extern),
     
     % Check for the HCP Workbench
     palm_extern.wb_command = false;
-    [t1,wbpath] = system('which wb_command');
-    if t1 == 0,
-        fprintf('Found HCP Workbench executable in %s',wbpath);
-        fprintf('Now testing it...\n')
-        try %#ok
-            [t2,wboutput] = system(wbpath);
-        end
-        if t2 == 0,
-            fprintf('Test successful.\n');
-            palm_extern.wb_command = true;
-        else
-            disp(wboutput)
-            fprintf('Test failed. Reading/writing of CIFTI files will be disabled.\n');
-            fprintf('If you will not use CIFTI files, you can ignore the errors above.\n\n');
-        end
+    [status,wb_command] = system('which wb_command');
+    if status == 0,
+        palm_extern.wb_command = true;
+        fprintf('Found HCP Workbench executable in %s',wb_command);
     end
     
     % Check the path of PALM and add the path for the NIFTI and GIFTI I/O.

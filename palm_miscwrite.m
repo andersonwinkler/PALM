@@ -152,4 +152,15 @@ switch lower(X.readwith),
         X.filename = horzcat(X.filename,'.mgz');
         save_mgh(X.data,X.filename,X.extra.M,X.extra.mr_parms);
         
+    case 'gifti',
+        
+        % Write a GIFTI file
+        X.filename = horzcat(X.filename,'.gii');
+        gii = gifti([]);
+        F = fieldnames(X.extra);
+        for f = 1:numel(F),
+            gii.private.(F{f}) = X.extra.(F{f});
+        end
+        gii.cdata = X.data;
+        save(gii,X.filename,gii.private.data{1}.attributes.Encoding);
 end

@@ -40,9 +40,9 @@ filename = varargin{1};
 data     = varargin{2};
 extra    = varargin{3};
 if nargin == 4,
-    wb_command  = varargin{4};
+    wb_command = varargin{4};
 else
-    wb_command  = 'wb_command';
+    wb_command = 'wb_command';
 end
 
 % Convert to a GIFTI object 

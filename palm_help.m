@@ -27,9 +27,11 @@ function palm_help(varargin)
 if nargin == 0 || strcmpi(varargin{1},'basic'),
     showlogo;
     basic_help;
+    showdate;
 elseif strcmpi(varargin{1},'advanced'),
     showlogo;
     advanced_help;
+    showdate;
 elseif strcmpi(varargin{1},'logo'),
     showlogo;
 end
@@ -97,8 +99,8 @@ fprintf('	the data is treated as homoscedastic. Use "-vg auto" to define the\n')
 fprintf('	automatically using a structure that is compatible with the\n');
 fprintf('	exchangeability blocks (option -eb).\n\n');
 
-fprintf('-npc <method> : Do non-parametric combination (NPC), using the the\n');
-fprintf('	specified method, which can be one of: Tippett, Fisher,\n');
+fprintf('-npc <method> : Specify the combining function for the non-parametric\n');
+fprintf('	combination (NPC), which can be one of: Tippett, Fisher,\n');
 fprintf('	Pearson-David, Stouffer, Wilkinson <alpha>, Winer, Edgington,\n');
 fprintf('	Mudholkar-George, Friston, Darlington-Hayes <r>, Zaykin <alpha>,\n');
 fprintf('	Dudbridge-Koeleman <r>, Dudbridge-Koeleman2 <r> <alpha>,\n');
@@ -162,8 +164,7 @@ fprintf('-draft : Run in the "draft mode". No NPC, nor FWER correction are\n');
 fprintf('	possible. MV and FDR-adjustment are possible.\n\n');
 
 fprintf('-demean : Mean center the data, as well as all columns of the design\n');
-fprintf('	matrix. If the original design had an intercept, the intercept is\n');
-fprintf('	removed.\n\n');
+fprintf('	matrix. If the design has an intercept, the intercept is removed.\n\n');
 
 fprintf('-twotail : Run two-tailed tests for all the t-contrasts instead of\n');
 fprintf('	one-tailed. If NPC is used, it naturally becomes two-tailed.\n\n');
@@ -175,11 +176,6 @@ fprintf('-quiet : Don''t shown progress as the shufflings are performed.\n\n');
 
 fprintf('-advanced : Show advanced options.\n\n');
 
-fprintf('_____________________________________\n');
-fprintf('Anderson M. Winkler\n');
-fprintf('FMRIB / University of Oxford\n');
-fprintf('Mar/2015\n');
-fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
 
 % ==============================================================
 function advanced_help
@@ -324,11 +320,6 @@ fprintf('	matrix, within each VG. Intercepts are removed.\n\n');
 fprintf('-zstat : Convert the original statistic (t, F, v, G, r, R2, or any of\n');
 fprintf('	the MV statistics) to a normally distributed, z-statistic.\n\n');
 
-fprintf('_____________________________________\n');
-fprintf('Anderson M. Winkler\n');
-fprintf('FMRIB / University of Oxford\n');
-fprintf('Mar/2015\n');
-fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
 
 % ==============================================================
 function showlogo
@@ -349,3 +340,13 @@ fprintf('\n');
 fprintf('=======================================================================\n');
 fprintf('                 Permutation Analysis of Linear Models\n');
 fprintf('=======================================================================\n');
+
+
+% ==============================================================
+function showdate
+% Show the date
+fprintf('_____________________________________\n');
+fprintf('Anderson M. Winkler\n');
+fprintf('FMRIB / University of Oxford\n');
+fprintf('%s',palm_version);
+fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
