@@ -62,6 +62,11 @@ switch lower(X.readwith),
         % Write an MSET (matrix set) file
         palm_msetwrite(X.filename,X.data);
         
+    case 'wb_command',
+        
+        % Write a CIFTI file using the HCP Workbench
+        palm_ciftiwrite(X.filename,X.data,X.extra);
+        
     case 'nifticlass',
         
         % Write using the NIFTI class.

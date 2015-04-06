@@ -1,8 +1,8 @@
 function palm_dpxwrite(varargin)
 % Write a curvature file (DPV or DPF), in ASCII format.
 %
-% dpxwrite(filename,dpx)
-% dpxwrite(filename,dpx,crd,idx)
+% palm_dpxwrite(filename,dpx)
+% palm_dpxwrite(filename,dpx,crd,idx)
 %
 % - fname is the file name to be created
 % - dpx contains the values for each vertex or face

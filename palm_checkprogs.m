@@ -36,11 +36,6 @@ function ext = palm_checkprogs
 
 persistent palm_extern;
 if isempty(palm_extern),
-    
-    % Check the path of PALM and add the path for the NIFTI class.
-    palm_extern.palmpath = fileparts(mfilename('fullpath'));
-    addpath(fullfile(palm_extern.palmpath,'niftimatlib','matlab'));
-    addpath(fullfile(palm_extern.palmpath,'niftimatlib','matlab'));
         
     % Check for FSL
     palm_extern.fsl = false;
@@ -71,9 +66,32 @@ if isempty(palm_extern),
     try %#ok
         spm_check_installation('basic');
         palm_extern.spm = true;
-        spmpath = which('spm');
         spmpath = fileparts(which('spm'));
         fprintf('Found SPM in %s\n',spmpath);
     end
+    
+    % Check for the HCP Workbench
+    palm_extern.wb_command = false;
+    [t1,wbpath] = system('which wb_command');
+    if t1 == 0,
+        fprintf('Found HCP Workbench executable in %s',wbpath);
+        fprintf('Now testing it...\n')
+        try %#ok
+            [t2,wboutput] = system(wbpath);
+        end
+        if t2 == 0,
+            fprintf('Test successful.\n');
+            palm_extern.wb_command = true;
+        else
+            disp(wboutput)
+            fprintf('Test failed. Reading/writing of CIFTI files will be disabled.\n');
+            fprintf('If you will not use CIFTI files, you can ignore the errors above.\n\n');
+        end
+    end
+    
+    % Check the path of PALM and add the path for the NIFTI and GIFTI I/O.
+    palm_extern.palmpath = fileparts(mfilename('fullpath'));
+    addpath(fullfile(palm_extern.palmpath,'fileio'));
+    addpath(fullfile(palm_extern.palmpath,'fileio','extras'));
 end
 ext = palm_extern;

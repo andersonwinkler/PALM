@@ -1230,7 +1230,7 @@ end
 % each modality will be created after each modality is loaded.
 plm.masks = cell(Ni,1);
 for m = 1:Nm,
-    plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass);
+    plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass,opts.o);
     if strcmp(plm.masks{m}.readwith,'nifticlass'),
         plm.masks{m}.data = double(plm.masks{m}.data);
     end
@@ -1262,7 +1262,7 @@ for i = 1:Ni,
     
     % Read an initial version
     fprintf('Reading input %d/%d: %s\n',i,Ni,opts.i{i});
-    Ytmp = palm_miscread(opts.i{i},opts.useniiclass);
+    Ytmp = palm_miscread(opts.i{i},opts.useniiclass,opts.o);
     
     % If this is 4D read with the NIFTI class, it needs a mask now
     if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,
@@ -1478,7 +1478,7 @@ if opts.evperdat,
         
         % Read an initial version
         fprintf('Reading EV for each datum %d/%d: %s\n',ev,Nevd,opts.i{ev});
-        EVtmp = palm_miscread(opts.evdatfile{ev},opts.useniiclass);
+        EVtmp = palm_miscread(opts.evdatfile{ev},opts.useniiclass,opts.o);
         
         % If this is 4D read with the NIFTI class, it needs a mask now
         if strcmp(EVtmp.readwith,'nifticlass') && ndims(EVtmp.data) == 4,

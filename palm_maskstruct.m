@@ -54,6 +54,10 @@ switch lower(readwith),
         % If the original data is a CSV or VEST file.
         S.data = mask;
         
+    case 'wb_command',
+        S.data  = mask';
+        S.extra = extra;
+        
     case 'nifticlass',
         
         % If the original data is NIFTI and was read witht the NIFTI class
@@ -109,4 +113,7 @@ switch lower(readwith),
         % If the original data is an FS MGH/MGZ file.
         S.data  = palm_conv2to4(mask,extra.volsz(1:3));
         S.extra = extra;
+        
+    otherwise
+        error('Unknown format.')
 end

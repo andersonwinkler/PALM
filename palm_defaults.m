@@ -26,7 +26,7 @@ function opts = palm_defaults
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Define some defaults and organise all as a struct
-opts.o                = 'palm';             % Default output string
+opts.o                = 'palm';             % Default output string.
 opts.nP0              = 10000;              % Number of permutations
 opts.SB               = false;              % Whole block shuffling (for legacy format)?
 opts.lx               = true;               % Lexicographic permutations?
