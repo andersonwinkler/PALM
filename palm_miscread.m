@@ -1,7 +1,7 @@
 function X = palm_miscread(filename,useniiclass,tmppath)
 % Read various scalar data formats based on the file extension.
 %
-% X = miscread(filename,useniiclass);
+% X = palm_miscread(filename,useniiclass);
 %
 % X is a struct that contains the fields:
 % X.filename : Contains the name of the file.
@@ -259,7 +259,18 @@ switch lower(fext{end}),
         palm_checkprogs; % ensure GIFTI toolbox in the path
         X.readwith = 'gifti';
         gii = gifti(X.filename);
-        X.data  = gii.cdata';
+        if isfield(gii,'cdata'),
+            X.data = gii.cdata';
+        end
+        if isfield(gii,'vertices') && isfield(gii,'faces'),
+            X.data.vtx  = gii.vertices;
+            X.data.fac  = gii.faces;
+            if isfield(gii,'mat'),
+                vtx = [X.data.vtx ones(size(X.data.vtx,1),1)];
+                vtx = vtx * gii.mat;
+                X.data.vtx = vtx(:,1:3);
+            end
+        end
         for d = numel(gii.private.data):-1:1,
             gii.private.data{d}.data = [];
         end
@@ -271,7 +282,7 @@ end
 
 % ==============================================================
 function spl = strdotsplit(str)
-% Split a string using the dots '.' as separators.
+% Split a string at the dots (.).
 idx  = find(str == '.');
 idxb = [1 idx+1];
 idxe = [idx-1 numel(str)];

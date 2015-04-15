@@ -45,6 +45,15 @@ else
     wb_command = 'wb_command';
 end
 
+% Test the wb_command
+try  %#ok
+    [status,wb_output] = system(wb_command);
+end
+if status ~= 0,
+    disp(wb_output);
+    error('Test failed for your architecture. CIFTI will not be read.');
+end
+
 % Convert to a GIFTI object 
 C = gifti([]);
 F = fieldnames(extra);

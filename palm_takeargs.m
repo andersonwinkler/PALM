@@ -67,6 +67,7 @@ Nevd  = sum(strcmp(vararginx,'-evperdat')); % number of EV per datum inputs
 opts.i    = cell(Ni,1);   % Input files (to constitute Y later)
 opts.m    = cell(Nm,1);   % Mask file(s)
 opts.s    = cell(Ns,1);   % Surface file(s)
+opts.sa   = cell(Ns,1);   % Area file(s) or weight(s)
 opts.d    = cell(Nd,1);   % Design file(s)
 opts.t    = cell(Nt,1);   % t contrast file(s)
 opts.f    = cell(Nf,1);   % F contrast file(s)
@@ -117,13 +118,19 @@ while a <= narginx,
             m = m + 1;
             a = a + 2;
             
-        case '-s',
+        case {'-s','-surf'},
             
             % Get the filenames for the surfaces, if any.
-            opts.s{s} = vararginx{a+1};
+            opts.s{s}  = vararginx{a+1};
             s = s + 1;
-            a = a + 2;
-            
+            if nargin == a || (nargin > a && strcmp(vararginx{a+1}(1),'-')),
+                opts.sa{s} = [];
+                a = a + 2;
+            else
+                opts.sa{s} = vararginx{a+2};
+                a = a + 3;
+            end
+
         case '-d',
             
             % Get the design matrix file.
@@ -1203,10 +1210,33 @@ end
 % Read and organise the surfaces. If no surfaces have been loaded, but the
 % user wants cluster extent, cluster mass, or TFCE, an error will be
 % printed later down in the code.
+% At this stage the average area from native geometry is also loaded if it
+% was provided. If a weight was given, such as 1, use this weight, so that
+% all faces are treated as if having the same size. If nothing was
+% supplied, use the actual area of the surface.
 if opts.spatial && Ns > 0,
     plm.srf = cell(Ns,1);
     for s = 1:Ns,
-        plm.srf{s} = palm_miscread(opts.s{s});
+        
+        % Load surface
+        plm.srf{s}     = palm_miscread(opts.s{s});
+        
+        % Load areas
+        if isempty(opts.sa{s}),
+            
+            % No area means area of the actual surface file
+            plm.srfarea{s}.data = [];
+            
+        elseif exist(opts.sa{s},'file'),
+            
+            % A file with the average areas from native geometry
+            plm.srfarea{s}      = palm_miscread(opts.sa{s});
+            
+        elseif ~ isnan(str2double(opts.sa{s})),
+            
+            % A weight (such as 1)
+            plm.srfarea{s}.data = str2double(opts.sa{s});
+        end
     end
 end
 
@@ -1463,7 +1493,30 @@ for i = 1:Ni,
                     s,size(plm.srf{s}.data.vtx,1),size(plm.srf{s}.data.fac,1),opts.s{s},...
                     i,max(size(plm.masks{i}.data)),opts.i{i});
         end
-        plm.Yarea{i} = palm_calcarea(plm.srf{s}.data,plm.Yisvtx(i));
+        
+        % Surface area, to be used by the spatial statistics
+        if isempty(plm.srfarea{s}.data),
+            
+            % No area file given, use the actual surface area
+            plm.Yarea{i} = palm_calcarea(plm.srf{s}.data,plm.Yisvtx(i));
+            
+        elseif numel(plm.srfarea{s}.data) == 1,
+            
+            % A weight given (such as 1): use that for each vertex or face,
+            % treating as if all had the same area.
+            if plm.Yisvtx(i),
+                plm.Yarea{i} = plm.srfarea{s}.data .* ...
+                    ones(size(plm.srf{s}.data.vtx,1),1);
+            elseif plm.Yisfac(i),
+                plm.Yarea{i} = plm.srfarea{s}.data .* ...
+                    ones(size(plm.srf{s}.data.fac,1),1);
+            end
+            
+        else
+            
+            % Otherwise, just use the data from the file (already loaded).
+            plm.Yarea{i} = plm.srfarea{s}.data;
+        end
     end
 end
 plm.nY = numel(plm.Yset); % this is redefined below if opts.inputmv is set.

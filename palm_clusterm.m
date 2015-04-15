@@ -1,6 +1,6 @@
 function [maxsize,clstat,sizes] = palm_clusterm(X,y,thr,opts,plm)
 % Compute cluster mass statistics, for volume or surface
-% data (voxelwise or facewise).
+% data (vertexwise or facewise).
 % 
 % Usage:
 % [maxmass,clstat,masses] = palm_clusterm(X,y,thr,opts,plm)
@@ -117,8 +117,7 @@ elseif plm.Yisvtx(y) || plm.Yisfac(y),
 end
 
 % In fact, only the max matters, because the uncorrected cluster extent
-% doesn't make much sense (probably TFCE doesn't make sense either for
-% the same reason...). Make sure the output isn't empty.
+% doesn't make much sense. Make sure the output isn't empty.
 if isempty(sizes),
     sizes = 0;
 end

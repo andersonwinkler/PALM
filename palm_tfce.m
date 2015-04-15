@@ -1,6 +1,6 @@
 function tfcestat = palm_tfce(X,y,opts,plm)
 % Compute the TFCE statistic, for volume or surface
-% data (voxelwise or facewise).
+% data (vertexwise or facewise).
 % 
 % Usage:
 % tfcestat = palm_tfce(X,y,opts,plm)

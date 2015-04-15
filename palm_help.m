@@ -52,11 +52,17 @@ fprintf('	corrected across).\n\n');
 fprintf('-m <file> : Mask(s). Either one for all inputs, or one per input,\n');
 fprintf('	supplied in the same order as the respective -i appear.\n\n');
 
-fprintf('-s <file> : Surface file(s). When more than one is supplied, each -s\n');
-fprintf('	should be entered in the same order as the respective -i. This\n');
-fprintf('	option is needed when the input data is a scalar field over a\n');
-fprintf('	surface and spatial statistics (cluster extent, cluster mass or\n');
-fprintf('	TFCE) have been enabled.\n\n');
+fprintf('-s <filesurf> [filearea] : The first argument is the surface file\n');
+fprintf('	itself. The second is an optional area-per-vertex or area-per-\n');
+fprintf('	face file, or simply a number. If only the surface file is\n');
+fprintf('	provided, its area is calculated and used for the computation\n');
+fprintf('	of spatial statistics (cluster extent and TFCE). If the second\n');
+fprintf('	argument is given, it should contain the areas, which are then\n');
+fprintf('	used (e.g., average areas from native geometry after areal\n');
+fprintf('	interpolation). Alternatively, if the areas are not meaningful\n');
+fprintf('	for cluster extent or TFCE, this argument can be simply a number,\n');
+fprintf('	such as "1", which is then used as the area of all vertices or\n');
+fprintf('	faces.\n\n');
 
 fprintf('-d <file> : Design matrix. It can be in csv format, or in fsl"s vest\n');
 fprintf('	format. For information on how to construct the design matrix,\n');

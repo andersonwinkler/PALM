@@ -1,5 +1,5 @@
 function dpfl = palm_faclabel(dpf,fac)
-% Label a DPV file (vertexwise data).
+% Label a DPF file (facewise data).
 % 
 % Usage:
 % dpfl = palm_faclabel(dpf,fac)
