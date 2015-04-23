@@ -123,7 +123,7 @@ while a <= narginx,
             % Get the filenames for the surfaces, if any.
             opts.s{s}  = vararginx{a+1};
             s = s + 1;
-            if nargin == a || (nargin > a && strcmp(vararginx{a+1}(1),'-')),
+            if nargin == a+1 || (nargin>a+1 && strcmp(vararginx{a+2}(1),'-')),
                 opts.sa{s} = [];
                 a = a + 2;
             else
@@ -1675,6 +1675,13 @@ if opts.evperdat,
     end
 end
 plm.nmasks = numel(plm.masks);
+
+% Make sure none of the modalities is empty
+for y = 1:plm.nY,
+    if any(size(plm.Yset{y}) == 0),
+        error('Modality %d has no data.\n',y);
+    end
+end
 
 % Create an intersection mask if NPC or MV is to be done, and further apply
 % to the data that was previously masked above, as needed.

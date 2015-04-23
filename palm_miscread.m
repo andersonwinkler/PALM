@@ -89,7 +89,7 @@ switch lower(fext{end}),
         % Handle (or not) a gzipped NIFTI or CIFTI file.
         if strcmpi(fext{end-1},'nii'),
             
-            if any(strcmpi(fext{end-2},{'dscalar','dtseries','dconn','dlabel','ptseries'})),
+            if any(strcmpi(fext{end-2},{'dscalar','dtseries','dconn','dlabel','ptseries','merge'})),
                 
                 % Until CIFTI migrates to HDF5, users will have to uncompress manually.
                 error('CIFTI files must be uncompressed before they can be read. Use gunzip and try again.');
@@ -142,7 +142,7 @@ switch lower(fext{end}),
 
         % Handle NIFTI and CIFTI files.
         if strcmpi(fext{end},'nii') && ...
-                any(strcmpi(fext{end-1},{'dscalar','dtseries','dconn','dlabel','ptseries'})),
+                any(strcmpi(fext{end-1},{'dscalar','dtseries','dconn','dlabel','ptseries','merge'})),
             
             % Read a CIFTI file.
             if extern.wb_command,
