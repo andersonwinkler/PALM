@@ -82,6 +82,5 @@ if isempty(palm_extern),
     palm_extern.palmpath = fileparts(mfilename('fullpath'));
     addpath(fullfile(palm_extern.palmpath,'fileio'));
     addpath(fullfile(palm_extern.palmpath,'fileio','extras'));
-    addpath(fullfile(palm_extern.palmpath,'fileio','cifti'));
 end
 ext = palm_extern;

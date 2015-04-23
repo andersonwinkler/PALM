@@ -81,10 +81,23 @@ temp_gii = strcat(rand_prefix,'.gii');
 [~] = system(sprintf('%s -cifti-convert -to-gifti-ext %s %s',wb_command,filename,temp_gii));
 
 % Load the temporary GIFTI file. Note that there are no mapped file-arrays.
-C = gifti(temp_gii);
-data  = C.cdata;
-extra = C.private;
-extra.data{1}.data = [];
+gii = gifti(temp_gii);
+if isfield(gii,'cdata'),
+    data = gii.cdata';
+end
+if isfield(gii,'vertices') && isfield(gii,'faces'),
+    data.vtx = gii.vertices;
+    data.fac = gii.faces;
+    if isfield(gii,'mat'),
+        vtx = [data.vtx ones(size(data.vtx,1),1)];
+        vtx = vtx * gii.mat;
+        data.vtx = vtx(:,1:3);
+    end
+end
+for d = numel(gii.private.data):-1:1,
+    gii.private.data{d}.data = [];
+end
+extra = gii.private;
 
 % Delete the temporary GIFTI file.
 % Note that here the extension is "data" because it comes from the
