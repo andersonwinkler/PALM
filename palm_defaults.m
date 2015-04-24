@@ -96,6 +96,7 @@ opts.savedof          = false;              % save a file with the degrees of fr
 opts.inputmv          = false;              % treat each column of the sole input as a separate input for MV/NPC/CCA?
 opts.pareto           = false;              % Use a Pareto tail approximation to the FWER-adjusted p-values?
 opts.paretothr        = 0.10;               % P-values below this will be approximated.
+opts.reversemasks     = false;              % Reverse the masks?
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within is also default).

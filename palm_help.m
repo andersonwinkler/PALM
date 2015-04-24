@@ -52,6 +52,9 @@ fprintf('	corrected across).\n\n');
 fprintf('-m <file> : Mask(s). Either one for all inputs, or one per input,\n');
 fprintf('	supplied in the same order as the respective -i appear.\n\n');
 
+fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values are\n');
+fprintf('	then used to select the voxels/vertices/faces.\n\n');
+
 fprintf('-s <filesurf> [filearea] : The first argument is the surface file\n');
 fprintf('	itself. The second is an optional area-per-vertex or area-per-\n');
 fprintf('	face file, or simply a number. If only the surface file is\n');

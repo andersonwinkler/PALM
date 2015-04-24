@@ -118,6 +118,12 @@ while a <= narginx,
             m = m + 1;
             a = a + 2;
             
+        case '-reversemasks',
+            
+            % Reverse masks
+            opts.reversemasks = true;
+            a = a + 1;
+            
         case {'-s','-surf'},
             
             % Get the filenames for the surfaces, if any.
@@ -1261,9 +1267,18 @@ for m = 1:Nm,
     if strcmp(plm.masks{m}.readwith,'nifticlass'),
         plm.masks{m}.data = double(plm.masks{m}.data);
     end
-    plm.masks{m}.data(isnan(plm.masks{m}.data)) = 0;
-    plm.masks{m}.data(isinf(plm.masks{m}.data)) = 0;
-    plm.masks{m}.data = logical(plm.masks{m}.data);
+    if strcmp(plm.masks{m}.readwith,'gifti'),
+        plm.masks{m}.data = plm.masks{m}.data';
+    end
+    if opts.reversemasks,
+        plm.masks{m}.data(isnan(plm.masks{m}.data)) = 1;
+        plm.masks{m}.data(isinf(plm.masks{m}.data)) = 1;
+        plm.masks{m}.data = ~ logical(plm.masks{m}.data);
+    else
+        plm.masks{m}.data(isnan(plm.masks{m}.data)) = 0;
+        plm.masks{m}.data(isinf(plm.masks{m}.data)) = 0;
+        plm.masks{m}.data = logical(plm.masks{m}.data);
+    end
 end
 if Nm == 1,
     for i = 2:Ni,
@@ -1442,7 +1457,7 @@ for i = 1:Ni,
                 'spm_spm_vol','nii_load_nii'},
             plm.Yisvol(i)   = true;
             plm.Ykindstr{i} = '_vox';
-        case 'fs_read_curv',
+        case {'fs_read_curv','gifti'},
             plm.Yissrf(i)   = true;
             plm.Ykindstr{i} = '_dpv';
         case 'dpxread',
