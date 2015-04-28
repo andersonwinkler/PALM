@@ -84,7 +84,7 @@ elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    else
       MATLABCMD=${MATLABPATH}/matlab
    fi
-   ${MATLABCMD} -nodesktop -nojvm -nosplash -singleCompThread -r "${RUNCMD}" \
+   ${MATLABCMD} -nodesktop -nosplash -singleCompThread -r "${RUNCMD}" \
      | sed -e '1,/^.......................................................................$/ d'
 fi
 

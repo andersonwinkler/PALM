@@ -1312,8 +1312,7 @@ for i = 1:Ni,
                     tmpmsk(:,a,b) = ~ (inan | iinf | icte);
                 end
             end
-            tmpmsk = tmpmsk(:)';
-            plm.masks{i} = palm_maskstruct(tmpmsk,Ytmp.readwith,Ytmp.extra);
+            plm.masks{i} = palm_maskstruct(tmpmsk(:)',Ytmp.readwith,Ytmp.extra);
         else
             % If a mask was supplied, check its size
             if any(Ytmp.extra.dat.dim(1:3) ~= size(plm.masks{i}.data)),
@@ -1556,8 +1555,7 @@ if opts.evperdat,
                         tmpmsk(:,a,b) = ~ (inan | iinf | icte);
                     end
                 end
-                tmpmsk = tmpmsk(:)';
-                plm.masks{ev} = palm_maskstruct(tmpmsk,EVtmp.readwith,EVtmp.extra);
+                plm.masks{ev} = palm_maskstruct(tmpmsk(:)',EVtmp.readwith,EVtmp.extra);
             else
                 % If a mask was supplied, check its size
                 if any(EVtmp.extra.dat.dim(1:3) ~= size(plm.masks{ev}.data)),

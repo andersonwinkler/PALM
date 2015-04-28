@@ -100,4 +100,5 @@ elseif plm.Yisfac(y),
 end
 
 % Return as a vector with the same size as X.
-tfcestat = tfcestat(mask); % don't make it transpose!! check elsewhere in the code!!
+tfcestat = tfcestat(mask);
+tfcestat = tfcestat(:)';

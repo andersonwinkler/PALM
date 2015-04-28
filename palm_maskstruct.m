@@ -55,7 +55,7 @@ switch lower(readwith),
         S.data = mask;
         
     case 'wb_command',
-        S.data  = mask';
+        S.data  = mask;
         S.extra = extra;
         
     case 'nifticlass',
@@ -105,7 +105,7 @@ switch lower(readwith),
     case 'fs_read_curv',
         
         % If the original data is an FS curvature.
-        S.data  = mask(:);
+        S.data  = mask;
         S.extra = extra;
         
     case 'fs_load_mgh',
@@ -117,7 +117,7 @@ switch lower(readwith),
     case 'gifti',
         
         % If the original data is a GIFTI file.
-        S.data  = mask';
+        S.data  = mask;
         S.extra = extra;
         S.extra.data = S.extra.data(1);
 
