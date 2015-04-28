@@ -1041,11 +1041,6 @@ if any([ ...
     end
 end
 
-% Some extra packages for Octave
-if opts.spatial && palm_isoctave,
-    pkg load image
-end
-
 % No FWER or NPC if using draft mode
 if opts.draft,
     if opts.corrmod || opts.corrcon,
@@ -1267,9 +1262,6 @@ for m = 1:Nm,
     if strcmp(plm.masks{m}.readwith,'nifticlass'),
         plm.masks{m}.data = double(plm.masks{m}.data);
     end
-    if strcmp(plm.masks{m}.readwith,'gifti'),
-        plm.masks{m}.data = plm.masks{m}.data';
-    end
     if opts.reversemasks,
         plm.masks{m}.data(isnan(plm.masks{m}.data)) = 1;
         plm.masks{m}.data(isinf(plm.masks{m}.data)) = 1;
@@ -1480,7 +1472,7 @@ for i = 1:Ni,
     % If this is a DPX/curvature file, and if one of the spatial
     % statistics has been invoked, check if surfaces are available
     % and with compatible size, then compute the area (dpv or dpf)
-    if plm.Yissrf(i) && opts.spatial,
+    if opts.spatial && (plm.Yissrf(i) || strcmpi(Ytmp.readwith,'load')),
         if Ns == 0,
             error([ ...
                 'To use cluster extent, cluster mass, or TFCE with vertexwise or facewise data\n'...
@@ -1494,7 +1486,7 @@ for i = 1:Ni,
                 max(size(plm.masks{i}.data));
             plm.Yisvtx(i)   = true;
             plm.Yisfac(i)   = false;
-            plm.Ykindstr{i} = '_dpx';
+            plm.Ykindstr{i} = '_dpv';
         elseif size(plm.srf{s}.data.fac,1) == ...
                 max(size(plm.masks{i}.data));
             plm.Yisvtx(i)   = false;
@@ -1535,6 +1527,11 @@ for i = 1:Ni,
     end
 end
 plm.nY = numel(plm.Yset); % this is redefined below if opts.inputmv is set.
+
+% Some extra packages for Octave
+if opts.spatial && palm_isoctave && any(plm.Yisvol),
+    pkg load image
+end
 
 % Read and organise the EV per datum.
 if opts.evperdat,
