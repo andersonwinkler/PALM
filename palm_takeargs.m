@@ -1090,6 +1090,11 @@ if opts.MV && strcmpi(opts.mvstat,'Roy_iii'),
         opts.tfce_mv.do      = false;
         opts.spatial_mv      = false;
     end
+elseif opts.CCA && opts.savepara,
+    plm.nomvppara = true;
+    warning([...
+        'No parametric p-value will be saved for CCA.\n', ...
+        '         Use Wilks'' lambda instead.%s'],'');
 else
     plm.nomvppara = false;
 end

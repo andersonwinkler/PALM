@@ -80,7 +80,8 @@ if any(Pidx),
     % Just for the stats that are significant
     G = G(Pidx);
     
-    % Keep adjusting until the fit is good.
+    % Keep adjusting until the fit is good. hange the step to 10 to get the
+    % same result as Knijnenburg et al.
     Q  = (751:1:999)/1000;
     nQ = numel(Q);
     q  = 1;

@@ -501,7 +501,7 @@ for po = P_outer,
                     [plm.X{m}{c},plm.Z{m}{c},plm.eCm{m}{c},plm.eCx{m}{c}] = ...
                         palm_partition(plm.Mset{m},plm.Cset{m}{c},opts.pmethodr);
                     plm.Mp{m}{c} = horzcat(plm.X{m}{c},plm.Z{m}{c}); % partitioned design matrix, joined
-                    
+
                     % To avoid rank deficiency issues after partitioning, remove
                     % columns that are all equal to zero. This won't be
                     % done for the evperdat case because it's too slow and
@@ -627,7 +627,11 @@ for po = P_outer,
                 elseif opts.CCA,
                     
                     % Output string
-                    plm.Qname{m}{c} = sprintf('_cca%d',opts.ccaparm); 
+                    plm.Qname{m}{c} = sprintf('_cca%d',opts.ccaparm);
+                    
+                    % For CCA, this obviously false, but need to have when
+                    % saving, do make the distributions correct
+                    plm.mvrev{m}{c} = false;
                 end
                 
                 % Decide which method is going to be used for the regression and
@@ -1286,7 +1290,7 @@ for po = P_outer,
                     end
                 end
                 
-                % MANOVA/MANCOVA is here
+                % MANOVA/MANCOVA is here. CCA is the elseif below
                 if opts.MV,
                     if opts.showprogress,
                         fprintf('\t [Doing multivariate analysis]\n');
@@ -1446,13 +1450,13 @@ for po = P_outer,
                         Q{m}{c} = zeros(1,plm.Ysiz(1));
                     end
                     if opts.evperdat,
-                        for t = find(yselq)',
+                        for t = 1:size(plm.Yq{m}{c},3),
                             M(:,:,t)   = plm.Pset{p}*plm.Rz{m}{c}(:,:,t)*plm.X{m}{c}(:,:,t);
                             Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M(:,:,t),opts.ccaparm);
                         end
                     else
                         M = plm.Pset{p}*plm.Rz{m}{c}*plm.X{m}{c};
-                        for t = find(yselq)',
+                        for t = 1:size(plm.Yq{m}{c},3),
                             Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M,opts.ccaparm);
                         end
                     end
