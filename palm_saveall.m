@@ -1549,7 +1549,7 @@ if ( opts.MV  || opts.CCA ) && opts.corrcon,
             j = 1;
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
-                    pmerged(:,j) = plm.Qtfcepperm{m}{c};
+                    pmerged(j,:) = plm.Qtfcepperm{m}{c};
                     j = j + 1;
                 end
             end
@@ -1557,7 +1557,7 @@ if ( opts.MV  || opts.CCA ) && opts.corrcon,
             j = 1;
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
-                    palm_quicksave(pfdradj(:,j),1,opts,plm,[],m,c, ...
+                    palm_quicksave(pfdradj(j,:),1,opts,plm,[],m,c, ...
                         sprintf('%s',opts.o,'_tfce',plm.mvstr,plm.Qname{m}{c},'_cfdrp',plm.mstr{m},plm.cstr{c}));
                     j = j + 1;
                 end
