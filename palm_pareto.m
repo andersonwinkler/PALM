@@ -62,7 +62,7 @@ function P = palm_pareto(G,Gvals,rev,Pthr)
 
 % Compute the usual permutation p-values.
 P    = palm_datapval(G,Gvals,rev);
-Pidx = P <= Pthr;
+Pidx = P < Pthr; % don't replace this "<" for "<=".
 
 % If some of these are small (as specified by the user), these
 % will be approximated via the GPD tail.
@@ -87,7 +87,7 @@ if any(Pidx),
     q  = 1;
     Ptail = NaN;
     while any(isnan(Ptail)) && q <= nQ,
-        
+
         % Get the tail
         qidx  = Gcdf >= Q(q);
         Gtail = Gvals(qidx);

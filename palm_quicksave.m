@@ -2,10 +2,10 @@ function P = palm_quicksave(X,flg,opts,plm,y,m,c,filename)
 % An intermediate function to be used many times in palm.m,
 % which chooses an adequate mask, then places back the data
 % into the points defined by this mask, and save.
-% 
+%
 % Usage:
 % P = palm_quicksave(X,flg,opts,plm,y,c,filename)
-% 
+%
 % Inputs:
 % X        : Data to be saved.
 % flg      : A flag that can be:
@@ -21,10 +21,10 @@ function P = palm_quicksave(X,flg,opts,plm,y,m,c,filename)
 % m        : Index for the current design in plm.Mset.
 % c        : Index for the current contrast in plm.Cset.
 % filename : File to be created.
-% 
+%
 % Outputs:
 % P        : True P-value (not 1-p or -log(p)).
-% 
+%
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
@@ -34,91 +34,100 @@ function P = palm_quicksave(X,flg,opts,plm,y,m,c,filename)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % PALM -- Permutation Analysis of Linear Models
 % Copyright (C) 2015 Anderson M. Winkler
-% 
+%
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation, either version 3 of the License, or
 % any later version.
-% 
+%
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-% 
+%
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-% Modify X accodring to the flag
-if flg == 1 && opts.savecdf,
+% Save only if X isn't empty
+if ~ isempty(X),
     
-    % Convert P to 1-P
-    X = 1 - X;
-    
-elseif flg == 2,
-    
-    % Convert a statistic to a P-value
-    X0 = X;
-    if opts.savecdf,
-        
-        % CDF (1-P)
-        X = palm_gcdf(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
-        
-        % Even saving the CDF, the true p-vals may be needed
-        if nargout > 0,
-            P = palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
-        end
-        
-        % Double the p-vals for parametric 2-tailed
-        if opts.twotail && plm.rC{m}(c) <= 1,
-            upp     = X <= .5;
-            X( upp) = 2*X;
-            X(~upp) = 2*palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
-        end
-    else
-        % Just P
-        X = palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
-        if nargout > 0,
-            P = X;
-        end
-        
-        % Double the p-vals for parametric 2-tailed
-        if opts.twotail && plm.rC{m}(c) <= 1,
-            upp     = X <= .5;
-            X( upp) = 2*X;
-            X(~upp) = 2*palm_gcdf(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
-        end
+    % Just some verbosity, if asked
+    if opts.showprogress,
+        fprintf('\t Saving file: %s\n',filename);
     end
-end
-
-% Convert to logarithm
-if opts.savelogp && any(flg == [1 2]),
-    X = -log10(X);
-end
-
-% Prepare struct to save
-if opts.inputmv,
-    S.filename = filename;
-    S.readwith = 'load';
-    S.data     = X;
-else
-    % Choose an appropriate mask struct.
-    if opts.npcmod || opts.MV,
-        S = plm.maskinter;
-    else
-        if plm.nmasks == 1,
-            S = plm.masks{1};
+    
+    % Modify X accodring to the flag
+    if flg == 1 && opts.savecdf,
+        
+        % Convert P to 1-P
+        X = 1 - X;
+        
+    elseif flg == 2,
+        
+        % Convert a statistic to a P-value
+        X0 = X;
+        if opts.savecdf,
+            
+            % CDF (1-P)
+            X = palm_gcdf(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
+            
+            % Even saving the CDF, the true p-vals may be needed
+            if nargout > 0,
+                P = palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
+            end
+            
+            % Double the p-vals for parametric 2-tailed
+            if opts.twotail && plm.rC{m}(c) <= 1,
+                upp     = X <= .5;
+                X( upp) = 2*X;
+                X(~upp) = 2*palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
+            end
         else
-            S = plm.masks{y};
+            % Just P
+            X = palm_gpval(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
+            if nargout > 0,
+                P = X;
+            end
+            
+            % Double the p-vals for parametric 2-tailed
+            if opts.twotail && plm.rC{m}(c) <= 1,
+                upp     = X <= .5;
+                X( upp) = 2*X;
+                X(~upp) = 2*palm_gcdf(X0,plm.rC{m}(c),plm.df2{y}{m}{c});
+            end
         end
     end
     
-    % Inject the data.
-    mask         = S.data;
-    S.data       = double(S.data);
-    S.data(mask) = X;
-    S.filename   = filename;
+    % Convert to logarithm
+    if opts.savelogp && any(flg == [1 2]),
+        X = -log10(X);
+    end
+    
+    % Prepare struct to save
+    if opts.inputmv,
+        S.filename = filename;
+        S.readwith = 'load';
+        S.data     = X;
+    else
+        % Choose an appropriate mask struct.
+        if opts.npcmod || opts.MV,
+            S = plm.maskinter;
+        else
+            if plm.nmasks == 1,
+                S = plm.masks{1};
+            else
+                S = plm.masks{y};
+            end
+        end
+        
+        % Inject the data.
+        mask         = S.data;
+        S.data       = double(S.data);
+        S.data(mask) = X;
+        S.filename   = filename;
+    end
+    
+    % Save
+    palm_miscwrite(S);
 end
-
-% Save
-palm_miscwrite(S);

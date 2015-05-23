@@ -1,6 +1,6 @@
 function [opts,plm] = palm_takeargs(varargin)
 % Handle the inputs for PALM.
-% 
+%
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
@@ -10,17 +10,17 @@ function [opts,plm] = palm_takeargs(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % PALM -- Permutation Analysis of Linear Models
 % Copyright (C) 2015 Anderson M. Winkler
-% 
+%
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation, either version 3 of the License, or
 % any later version.
-% 
+%
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-% 
+%
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -43,7 +43,7 @@ else
     else
         otmp = vararginx{idxa+1};
     end
-    if ~strcmp(otmp(end),'_'),
+    if ~ strcmp(otmp(end),'_'),
         otmp = horzcat(otmp,'_');
     end
     cfgname = horzcat(otmp,'palmconfig.txt');
@@ -104,27 +104,21 @@ while a <= narginx,
             % and should anyway be given without any other argument.
             a = a + 1;
             
-        case '-i',
+        case '-i', % basic
             
             % Get the filenames for the data.
             opts.i{i} = vararginx{a+1};
             i = i + 1;
             a = a + 2;
             
-        case '-m',
+        case '-m', % basic
             
             % Get the filenames for the masks, if any.
             opts.m{m} = vararginx{a+1};
             m = m + 1;
             a = a + 2;
-            
-        case '-reversemasks',
-            
-            % Reverse masks
-            opts.reversemasks = true;
-            a = a + 1;
-            
-        case {'-s','-surf'},
+        
+        case {'-s','-surf'}, % basic
             
             % Get the filenames for the surfaces, if any.
             opts.s{s}  = vararginx{a+1};
@@ -136,15 +130,15 @@ while a <= narginx,
                 opts.sa{s} = vararginx{a+2};
                 a = a + 3;
             end
-
-        case '-d',
+            
+        case '-d', % basic
             
             % Get the design matrix file.
             opts.d{d} = vararginx{a+1};
             d = d + 1;
             a = a + 2;
             
-        case '-evperdat',
+        case '-evperdat', % advanced
             
             % Use one EV per datum?
             opts.evperdat = true;
@@ -171,21 +165,21 @@ while a <= narginx,
             end
             ev = ev + 1;
             
-        case '-t',
+        case '-t', % basic
             
             % Get the t contrast files.
             opts.t{t} = vararginx{a+1};
             t = t + 1;
             a = a + 2;
             
-        case '-f',
+        case '-f', % basic
             
             % Get the F contrast files.
             opts.f{f} = vararginx{a+1};
             f = f + 1;
             a = a + 2;
             
-        case '-con',
+        case '-con', % advanced
             
             % Get the contrast files from an .mset file or
             % pair of files. If a pair, the 1st is for Cset
@@ -201,8 +195,8 @@ while a <= narginx,
                 a = a + 3;
             end
             con = con + 1;
-
-        case '-conskipcount',
+            
+        case '-conskipcount', % advanced
             
             % Numbers to skip when saving the contrasts
             opts.conskipcount = vararginx{a+1};
@@ -211,25 +205,25 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-tonly',
+        case '-tonly', % advanced
             
             % Run only the t-contrasts
             opts.tonly = true;
             a = a + 1;
             
-        case '-fonly',
+        case '-fonly', % basic
             
             % Run only the F-contrasts
             opts.fonly = true;
             a = a + 1;
             
-        case '-eb',
+        case '-eb', % basic
             
             % Get the exchangeability blocks file.
             opts.eb = vararginx{a+1};
             a = a + 2;
             
-        case '-vg'
+        case '-vg' % basic
             
             % Get the variance groups file.
             opts.vg = vararginx{a+1};
@@ -240,13 +234,13 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-o',
+        case '-o', % basic
             
             % Output prefix for the files to be saved.
             opts.o = vararginx{a+1};
             a = a + 2;
             
-        case '-n',
+        case '-n', % basic
             
             % Number of permutations
             opts.nP0 = vararginx{a+1};
@@ -255,139 +249,106 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-c',
+        case '-C', % basic
             
             % Threshold for cluster extent, univariate, NPC and MV
-            opts.clustere_uni.do  = true;
-            opts.clustere_uni.thr = vararginx{a+1};
-            if ischar(opts.clustere_uni.thr),
-                opts.clustere_uni.thr = str2double(opts.clustere_uni.thr);
+            opts.cluster.uni.do = true;
+            opts.cluster.uni.thr = vararginx{a+1};
+            if ischar(opts.cluster.uni.thr),
+                opts.cluster.uni.thr = str2double(opts.cluster.uni.thr);
             end
-            opts.clustere_npc.do  = true;
-            opts.clustere_npc.thr = vararginx{a+1};
-            if ischar(opts.clustere_npc.thr),
-                opts.clustere_npc.thr = str2double(opts.clustere_npc.thr);
+            opts.cluster.npc.do = true;
+            opts.cluster.npc.thr = vararginx{a+1};
+            if ischar(opts.cluster.npc.thr),
+                opts.cluster.npc.thr = str2double(opts.cluster.npc.thr);
             end
-            opts.clustere_mv.do   = true;
-            opts.clustere_mv.thr  = vararginx{a+1};
-            if ischar(opts.clustere_mv.thr),
-                opts.clustere_mv.thr = str2double(opts.clustere_mv.thr);
+            opts.cluster.mv.do  = true;
+            opts.cluster.mv.thr = vararginx{a+1};
+            if ischar(opts.cluster.mv.thr),
+                opts.cluster.mv.thr = str2double(opts.cluster.mv.thr);
+            end
+            a = a + 2;
+ 
+        case '-Cuni', % advanced
+            
+            % Threshold for cluster statistic, univariate
+            opts.cluster.uni.do = true;
+            opts.cluster.uni.thr = vararginx{a+1};
+            if ischar(opts.cluster.uni.thr),
+                opts.cluster.uni.thr = str2double(opts.cluster.uni.thr);
             end
             a = a + 2;
             
-        case '-C',
+        case '-Cnpc', % advanced
             
-            % Threshold for cluster mass, univariate, NPC and MV
-            opts.clusterm_uni.do  = true;
-            opts.clusterm_uni.thr = vararginx{a+1};
-            if ischar(opts.clusterm_uni.thr),
-                opts.clusterm_uni.thr = str2double(opts.clusterm_uni.thr);
-            end
-            opts.clusterm_npc.do  = true;
-            opts.clusterm_npc.thr = vararginx{a+1};
-            if ischar(opts.clusterm_npc.thr),
-                opts.clusterm_npc.thr = str2double(opts.clusterm_npc.thr);
-            end
-            opts.clusterm_mv.do   = true;
-            opts.clusterm_mv.thr  = vararginx{a+1};
-            if ischar(opts.clusterm_mv.thr),
-                opts.clusterm_mv.thr = str2double(opts.clusterm_mv.thr);
-            end
-            a = a + 2;
-            
-        case '-cuni',
-            
-            % Threshold for cluster extent, univariate
-            opts.clustere_uni.do  = true;
-            opts.clustere_uni.thr = vararginx{a+1};
-            if ischar(opts.clustere_uni.thr),
-                opts.clustere_uni.thr = str2double(opts.clustere_uni.thr);
-            end
-            a = a + 2;
-            
-        case '-Cuni',
-            
-            % Threshold for cluster mass, univariate
-            opts.clusterm_uni.do  = true;
-            opts.clusterm_uni.thr = vararginx{a+1};
-            if ischar(opts.clusterm_uni.thr),
-                opts.clusterm_uni.thr = str2double(opts.clusterm_uni.thr);
-            end
-            a = a + 2;
-            
-        case '-cnpc',
-            
-            % Threshold for cluster extent, NPC
+            % Threshold for cluster statistic, NPC
             opts.NPC = true;
-            opts.clustere_npc.do  = true;
-            opts.clustere_npc.thr = vararginx{a+1};
-            if ischar(opts.clustere_npc.thr),
-                opts.clustere_npc.thr = str2double(opts.clustere_npc.thr);
+            opts.cluster.npc.do = true;
+            opts.cluster.npc.thr = vararginx{a+1};
+            if ischar(opts.cluster.npc.thr),
+                opts.cluster.npc.thr = str2double(opts.cluster.npc.thr);
             end
             a = a + 2;
             
-        case '-Cnpc',
+        case '-Cmv', % advanced
             
-            % Threshold for cluster mass, NPC
-            opts.NPC = true;
-            opts.clusterm_npc.do  = true;
-            opts.clusterm_npc.thr = vararginx{a+1};
-            if ischar(opts.clusterm_npc.thr),
-                opts.clusterm_npc.thr = str2double(opts.clusterm_npc.thr);
-            end
-            a = a + 2;
-            
-        case '-cmv',
-            
-            % Threshold for cluster extent, MV
+            % Threshold for cluster statistic, MV
             opts.MV = true;
-            opts.clustere_mv.do  = true;
-            opts.clustere_mv.thr = vararginx{a+1};
-            if ischar(opts.clustere_mv.thr),
-                opts.clustere_mv.thr = str2double(opts.clustere_mv.thr);
+            opts.cluster.mv.do = true;
+            opts.cluster.mv.thr = vararginx{a+1};
+            if ischar(opts.cluster.mv.thr),
+                opts.cluster.mv.thr = str2double(opts.cluster.mv.thr);
             end
             a = a + 2;
             
-        case '-Cmv',
+        case '-Cstat', % advanced
             
-            % Threshold for cluster mass, MV
-            opts.MV = true;
-            opts.clusterm_mv.do  = true;
-            opts.clusterm_mv.thr = vararginx{a+1};
-            if ischar(opts.clusterm_mv.thr),
-                opts.clusterm_mv.thr = str2double(opts.clusterm_mv.thr);
+            % Type of cluster statistic
+            opts.cluster.stat = vararginx{a+1};
+            if ~ any(strcmp(opts.cluster.stat,{'extent','mass','density','tippett'})),
+                error('Cluster statistic "%s" unknown.',opts.cluster.stat);
             end
             a = a + 2;
             
-        case '-T',
+        case '-T', % basic
             
             % Do TFCE for univariate, NPC and MV?
-            opts.tfce_uni.do = true;
-            opts.tfce_npc.do = true;
-            opts.tfce_mv.do  = true;
+            opts.tfce.uni.do = true;
+            opts.tfce.npc.do = true;
+            opts.tfce.mv.do = true;
+            opts.tfce.stat = 'tfce';
             a = a + 1;
             
-        case '-Tuni',
+        case '-Tstat', % not in the help
+            
+            % Type of cluster statistic
+            opts.tfce.stat = vararginx{a+1};
+            if ~ any(strcmp(opts.tfce.stat,{'tfce','density','tippett'})),
+                error('TFCE statistic "%s" unknown.',opts.tfce.stat);
+            end
+            a = a + 2;
+        
+        case '-Tuni', % advanced
             
             % Do TFCE for uni?
-            opts.tfce_uni.do = true;
+            opts.tfce.uni.do = true;
             a = a + 1;
             
-        case '-Tnpc',
+        case '-Tnpc', % advanced
             
             % Do TFCE for NPC?
             opts.NPC = true;
-            opts.tfce_npc.do = true;
+            opts.tfce.npc.do = true;
             a = a + 1;
             
-        case '-Tmv',
+        case '-Tmv', % advanced
             
             % Do TFCE for MV?
             opts.MV = true;
-            opts.tfce_mv.do  = true;
+            opts.tfce.mv.do = true;
             a = a + 1;
-            
-        case '-tfce1D',
+  
+        case '-tfce1D', % basic
             
             % Shortcut for -tfce_H 2 -tfce_E 2 -tfce_C 6,
             % i.e., parameters for TFCE in 2D mode
@@ -396,7 +357,7 @@ while a <= narginx,
             opts.tfce.conn   = 6;
             a = a + 1;
             
-        case '-tfce2D',
+        case '-tfce2D', % basic
             
             % Shortcut for -tfce_H 2 -tfce_E 1 -tfce_C 26,
             % i.e., parameters for TFCE in 2D mode
@@ -405,7 +366,7 @@ while a <= narginx,
             opts.tfce.conn   = 26;
             a = a + 1;
             
-        case '-tfce_H',
+        case '-tfce_H', % advanced
             
             % TFCE H parameter
             opts.tfce.H = vararginx{a+1};
@@ -414,7 +375,7 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-tfce_E',
+        case '-tfce_E', % advanced
             
             % TFCE E parameter
             opts.tfce.E = vararginx{a+1};
@@ -423,7 +384,7 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-tfce_C',
+        case '-tfce_C', % advanced
             
             % TFCE connectivity
             opts.tfce.conn = vararginx{a+1};
@@ -431,41 +392,41 @@ while a <= narginx,
                 opts.tfce.conn = str2double(opts.tfce.conn);
             end
             a = a + 2;
-            
-        case '-within',
+               
+        case '-within', % basic
             
             % Define whether should permute blocks as a whole or not
             opts.within = true;
             a = a + 1;
             
-        case '-whole',
+        case '-whole', % basic
             
             % Define whether should permute blocks as a whole or not
             opts.whole = true;
             a = a + 1;
             
-        case '-ee',
+        case '-ee', % basic
             
             % Exchangeable errors (EE)?
             % If yes, this means permutations.
             opts.EE = true;
             a = a + 1;
             
-        case '-ise',
+        case '-ise', % basic
             
             % Independent and symmetric errors (ISE)?
             % If yes, this means sign-flippings.
             opts.ISE = true;
             a = a + 1;
             
-        case '-cmcp',
+        case '-cmcp', % advanced
             
             % Define whether Conditional Monte Carlo should be used or not,
             % that is, ignoring repeated elements in the permutation set.
             opts.cmcp = true;
             a = a + 1;
             
-        case '-cmcx',
+        case '-cmcx', % advanced
             
             % Define whether repeated rows in X should be ignored or not
             % when defining the permutations, which constitutes another
@@ -473,56 +434,62 @@ while a <= narginx,
             opts.cmcx = true;
             a = a + 1;
             
-        case '-twotail',
+        case '-twotail', % basic
             
             % Do a two-tailed test for all t-contrasts?
             opts.twotail = true;
             a = a + 1;
             
-        case '-concordant',
+        case '-concordant', % basic
             
             % For the NPC, favour alternatives with the same sign?
             opts.concordant = true;
             a = a + 1;
             
-        case '-corrmod',
+        case '-reversemasks', % basic
+            
+            % Reverse masks
+            opts.reversemasks = true;
+            a = a + 1;
+            
+        case '-corrmod', % basic
             
             % Correct over modalities.
             opts.corrmod = true;
             a = a + 1;
             
-        case '-corrcon',
+        case '-corrcon', % basic
             
             % Correct over contrasts.
             opts.corrcon = true;
             a = a + 1;
             
-        case '-saveparametric',
+        case '-saveparametric', % advanced
             
             % If the user wants to have also the parametric p-values
             opts.savepara = true;
             a = a + 1;
             
-        case {'-savecdf','-save1-p'},
+        case {'-savecdf','-save1-p'}, % basic
             
             % Save 1-p values (CDF) instead of the P-values
             opts.savecdf = true;
             a = a + 1;
             
-        case '-logp',
+        case '-logp',  % basic
             
             % Convert the P-values or (1-P)-values to -log10 before saving
             opts.savelogp = true;
             a = a + 1;
             
-        case '-savemask',
+        case '-savemask', % advanced
             
             % If the user wants to have also the masks used for each
             % modality
             opts.savemask = true;
             a = a + 1;
             
-        case '-rmethod',
+        case '-rmethod', % advanced
             
             % Which method to use for the regression/permutation?
             if nargin > a,
@@ -548,8 +515,7 @@ while a <= narginx,
                     'Consult the documentation.']);
             end
             
-            
-        case '-npc',
+        case '-npc', % basic
             
             % Do the non-parametric combination?
             opts.NPC = true;
@@ -654,21 +620,22 @@ while a <= narginx,
                 opts.npcmethod = methlist{methidx};
             end
             
-        case '-npcmod',
+        case '-npcmod', % basic
             
-            % Correct over modalities.
+            % NPC over modalities.
             opts.NPC    = true;
             opts.npcmod = true;
             a = a + 1;
             
-        case '-npccon',
+        case '-npccon', % basic
             
-            % Correct over contrasts.
+            % NPC over contrasts -- that is, all contrasts, even contrasts
+            % in different designs (if more than one -d is supplied).
             opts.NPC    = true;
             opts.npccon = true;
             a = a + 1;
-   
-        case '-mv',
+            
+        case '-mv', % basic
             
             % Compute classic multivariate statistics
             if nargin == a,
@@ -720,48 +687,92 @@ while a <= narginx,
                 opts.mvstat = methlist{methidx};
             end
             
-        case '-fdr',
+        case '-fdr', % basic
             
             % Compute FDR-adjusted p-values
             opts.FDR = true;
             a = a + 1;
+        
+        case '-approx', % advanced
             
-        case '-draft',
-            
-            % Do a draft scheme
-            opts.draft = vararginx{a+1};
-            if ischar(opts.draft),
-                opts.draft = str2double(opts.draft);
+            % Choose a method to do the approximation of p-values
+            if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
+                methlist = {   ...
+                    'draft',   ...
+                    'tail',    ...
+                    'noperm',  ...
+                    'gamma',   ...
+                    'lowrank'};
+                methidx = strcmpi(vararginx{a+1},methlist);
+                if ~any(methidx);
+                    error('Approximation method "%s" unknown.',vararginx{a+1});
+                end
+                for m = 1:numel(methlist),
+                    opts.approx.(methlist{m}) = methidx(m);
+                end
+                
+                % Extra parameters
+                if opts.approx.draft,
+                    
+                    % Number of exceedances:
+                    if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
+                        opts.approx.draft = str2double(vararginx{a+2});
+                        a = a + 3;
+                    else
+                        opts.approx.draft = opts.approx.draft_nexced;
+                        a = a + 2;
+                    end
+                    
+                elseif opts.approx.tail,
+                    
+                    % Smaller p-vals than this are refined.
+                    if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
+                        opts.approx.tail_thr = str2double(vararginx{a+2});
+                        a = a + 3;
+                    else
+                        a = a + 2;
+                    end
+                    
+                elseif opts.approx.lowrank,
+                    
+                    % Fraction of voxels to be sampled (if < 1) or actual
+                    % number of voxels to be sampled.
+                    if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
+                        opts.approx.lowrank_val = str2double(vararginx{a+2});
+                        a = a + 3;
+                    else
+                        a = a + 2;
+                    end
+                    
+                else
+                    a = a + 2;
+                end
+            else
+                error([...
+                    'The option "-approx" requires a method to be specified.\n' ...
+                    'Consult the documentation.']);
             end
-            a = a + 2;
             
-        case '-tailapproximation',
-            
-            % Do a tail approximation based on a
-            % Generalised Pareto Distribution
-            opts.pareto = true;
-            a = a + 1;
-            
-        case '-noniiclass',
+        case '-noniiclass', % advanced
             
             % Disable using the NIFTI class
             opts.useniiclass = false;
             a = a + 1;
             
-        case '-saveperms',
+        case '-saveperms', % advanced
             
             % Allow no use of mask for 4D NIFTI files
             opts.saveperms = true;
             a = a + 1;
             
-        case '-savemetrics',
+        case '-savemetrics', % advanced
             
             % Save a file with the number of permutations, average
             % Hamming distance, etc.
             opts.savemetrics = true;
             a = a + 1;
             
-        case '-inormal',
+        case '-inormal', % advanced
             
             % Inverse-normal transformation?
             opts.inormal = true;
@@ -800,13 +811,13 @@ while a <= narginx,
                 end
             end
             
-        case '-probit',
+        case '-probit', % advanced
             
             % Probit transformation?
             opts.probit = true;
             a = a + 1;
             
-        case '-seed'
+        case '-seed', % advanced
             
             % Seed for the random number generator
             opts.seed = vararginx{a+1};
@@ -816,27 +827,27 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-demean',
+        case '-demean', % basic
             
             % Demean data and design. Additionally, remove
             % a global intercept, if any, from the design.
             opts.demean = true;
             a = a + 1;
             
-        case '-vgdemean',
+        case '-vgdemean', % advanced
             
             % Demean data and design within VG. Additionally, remove
             % a global intercept, if any, from the design.
             opts.vgdemean = true;
             a = a + 1;
             
-        case '-ev4vg',
+        case '-ev4vg', % advanced
             
             % Add to the design matrix one EV for each variance group.
             opts.ev4vg = true;
             a = a + 1;
             
-        case '-removevgbysize',
+        case '-removevgbysize', % advanced
             
             % Remove from the analysis observations that are the only
             % in their variance group.
@@ -846,31 +857,31 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-zstat',
+        case '-zstat', % advanced
             
             % Convert the statistic for each test to a z-score
             opts.zstat = true;
             a = a + 1;
             
-        case '-pearson',
+        case '-pearson', % basic
             
             % Compute the Pearson's correlation coefficient (R^2 if rank(C)>1).
             opts.pearson = true;
             a = a + 1;
             
-        case '-noranktest',
+        case '-noranktest', % advanced
             
             % Don't test the rank(Y) before doing MANOVA/MANCOVA.
             opts.noranktest = true;
             a = a + 1;
-        
-        case '-transposedata',
+            
+        case '-transposedata', % advanced
             
             % Transpose the data if it's 2D?
             opts.transposedata = true;
             a = a + 1;
             
-        case '-inputmv',
+        case '-inputmv', % advanced
             
             % Treat the (sole) input as multivariate, that is,
             % each column is a variable in a multivariate model,
@@ -879,59 +890,65 @@ while a <= narginx,
             opts.inputmv = true;
             a = a + 1;
             
-        case '-verbosefilenames',
+        case '-verbosefilenames', % advanced
             
             % Don't simplify filenames when otherwise it would be possible
             opts.verbosefilenames = true;
             a = a + 1;
             
-        case '-syncperms',
+        case '-syncperms', % advanced
             
             % Synchronize permutations regardless of other options?
             opts.syncperms = true;
             a = a + 1;
             
-        case {'-designperinput','-erie'},
+        case {'-designperinput','-erie'}, % advanced
             
-            % Use one design matrix for each input dataset? This enables
+            % Use one design matrix for each input dataset?
+            % This enables
             % syncP regardless.
             opts.designperinput = true;
             opts.syncperms      = true;
             a = a + 1;
             
-        case '-subjidx',
-                        
+        case '-subjidx', % advanced
+            
             % Indices of the subjects to keep in the design
             opts.subjidx = vararginx{a+1};
             a = a + 2;
             
-        case '-quiet',
+        case '-quiet', % basic
             
             % Don't print lines indicating progress
             opts.showprogress = false;
             a = a + 1;
             
-        case '-nounivariate',
+        case '-nounivariate', % advanced
             
             % Save or not univariate tests? Useful with MV/NPC/CCA
             opts.saveunivariate = false;
             a = a + 1;
             
-        case '-savedof',
+        case '-nouncorrected',  % advanced
+            
+            % Save or not uncorrected p-vals
+            opts.saveuncorrected = false;
+            a = a + 1;
+            
+        case '-savedof', % advanced
             
             % Save a file with the degrees of freedom?
             opts.savedof = true;
             a = a + 1;
-
-        case '-pmethodp',
+            
+        case '-pmethodp', % advanced
             
             % Which method to use to partition the model when defining
             % the permutations?
-            if nargin > a,
+            if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
                 methlist = {    ...
                     'Guttman',  ...
                     'Beckmann', ...
-                    'Winkler',  ...
                     'Ridgway',  ...
                     'none'};
                 methidx = strcmpi(vararginx{a+1},methlist);
@@ -947,15 +964,14 @@ while a <= narginx,
                     'Consult the documentation.']);
             end
             
-        case '-pmethodr',
+        case '-pmethodr', % advanced
             
             % Which method to use to partition the model when defining
             % doing the actual regression?
-            if nargin > a,
+            if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
                 methlist = {    ...
                     'Guttman',  ...
                     'Beckmann', ...
-                    'Winkler',  ...
                     'Ridgway',  ...
                     'none'};
                 methidx = strcmpi(vararginx{a+1},methlist);
@@ -970,6 +986,25 @@ while a <= narginx,
                     'The option "-pmethodr" requires a method to be specified.\n' ...
                     'Consult the documentation.']);
             end
+        
+        case '-draft', % this will disappear (see -approx)
+            
+            % Do a draft scheme
+            opts.approx.draft = vararginx{a+1};
+            if ischar(opts.approx.draft),
+                opts.approx.draft = str2double(opts.approx.draft);
+            end
+            opts.approx.tail = false;
+            a = a + 2;
+            
+        case '-tailapproximation', % this will disappear (see -approx)
+            
+            % Do a tail approximation based on a
+            % Generalised Pareto Distribution
+            opts.approx.tail = true;
+            opts.approx.draft = 0;
+            a = a + 1;
+            
         otherwise
             error('Unknown option: "%s"',vararginx{a});
     end
@@ -1006,51 +1041,68 @@ if opts.evperdat,
 end
 
 % This simplifies some tests later
-opts.spatial     = false;
-opts.spatial_uni = false;
-opts.spatial_npc = false;
-opts.spatial_mv  = false;
+opts.spatial.do  = false;
+opts.spatial.uni = false;
+opts.spatial.npc = false;
+opts.spatial.mv  = false;
 if any([ ...
-        opts.clustere_uni.do  ...
-        opts.clusterm_uni.do  ...
-        opts.tfce_uni.do      ...
-        opts.clustere_npc.do  ...
-        opts.clusterm_npc.do  ...
-        opts.tfce_npc.do      ...
-        opts.clustere_mv.do   ...
-        opts.clusterm_mv.do   ...
-        opts.tfce_mv.do]'),
-    opts.spatial = true;
+        opts.cluster.uni.do  ...
+        opts.cluster.npc.do  ...
+        opts.cluster.mv.do   ...
+        opts.tfce.uni.do     ...
+        opts.tfce.npc.do     ...
+        opts.tfce.mv.do]'),
+    opts.spatial.do = true;
     if any([ ...
-            opts.clustere_uni.do  ...
-            opts.clusterm_uni.do  ...
-            opts.tfce_uni.do]'),
-        opts.spatial_uni = true;
+            opts.cluster.uni.do  ...
+            opts.tfce.uni.do]'),
+        opts.spatial.uni = true;
     end
     if any([ ...
-            opts.clustere_npc.do  ...
-            opts.clusterm_npc.do  ...
-            opts.tfce_npc.do]'),
-        opts.spatial_npc = true;
+            opts.cluster.npc.do  ...
+            opts.tfce.npc.do]'),
+        opts.spatial.npc = true;
     end
     if any([ ...
-            opts.clustere_mv.do   ...
-            opts.clusterm_mv.do   ...
-            opts.tfce_mv.do]'),
-        opts.spatial_mv = true;
+            opts.cluster.mv.do   ...
+            opts.tfce.mv.do]'),
+        opts.spatial.mv = true;
     end
 end
 
-% No FWER or NPC if using draft mode
-if opts.draft,
-    if opts.corrmod || opts.corrcon,
-        error('The draft mode does not allow FWER-correction, only FDR.');
+% No FWER or NPC if using draft or noperm mode
+if opts.approx.draft,
+    if ~ opts.saveuncorrected,
+        error('The option "-nouncorrected" cannot be used with "-approx draft".');
+    end
+    if (opts.corrmod || opts.corrcon) && ~ opts.FDR,
+        error('The option "-approx draft" cannot be used with FWER-correction, only FDR.');
     end
     if opts.NPC,
-        error('The draft mode does not allow NPC.');
+        error('The option "-approx draft" cannot be used with NPC.');
     end
-    if opts.clustere_npc.do || opts.clustere_npc.do || opts.tfce_npc.do,
-        error('The draft mode does not allow spatial statistics (cluster or TFCE).'); 
+    if opts.spatial,
+        error('The option "-approx draft" cannot be used with spatial statistics.');
+    end
+end
+if opts.approx.noperm,
+    if ~ opts.saveuncorrected,
+        error('The option "-nouncorrected" cannot be used with "-approx noperm".');
+    end
+    if (opts.corrmod || opts.corrcon) && ~ opts.FDR,
+        error('The option "-approx noperm" cannot be used with FWER-correction, only FDR.');
+    end
+    if opts.NPC,
+        error('The option "-approx noperm" cannot be used with NPC.');
+    end
+    if opts.spatial.do,
+        error('The option "-approx noperm" cannot be used with spatial statistics.');
+    end
+    if opts.MV && ~ any(strcmpi(opts.mvstat,{'auto','pillai'})),
+        warning([...
+            'With multivariate tests, the option "-approx noperm" can only be used\n'...
+            'with the Pillai'' trace statistic. Changing automatically to Pillai.%s'],'');
+        opts.mvstat = 'pillai';
     end
 end
 
@@ -1062,13 +1114,12 @@ if opts.NPC && any(strcmpi(opts.npcmethod,{'Darlington-Hayes','Jiang'})),
             'No parametric combination p-value will be saved for the\n', ...
             '         Darlington-Hayes or Jiang methods%s'],'');
     end
-    if opts.spatial_npc,
+    if opts.spatial.npc,
         warning([ ...
-            'No NPC cluster-level or TFCE statistic will be produced for the\n', ...
+            'No NPC spatial statistic will be produced for the\n', ...
             '         Darlington-Hayes or Jiang methods%s'],'');
-        opts.clustere_npc.do = false;
-        opts.clusterm_npc.do = false;
-        opts.tfce_npc.do     = false;
+        opts.cluster.npc.do = false;
+        opts.tfce.npc.do     = false;
         opts.spatial_npc     = false;
     end
 else
@@ -1085,10 +1136,9 @@ if opts.MV && strcmpi(opts.mvstat,'Roy_iii'),
         warning([ ...
             'No multivariate cluster-level or TFCE statistic will be produced\n', ...
             '         for the Roy_iii statistic%s'],'');
-        opts.clustere_mv.do  = false;
-        opts.clusterm_mv.do  = false;
-        opts.tfce_mv.do      = false;
-        opts.spatial_mv      = false;
+        opts.cluster.mv.do = false;
+        opts.tfce.mv.do    = false;
+        opts.spatial.mv    = false;
     end
 elseif opts.CCA && opts.savepara,
     plm.nomvppara = true;
@@ -1169,7 +1219,7 @@ if opts.MV && ~ opts.singlevg,
     error('Currently MV is only allowed with a single VG, that is, assuming homoscedasticity.');
 end
 if opts.designperinput && opts.MV,
-    error('It''s not possible to use the option "-onedesignperinput" together with the option "-mv".');
+    error('It''s not possible to use the option "-designperinput" together with the option "-mv".');
 end
 if ~opts.saveunivariate && ~opts.MV && ~opts.NPC && ~opts.CCA,
     error('The option "-nounivariate" can only be used with "-mv", "-npc" or "-cca".');
@@ -1220,12 +1270,12 @@ end
 % was provided. If a weight was given, such as 1, use this weight, so that
 % all faces are treated as if having the same size. If nothing was
 % supplied, use the actual area of the surface.
-if opts.spatial && Ns > 0,
+if opts.spatial.do && Ns > 0,
     plm.srf = cell(Ns,1);
     for s = 1:Ns,
         
         % Load surface
-        plm.srf{s}     = palm_miscread(opts.s{s});
+        plm.srf{s} = palm_miscread(opts.s{s});
         
         % Load areas
         if isempty(opts.sa{s}),
@@ -1236,7 +1286,7 @@ if opts.spatial && Ns > 0,
         elseif exist(opts.sa{s},'file'),
             
             % A file with the average areas from native geometry
-            plm.srfarea{s}      = palm_miscread(opts.sa{s});
+            plm.srfarea{s} = palm_miscread(opts.sa{s});
             
         elseif ~ isnan(str2double(opts.sa{s})),
             
@@ -1476,11 +1526,11 @@ for i = 1:Ni,
     % If this is a DPX/curvature file, and if one of the spatial
     % statistics has been invoked, check if surfaces are available
     % and with compatible size, then compute the area (dpv or dpf)
-    if opts.spatial && (plm.Yissrf(i) || strcmpi(Ytmp.readwith,'load')),
+    if opts.spatial.do && (plm.Yissrf(i) || strcmpi(Ytmp.readwith,'load')),
         if Ns == 0,
             error([ ...
-                'To use cluster extent, cluster mass, or TFCE with vertexwise or facewise data\n'...
-                'it is necessary to provide the surface files (with the option "-s").%s'],'');
+                'To use spatial statistics with vertexwise or facewise data it is\n'...
+                'necessary to provide the surface files (with the option "-s").%s'],'');
         elseif Ns == 1,
             s = 1;
         else
@@ -1498,11 +1548,11 @@ for i = 1:Ni,
             plm.Ykindstr{i} = '_dpf';
         else
             error([...
-                    'Surface file does not match the input data:\n' ...
-                    '- Surface file %d has %d vertices and %d faces (%s)\n' ...
-                    '- Input data file %d has %d points (%s)'],...
-                    s,size(plm.srf{s}.data.vtx,1),size(plm.srf{s}.data.fac,1),opts.s{s},...
-                    i,max(size(plm.masks{i}.data)),opts.i{i});
+                'Surface file does not match the input data:\n' ...
+                '- Surface file %d has %d vertices and %d faces (%s)\n' ...
+                '- Input data file %d has %d points (%s)'],...
+                s,size(plm.srf{s}.data.vtx,1),size(plm.srf{s}.data.fac,1),opts.s{s},...
+                i,max(size(plm.masks{i}.data)),opts.i{i});
         end
         
         % Surface area, to be used by the spatial statistics
@@ -1533,7 +1583,7 @@ end
 plm.nY = numel(plm.Yset); % this is redefined below if opts.inputmv is set.
 
 % Some extra packages for Octave
-if opts.spatial && palm_isoctave && any(plm.Yisvol),
+if opts.spatial.do && palm_isoctave && any(plm.Yisvol),
     pkg load image
 end
 
@@ -1849,7 +1899,8 @@ end
 if opts.evperdat,
     evpos = cat(1,opts.evpos{:});
     if size(unique(evpos(:,1:2),'rows'),1) ~= size(evpos,1);
-        error(['Some EV per datum have been defined for the same\n'...
+        error([
+            'Some EV per datum have been defined for the same\n'...
             'position in the same design matrices.%s'],'');
     end
     desidx = unique(evpos(:,2));
@@ -1912,11 +1963,12 @@ if Nd == 0 && Ndev == 0,
     plm.Mset{1} = ones(plm.N,1);
     opts.EE  = false;
     opts.ISE = true;
-    plm.nM = numel(plm.Mset);
+    plm.nM   = numel(plm.Mset);
 end
 % Some related sanity checks
 if opts.designperinput && plm.nY ~= plm.nM,
-    error(['To use the option "-onedesignperinput", the number of design files must\n' ...
+    error([
+        'To use the option "-designperinput", the number of design files must\n' ...
         'match the number of inputs.\n%s'],'');
 end
 if opts.evperdat,
@@ -1924,7 +1976,8 @@ if opts.evperdat,
         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
         for y = loopY,
             if size(plm.Yset{y},2) ~= size(plm.Mset{m},3),
-                error(['The size of the data and the size of the EV per datum\n' ...
+                error([
+                    'The size of the data and the size of the EV per datum\n' ...
                     'don''t match.%s'],'')
             end
         end
@@ -1938,8 +1991,6 @@ plm.nC   = zeros(plm.nM,1);
 plm.nD   = zeros(plm.nM,1);
 if Nt || Nf,
     % Load FSL style t and F contrasts
-
-    % Load t and F contrast files
     tcon = cell(Nt,1);
     for t = 1:Nt,
         tmp = palm_miscread(opts.t{t});
@@ -1985,9 +2036,8 @@ if Nt || Nf,
     end
     
 elseif Ncon,
-    % Load MSET style contrasts
     
-    % Load all contrast pairs
+    % Load MSET style contrasts (all contrast pairs)
     Ccon = cell(Ncon,1);
     Dcon = cell(Ncon,1);
     for con = 1:Ncon,
@@ -2040,9 +2090,9 @@ else
             % positive and negative.
             % The statistic will be t or v, depending on the number of VGs.
             plm.Cset{m}{1} = 1;
-            plm.Cset{m}{2} = -1;
+            %plm.Cset{m}{2} = -1;
             plm.Dset{m}{1} = eye(plm.nY);
-            plm.Dset{m}{2} = eye(plm.nY);
+            %plm.Dset{m}{2} = eye(plm.nY);
         else
             % Otherwise, run an F-test over all regressors in the design matrix.
             % The statistic will be F or G, depending on the number of VGs.
@@ -2054,11 +2104,24 @@ else
     end
 end
 
+% Ranks of the contrasts
+plm.rC = cell(plm.nM,1);
+plm.rD = plm.rC;
+for m = 1:plm.nM,
+    plm.rC{m} = zeros(plm.nC(m),1);
+    plm.rD{m} = plm.rC{m};
+    for c = 1:plm.nC(m),
+        plm.rC{m}(c) = rank(plm.Cset{m}{c});
+        plm.rD{m}(c) = rank(plm.Dset{m}{c});
+    end
+end
+plm.rC0 = plm.rC; % the rC can be changed for z-scores, but not rC0.
+
 % If only the t or F tests are to be performed
 if opts.tonly,
     for m = 1:plm.nM,
         for c = plm.nC(m):-1:1,
-            if rank(plm.Cset{m}{c}) > 1,
+            if plm.rC{m}(c) > 1,
                 plm.Cset{m}(c) = [];
                 plm.Dset{m}(c) = [];
             end
@@ -2069,7 +2132,7 @@ if opts.tonly,
 elseif opts.fonly,
     for m = 1:plm.nM,
         for c = plm.nC(m):-1:1,
-            if rank(plm.Cset{m}{c}) <= 1,
+            if plm.rC{m}(c) == 1,
                 plm.Cset{m}(c) = [];
                 plm.Dset{m}(c) = [];
             end
@@ -2097,7 +2160,7 @@ for m = 1:plm.nM,
 end
 if opts.MV
     if any(plm.nC ~= plm.nD),
-        error('The number of contrasts on the L and R sides of the GLM must be the same');
+        error('The number of C and D contrasts must be the same');
     end
     for m = 1:plm.nM,
         for d = 1:plm.nD(m),
@@ -2109,7 +2172,7 @@ if opts.MV
 end
 for m = 1:plm.nM,
     for c = 1:plm.nC(m),
-        if opts.concordant && rank(plm.Cset{m}{c}) > 1,
+        if opts.concordant && plm.rC{m}(c) > 1,
             error(['Cannot use the "-concordant" option with F-tests (inadmissible).\n'...
                 'Use "-tonly" to run just the t-tests.%s'],'');
         end
@@ -2119,12 +2182,12 @@ end
 % Check if the contrasts have all the same rank for correction over
 % contrasts. If not, convert to zstat.
 if opts.corrcon,
-    rC1 = rank(plm.Cset{1}{1});
-    rD1 = rank(plm.Dset{1}{1});
+    rC1 = plm.rC{1}(1);
+    rD1 = plm.rD{1}(1);
     for m = 1:plm.nM,
         brflag = false;
         for c = 1:plm.nC(m),
-            if rC1 ~= rank(plm.Cset{m}{c}) || rD1 ~= rank(plm.Dset{m}{c});
+            if rC1 ~= plm.rC{m}(c) || rD1 ~= plm.rD{m}(c);
                 opts.zstat = true;
                 brflag = true;
                 break;
@@ -2360,5 +2423,33 @@ if opts.vgdemean,
             plm.Yset{y}(vidx,:) = bsxfun(@minus,...
                 plm.Yset{y}(vidx,:),mean(plm.Yset{y}(vidx,:),1));
         end
+    end
+end
+
+% Number of tests to be selected for the low rank approximation
+if opts.approx.lowrank,
+    if opts.nP0 == 0,
+        error('With lowrank approximation you must indicate a larger-than-zero number of permutations.');
+    end
+    if opts.nP0 < 3*plm.N,
+        error([ ...
+            'Too few permutations selected to use with lowrank approximation.\n' ...
+            'Use at least 3*N = %d to note a speed difference and have reasonably accurate results.\n'...
+            'Otherwise, don''t bother using lowrank approximation.\n'],3*plm.N);
+    end
+    if opts.spatial,
+        warning([ ...
+            'There isn''t much benefit in using lowrank approximation with spatial statistics\n' ...
+            '         like TFCE and cluster extent and/or mass. These cannot be accelerated with this\n' ...
+            '         method, and the overall gain will be minimal. Consider other approximation methods,\n' ...
+            '         or run the full permutation test, or just drop spatial statistics.%s'],'');
+    end
+    plm.nsel = zeros(plm.nY,1);
+    if opts.approx.lowrank_val <= 1,
+        for y = 1:plm.nY,
+            plm.nsel(y) = max(1,ceil(opts.approx.lowrank_val*plm.Ysiz(y)));
+        end
+    else
+        plm.nsel(1:end) = opts.approx.lowrank_val;
     end
 end

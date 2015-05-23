@@ -6,7 +6,7 @@ function [Bset,nB,mtr] = palm_shuffree(varargin)
 % to be constructed.
 % 
 % Usage
-% [Bset,nB] = palm_freeshuf(M,nP0,CMC,EE,ISE,idxout)
+% [Bset,nB] = palm_shuffree(M,nP0,CMC,EE,ISE,idxout)
 % 
 % Inputs:
 % - M        : Design matrix.

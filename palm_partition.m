@@ -25,15 +25,15 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 %
 % References:
 % * Guttman I. Linear Models: An Introduction. Wiley,
-%   New York, 1982
+%   New York, 1982.
 % * Smith SM, Jenkinson M, Beckmann C, Miller K,
 %   Woolrich M. Meaningful design and contrast estimability
 %   in FMRI. Neuroimage 2007;34(1):127-36.
 % * Ridgway GR. Statistical analysis for longitudinal MR
 %   imaging of dementia. PhD thesis. 2009.
-% * Winkler AM, Ridgway GR, Webster MG, Smith SM,
-%   Nichols TE. Permutation inference for the general
-%   linear model. Neuroimage 2014 (in press).
+% * Winkler AM, Ridgway GR, Webster MG, Smith SM, Nichols TE.
+%   Permutation inference for the general linear model.
+%   Neuroimage. 2014 May 15;92:381-97.
 % _____________________________________
 % A. Winkler, G. Ridgway & T. Nichols
 % FMRIB / University of Oxford

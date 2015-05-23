@@ -47,13 +47,10 @@ fprintf('	by its own -i. All input files must contain the same number of\n');
 fprintf('	observations (e.g., the same number of subjects). Except for NPC\n');
 fprintf('	and MV, mixing is allowed (e.g., voxelwise, vertexwise and\n');
 fprintf('	non-imaging data can be all loaded at once, and later will be all\n');
-fprintf('	corrected across).\n\n');
+fprintf('	corrected across) if the option "-corrmod" is used.\n\n');
 
 fprintf('-m <file> : Mask(s). Either one for all inputs, or one per input,\n');
 fprintf('	supplied in the same order as the respective -i appear.\n\n');
-
-fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values are\n');
-fprintf('	then used to select the voxels/vertices/faces.\n\n');
 
 fprintf('-s <filesurf> [filearea] : The first argument is the surface file\n');
 fprintf('	itself. The second is an optional area-per-vertex or area-per-\n');
@@ -129,23 +126,22 @@ fprintf('	the last can also be used to calculate parametric p-values and\n');
 fprintf('	spatial statistics.\n\n');
 
 fprintf('-pearson : Instead of t, F, v or G, compute either the Pearson"s\n');
-fprintf('	correlation coefficient, r (if the constrast has rank=1), or the\n');
-fprintf('	coefficient of determination R2 (if the constrast has rank>1).\n');
+fprintf('	correlation coefficient, r (if the constrast has rank = 1), or the\n');
+fprintf('	coefficient of determination R^2 (if the constrast has rank > 1).\n');
 fprintf('	For the contrasts in which some EVs are zeroed out, this option\n');
-fprintf('	computes the partial correlation (or partial R2).\n\n');
+fprintf('	computes the partial correlation (or partial R^2).\n\n');
 
 fprintf('-T : Enable TFCE inference for univariate (partial) tests, as well as\n');
 fprintf('	for NPC and/or MV if these options have been enabled.\n\n');
 
-fprintf('-c <real> : Enable cluster extent for t contrasts for univariate\n');
-fprintf('	(partial) tests, with the supplied cluster-forming threshold\n');
-fprintf('	(supplied as the equivalent z-score), as well as for NPC and/or\n');
-fprintf('	MV if these options have been enabled.\n\n');
+fprintf('-C <real> : Enable cluster inference for univariate (partial) tests,\n');
+fprintf('	with the supplied cluster-forming threshold (supplied as the\n');
+fprintf('	equivalent z-score), as well as for NPC and/or MV if these options\n');
+fprintf('	have been enabled. Use preferably values >3.\n\n');
 
-fprintf('-C <real> : Enable cluster mass for t contrasts for univariate\n');
-fprintf('	(partial) tests, with the supplied cluster-forming threshold\n');
-fprintf('	(supplied as the equivalent z-score), as well as for NPC and/or\n');
-fprintf('	MV if these options have been enabled.\n\n');
+fprintf('-Cstat <name> : Choose which cluster statistic should be used. Accepted\n');
+fprintf('	statistics are "extent" and "mass" (see the source code for experimental\n');
+fprintf('	possibilities).\n\n');
 
 fprintf('-tfce1D : Set TFCE parameters for 1D data (synchronised timeseries) i.e.,\n');
 fprintf('	H = 2, E = 2, C = 6. Use this option together with -T.\n\n');
@@ -169,9 +165,6 @@ fprintf('-save1-p : Save (1-p) instead of the actual p-values.\n\n');
 fprintf('-logp : Save the output p-values as -log(p) (or -log(1-p) if the option\n');
 fprintf('	-save1-p is used).\n\n');
 
-fprintf('-draft : Run in the "draft mode". No NPC, nor FWER correction are\n');
-fprintf('	possible. MV and FDR-adjustment are possible.\n\n');
-
 fprintf('-demean : Mean center the data, as well as all columns of the design\n');
 fprintf('	matrix. If the design has an intercept, the intercept is removed.\n\n');
 
@@ -180,6 +173,9 @@ fprintf('	one-tailed. If NPC is used, it naturally becomes two-tailed.\n\n');
 
 fprintf('-concordant : For the NPC, favour alternative hypotheses with concordant\n');
 fprintf('	signs. Cannot be used with "-twotail".\n\n');
+
+fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values are\n');
+fprintf('	then used to select the voxels/vertices/faces.\n\n');
 
 fprintf('-quiet : Don''t shown progress as the shufflings are performed.\n\n');
 
@@ -191,6 +187,9 @@ function advanced_help
 % Show advanced options.
 
 fprintf('\nThe advanced or less commonly used options are:\n\n');
+
+fprintf('-approx <method> : Run in the "draft mode". No NPC, nor FWER correction are\n');
+fprintf('	possible. MV and FDR-adjustment are possible.\n\n');
 
 fprintf('-con <file1> <file2> : Contrast file(s) in .mset format. For hypotheses\n');
 fprintf('	of the form H0: C''*Psi*D, file1 contains a set of C contrasts, and\n');
@@ -209,24 +208,14 @@ fprintf('-conskipcount <integer> : Normally the contrasts are numbered from 1, b
 fprintf('	this option allows staring the counter from the specified number.\n');
 fprintf('	This option doesn"t affect which contrasts are performed.\n\n');
 
-fprintf('-cuni <real> : Enable cluster extent for t contrasts for univariate\n');
+fprintf('-Cuni <real> : Enable cluster statistics for t contrasts for univariate\n');
 fprintf('	(partial) tests, with the supplied cluster-forming threshold (as\n');
 fprintf('	a z-score).\n\n');
 
-fprintf('-cnpc <real> : Enable cluster extent for t contrasts for NPC, with the\n');
+fprintf('-Cnpc <real> : Enable cluster statistics for t contrasts for NPC, with the\n');
 fprintf('	supplied cluster-forming threshold (as a z-score).\n\n');
 
-fprintf('-cmv <real> : Enable cluster extent for t contrasts for MV, with the\n');
-fprintf('	supplied cluster-forming threshold (as a z-score).\n\n');
-
-fprintf('-Cuni <real> : Enable cluster mass for t contrasts for univariate\n');
-fprintf('	(partial) tests, with the supplied cluster-forming threshold (as\n');
-fprintf('	a z-score).\n\n');
-
-fprintf('-Cnpc <real> : Enable cluster mass for t contrasts for NPC, with the\n');
-fprintf('	supplied cluster-forming threshold (as a z-score).\n\n');
-
-fprintf('-Cmv <real> : Enable cluster mass for t contrasts for MV, with the\n');
+fprintf('-Cmv <real> : Enable cluster statistics for t contrasts for MV, with the\n');
 fprintf('	supplied cluster-forming threshold (as a z-score).\n\n');
 
 fprintf('-designperinput : Use one design file for each input modality.\n\n');
@@ -244,6 +233,8 @@ fprintf('	methods available, which can be specified as "-inormal <method>" or\n'
 fprintf('	"-inormal quanti <method>". The methods are "Waerden" (default),\n');
 fprintf('	"Blom", "Tukey" and "Bliss".\n\n');
 
+fprintf('-probit : Apply a probit transformation to the data.\n\n');
+
 fprintf('-inputmv : Treat the (sole) input as multivariate, that is, each column is\n');
 fprintf('	a variable in a multivariate model, as opposed to independent univariate\n');
 fprintf('	tests. Useful with non-imaging data. When used, the option "-nounivariate"\n');
@@ -256,6 +247,8 @@ fprintf('-noranktest : For MV, don''t check the rank of the data before trying t
 fprintf('	compute the multivariate statistics.\n\n');
 
 fprintf('-nounivariate : Don''t save univariate resuts.\n\n')
+
+fprintf('-nouncorrected : Don''t save uncorrected resuts.\n\n')
 
 fprintf('-pmethodp : Partition method used when defining the set of permutations.\n');
 fprintf('	Cab be "Guttman", "Beckmann", "Ridgway" or "None".\n');

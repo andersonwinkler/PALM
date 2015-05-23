@@ -25,5 +25,6 @@ function I = palm_perm2idx(P)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+% This function is small, but used very often.
 I = 1:size(P,1);
 I = P*I';

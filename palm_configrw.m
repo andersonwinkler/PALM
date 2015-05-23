@@ -45,20 +45,26 @@ if nargin == 1,
     
 elseif nargin == 2,
     
-    % Write files
-    cfg = varargin{1};
-    plmfile = varargin{2};
-    fid = fopen(plmfile,'w');
-    fprintf(fid,'# Configuration file for PALM.\n');
-    fprintf(fid,'# %s\n',datestr(now));
+    % Version & environment
+    ver = fliplr(strtok(fliplr(palm_version),' '));
+    ver = strtok(ver,')');
     if palm_isoctave,
         envrun = 'Octave';
     else
         envrun = 'MATLAB';
     end
-    fprintf('Running PALM using %s with the following options:',envrun);
+    
+    % Write files
+    cfg = varargin{1};
+    plmfile = varargin{2};
+    fid = fopen(plmfile,'w');
+    fprintf(fid,'# Configuration file for PALM.\n');
+    fprintf(fid,'# Version %s, running in %s.\n',ver,envrun);
+    fprintf(fid,'# %s\n',datestr(now));
+    fprintf('Running PALM %s using %s with the following options:',ver,envrun);
     for c = 1:numel(cfg),
-        if strcmp(cfg{c}(1),'-'),
+        s2d = str2double(cfg{c});
+        if strcmp(cfg{c}(1),'-') && (isnan(s2d) || ~isreal(s2d)),
             fprintf(    '\n%s',cfg{c});
             fprintf(fid,'\n%s',cfg{c});
         else

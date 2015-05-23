@@ -50,7 +50,7 @@ switch lower(X.readwith),
         if isempty(fext),
             X.filename = horzcat(X.filename,'.csv');
         end
-        csvwrite(X.filename,X.data);
+        dlmwrite(X.filename,X.data,'delimiter',',','precision','%0.4f');
         
     case 'vestread',
         
