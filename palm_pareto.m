@@ -68,7 +68,7 @@ Pidx = P < Pthr; % don't replace this "<" for "<=".
 % will be approximated via the GPD tail.
 if any(Pidx),
     
-    % Numbe of permutations & distribution CDF
+    % Number of permutations & distribution CDF
     nP   = size(Gvals,1);
     if rev,
         [~,Gvals,Gcdf] = palm_csort(Gvals,'descend',true);
@@ -80,19 +80,23 @@ if any(Pidx),
     % Just for the stats that are significant
     G = G(Pidx);
     
-    % Keep adjusting until the fit is good. hange the step to 10 to get the
+    % Keep adjusting until the fit is good. Change the step to 10 to get the
     % same result as Knijnenburg et al.
-    Q  = (751:1:999)/1000;
+    Q  = (751:10:999)/1000;
     nQ = numel(Q);
     q  = 1;
     Ptail = NaN;
-    while any(isnan(Ptail)) && q <= nQ,
+    while isnan(Ptail) && q < nQ,
 
         % Get the tail
         qidx  = Gcdf >= Q(q);
         Gtail = Gvals(qidx);
         qi    = find(qidx,1);
-        thr   = mean(Gvals(qi-1:qi));
+        if qi == 1,
+            thr = Gvals(qi) - mean(Gvals(qi:qi+1));
+        else
+            thr = mean(Gvals(qi-1:qi));
+        end
         if rev,
             z = thr - Gtail;
             Gdiff = thr - G;
@@ -100,13 +104,13 @@ if any(Pidx),
             z = Gtail - thr;
             Gdiff = G - thr;
         end
-        cte   = numel(Gtail)/nP;
+        cte = numel(Gtail)/nP;
         
         % Estimate the distribution parameters
-        x     = mean(z);
-        s2    = var(z);
-        a     = x*(x^2/s2 + 1)/2;
-        k     =   (x^2/s2 - 1)/2;
+        x   = mean(z);
+        s2  = var(z);
+        a   = x*(x^2/s2 + 1)/2;
+        k   =   (x^2/s2 - 1)/2;
         
         % Check if the fitness is good
         A2pval = andersondarling(gpdpvals(z,a,k),k);
@@ -122,7 +126,9 @@ if any(Pidx),
     
     % Replace the permutation p-value for the approximated
     % p-value
-    P(Pidx) = Ptail;
+    if ~ isnan(Ptail),
+        P(Pidx) = Ptail;
+    end
 end
 
 % ==============================================================

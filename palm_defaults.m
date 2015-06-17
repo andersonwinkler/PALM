@@ -96,14 +96,14 @@ opts.inputmv             = false;              % treat each column of the sole i
 opts.reversemasks        = false;              % Reverse the masks?
 
 % New approximation options
-opts.approx.draft        = 0;                  % Run a draft scheme
-opts.approx.draft_nexced = 1;                  % Number of exceedances for the draft mode
-opts.approx.tail         = false;              % Use a Pareto tail approximation to the FWER-adjusted p-values?
-opts.approx.tail_thr     = 0.10;               % P-values below this will be approximated using tail approximation
-opts.approx.noperm       = false;              % Compute approximate p-vals without doing any permutation
-opts.approx.gamma        = false;              % Do a gamma-fit after just a few permutations
-opts.approx.lowrank      = false;              % Try a low rank approximation
-opts.approx.lowrank_val  = .001;               % Fraction of tests to use to reconstruct the others
+opts.approx.negbin        = 0;                 % Run a negbin scheme
+opts.approx.negbin_nexced = 2;                 % Number of exceedances for the negbin mode
+opts.approx.tail          = false;             % Use a Pareto tail approximation to the FWER-adjusted p-values?
+opts.approx.tail_thr      = 0.10;              % P-values below this will be approximated using tail approximation
+opts.approx.noperm        = false;             % Compute approximate p-vals without doing any permutation
+opts.approx.gamma         = false;             % Do a gamma-fit after just a few permutations
+opts.approx.lowrank       = false;             % Try a low rank approximation
+opts.approx.lowrank_val   = .001;              % Fraction of tests to use to reconstruct the others
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within-block is also default).

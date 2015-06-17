@@ -1,15 +1,23 @@
-function pvals = palm_gamma(G,mu,sigsq,gamm1,rev)
+function pvals = palm_gamma(G,mu,sigsq,gamm1,rev,prepl)
 % Return the p-values for a Gamma distribution, parameterised by
 % its first three moments.
 %
 % pvals = palm_gamma(G,mu,s2,gamm1,rev)
 % 
+% Inputs:
 % - G     : Statistics for which p-values are to be computed.
 % - mu    : Distribution mean.
 % - sigsq : Distribution standard deviation.
 % - gamm1 : Distribution skewness.
 % - rev   : Use if lower values of the statistic are evidence in
 %           favour of the alternative.
+% - prepl : Replacement for what otherwise would be zero p-values
+%           in case of poor fits (e.g., statistic falls into the
+%           part of the distribution that has pdf=0. In these cases
+%           the p-value can be 1 or 1/(#perm) depending on which
+%           tail and the sign of the skewness.
+%
+% Outputs:
 % - pvals : p-values.
 % 
 % References:
@@ -56,29 +64,46 @@ if gamm1 == 0,
     
 else
     
-    % For the negative skewness, flip the sign of G and mu. It's still
-    % possible that G will be negative even with the skewness flipped to
-    % the positive side. These cases are treated later.
-    sg    = sign(gamm1);
-    G     = sg.*G;
-    mu    = sg.*mu;
-    gamm1 = abs(gamm1);
-    
     % Standardise G, so that all becomes a function of the skewness.
-    G     = (G - mu)./sigsq.^.5;
+    G    = (G - mu)./sigsq.^.5;
     
     % Gamma distribution parameters (Minas & Montana, 2014).
-    kpar  = 4/gamm1.^2;
-    tpar  = gamm1/2;
-    cpar  = -2/gamm1;
+    kpar = 4/gamm1.^2;
+    tpar = gamm1/2;
+    cpar = -2/gamm1;
      
     % Actual p-value. If there are negatives here, the probability can
-    % have an imaginary part, and the real is above unity. Taking the
-    % min deals with the issue.
+    % have an imaginary part, which is dealt with later.
     if rev,
-        tail = 'lower';
+        if gamm1 > 0,
+            tail = 'lower';
+        else
+            tail = 'upper';
+        end
     else
-        tail = 'upper';
+        if gamm1 > 0,
+            tail = 'upper';
+        else
+            tail = 'lower';
+        end
     end
-    pvals = min(1,gammainc((G-cpar)./tpar,kpar,tail));
+    pvals = gammainc((G-cpar)./tpar,kpar,tail);
+    
+    % Deal with imaginary parts.
+    if ~ isreal(pvals),
+        iidx = imag(pvals) ~= 0;
+        if rev,
+            if gamm1 > 0,
+                pvals(iidx) = prepl;
+            else
+                pvals(iidx) = 1;
+            end
+        else
+            if gamm1 > 0,
+                pvals(iidx) = 1;
+            else
+                pvals(iidx) = prepl;
+            end
+        end
+    end
 end

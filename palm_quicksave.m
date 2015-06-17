@@ -51,17 +51,35 @@ function P = palm_quicksave(X,flg,opts,plm,y,m,c,filename)
 
 % Save only if X isn't empty
 if ~ isempty(X),
-    
+        
     % Just some verbosity, if asked
     if opts.showprogress,
         fprintf('\t Saving file: %s\n',filename);
     end
     
     % Modify X accodring to the flag
-    if flg == 1 && opts.savecdf,
+    if flg == 1 
+        
+        % Deal with complex values in the gamma approximation
+        if opts.approx.gamma,
+            if ~ isreal(X),
+                iidx  = imag(X(:)) ~= 0;
+                nimag = sum(iidx);
+                warning(sprintf([...
+                    'Complex values found with the gamma approximation in %d out of %d tests. \n' ...
+                    '         These will be saved as non-significant (p-value = 1).\n' ...
+                    '         To solve this issue, increase the number of permutations.\n'...
+                    '         Affected file: %s'],...
+                    nimag,numel(iidx),filename));
+                X(iidx) = 1;
+                X(iidx) = real(X(iidx));
+            end
+        end
         
         % Convert P to 1-P
-        X = 1 - X;
+        if opts.savecdf,
+            X = 1 - X;
+        end
         
     elseif flg == 2,
         

@@ -177,7 +177,7 @@ fprintf('	signs. Cannot be used with "-twotail".\n\n');
 fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values are\n');
 fprintf('	then used to select the voxels/vertices/faces.\n\n');
 
-fprintf('-quiet : Don''t shown progress as the shufflings are performed.\n\n');
+fprintf('-quiet : Don''t show progress as the shufflings are performed.\n\n');
 
 fprintf('-advanced : Show advanced options.\n\n');
 
@@ -188,12 +188,14 @@ function advanced_help
 
 fprintf('\nThe advanced or less commonly used options are:\n\n');
 
-fprintf('-approx <method> : Run in the "draft mode". No NPC, nor FWER correction are\n');
-fprintf('	possible. MV and FDR-adjustment are possible.\n\n');
+fprintf('-approx <method> : Run one of various approximation methods available.\n\n');
+fprintf('	This is very experimental. See the source code for details.\n\n');
 
 fprintf('-con <file1> <file2> : Contrast file(s) in .mset format. For hypotheses\n');
 fprintf('	of the form H0: C''*Psi*D, file1 contains a set of C contrasts, and\n');
 fprintf('	file2 (optional) contains a set of D contrasts.\n\n')
+
+fprintf('-tonly : Run only the t-contrasts, not the F-contrasts.\n\n');
 
 fprintf('-cmcp : Ignore the possibility of repeated permutations. This option\n');
 fprintf('	will be ignored if the number of shufflings chosen is larger than the\n');
@@ -295,8 +297,6 @@ fprintf('-syncperms : If possible, use synchronized permutations even they would
 fprintf('	be used by default.\n\n');
 
 fprintf('-subjidx <file> : Indices of input data to keep in the design.\n\n');
-
-fprintf('-tailapproximation : Compute a tail approximation for P-values <= 0.10.\n\n');
 
 fprintf('-Tuni : Enable TFCE inference for univariate (partial) tests.\n\n');
 

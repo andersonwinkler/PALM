@@ -681,7 +681,8 @@ while a <= narginx,
                         a = a + 3;
                     end
                 else
-                    opts.MV = true;
+                    opts.MV  = true;
+                    opts.CCA = false;
                     a = a + 2;
                 end
                 opts.mvstat = methlist{methidx};
@@ -698,13 +699,13 @@ while a <= narginx,
             % Choose a method to do the approximation of p-values
             if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
                 methlist = {   ...
-                    'draft',   ...
+                    'negbin',   ...
                     'tail',    ...
                     'noperm',  ...
                     'gamma',   ...
                     'lowrank'};
                 methidx = strcmpi(vararginx{a+1},methlist);
-                if ~any(methidx);
+                if ~ any(methidx);
                     error('Approximation method "%s" unknown.',vararginx{a+1});
                 end
                 for m = 1:numel(methlist),
@@ -712,14 +713,18 @@ while a <= narginx,
                 end
                 
                 % Extra parameters
-                if opts.approx.draft,
+                if opts.approx.negbin,
                     
                     % Number of exceedances:
                     if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
-                        opts.approx.draft = str2double(vararginx{a+2});
+                        if ischar(vararginx{a+2}),
+                            opts.approx.negbin = str2double(vararginx{a+2});
+                        else
+                            opts.approx.negbin = vararginx{a+2};
+                        end
                         a = a + 3;
                     else
-                        opts.approx.draft = opts.approx.draft_nexced;
+                        opts.approx.negbin = opts.approx.negbin_nexced;
                         a = a + 2;
                     end
                     
@@ -727,7 +732,11 @@ while a <= narginx,
                     
                     % Smaller p-vals than this are refined.
                     if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
-                        opts.approx.tail_thr = str2double(vararginx{a+2});
+                        if ischar(vararginx{a+2}),
+                            opts.approx.tail_thr = str2double(vararginx{a+2});
+                        else
+                            opts.approx.tail_thr = vararginx{a+2};
+                        end
                         a = a + 3;
                     else
                         a = a + 2;
@@ -738,7 +747,11 @@ while a <= narginx,
                     % Fraction of voxels to be sampled (if < 1) or actual
                     % number of voxels to be sampled.
                     if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
-                        opts.approx.lowrank_val = str2double(vararginx{a+2});
+                        if ischar(vararginx{a+2}),
+                            opts.approx.lowrank_val = str2double(vararginx{a+2});
+                        else
+                            opts.approx.lowrank_val = vararginx{a+2};
+                        end
                         a = a + 3;
                     else
                         a = a + 2;
@@ -986,24 +999,6 @@ while a <= narginx,
                     'The option "-pmethodr" requires a method to be specified.\n' ...
                     'Consult the documentation.']);
             end
-        
-        case '-draft', % this will disappear (see -approx)
-            
-            % Do a draft scheme
-            opts.approx.draft = vararginx{a+1};
-            if ischar(opts.approx.draft),
-                opts.approx.draft = str2double(opts.approx.draft);
-            end
-            opts.approx.tail = false;
-            a = a + 2;
-            
-        case '-tailapproximation', % this will disappear (see -approx)
-            
-            % Do a tail approximation based on a
-            % Generalised Pareto Distribution
-            opts.approx.tail = true;
-            opts.approx.draft = 0;
-            a = a + 1;
             
         otherwise
             error('Unknown option: "%s"',vararginx{a});
@@ -1040,6 +1035,12 @@ if opts.evperdat,
     end
 end
 
+% No spatial statistics if no univariate results will be saved anyway
+if ~ opts.saveunivariate,
+    opts.cluster.uni.do = false;
+    opts.tfce.uni.do    = false;
+end
+
 % This simplifies some tests later
 opts.spatial.do  = false;
 opts.spatial.uni = false;
@@ -1070,19 +1071,36 @@ if any([ ...
     end
 end
 
-% No FWER or NPC if using draft or noperm mode
-if opts.approx.draft,
+% Sanity checks for the approximation modes.
+if sum(logical([ ...
+        opts.approx.negbin, ...
+        opts.approx.tail,   ...
+        opts.approx.noperm, ...
+        opts.approx.gamma,  ...
+        opts.approx.lowrank])) > 1,
+    error('Only one approximation method can be used for a given run.');
+end
+if opts.approx.negbin,
+    if opts.approx.negbin < 2,
+        error('The parameter r given to "-approx negbin <r>" must be >= 2.')
+    end
+    if opts.nP0 < 3,
+        error('The option "-approx negbin <r>" needs at least 3 permutations.')
+    end
     if ~ opts.saveuncorrected,
-        error('The option "-nouncorrected" cannot be used with "-approx draft".');
+        error('The option "-nouncorrected" cannot be used with "-approx negbin".');
     end
     if (opts.corrmod || opts.corrcon) && ~ opts.FDR,
-        error('The option "-approx draft" cannot be used with FWER-correction, only FDR.');
+        error('The option "-approx negbin" cannot be used with FWER-correction, only FDR.');
     end
     if opts.NPC,
-        error('The option "-approx draft" cannot be used with NPC.');
+        error('The option "-approx negbin" cannot be used with NPC.');
     end
-    if opts.spatial,
-        error('The option "-approx draft" cannot be used with spatial statistics.');
+    if opts.spatial.do,
+        error('The option "-approx negbin" cannot be used with spatial statistics.');
+    end
+    if opts.saveperms,
+        error('The option "-saveperms" cannot be used together with "-approx negbin".');
     end
 end
 if opts.approx.noperm,
@@ -1098,11 +1116,21 @@ if opts.approx.noperm,
     if opts.spatial.do,
         error('The option "-approx noperm" cannot be used with spatial statistics.');
     end
-    if opts.MV && ~ any(strcmpi(opts.mvstat,{'auto','pillai'})),
-        warning([...
-            'With multivariate tests, the option "-approx noperm" can only be used\n'...
-            'with the Pillai'' trace statistic. Changing automatically to Pillai.%s'],'');
+    if opts.MV,
+        if ~ any(strcmpi(opts.mvstat,{'auto','pillai'})),
+            warning([...
+                'With multivariate tests, the option "-approx noperm" can only be used\n'...
+                'with the Pillai'' trace statistic. Changing automatically to Pillai.%s'],'');
+        end
         opts.mvstat = 'pillai';
+    end
+end
+if opts.approx.lowrank,
+    if opts.NPC,
+        error('The option "-approx lowrank" cannot be used with NPC.');
+    end
+    if opts.spatial.do,
+        error('The option "-approx lowrank" cannot be used with spatial statistics.');
     end
 end
 
@@ -1119,8 +1147,8 @@ if opts.NPC && any(strcmpi(opts.npcmethod,{'Darlington-Hayes','Jiang'})),
             'No NPC spatial statistic will be produced for the\n', ...
             '         Darlington-Hayes or Jiang methods%s'],'');
         opts.cluster.npc.do = false;
-        opts.tfce.npc.do     = false;
-        opts.spatial_npc     = false;
+        opts.tfce.npc.do    = false;
+        opts.spatial.npc    = false;
     end
 else
     plm.nonpcppara = false;
@@ -1130,9 +1158,9 @@ end
 if opts.MV && strcmpi(opts.mvstat,'Roy_iii'),
     plm.nomvppara = true;
     if opts.savepara,
-        warning('No parametric p-value will be saved for the Roy_iii method.%s',''); %#ok
+        warning('No parametric p-value will be saved for the Roy_iii method.%s','');
     end
-    if opts.spatial_mv,
+    if opts.spatial.mv,
         warning([ ...
             'No multivariate cluster-level or TFCE statistic will be produced\n', ...
             '         for the Roy_iii statistic%s'],'');
@@ -1380,7 +1408,7 @@ for i = 1:Ni,
     end
     
     % Now deal with the actual data
-    if ndims(Ytmp.data) == 2,
+    if ndims(Ytmp.data) == 2, %#ok
         
         % Transpose if that was chosen.
         if opts.transposedata,
@@ -1623,7 +1651,7 @@ if opts.evperdat,
         end
         
         % Now deal with the actual data
-        if ndims(EVtmp.data) == 2,
+        if ndims(EVtmp.data) == 2, %#ok
             
             % Transpose if that was chosen.
             if opts.transposedata,
@@ -1844,7 +1872,7 @@ end
 
 % If MV was selected, make sure that Y is full rank.
 if opts.MV && ~ opts.noranktest,
-    fprintf('Testing rank of the data (for MV tests). To skip, use -noranktest.\n')
+    fprintf('Testing rank of the data for the MV tests. To skip, use -noranktest.\n')
     Y = cat(3,plm.Yset{:});
     Y = permute(Y,[1 3 2]);
     failed = false(1,size(Y,3));
@@ -2090,9 +2118,9 @@ else
             % positive and negative.
             % The statistic will be t or v, depending on the number of VGs.
             plm.Cset{m}{1} = 1;
-            %plm.Cset{m}{2} = -1;
+            plm.Cset{m}{2} = -1;
             plm.Dset{m}{1} = eye(plm.nY);
-            %plm.Dset{m}{2} = eye(plm.nY);
+            plm.Dset{m}{2} = eye(plm.nY);
         else
             % Otherwise, run an F-test over all regressors in the design matrix.
             % The statistic will be F or G, depending on the number of VGs.
@@ -2437,7 +2465,7 @@ if opts.approx.lowrank,
             'Use at least 3*N = %d to note a speed difference and have reasonably accurate results.\n'...
             'Otherwise, don''t bother using lowrank approximation.\n'],3*plm.N);
     end
-    if opts.spatial,
+    if opts.spatial.do,
         warning([ ...
             'There isn''t much benefit in using lowrank approximation with spatial statistics\n' ...
             '         like TFCE and cluster extent and/or mass. These cannot be accelerated with this\n' ...
