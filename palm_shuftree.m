@@ -220,7 +220,7 @@ nB = numel(Bset);
 
 % In the draft mode, the permutations can't be in lexicographic
 % order, but entirely shuffled.
-if nargin >= 2 && opts.draft,
+if nargin >= 2 && opts.approx.negbin,
     Bset2 = cell(size(Bset));
     [~,idx] = sort(rand(nB,1));
     for p = 2:nB,

@@ -1943,6 +1943,9 @@ if Nd > 0,
     for m = 1:Nd,
         Mtmp = palm_miscread(opts.d{m});
         plm.Mset{m} = Mtmp.data;
+        if ~isempty(plm.subjidx) && size(plm.Mset{m},1) ~= plm.N,
+            plm.Mset{m} = plm.Mset{m}(plm.subjidx,:);
+        end
         if size(plm.Mset{m},1) ~= plm.N,
             error([
                 'The number of rows in the design matrix does\n' ...
