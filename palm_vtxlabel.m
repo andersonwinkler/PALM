@@ -4,7 +4,7 @@ function dpvl = palm_vtxlabel(dpv,fac)
 % Usage:
 % dpvl = palm_vtxlabel(dpv,fac)
 % 
-% - dpv  : Data per vertex to be labelled. The non-zero
+% - dpv  : Binary data per vertex to be labelled. The non-zero
 %          regions receive an unique identifier.
 % - fac  : Face indices (see palm_srfread for details).
 % - dpvl : Labelled data per vertex.
@@ -82,7 +82,7 @@ for f = find(faci)',
             dpvl(dpvl == flab(1)) = flab(3);
         end
         
-        % Finally, mark all other vertices of this face witht the
+        % Finally, mark all other vertices of this face with the
         % same lavel as the 3rd one
         dpvl(fac(f,:)) = flab(3);
     end

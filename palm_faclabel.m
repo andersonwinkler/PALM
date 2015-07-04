@@ -4,7 +4,7 @@ function dpfl = palm_faclabel(dpf,fac)
 % Usage:
 % dpfl = palm_faclabel(dpf,fac)
 % 
-% - dpf  : Data per face to be labelled. The non-zero
+% - dpf  : Binary data per face to be labelled. The non-zero
 %          regions receive an unique identifier.
 % - fac  : Face indices (see palm_srfread for details).
 % - dpfl : Labelled data per vertex.

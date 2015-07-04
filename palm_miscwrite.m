@@ -161,6 +161,6 @@ switch lower(X.readwith),
         for f = 1:numel(F),
             gii.private.(F{f}) = X.extra.(F{f});
         end
-        gii.cdata = X.data;
+        gii.cdata = X.data';
         save(gii,X.filename,gii.private.data{1}.attributes.Encoding);
 end

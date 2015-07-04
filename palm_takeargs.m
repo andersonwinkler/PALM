@@ -1299,7 +1299,9 @@ end
 % all faces are treated as if having the same size. If nothing was
 % supplied, use the actual area of the surface.
 if opts.spatial.do && Ns > 0,
-    plm.srf = cell(Ns,1);
+    plm.srf     = cell(Ns,1);
+    plm.srfarea = cell(Ns,1);
+    plm.srfadj  = cell(Ns,1);
     for s = 1:Ns,
         
         % Load surface
@@ -1553,7 +1555,8 @@ for i = 1:Ni,
     
     % If this is a DPX/curvature file, and if one of the spatial
     % statistics has been invoked, check if surfaces are available
-    % and with compatible size, then compute the area (dpv or dpf)
+    % and with compatible size, then compute the area (dpv or dpf).
+    % Also take this opportunity to compute the adjacency matrix.
     if opts.spatial.do && (plm.Yissrf(i) || strcmpi(Ytmp.readwith,'load')),
         if Ns == 0,
             error([ ...
@@ -1564,6 +1567,8 @@ for i = 1:Ni,
         else
             s = i;
         end
+        
+        % String defining the types, for the filenames and other tasks.
         if size(plm.srf{s}.data.vtx,1) == ...
                 max(size(plm.masks{i}.data));
             plm.Yisvtx(i)   = true;
@@ -1606,6 +1611,9 @@ for i = 1:Ni,
             % Otherwise, just use the data from the file (already loaded).
             plm.Yarea{i} = plm.srfarea{s}.data;
         end
+        
+        % Compute the adjacency matrix
+        plm.Yadjacency{i} = palm_adjacency(plm.srf{s}.data.fac,plm.Yisvtx(i));
     end
 end
 plm.nY = numel(plm.Yset); % this is redefined below if opts.inputmv is set.

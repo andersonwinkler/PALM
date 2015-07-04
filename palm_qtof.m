@@ -1,5 +1,5 @@
 function [F,Fdf1,Fdf2] = palm_qtof(Q,df1,df2,p,Qname)
-% Convert a multivariate MANOVA/MANCOVA statistic scalar
+% Convert a multivariate MANOVA/MANCOVA scalar
 % statistic (Q) to an F-score. The conversion is only
 % approximate for most methods and cases.
 % 

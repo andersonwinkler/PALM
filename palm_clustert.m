@@ -58,28 +58,12 @@ D       = double(S.data);
 D(mask) = X;
 Dt      = D >= thr;
 
-% Do the labelling
-if plm.Yisvol(y),
-    
-    % Volume (voxelwise data)
-    % bwconncomp is slightly faster and
-    % less memory intensive than bwlabel
-    CC = bwconncomp(Dt);
-
-elseif plm.Yisvtx(y),
-    
-    % Vertexwise surface data
-    dpxl = palm_vtxlabel(Dt,plm.srf{y}.data.fac);
-
-elseif plm.Yisfac(y),
-    
-    % Facewise surface data
-    dpxl = palm_faclabel(Dt,plm.srf{y}.data.fac);
-    
-end
-
 % Compute the sizes and the statistic
 if plm.Yisvol(y),
+    
+    % Connected components: bwconncomp is slightly faster and
+    % less memory intensive than bwlabel
+    CC = bwconncomp(Dt);
     
     % A loop here is 4x faster than cellfun
     sizes = zeros(CC.NumObjects,1);
@@ -97,6 +81,9 @@ if plm.Yisvol(y),
     end
     
 elseif plm.Yisvtx(y) || plm.Yisfac(y),
+    
+    % Connected components:
+    dpxl  = palm_dpxlabel(Dt,plm.Yadjacency{y});
     
     % Compute the cluster stats
     U     = unique(dpxl(dpxl>0))';

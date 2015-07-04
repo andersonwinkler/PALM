@@ -42,7 +42,7 @@ if size(Ptree,2) > 1,
     else
         nclr = 'blue';
     end
-    fprintf(fid,'%s [label="" shape=point color=%s fixedsize=true width=.5 height=.5 fontsize=20 penwidth=3];\n',ntop,nclr);
+    fprintf(fid,'%s [label="" shape=point color=%s fixedsize=true width=1 height=1 fontsize=20 penwidth=3];\n',ntop,nclr);
     downstream(fid,ntop,Ptree{1,3});
 end
 fprintf(fid,'}');

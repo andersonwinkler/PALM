@@ -70,26 +70,12 @@ if plm.Yisvol(y),
         end
     end
     
-elseif plm.Yisvtx(y),
+elseif plm.Yisvtx(y) || plm.Yisfac(y),
     
-    % Vertexwise surface data
+    % Vertexwise or facewise surface data
     tfcestat = zeros(size(D));
     for h = dh:dh:max(D(:));
-        dpxl  = palm_vtxlabel(D>=h,plm.srf{y}.data.fac);
-        U     = unique(dpxl(dpxl>0))';
-        for u = 1:numel(U),
-            idx = dpxl == U(u);
-            tfcestat(idx) = tfcestat(idx) + ...
-                sum(plm.Yarea{y}(idx)).^opts.tfce.E * h^opts.tfce.H;
-        end
-    end
-    
-elseif plm.Yisfac(y),
-    
-    % Facewise surface data
-    tfcestat = zeros(size(D));
-    for h = dh:dh:max(D(:));
-        dpxl  = palm_faclabel(D>=h,plm.srf{y}.data.fac);
+        dpxl  = palm_dpxlabel(D>=h,plm.Yadjacency{y});
         U     = unique(dpxl(dpxl>0))';
         for u = 1:numel(U),
             idx = dpxl == U(u);

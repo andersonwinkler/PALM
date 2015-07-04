@@ -56,38 +56,22 @@ end
 mask    = S.data;
 D       = double(S.data);
 D(mask) = X;
-D       = D >= thr;
-
-% Do the labelling
-if plm.Yisvol(y),
-    
-    % Volume (voxelwise data)
-    % bwconncomp is slightly faster and
-    % less memory intensive than bwlabel
-    CC = bwconncomp(D);
-
-elseif plm.Yisvtx(y),
-    
-    % Vertexwise surface data
-    dpxl = palm_vtxlabel(D,plm.srf{y}.data.fac);
-
-elseif plm.Yisfac(y),
-    
-    % Facewise surface data
-    dpxl = palm_faclabel(D,plm.srf{y}.data.fac);
-    
-end
+Dt      = D >= thr;
 
 % Compute the sizes and the statistic
 sizes = [];
 if plm.Yisvol(y),
+    
+    % Connected components: bwconncomp is slightly faster and
+    % less memory intensive than bwlabel
+    CC = bwconncomp(Dt);
     
     % Here cellfun is ~30% faster than doing as a loop
     sizes = cellfun(@numel,CC.PixelIdxList);
     
     % Compute the statistic image (this should be for the 1st perm only)
     if nargout > 1,
-        clstat = zeros(size(D));
+        clstat = zeros(size(Dt));
         for c = 1:CC.NumObjects,
             clstat(CC.PixelIdxList{c}) = sizes(c);
         end
@@ -95,6 +79,9 @@ if plm.Yisvol(y),
     end
     
 elseif plm.Yisvtx(y) || plm.Yisfac(y),
+    
+    % Connected components:
+    dpxl  = palm_dpxlabel(Dt,plm.Yadjacency{y});
     
     % Compute the cluster stats
     U     = unique(dpxl(dpxl>0))';
@@ -105,7 +92,7 @@ elseif plm.Yisvtx(y) || plm.Yisfac(y),
     
     % Compute the statistic image (this is normally for the 1st perm only)
     if nargout > 1,
-        clstat = zeros(size(D));
+        clstat = zeros(size(Dt));
         for u = 1:numel(U),
             clstat(dpxl == U(u)) = sizes(u);
         end

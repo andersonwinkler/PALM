@@ -533,7 +533,7 @@ else
     ProgressCon = 0;
 end
 tocI = toc(ticI);
-fprintf('Elapsed time parsing inputs: ~%g s\n',tocI);
+fprintf('Elapsed time parsing inputs: ~ %g s\n',tocI);
 
 % For each permutation (outer loop)
 ticP = tic;
@@ -2344,8 +2344,8 @@ clear M Y psi res G df2 T Q;
 ticS = tic;
 palm_saveall(plm,opts);
 tocS = toc(ticS);
-fprintf('Elapsed time generating and saving results: ~%g s\n',tocS);
-fprintf('Overall elapsed time: ~%g s\n',tocI+tocP+tocS);
+fprintf('Elapsed time generating and saving results: ~ %g s\n',tocS);
+fprintf('Overall elapsed time: ~ %g s\n',tocI+tocP+tocS);
 csvwrite(sprintf('%s_elapsed.csv',opts.o),[tocI tocP tocS]);
 
 % Finished.
