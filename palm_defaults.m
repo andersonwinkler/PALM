@@ -94,7 +94,6 @@ opts.designperinput      = false;              % use one design for each input?
 opts.showprogress        = true;               % print progress as the permutations are performed? (use -quiet to disable)
 opts.inputmv             = false;              % treat each column of the sole input as a separate input for MV/NPC/CCA?
 opts.reversemasks        = false;              % Reverse the masks?
-opts.srfadjacency        = 3;                  % Adjacency for the surface spatial stats. Valid values are 2 or 3.
 
 % Approximation options
 opts.approx.negbin        = 0;                 % Run a negbin scheme
