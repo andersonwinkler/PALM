@@ -33,6 +33,10 @@ function adj = palm_adjacency(fac,isvtx)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+% Make sure the face indices aren't stored as int,
+% otherwise sparse won't work.
+fac = double(fac);
+
 % Number of vertices and faces
 nV = max(fac(:));
 nF = size(fac,1);
