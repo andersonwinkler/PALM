@@ -1891,7 +1891,7 @@ if opts.MV && ~ opts.noranktest,
     end
     if any(failed),
         fname = sprintf('%s_mv_illconditioned',opts.o);
-        palm_quicksave(double(failed),0,opts,plm,[],[],fname);
+        palm_quicksave(double(failed),0,opts,plm,[],[],[],fname);
         error([
             'One or more datapoints have ill-conditioned data. It is\n' ...
             'not possible to run multivariate analyses as MANOVA/MANCOVA.\n' ...

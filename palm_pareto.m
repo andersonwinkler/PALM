@@ -86,7 +86,7 @@ if any(Pidx),
     nQ = numel(Q);
     q  = 1;
     Ptail = NaN;
-    while isnan(Ptail) && q < nQ,
+    while isnan(Ptail) && q < nQ-1,
 
         % Get the tail
         qidx  = Gcdf >= Q(q);
@@ -104,7 +104,6 @@ if any(Pidx),
             z = Gtail - thr;
             Gdiff = G - thr;
         end
-        cte = numel(Gtail)/nP;
         
         % Estimate the distribution parameters
         x   = mean(z);
@@ -114,10 +113,11 @@ if any(Pidx),
         
         % Check if the fitness is good
         A2pval = andersondarling(gpdpvals(z,a,k),k);
-        
+            
         % If yes, keep. If not, try again with the
         % next quantile.
         if A2pval > .05;
+            cte = numel(Gtail)/nP;
             Ptail = cte*gpdpvals(Gdiff,a,k);
         else
             q = q + 1;

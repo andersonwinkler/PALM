@@ -481,6 +481,9 @@ if opts.NPC,
     end
 end
 
+tocI = toc(ticI);
+fprintf('Elapsed time parsing inputs: ~ %g seconds.\n',tocI);
+
 % Create the permutation set, while taking care of the synchronized
 % permutations (see the inner loop below)
 if opts.syncperms,
@@ -532,8 +535,6 @@ if opts.syncperms,
 else
     ProgressCon = 0;
 end
-tocI = toc(ticI);
-fprintf('Elapsed time parsing inputs: ~ %g s\n',tocI);
 
 % For each permutation (outer loop)
 ticP = tic;
@@ -1588,6 +1589,7 @@ for po = P_outer,
                     % Cluster statistic NPC is here
                     if opts.cluster.npc.do,
                         if p == 1,
+                            plm.Tclumax{m}{c} = zeros(plm.nP{m}(c),1);
                             [plm.Tclumax{m}{c}(p),plm.Tclu{m}{c}] = ...
                                 clusterfunc(T{m}{c},1,opts.cluster.npc.thr,opts,plm);
                         else
@@ -1980,6 +1982,7 @@ for po = P_outer,
                             % Cluster statistic is here
                             if opts.cluster.mv.do,
                                 if p == 1,
+                                    plm.Qclumax{m}{c} = zeros(plm.nP{m}(c),1);
                                     [plm.Qclumax{m}{c}(p),plm.Qclu{m}{c}] = ...
                                         clusterfunc(Q{m}{c},1,opts.cluster.mv.thr,opts,plm);
                                 else
@@ -2335,7 +2338,7 @@ for po = P_outer,
     end
 end
 tocP = toc(ticP);
-fprintf('Elapsed time with permutations: ~ %g s\n',tocP);
+fprintf('Elapsed time with permutations: ~ %g seconds.\n',tocP);
 
 % Free up a bit of memory after the loop.
 clear M Y psi res G df2 T Q;
@@ -2344,8 +2347,8 @@ clear M Y psi res G df2 T Q;
 ticS = tic;
 palm_saveall(plm,opts);
 tocS = toc(ticS);
-fprintf('Elapsed time generating and saving results: ~ %g s\n',tocS);
-fprintf('Overall elapsed time: ~ %g s\n',tocI+tocP+tocS);
+fprintf('Elapsed time generating and saving results: ~ %g seconds.\n',tocS);
+fprintf('Overall elapsed time: ~ %g seconds.\n',tocI+tocP+tocS);
 csvwrite(sprintf('%s_elapsed.csv',opts.o),[tocI tocP tocS]);
 
 % Finished.
