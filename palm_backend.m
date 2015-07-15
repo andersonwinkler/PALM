@@ -842,7 +842,7 @@ for po = P_outer,
                         plm.Rz{m}{c} = zeros(plm.N,plm.N,plm.Ysiz{1});
                         if strcmpi(plm.rmethod{m}{c},'noz'),
                             plm.Rz{m}{c} = bsxfun(@plus,eye(plm.N),plm.Rz{m}{c});
-                        elseif ~any(strcmpi(plm.rmethod{m}{c},{ ...
+                        elseif ~ any(strcmpi(plm.rmethod{m}{c},{ ...
                                 'still-white','freedman-lane',  ...
                                 'kennedy','huh-jhun','smith'})),
                             I = eye(N);
@@ -950,7 +950,7 @@ for po = P_outer,
                         % Residual forming matrix (Z only)
                         if strcmpi(plm.rmethod{m}{c},'noz'),
                             plm.Rz{m}{c} = eye(plm.N);
-                        elseif ~any(strcmpi(plm.rmethod{m}{c},{ ...
+                        elseif ~ any(strcmpi(plm.rmethod{m}{c},{ ...
                                 'still-white','freedman-lane',  ...
                                 'kennedy','huh-jhun','smith'})),
                             plm.Rz{m}{c} = eye(plm.N) - plm.Z{m}{c}*pinv(plm.Z{m}{c});
@@ -1091,6 +1091,9 @@ for po = P_outer,
                         end
                     end
                 end
+                if opts.savepara,
+                    plm.df2{y}{m}{c} = plm.N - plm.rM{m}(c);
+                end
                 
                 % For four cases below, compute the statistic trace(AW),
                 % the moments of the permutation distribution, and fit a gamma:
@@ -1108,19 +1111,28 @@ for po = P_outer,
                                 [m1,m2,m3] = palm_moments(A,W,plm.N);
                                 plm.Gpperm{y}{m}{c}(1,t) = ...
                                     palm_gamma(plm.G{y}{m}{c}(1,t),m1,m2,m3,false);
-                                
+                                if opts.savepara,
+                                    plm.Gppara{y}{m}{c}(1,t) = pillaip(plm.G{y}{m}{c}(1,t),...
+                                        plm.rC{m}(c),plm.df2{y}{m}{c},plm.nY);
+                                end
+
                                 % If rank(C)=1, the test can be two-tailed,
                                 % under the assumption that it's symmetric
-                                if opts.ISE && plm.rC{m}(c) == 1,
+                                if opts.ISE && plm.rC{m}(c) == 1 && ~ opts.twotail,
                                     [M,Y] = prepglm{m}{c}(eye(plm.N),plm.Yset{y});
-                                    psi = zeros(size(M,2),plm.Ysiz(y));
+                                    psi   = zeros(size(M,2),plm.Ysiz(y));
                                     for tt = 1:plm.Ysiz(y),
                                         psi(:,tt) = M(:,:,tt)\Y(:,tt);
                                     end
-                                    sgn = sign(plm.eC{m}{c}'*psi);
+                                    sgn   = sign(plm.eC{m}{c}'*psi);
+                                    isgn  = sgn < 0;
                                     plm.G{y}{m}{c} = plm.G{y}{m}{c}.^.5.*sgn;
                                     plm.Gpperm{y}{m}{c} = plm.Gpperm{y}{m}{c}./2;
-                                    plm.Gpperm{y}{m}{c}(sgn<0) = 1 - plm.Gpperm{y}{m}{c}(sgn<0);
+                                    plm.Gpperm{y}{m}{c}(isgn) = 1 - plm.Gpperm{y}{m}{c}(isgn);
+                                    if opts.savepara,
+                                        plm.Gppara{y}{m}{c} = plm.Gppara{y}{m}{c}./2;
+                                        plm.Gppara{y}{m}{c}(isgn) = 1 - plm.Gppara{y}{m}{c}(isgn);
+                                    end
                                 end
                             end
                         end
@@ -1136,6 +1148,9 @@ for po = P_outer,
                             plm.Qpperm{m}{c}(1,t) = ...
                                 palm_gamma(plm.Q{m}{c}(1,t),m1,m2,m3,plm.mvrev{m}{c});
                         end
+                        if opts.savepara || opts.zstat,
+                            plm.Qppara{m}{c} = pparamv{m}{c}(plm.Q{m}{c});
+                        end
                     end
                 else
                     RzX   = plm.Rz{m}{c}*plm.X{m}{c};
@@ -1144,22 +1159,30 @@ for po = P_outer,
                         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                         for y = loopY,
                             for t = 1:plm.Ysiz(y),
-                                
                                 W = u(:,y,t)*u(:,y,t)';
                                 plm.G{y}{m}{c}(1,t) = trace(A*W);
                                 [m1,m2,m3] = palm_moments(A,W,plm.N);
                                 plm.Gpperm{y}{m}{c}(1,t) = ...
                                     palm_gamma(plm.G{y}{m}{c}(1,t),m1,m2,m3,false);
                             end
+                            if opts.savepara,
+                                plm.Gppara{y}{m}{c} = pillaip(plm.G{y}{m}{c},...
+                                    plm.rC{m}(c),plm.df2{y}{m}{c},plm.nY);
+                            end
                             
                             % If rank(C)=1, the test can be two-tailed,
                             % under the assumption that it's symmetric
-                            if opts.ISE && plm.rC{m}(c) == 1,
+                            if opts.ISE && plm.rC{m}(c) == 1 && ~ opts.twotail,
                                 [M,Y] = prepglm{m}{c}(eye(plm.N),plm.Yset{y});
-                                sgn = sign(plm.eC{m}{c}'*(M\Y));
+                                sgn   = sign(plm.eC{m}{c}'*(M\Y));
+                                isgn  = sgn < 0;
                                 plm.G{y}{m}{c} = plm.G{y}{m}{c}.^.5.*sgn;
                                 plm.Gpperm{y}{m}{c} = plm.Gpperm{y}{m}{c}./2;
-                                plm.Gpperm{y}{m}{c}(sgn<0) = 1 - plm.Gpperm{y}{m}{c}(sgn<0);
+                                plm.Gpperm{y}{m}{c}(isgn) = 1 - plm.Gpperm{y}{m}{c}(isgn);
+                                if opts.savepara,
+                                    plm.Gppara{y}{m}{c} = plm.Gppara{y}{m}{c}./2;
+                                    plm.Gppara{y}{m}{c}(isgn) = 1 - plm.Gppara{y}{m}{c}(isgn);
+                                end
                             end
                         end
                     end
@@ -1172,6 +1195,17 @@ for po = P_outer,
                             plm.Qpperm{m}{c}(1,t) = ...
                                 palm_gamma(plm.Q{m}{c}(1,t),m1,m2,m3,plm.mvrev{m}{c});
                         end
+                        if opts.savepara || opts.zstat,
+                            plm.Qppara{m}{c} = pparamv{m}{c}(plm.Q{m}{c});
+                        end
+                    end
+                end
+                
+                % Convert the MV statistic to z if that was requested.
+                if opts.zstat,
+                    plm.Q{m}{c} = -erfinv(2*plm.Qppara{m}{c}-1)*sqrt(2);
+                    if m == 1 && c == 1,
+                        plm.mvstr = horzcat('_z',plm.mvstr(2:end));
                     end
                 end
                 
@@ -1623,7 +1657,7 @@ for po = P_outer,
                 % MANOVA/MANCOVA is here. CCA is in the elseif below
                 if opts.MV && ~ opts.approx.noperm,
                     
-                    % This if is for the negative binomial mode.
+                    % This "if" is for the negative binomial mode.
                     if dotheMVorCCA,
                         if opts.showprogress,
                             if opts.syncperms,

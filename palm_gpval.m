@@ -1,4 +1,4 @@
-function pvals = palm_gpval(G,df1,df2)
+function pvals = palm_gpval(G,df1,df2,twotail)
 % Convert a pivotal statistic computed with 'pivotal.m'
 % (or simplifications) to a parametric p-value.
 %

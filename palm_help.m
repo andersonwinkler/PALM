@@ -279,7 +279,6 @@ fprintf('-savemetrics : Save a csv file with various permutation metrics.\n\n');
 
 fprintf('-saveparametric : Save also uncorrected parametric p-values. These are only\n');
 fprintf('	valid if all assumptions are met, including iid and normality.\n');
-fprintf('	Currently the option "-twotail" doesn''t affect "-saveparametric".\n\n');
 
 fprintf('-saveperms : Save one statistic image per permutation, as well as a csv\n');
 fprintf('	file with the permutation indices (one permutation per row, one\n');

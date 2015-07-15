@@ -86,7 +86,7 @@ if any(Pidx),
     nQ = numel(Q);
     q  = 1;
     Ptail = NaN;
-    while isnan(Ptail) && q < nQ-1,
+    while any(isnan(Ptail)) && q < nQ-1,
 
         % Get the tail
         qidx  = Gcdf >= Q(q);
