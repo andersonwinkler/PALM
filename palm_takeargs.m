@@ -392,6 +392,15 @@ while a <= narginx,
                 opts.tfce.conn = str2double(opts.tfce.conn);
             end
             a = a + 2;
+            
+        case '-tfce_dh', % advanced
+            
+            % TFCE connectivity
+            opts.tfce.deltah = vararginx{a+1};
+            if ischar(opts.tfce.deltah),
+                opts.tfce.deltah = str2double(opts.tfce.deltah);
+            end
+            a = a + 2;
                
         case '-within', % basic
             

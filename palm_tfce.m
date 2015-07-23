@@ -54,37 +54,42 @@ mask    = S.data;
 D       = double(S.data);
 D(mask) = X;
 
-% "delta h"
-dh = max(X(:))/100;
-
 if plm.Yisvol(y),
     
     % Volume (voxelwise data)
-    tfcestat = zeros(size(D));
-    for h = dh:dh:max(D(:));
-        CC    = bwconncomp(D>=h,opts.tfce.conn);
+    tfcestat  = zeros(size(D));
+    h         = opts.tfce.deltah;
+    CC        = bwconncomp(D>=h,opts.tfce.conn);
+    while CC.NumObjects,
         integ = cellfun(@numel,CC.PixelIdxList).^opts.tfce.E * h^opts.tfce.H;
         for c = 1:CC.NumObjects,
             tfcestat(CC.PixelIdxList{c}) = ...
                 tfcestat(CC.PixelIdxList{c}) + integ(c);
         end
+        h     = h + opts.tfce.deltah;
+        CC    = bwconncomp(D>=h,opts.tfce.conn);
     end
     
 elseif plm.Yisvtx(y) || plm.Yisfac(y),
     
     % Vertexwise or facewise surface data
-    tfcestat = zeros(size(D));
-    for h = dh:dh:max(D(:));
-        dpxl  = palm_dpxlabel(D>=h,plm.Yadjacency{y});
-        U     = unique(dpxl(dpxl>0))';
+    tfcestat  = zeros(size(D));
+    h         = opts.tfce.deltah;
+    dpxl      = palm_dpxlabel(D>=h,plm.Yadjacency{y});
+    U         = unique(dpxl(dpxl>0))';
+    while numel(U),
         for u = 1:numel(U),
             idx = dpxl == U(u);
             tfcestat(idx) = tfcestat(idx) + ...
                 sum(plm.Yarea{y}(idx)).^opts.tfce.E * h^opts.tfce.H;
         end
+        h     = h + opts.tfce.deltah;
+        dpxl  = palm_dpxlabel(D>=h,plm.Yadjacency{y});
+        U     = unique(dpxl(dpxl>0))';
     end
 end
 
-% Return as a vector with the same size as X.
+% Return as a vector with the same size as X, and
+% apply the correction for the dh.
 tfcestat = tfcestat(mask);
-tfcestat = tfcestat(:)';
+tfcestat = tfcestat(:)' * opts.tfce.deltah;
