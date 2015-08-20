@@ -395,10 +395,14 @@ while a <= narginx,
             
         case '-tfce_dh', % advanced
             
-            % TFCE connectivity
+            % TFCE delta-h parameter
             opts.tfce.deltah = vararginx{a+1};
             if ischar(opts.tfce.deltah),
-                opts.tfce.deltah = str2double(opts.tfce.deltah);
+                if strcmpi(opts.tfce.deltah,'auto'),
+                    opts.tfce.deltah = 0;
+                else
+                    opts.tfce.deltah = str2double(opts.tfce.deltah);
+                end
             end
             a = a + 2;
                
@@ -1078,6 +1082,15 @@ if any([ ...
             opts.tfce.mv.do]'),
         opts.spatial.mv = true;
     end
+end
+
+% Adjust the delta-h.
+if any([ ...
+        opts.tfce.uni.do
+        opts.tfce.npc.do
+        opts.tfce.mv.do ]) && ...
+        strcmpi(opts.tfce.deltah,'auto'),
+    opts.tfce.deltah = 0;
 end
 
 % Sanity checks for the approximation modes.
@@ -2266,6 +2279,9 @@ if opts.cmcx,
             plm.seq{m}{c} = (1:plm.N)';
         end
     end
+    if opts.corrcon || opts.npccon,
+        opts.syncperms = true;
+    end
 else
     seqtmp = zeros(plm.N,sum(plm.nC));
     j = 1;
@@ -2283,9 +2299,10 @@ else
     if (opts.corrcon || opts.npccon) && any(tmp(:) ~= 0),
         warning([ ...
             'You chose to correct over contrasts, or run NPC between contrasts, but with\n' ...
-            '         the design(s) contrasts given, it is not possible to run synchronized permutations\n' ...
-            '         without ignoring repeated elements in the design matrix (or matrices).\n' ...
-            '         To solve this, adding the option -cmcx automatically.%s\n'],'');
+            '         the design(s) and contrasts given, it is not possible to run synchronized\n' ...
+            '         permutations without ignoring repeated elements in the design matrix (or\n' ...
+            '         matrices). To solve this, adding the option -cmcx automatically.\n' ...
+            '         If this isn''t what you want, consider the option -pmethodp Guttman.%s\n'],'');
         opts.cmcx = true;
     end
     if opts.corrcon || opts.npccon,

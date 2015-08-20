@@ -257,7 +257,7 @@ fprintf('	Cab be "Guttman", "Beckmann", "Ridgway" or "None".\n');
 fprintf('	Default is "Beckmann"\n\n');
 
 fprintf('-pmethodr : Partition method used during the regression. Valid values\n');
-fprintf('	are "Guttman", "Beckmann", "Ridgway" or "None".\n\n');
+fprintf('	are "Guttman", "Beckmann", "Ridgway" or "None".\n');
 fprintf('	Default is "Beckmann"\n\n');
 
 fprintf('-removevgbysize <integer> : Remove from the data and design those\n');
@@ -309,7 +309,8 @@ fprintf('-tfce_E <real> : Set the TFCE E parameter (extent power).\n\n');
 
 fprintf('-tfce_C <integer> : Set the TFCE C parameter (connectivity).\n\n');
 
-fprintf('-tfce_dh <real> : Set the "delta h" for the calculation of TFCE.\n\n');
+fprintf('-tfce_dh <real> : Set the "delta h" for the calculation of TFCE.\n');
+fprintf('	Default is "auto".\n\n');
 
 fprintf('-transposedata : For input data (-i) that are csv tables (2D), transpose\n');
 fprintf('	rows and columns.\n\n');

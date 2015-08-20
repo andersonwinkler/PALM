@@ -1,4 +1,16 @@
 function varargout = palm_lowrank(varargin)
+% Do various tasks related to lowrank matrix completion.
+% 
+% Usage:
+% U          = palm_lowrank(G)
+% [Grec,mom] = palm_lowrank(G,U,nsel)
+% Grec       = palm_lowrank(G,U,ysel,mom)
+%
+% _____________________________________
+% Anderson M. Winkler
+% FMRIB / University of Oxford
+% May/2015
+% http://brainder.org
 
 % Note that the basis U is on rowspace. This is so to minimise the number
 % of matrix transposes in the code, which can be slow for large matrices.
