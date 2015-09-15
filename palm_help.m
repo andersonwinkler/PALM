@@ -64,7 +64,7 @@ fprintf('	for cluster extent or TFCE, this argument can be simply a number,\n');
 fprintf('	such as "1", which is then used as the area of all vertices or\n');
 fprintf('	faces.\n\n');
 
-fprintf('-d <file> : Design matrix. It can be in csv format, or in fsl"s vest\n');
+fprintf('-d <file> : Design matrix. It can be in csv format, or in FSL''s vest\n');
 fprintf('	format. For information on how to construct the design matrix,\n');
 fprintf('	see the FSL GLM manual.\n\n');
 
@@ -140,8 +140,8 @@ fprintf('	equivalent z-score), as well as for NPC and/or MV if these options\n')
 fprintf('	have been enabled. Use preferably values >3.\n\n');
 
 fprintf('-Cstat <name> : Choose which cluster statistic should be used. Accepted\n');
-fprintf('	statistics are "extent" and "mass" (see the source code for experimental\n');
-fprintf('	possibilities).\n\n');
+fprintf('	statistics are "extent" and "mass" (see the source code for\n');
+fprintf('	experimental possibilities).\n\n');
 
 fprintf('-tfce1D : Set TFCE parameters for 1D data (synchronised timeseries) i.e.,\n');
 fprintf('	H = 2, E = 2, C = 6. Use this option together with -T.\n\n');
@@ -278,7 +278,7 @@ fprintf('	selected.\n\n');
 fprintf('-savemetrics : Save a csv file with various permutation metrics.\n\n');
 
 fprintf('-saveparametric : Save also uncorrected parametric p-values. These are only\n');
-fprintf('	valid if all assumptions are met, including iid and normality.\n');
+fprintf('	valid if all assumptions are met, including iid and normality.\n\n');
 
 fprintf('-saveperms : Save one statistic image per permutation, as well as a csv\n');
 fprintf('	file with the permutation indices (one permutation per row, one\n');
@@ -289,10 +289,10 @@ fprintf('	disk space.\n\n');
 fprintf('-seed <positive> : Seed used for the random number generator. Use a\n');
 fprintf('	positive integer up to 2^32. Default is 0. To start with a random\n');
 fprintf('	number, use the word "twist" instead of the integer. Note that a\n');
-fprintf('	given seed used in Matlab isn"t equivalent to the same seed used\n');
+fprintf('	given seed used in Matlab isn''t equivalent to the same seed used\n');
 fprintf('	in Octave.\n\n');
 
-fprintf('-syncperms : If possible, use synchronized permutations even they wouldn"t\n');
+fprintf('-syncperms : If possible, use synchronized permutations even they wouldn''t\n');
 fprintf('	be used by default.\n\n');
 
 fprintf('-subjidx <file> : Indices of input data to keep in the design.\n\n');

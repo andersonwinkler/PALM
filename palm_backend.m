@@ -102,10 +102,11 @@ if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
     plm.Gperms                      = plm.G;      % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
 end
 if opts.approx.lowrank,
-    Gperms                          = G;          % To store the initial full permutations
-    plm.effrank                     = plm.rC;     % To store the effective rank of the set of permutations
-    plm.moments                     = G;
-    plm.U                           = G;
+    Bperms                          = G;          % To store the initial full permutations (betas)
+    Sperms                          = G;          % To store the initial full permutations (variances)
+    plm.nJ                          = plm.rC;     % To store the number of full permutations to do
+    plm.Bbasis                      = G;          % Basis for the betas
+    plm.Sbasis                      = G;          % Basis for the variances
 end
 if opts.savemetrics,
     plm.metr                        = plm.Gname;  % to store permutation metrics
@@ -268,11 +269,6 @@ if opts.MV,
         plm.Qperms                  = plm.Q; % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
         if opts.tfce.mv.do,
             plm.Qtfceperms          = plm.Qtfce;
-        end
-        if opts.approx.lowrank,
-            Qperms                  = Q;          % To store the initial full permutations
-            plm.momentsq            = Q;
-            plm.Uq                  = Q;
         end
     end
 end
@@ -720,7 +716,7 @@ for po = P_outer,
                 % the permutation and regression strategies, but it's
                 % roughly as below:
                 if opts.approx.lowrank,
-                    plm.effrank{m}(c) = plm.rC{m}(c)*plm.N;
+                    plm.nJ{m}(c) = plm.N*(plm.N+1)/2;
                 end
                 
                 % Decide which method is going to be used for the regression and
@@ -887,7 +883,6 @@ for po = P_outer,
                             plm.Rz{m}{c}       = eye(plm.N) - plm.Hz{m}{c};
                             prepglm{m}{c}      = @(P,Y)freedmanlane(P,Y,m,c,plm);
                             plm.eC {m}{c}      = plm.eCm{m}{c};
-                            plm.effrank{m}(c)  = plm.rC{m}(c)*(plm.N-sum(diag(plm.Hz{m}{c})));
                             
                         case 'terbraak',
                             isterbraak         = true;
@@ -925,6 +920,8 @@ for po = P_outer,
                         elseif plm.rC{m}(c) >  1,
                             fastpiv  {m}{c} = @(M,psi,Y)fastrsq(M,psi,Y,m,c,plm);
                         end
+                    elseif opts.approx.lowrank,
+                        fastpiv      {m}{c} = @(M,psi,res)lowrankt(M,psi,res,m,c,plm);
                     else
                         if     plm.rC{m}(c) == 1 && plm.nVG == 1,
                             fastpiv  {m}{c} = @(M,psi,res)fastt(M,psi,res,m,c,plm);
@@ -1059,12 +1056,11 @@ for po = P_outer,
                 if opts.npcmod && ~ opts.npccon,
                     plm.Tmax{m}{c} = zeros(plm.nP{m}(c),1);
                 end
-                if opts.MV && ~ opts.approx.noperm,
-                    plm.Qmax{m}{c} = zeros(plm.nP{m}(c),1);
-                    if opts.approx.lowrank,
-                        psiq = zeros(plm.nEV{m}(c),plm.nsel(1),plm.nY);
-                        resq = zeros(plm.N,plm.nsel(1),plm.nY);
-                    elseif ~ opts.approx.negbin,
+                if opts.MV
+                    if ~ opts.approx.noperm,
+                        plm.Qmax{m}{c} = zeros(plm.nP{m}(c),1);
+                    end
+                    if ~ opts.approx.negbin,
                         psiq = zeros(plm.nEV{m}(c),plm.Ysiz(1),plm.nY);
                         resq = zeros(plm.N,plm.Ysiz(1),plm.nY);
                     end
@@ -1253,20 +1249,11 @@ for po = P_outer,
                             end
                             [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yset{y}(:,ysel{y}));
                         elseif opts.approx.lowrank,
-                            if p <= 2*plm.effrank{m}(c),
+                            if p <= plm.nJ{m}(c),
                                 ysel{y} = true(1,plm.Ysiz(y));
                             else
-                                if opts.MV,
-                                    if y == 1,
-                                        ysel{y} = randperm(plm.Ysiz(y));
-                                        ysel{y} = ysel{y}(1:plm.nsel(y));
-                                    else
-                                        ysel{y} = ysel{1};
-                                    end
-                                else
-                                    ysel{y} = randperm(plm.Ysiz(y));
-                                    ysel{y} = ysel{y}(1:plm.nsel(y));
-                                end
+                                ysel{y} = randperm(plm.Ysiz(y));
+                                ysel{y} = ysel{y}(1:plm.nsel(y));
                             end
                             [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yset{y}(:,ysel{y}));
                         else
@@ -1275,20 +1262,11 @@ for po = P_outer,
                         
                         % Do the GLM fit.
                         if opts.evperdat,
-                            if opts.approx.lowrank,
-                                psi = zeros(size(M,2),plm.nsel(y));
-                                res = zeros(size(Y));
-                                for t = 1:plm.nsel(y),
-                                    psi(:,ysel{y}(t)) = M(:,:,ysel{y}(t))\Y(:,ysel{y}(t));
-                                    res(:,ysel{y}(t)) = Y(:,ysel{y}(t)) - M(:,:,ysel{y}(t))*psi(:,ysel{y}(t));
-                                end
-                            else
-                                psi = zeros(size(M,2),plm.Ysiz(y));
-                                res = zeros(size(Y));
-                                for t = 1:plm.Ysiz(y),
-                                    psi(:,t) = M(:,:,t)\Y(:,t);
-                                    res(:,t) = Y(:,t) - M(:,:,t)*psi(:,t);
-                                end
+                            psi = zeros(size(M,2),plm.Ysiz(y));
+                            res = zeros(size(Y));
+                            for t = 1:plm.Ysiz(y),
+                                psi(:,t) = M(:,:,t)\Y(:,t);
+                                res(:,t) = Y(:,t) - M(:,:,t)*psi(:,t);
                             end
                         else
                             psi = M\Y;
@@ -1298,15 +1276,6 @@ for po = P_outer,
                         % Unless this is negbin mode, there is no need to fit
                         % again for the MV later
                         if opts.MV && ~ opts.approx.negbin,
-                            if opts.approx.lowrank && y == 1,
-                                if p == 1,
-                                    psiq = zeros(size(psi,1),size(psi,2),plm.nY);
-                                    resq = zeros(plm.N,size(psi,2),plm.nY);
-                                elseif p == 2*plm.effrank{m}(c) + 1,
-                                    psiq = zeros(size(psi,1),plm.nsel(1),plm.nY);
-                                    resq = zeros(plm.N,plm.nsel(1),plm.nY);
-                                end
-                            end
                             psiq(:,:,y) = psi;
                             resq(:,:,y) = res;
                         end
@@ -1422,38 +1391,56 @@ for po = P_outer,
                             % Low rank approximation
                             if opts.approx.lowrank,
                                 if p == 1,
-                                    Gperms{y}{m}{c} = zeros(2*plm.effrank{m}(c),plm.Ysiz(y));
+                                    
+                                    % First permutation, compute constants and init variables
+                                    kappa{y}{m}{c}  = sqrt(plm.eC{m}{c}'*(M'*M)*plm.eC{m}{c}*(plm.N-plm.rM{m}(c)));
+                                    Bperms{y}{m}{c} = zeros(plm.nJ{m}(c),plm.Ysiz(y));
+                                    Sperms{y}{m}{c} = zeros(plm.nJ{m}(c),plm.Ysiz(y));
+                                    
                                 end
-                                if p < 2*plm.effrank{m}(c),
+                                if p < plm.nJ{m}(c),
                                     
-                                    % Initial permutations (done fully)
-                                    Gperms{y}{m}{c}(p,:) = G{y}{m}{c};
+                                    % Initial permutations are done fully
+                                    [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = fastpiv{m}{c}(M,psi,res);
                                     
-                                elseif p == 2*plm.effrank{m}(c),
+                                elseif p == plm.nJ{m}(c),
+
+                                    % Including this one
+                                    [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = fastpiv{m}{c}(M,psi,res);
+                                    
+                                    % Overall Sperms mean
+                                    Smean{y}{m}{c} = mean(Sperms{y}{m}{c}(:));
                                     
                                     % Generate a new basis
-                                    plm.U{y}{m}{c} = palm_lowrank(Gperms{y}{m}{c});
+                                    plm.Bbasis{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c});
+                                    plm.Sbasis{y}{m}{c} = palm_lowrank(Sperms{y}{m}{c}-Smean{y}{m}{c});
+size(plm.Bbasis{y}{m}{c})
+size(plm.Sbasis{y}{m}{c})
                                     
-                                    % Reconstruct past permutations in this
-                                    % new basis, and save the moments
-                                    [Gperms{y}{m}{c},plm.moments{y}{m}{c}] = ...
-                                        palm_lowrank(Gperms{y}{m}{c},plm.U{y}{m}{c},plm.nsel(y));
+                                    % Reconstruct past permutations in this new basis
+                                    Bperms{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c},plm.Bbasis{y}{m}{c},plm.nsel(y));
+                                    Sperms{y}{m}{c} = palm_lowrank(Sperms{y}{m}{c}-Smean{y}{m}{c},plm.Sbasis{y}{m}{c},plm.nsel(y))+Smean{y}{m}{c};
                                     if opts.twotail,
-                                        Gperms{y}{m}{c} = abs(Gperms{y}{m}{c});
+                                        Bperms{y}{m}{c} = abs(Bperms{y}{m}{c});
                                     end
                         
-                                    % Redefine the previous G and counter, now
+                                    % Redefine the previous B, S and counter, now
                                     % using the reconstructed stats
-                                    plm.G{y}{m}{c} = Gperms{y}{m}{c}(1,:);
-                                    plm.Gpperm{y}{m}{c} = sum(bsxfun(@ge,Gperms{y}{m}{c},plm.G{y}{m}{c}),1);
-                                    plm.Gmax  {y}{m}{c}(1:p) = max(Gperms{y}{m}{c},[],2);
-                                    Gperms{y}{m}{c} = []; % free up a bit of memory
+                                    Bperms{y}{m}{c} = kappa{y}{m}{c}.*Bperms{y}{m}{c}.*(Sperms{y}{m}{c}(1:p,:).^-.5);
+                                    plm.G{y}{m}{c}  = Bperms{y}{m}{c}(1,:);
+                                    plm.Gpperm{y}{m}{c} = sum(bsxfun(@ge,Bperms{y}{m}{c},plm.G{y}{m}{c}),1);
+                                    plm.Gmax{y}{m}{c}(1:p) = max(Bperms{y}{m}{c},[],2);
+                                    
+                                    % Free up a bit of memory
+                                    Bperms{y}{m}{c} = []; 
+                                    Sperms{y}{m}{c} = [];
                                     
                                 else
-                                    
                                     % Once a basis is known, use it.
-                                    G{y}{m}{c} = palm_lowrank(G{y}{m}{c},plm.U{y}{m}{c},...
-                                        ysel{y},plm.moments{y}{m}{c});
+                                    [B{y}{m}{c},S{y}{m}{c}] = fastpiv{m}{c}(M,psi,res);
+                                    B{y}{m}{c} = palm_lowrank(B{y}{m}{c},plm.Bbasis{y}{m}{c},ysel{y});
+                                    S{y}{m}{c} = palm_lowrank(S{y}{m}{c}-Smean{y}{m}{c},plm.Sbasis{y}{m}{c},ysel{y})+Smean{y}{m}{c};
+                                    G{y}{m}{c} = kappa{y}{m}{c}.*B{y}{m}{c}.*(S{y}{m}{c}.^-.5);
                                 end
                             end
                             
@@ -1467,7 +1454,7 @@ for po = P_outer,
                                 plm.G  {y}{m}{c} = G  {y}{m}{c};
                                 plm.df2{y}{m}{c} = df2{y}{m}{c};
                             end
-                            if ~ opts.approx.lowrank || p > 2*plm.effrank{m}(c),
+                            if ~ opts.approx.lowrank || p > plm.nJ{m}(c),
                                 plm.Gpperm{y}{m}{c}    = plm.Gpperm{y}{m}{c} + (G{y}{m}{c} >= plm.G{y}{m}{c});
                                 plm.Gmax  {y}{m}{c}(p) = max(G{y}{m}{c},[],2);
                             end
@@ -1758,42 +1745,7 @@ for po = P_outer,
                                 yselq = plm.Qpperm{m}{c} < opts.approx.negbin;
                             end
                         else
-                            
-                            % Low rank approximation
-                            if opts.approx.lowrank,
-                                if p == 1,
-                                    Qperms{m}{c} = zeros(2*plm.effrank{m}(c),plm.Ysiz(1));
-                                end
-                                if p < 2*plm.effrank{m}(c),
-                                    
-                                    % Initial permutations (done fully)
-                                    Qperms{m}{c}(p,:) = Q{m}{c};
-                                    
-                                elseif p == 2*plm.effrank{m}(c),
-                                    
-                                    % Generate a new basis
-                                    plm.Uq{m}{c} = palm_lowrank(Qperms{m}{c});
-                                    
-                                    % Reconstruct past permutations in this
-                                    % new basis, and save the moments
-                                    [Qperms{m}{c},plm.momentsq{m}{c}] = ...
-                                        palm_lowrank(Qperms{m}{c},plm.Uq{m}{c},plm.nsel(1));
-                                    
-                                    % Redefine the previous Q and counter, now
-                                    % using the reconstructed stats
-                                    plm.Q{m}{c} = Qperms{m}{c}(1,:);
-                                    plm.Qpperm{m}{c} = sum(bsxfun(@ge,Qperms{m}{c},plm.Q{m}{c}),1);
-                                    plm.Qmax  {m}{c}(1:p) = max(Qperms{m}{c},[],2);
-                                    Qperms    {m}{c} = []; % free up a bit of memory
-                                    
-                                else
-                                    
-                                    % Once a basis is known, use it.
-                                    Q{m}{c} = palm_lowrank(Q{m}{c},plm.Uq{m}{c},...
-                                        ysel{1},plm.momentsq{m}{c});
-                                end
-                            end
-                            
+
                             % If the user wants to save the statistic for each
                             % permutation, save it now. This isn't obviously allowed
                             % in negbin mode, as the images are not complete. Also,
@@ -1943,42 +1895,7 @@ for po = P_outer,
                                 yselq = plm.Qpperm{m}{c} < opts.approx.negbin;
                             end
                         else
-                            
-                            % Low rank approximation
-                            if opts.approx.lowrank,
-                                if p == 1,
-                                    Qperms{m}{c} = zeros(2*plm.effrank{m}(c),plm.Ysiz(1));
-                                end
-                                if p < 2*plm.effrank{m}(c),
-                                    
-                                    % Initial permutations (done fully)
-                                    Qperms{m}{c}(p,:) = Q{m}{c};
-                                    
-                                elseif p == 2*plm.effrank{m}(c),
-                                    
-                                    % Generate a new basis
-                                    plm.Uq{m}{c} = palm_lowrank(Qperms{m}{c});
-                                    
-                                    % Reconstruct past permutations in this
-                                    % new basis, and save the moments
-                                    [Qperms{m}{c},plm.momentsq{m}{c}] = ...
-                                        palm_lowrank(Qperms{m}{c},plm.Uq{m}{c},plm.nsel(1));
-                                    
-                                    % Redefine the previous Q and counter, now
-                                    % using the reconstructed stats
-                                    plm.Q{m}{c} = Qperms{m}{c}(1,:);
-                                    plm.Qpperm{m}{c} = sum(bsxfun(@ge,Qperms{m}{c},plm.Q{m}{c}),1);
-                                    plm.Qmax  {m}{c}(1:p) = max(Qperms{m}{c},[],2);
-                                    Qperms    {m}{c} = []; % free up a bit of memory
-                                    
-                                else
-                                    
-                                    % Once a basis is known, use it.
-                                    Q{m}{c} = palm_lowrank(Q{m}{c},plm.Uq{m}{c},...
-                                        ysel{1},plm.momentsq{m}{c});
-                                end
-                            end
-                            
+
                             % If the user wants to save the statistic for each
                             % permutation, save it now. This isn't obviously allowed
                             % in negbin mode, as the images are not complete. Also,
@@ -2775,6 +2692,25 @@ bsum = sum((1-bsxfun(@rdivide,W,sW1)).^2./dRmb,1);
 bsum = bsum/plm.rC{m}(c)/(plm.rC{m}(c)+2);
 df2  = 1/3./bsum;
 G    = G./(1 + 2*(plm.rC{m}(c)-1).*bsum);
+
+% ==============================================================
+function [B,S] = lowrankt(M,psi,res,m,c,plm)
+% This works only if:
+% - rank(contrast) = 1
+% - number of variance groups = 1
+%
+% Inputs:
+% M   : design matrix
+% psi : regression coefficients
+% res : residuals
+% plm : a struct with many things as generated by
+%       'palm_backend.m' and 'palm_takeargs.m'
+%
+% Outputs:
+% B   : p-th row of B
+% S   : p-th row of S
+B   = plm.eC{m}{c}'*psi;
+S   = sum(res.^2);
 
 % ==============================================================
 % Below are the functions to compute multivariate statistics:

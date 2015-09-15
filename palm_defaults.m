@@ -104,7 +104,7 @@ opts.approx.tail_thr      = 0.10;              % P-values below this will be app
 opts.approx.noperm        = false;             % Compute approximate p-vals without doing any permutation
 opts.approx.gamma         = false;             % Do a gamma-fit after just a few permutations
 opts.approx.lowrank       = false;             % Try a low rank approximation
-opts.approx.lowrank_val   = .001;              % Fraction of tests to use to reconstruct the others
+opts.approx.lowrank_val   = NaN;               % Use NaN for N*(N+1)/2. Values <=1 are fraction of voxels to use; vals >1 are number of voxels to use.
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within-block is also default).

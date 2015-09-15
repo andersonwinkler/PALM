@@ -80,8 +80,8 @@ if any(Pidx),
     % Just for the stats that are significant
     G = G(Pidx);
     
-    % Keep adjusting until the fit is good. Change the step to 10 to get the
-    % same result as Knijnenburg et al.
+    % Keep adjusting until the fit is good. Change the step to 10 to get
+    % the same result as Knijnenburg et al.
     Q  = (751:10:999)/1000;
     nQ = numel(Q);
     q  = 1;
@@ -93,32 +93,33 @@ if any(Pidx),
         Gtail = Gvals(qidx);
         qi    = find(qidx,1);
         if qi == 1,
-            thr = Gvals(qi) - mean(Gvals(qi:qi+1));
+            u = Gvals(qi) - mean(Gvals(qi:qi+1));
         else
-            thr = mean(Gvals(qi-1:qi));
+            u = mean(Gvals(qi-1:qi));
         end
         if rev,
-            z = thr - Gtail;
-            Gdiff = thr - G;
+            ytail = u - Gtail;
+            y     = u - G;
         else
-            z = Gtail - thr;
-            Gdiff = G - thr;
+            ytail = Gtail - u;
+            y     = G - u;
         end
         
-        % Estimate the distribution parameters
-        x   = mean(z);
-        s2  = var(z);
+        % Estimate the distribution parameters. See §3.2 of Hosking &
+        % Wallis (1987). Compared to the usual GPD parameterisation, 
+        % here k = xi, and a = \tilde{\sigma}.
+        x   = mean(ytail);
+        s2  = var(ytail);
         a   = x*(x^2/s2 + 1)/2;
         k   =   (x^2/s2 - 1)/2;
         
         % Check if the fitness is good
-        A2pval = andersondarling(gpdpvals(z,a,k),k);
+        A2pval = andersondarling(gpdpvals(ytail,a,k),k);
             
-        % If yes, keep. If not, try again with the
-        % next quantile.
+        % If yes, keep. If not, try again with the next quantile.
         if A2pval > .05;
             cte = numel(Gtail)/nP;
-            Ptail = cte*gpdpvals(Gdiff,a,k);
+            Ptail = cte*gpdpvals(y,a,k);
         else
             q = q + 1;
         end
@@ -132,20 +133,20 @@ if any(Pidx),
 end
 
 % ==============================================================
-function pval = gpdpvals(x,a,k)
-% Compute the p-values for a GPD with
+function z = gpdpvals(x,a,k)
+% Compute the p-values (here called z) for a GPD with
 % parameters a (scale) and k (shape).
 if abs(k) < eps;
-    pval = exp(-x/a);
+    z = exp(-x/a);
 else
-    pval = (1 - k*x/a).^(1/k);
+    z = (1 - k*x/a).^(1/k);
 end
 if k > 0;
-    pval(x > a/k) = 0;
+    z(x > a/k) = 0;
 end
 
 % ==============================================================
-function A2pval = andersondarling(p,k)
+function A2pval = andersondarling(z,k)
 % Compute the Anderson-Darling statistic and return an
 % approximated p-value based on the tables provided in:
 % * Choulakian V, Stephens M A. Goodness-of-Fit Tests
@@ -170,12 +171,12 @@ A2table = [ ...
 
 % The p-values are already sorted
 k  = max(0.5,k);
-p  = flipud(p)';
-n  = numel(p);
-i  = 1:n;
+z  = flipud(z)';
+n  = numel(z);
+j  = 1:n;
 
 % Anderson-Darling statistic and p-value:
-A2 = -n -(1/n)*((2*i-1)*(log(p) + log(1-p(n+1-i)))');
+A2 = -n -(1/n)*((2*j-1)*(log(z) + log(1-z(n+1-j)))');
 i1 = interp1(ktable,A2table,k,'linear','extrap');
 i2 = interp1(i1,ptable,A2,'linear','extrap');
 A2pval = max(min(i2,1),0);

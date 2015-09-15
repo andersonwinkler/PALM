@@ -1148,11 +1148,20 @@ if opts.approx.noperm,
     end
 end
 if opts.approx.lowrank,
+    if opts.pearson,
+        error('The option "-approx lowrank" cannot be used with "-pearson".');
+    end
+    if opts.MV,
+        error('The option "-approx lowrank" cannot be used with MV.');
+    end
     if opts.NPC,
         error('The option "-approx lowrank" cannot be used with NPC.');
     end
     if opts.spatial.do,
         error('The option "-approx lowrank" cannot be used with spatial statistics.');
+    end
+    if opts.evperdat,
+        error('The option "-approx lowrank" cannot be used with "-evperdat".');
     end
 end
 
@@ -2501,14 +2510,17 @@ end
 
 % Number of tests to be selected for the low rank approximation
 if opts.approx.lowrank,
+    if plm.nVG > 1,
+        error('The option "-approx lowrank" cannot be used with more than one variance group.');
+    end
     if opts.nP0 == 0,
         error('With lowrank approximation you must indicate a larger-than-zero number of permutations.');
     end
-    if opts.nP0 < 3*plm.N,
+    if opts.nP0 < plm.N*(plm.N+1)/2,
         error([ ...
             'Too few permutations selected to use with lowrank approximation.\n' ...
-            'Use at least 3*N = %d to note a speed difference and have reasonably accurate results.\n'...
-            'Otherwise, don''t bother using lowrank approximation.\n'],3*plm.N);
+            'Use at least plm.N*(plm.N+1)/2 = %d to note a speed difference and have reasonably accurate results.\n'...
+            'Otherwise, don''t bother using lowrank approximation.\n'],plm.N*(plm.N+1)/2);
     end
     if opts.spatial.do,
         warning([ ...
@@ -2520,9 +2532,11 @@ if opts.approx.lowrank,
     plm.nsel = zeros(plm.nY,1);
     if opts.approx.lowrank_val <= 1,
         for y = 1:plm.nY,
-            plm.nsel(y) = max(1,ceil(opts.approx.lowrank_val*plm.Ysiz(y)));
+            plm.nsel(y) = ceil(opts.approx.lowrank_val*plm.Ysiz(y));
         end
-    else
+    elseif opts.approx.lowrank_val > 1
         plm.nsel(1:end) = opts.approx.lowrank_val;
+    elseif isnan(opts.approx.lowrank_val),
+        plm.nsel(1:end) = plm.N*(plm.N+1)/2;
     end
 end

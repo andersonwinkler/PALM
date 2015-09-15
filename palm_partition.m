@@ -61,28 +61,28 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 
 switch lower(meth),
     case 'guttman'
-        idx = any(C~=0,2);
-        X   = M(:,idx);
-        Z   = M(:,~idx);
-        eCm = vertcat(C(idx,:),C(~idx,:));
+        idx   = any(C~=0,2);
+        X     = M(:,idx);
+        Z     = M(:,~idx);
+        eCm   = vertcat(C(idx,:),C(~idx,:));
         
     case 'beckmann'
-        C2  = null(C');
-        Q   = pinv(M'*M);
-        F1  = pinv(C'*Q*C);
-        Pc  = C*pinv(C'*Q*C)*C'*Q;
-        C3  = C2 - Pc*C2;
-        F3  = pinv(C3'*Q*C3);
-        X   = M*Q*C*F1;
-        Z   = M*Q*C3*F3;
-        eCm = vertcat(eye(size(X,2)),...
+        Cu    = null(C');
+        D     = pinv(M'*M);
+        CDCi  = pinv(C'*D*C);
+        Pc    = C*CDCi*C'*D;
+        Cv    = Cu - Pc*Cu;
+        F3    = pinv(Cv'*D*Cv);
+        X     = M*D*C*CDCi;
+        Z     = M*D*Cv*F3;
+        eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
     case 'winkler'
-        Q   = pinv(M'*M);
-        X   = M*Q*C*pinv(C'*Q*C);
-        Z   = (M*Q*M'-X*pinv(X))*Y;
-        eCm = vertcat(eye(size(X,2)),...
+        D     = pinv(M'*M);
+        X     = M*D*C*pinv(C'*D*C);
+        Z     = (M*D*M'-X*pinv(X))*Y;
+        eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
     case 'ridgway'
@@ -90,7 +90,7 @@ switch lower(meth),
         C0    = eye(size(M,2)) - C*pinv(C);
         [Z,~] = svd(M*C0);
         Z     = Z(:,1:rank(M)-rank(C));
-        X     = X-Z*(pinv(Z)*X);
+        X     = X-Z*xpinv(Z)*X;
         eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         

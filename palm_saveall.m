@@ -70,8 +70,8 @@ if opts.saveuncorrected || opts.FDR,
             for c = 1:plm.nC(m),
                 if opts.approx.negbin,
                     idx = plm.Gpperm{y}{m}{c} == opts.approx.negbin;
-                    plm.Gpperm{y}{m}{c}( idx) = (plm.Gpperm{y}{m}{c}( idx) - 1)./(plm.Gppermp{y}{m}{c}( idx) - 1); % Haldane (1945)
-                    plm.Gpperm{y}{m}{c}(~idx) = (plm.Gpperm{y}{m}{c}(~idx) + 1)./plm.nP{m}(c); % same as if dividing by (plm.Gppermp{y}{m}{c}(~idx) + 1)
+                    plm.Gpperm{y}{m}{c}( idx) = (plm.Gpperm{y}{m}{c}( idx)    )./(plm.Gppermp{y}{m}{c}( idx)); % Haldane (1945), but need to add 1 to num and den, see Besag & Clifford (1991).
+                    plm.Gpperm{y}{m}{c}(~idx) = (plm.Gpperm{y}{m}{c}(~idx) + 1)./plm.nP{m}(c); % the unpermuted isn't counted here, hence the +1. Also, this is the same as if dividing by (plm.Gppermp{y}{m}{c}(~idx) + 1)
                 elseif opts.approx.tail,
                     for t = 1:plm.Ysiz(y),
                         plm.Gpperm{y}{m}{c}(1,t) = palm_pareto(plm.G{y}{m}{c}(1,t),plm.Gperms{y}{m}{c}(:,t),false,opts.approx.tail_thr);
