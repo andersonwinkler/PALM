@@ -1,4 +1,4 @@
-function palm_backend(varargin)
+function palm_core(varargin)
 % This is the core PALM function.
 %
 % _____________________________________
@@ -507,7 +507,7 @@ if opts.syncperms,
     else
         fprintf('Doing the approximation without permutations.\n');
     end
-
+    
     % This is for the negative binomial mode
     if opts.approx.negbin && ~ opts.saveunivariate,
         dothisY = false(plm.nY,1);
@@ -920,8 +920,6 @@ for po = P_outer,
                         elseif plm.rC{m}(c) >  1,
                             fastpiv  {m}{c} = @(M,psi,Y)fastrsq(M,psi,Y,m,c,plm);
                         end
-                    elseif opts.approx.lowrank,
-                        fastpiv      {m}{c} = @(M,psi,res)lowrankt(M,psi,res,m,c,plm);
                     else
                         if     plm.rC{m}(c) == 1 && plm.nVG == 1,
                             fastpiv  {m}{c} = @(M,psi,res)fastt(M,psi,res,m,c,plm);
@@ -1111,7 +1109,7 @@ for po = P_outer,
                                     plm.Gppara{y}{m}{c}(1,t) = pillaip(plm.G{y}{m}{c}(1,t),...
                                         plm.rC{m}(c),plm.df2{y}{m}{c},plm.nY);
                                 end
-
+                                
                                 % If rank(C)=1, the test can be two-tailed,
                                 % under the assumption that it's symmetric
                                 if opts.ISE && plm.rC{m}(c) == 1 && ~ opts.twotail,
@@ -1233,7 +1231,7 @@ for po = P_outer,
                                     m,plm.nM,c,plm.nC(m),p,plm.nP{m}(c),y,plm.nY);
                             end
                         end
-
+                        
                         % String for the modality index & var for the max:
                         if p == 1,
                             plm.Gmax{y}{m}{c} = zeros(plm.nP{m}(c),1);
@@ -1293,8 +1291,73 @@ for po = P_outer,
                         if opts.pearson,
                             G  {y}{m}{c} = fastpiv{m}{c}(M,psi,Y);
                             df2{y}{m}{c} = NaN;
-                        else
+                        elseif ~ opts.approx.lowrank || p == 1,
                             [G{y}{m}{c},df2{y}{m}{c}] = fastpiv{m}{c}(M,psi,res);
+                        end
+                        
+                        % This is for the conversion to z. Do it just once:
+                        if p == 1 && (opts.designperinput || y == 1),
+                            plm.rC0{m}(c) = plm.rC{m}(c);
+                            plm.rC {m}(c) = 0;
+                        end
+                        
+                        % Low rank approximation
+                        if opts.approx.lowrank,
+
+                            if p < plm.nJ{m}(c),
+                                
+                                % First permutation, compute constants and init variables
+                                if p == 1,
+                                    kappa {y}{m}{c} = sqrt((plm.N-plm.rM{m}(c))/(plm.eC{m}{c}'*pinv(M'*M)*plm.eC{m}{c}));
+                                    Bperms{y}{m}{c} = zeros(plm.nJ{m}(c),plm.Ysiz(y));
+                                    Sperms{y}{m}{c} = zeros(plm.nJ{m}(c),plm.Ysiz(y));
+                                end
+                                
+                                % Initial permutations are done fully
+                                [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{m}{c},psi,res);
+                                if p == 1,
+                                    % First perm compute G
+                                    G{y}{m}{c} = kappa{y}{m}{c}*Bperms{y}{m}{c}(p,:)./Sperms{y}{m}{c}(p,:).^.5;
+                                end
+                                
+                            elseif p == plm.nJ{m}(c),
+
+                                % Including this one
+                                [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{m}{c},psi,res);
+                                
+                                % Some feedback of the screen
+                                if opts.showprogress,
+                                    fprintf('\t [Reconstructing past permutations in a low rank basis.]\n');
+                                end
+
+                                % Generate new bases
+                                plm.Bbasis{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c});
+                                Smean{y}{m}{c}      = mean(Sperms{y}{m}{c}(:));
+                                plm.Sbasis{y}{m}{c} = palm_lowrank(bsxfun(@minus,Sperms{y}{m}{c},Smean{y}{m}{c}));
+                                
+                                % Reconstruct past permutations in these new bases
+                                Bperms{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c},plm.Bbasis{y}{m}{c},plm.nsel(y),false);
+                                Sperms{y}{m}{c} = palm_lowrank(Sperms{y}{m}{c},plm.Sbasis{y}{m}{c},plm.nsel(y),Smean{y}{m}{c});
+
+                                % Compute G and convert to z, redefine counter
+                                Bperms{y}{m}{c}        = kappa{y}{m}{c}*Bperms{y}{m}{c}./Sperms{y}{m}{c}.^.5;
+                                Bperms{y}{m}{c}        = palm_gtoz(Bperms{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
+                                if opts.twotail, Bperms{y}{m}{c} = abs(Bperms{y}{m}{c}); end
+                                plm.G{y}{m}{c}         = Bperms{y}{m}{c}(1,:);
+                                plm.Gpperm{y}{m}{c}    = sum(bsxfun(@ge,Bperms{y}{m}{c},plm.G{y}{m}{c}),1);
+                                plm.Gmax{y}{m}{c}(1:p) = max(Bperms{y}{m}{c},[],2);
+
+                                % Free up a bit of memory
+                                Bperms{y}{m}{c} = [];
+                                Sperms{y}{m}{c} = [];
+                                
+                            else
+                                % Once a basis is known, use it.
+                                [B{y}{m}{c},S{y}{m}{c}] = lowrankfac(plm.eC{m}{c},psi,res);
+                                B{y}{m}{c} = palm_lowrank(B{y}{m}{c},plm.Bbasis{y}{m}{c},ysel{y},false);
+                                S{y}{m}{c} = palm_lowrank(S{y}{m}{c},plm.Sbasis{y}{m}{c},ysel{y},Smean{y}{m}{c});
+                                G{y}{m}{c} = kappa{y}{m}{c}*B{y}{m}{c}./S{y}{m}{c}.^.5;
+                            end
                         end
                         
                         % Save the unpermuted statistic if not z-score
@@ -1326,13 +1389,10 @@ for po = P_outer,
                             end
                         end
                         
-                        % Convert to Z, but make sure that the rank is changed
-                        % just once, regardless
-                        if p == 1 && (opts.designperinput || y == 1),
-                            plm.rC0{m}(c) = plm.rC{m}(c);
-                            plm.rC {m}(c) = 0;
+                        % Convert to z-score
+                        if ~ opts.approx.lowrank || p == 1 || p > plm.nJ{m}(c),
+                            G{y}{m}{c} = palm_gtoz(G{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
                         end
-                        G{y}{m}{c} = palm_gtoz(G{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
                         
                         % Save the unpermuted statistic if z-score
                         if opts.zstat
@@ -1351,18 +1411,20 @@ for po = P_outer,
                             end
                         end
                         
-                        % Draft mode
+                        % This needs to be here, inside the if-condition) because of the
+                        % lowrank approximation stuff
+                        if opts.twotail,
+                            if ~ opts.approx.lowrank || p > plm.nJ{m}(c)
+                                G{y}{m}{c} = abs(G{y}{m}{c});
+                            end
+                        end
+                        
+                        % Negative binomial approximation
                         if opts.approx.negbin,
-                            
-                            % Remove the sign if this is a two-tailed test. This
-                            % makes no difference if rank(C) > 1
-                            % This needs to be here, inside the if-condition) because of the
-                            % lowrank approximation stuff
-                            if opts.twotail, G{y}{m}{c} = abs(G{y}{m}{c}); end
                             
                             % In p = 1, there is no counter being incremented (stays at 0) and the number
                             % of permutations performed stays also at 0. In other words, in the negbin mode,
-                            % the first permutation is entirely ignored, so that the Haldane equation can 
+                            % the first permutation is entirely ignored, so that the Haldane equation can
                             % be applied directly.
                             % If the number of desired exceedances isn't found, this means the extra first
                             % permutation needs to be counted later, and the p-val is then computed as usual.
@@ -1388,72 +1450,14 @@ for po = P_outer,
                             end
                         else
                             
-                            % Low rank approximation
-                            if opts.approx.lowrank,
-                                if p == 1,
-                                    
-                                    % First permutation, compute constants and init variables
-                                    kappa{y}{m}{c}  = sqrt(plm.eC{m}{c}'*(M'*M)*plm.eC{m}{c}*(plm.N-plm.rM{m}(c)));
-                                    Bperms{y}{m}{c} = zeros(plm.nJ{m}(c),plm.Ysiz(y));
-                                    Sperms{y}{m}{c} = zeros(plm.nJ{m}(c),plm.Ysiz(y));
-                                    
-                                end
-                                if p < plm.nJ{m}(c),
-                                    
-                                    % Initial permutations are done fully
-                                    [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = fastpiv{m}{c}(M,psi,res);
-                                    
-                                elseif p == plm.nJ{m}(c),
-
-                                    % Including this one
-                                    [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = fastpiv{m}{c}(M,psi,res);
-                                    
-                                    % Overall Sperms mean
-                                    Smean{y}{m}{c} = mean(Sperms{y}{m}{c}(:));
-                                    
-                                    % Generate a new basis
-                                    plm.Bbasis{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c});
-                                    plm.Sbasis{y}{m}{c} = palm_lowrank(Sperms{y}{m}{c}-Smean{y}{m}{c});
-size(plm.Bbasis{y}{m}{c})
-size(plm.Sbasis{y}{m}{c})
-                                    
-                                    % Reconstruct past permutations in this new basis
-                                    Bperms{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c},plm.Bbasis{y}{m}{c},plm.nsel(y));
-                                    Sperms{y}{m}{c} = palm_lowrank(Sperms{y}{m}{c}-Smean{y}{m}{c},plm.Sbasis{y}{m}{c},plm.nsel(y))+Smean{y}{m}{c};
-                                    if opts.twotail,
-                                        Bperms{y}{m}{c} = abs(Bperms{y}{m}{c});
-                                    end
-                        
-                                    % Redefine the previous B, S and counter, now
-                                    % using the reconstructed stats
-                                    Bperms{y}{m}{c} = kappa{y}{m}{c}.*Bperms{y}{m}{c}.*(Sperms{y}{m}{c}(1:p,:).^-.5);
-                                    plm.G{y}{m}{c}  = Bperms{y}{m}{c}(1,:);
-                                    plm.Gpperm{y}{m}{c} = sum(bsxfun(@ge,Bperms{y}{m}{c},plm.G{y}{m}{c}),1);
-                                    plm.Gmax{y}{m}{c}(1:p) = max(Bperms{y}{m}{c},[],2);
-                                    
-                                    % Free up a bit of memory
-                                    Bperms{y}{m}{c} = []; 
-                                    Sperms{y}{m}{c} = [];
-                                    
-                                else
-                                    % Once a basis is known, use it.
-                                    [B{y}{m}{c},S{y}{m}{c}] = fastpiv{m}{c}(M,psi,res);
-                                    B{y}{m}{c} = palm_lowrank(B{y}{m}{c},plm.Bbasis{y}{m}{c},ysel{y});
-                                    S{y}{m}{c} = palm_lowrank(S{y}{m}{c}-Smean{y}{m}{c},plm.Sbasis{y}{m}{c},ysel{y})+Smean{y}{m}{c};
-                                    G{y}{m}{c} = kappa{y}{m}{c}.*B{y}{m}{c}.*(S{y}{m}{c}.^-.5);
-                                end
-                            end
-                            
-                            % This needs to be here, inside the if-condition) because of the
-                            % lowrank approximation stuff
-                            if opts.twotail, G{y}{m}{c} = abs(G{y}{m}{c}); end
-                            
                             % In the first permutation, keep G and df2,
                             % and start the counter.
-                            if p == 1,
+                            if ~ opts.approx.lowrank && p == 1,
                                 plm.G  {y}{m}{c} = G  {y}{m}{c};
                                 plm.df2{y}{m}{c} = df2{y}{m}{c};
                             end
+                            
+                            % Increment voxelwise counter
                             if ~ opts.approx.lowrank || p > plm.nJ{m}(c),
                                 plm.Gpperm{y}{m}{c}    = plm.Gpperm{y}{m}{c} + (G{y}{m}{c} >= plm.G{y}{m}{c});
                                 plm.Gmax  {y}{m}{c}(p) = max(G{y}{m}{c},[],2);
@@ -1466,7 +1470,7 @@ size(plm.Sbasis{y}{m}{c})
                                 end
                                 plm.Gperms{y}{m}{c}(p,:) = G{y}{m}{c};
                             end
- 
+                            
                             % Cluster statistic is here
                             if opts.cluster.uni.do,
                                 if p == 1,
@@ -1718,7 +1722,7 @@ size(plm.Sbasis{y}{m}{c})
                         if opts.approx.negbin,
                             % In p = 1, there is no counter being incremented (stays at 0) and the number
                             % of permutations performed stays also at 0. In other words, in the negbin mode,
-                            % the first permutation is entirely ignored, so that the Haldane equation can 
+                            % the first permutation is entirely ignored, so that the Haldane equation can
                             % be applied directly.
                             % If the number of desired exceedances isn't found, this means the extra first
                             % permutation needs to be counted later, and the p-val is then computed as usual.
@@ -1745,7 +1749,7 @@ size(plm.Sbasis{y}{m}{c})
                                 yselq = plm.Qpperm{m}{c} < opts.approx.negbin;
                             end
                         else
-
+                            
                             % If the user wants to save the statistic for each
                             % permutation, save it now. This isn't obviously allowed
                             % in negbin mode, as the images are not complete. Also,
@@ -1860,7 +1864,7 @@ size(plm.Sbasis{y}{m}{c})
                                 plm.mvstr = horzcat('_z',plm.mvstr(2:end));
                             end
                         end
-
+                        
                         % Save the CCA statistic
                         if p == 1,
                             palm_quicksave(Q{m}{c},0,opts,plm,[],m,c, ...
@@ -1895,7 +1899,7 @@ size(plm.Sbasis{y}{m}{c})
                                 yselq = plm.Qpperm{m}{c} < opts.approx.negbin;
                             end
                         else
-
+                            
                             % If the user wants to save the statistic for each
                             % permutation, save it now. This isn't obviously allowed
                             % in negbin mode, as the images are not complete. Also,
@@ -2188,7 +2192,7 @@ size(plm.Sbasis{y}{m}{c})
             if opts.zstat || ...
                     opts.spatial.npc || ...
                     (po == 1 && opts.savepara && ~ plm.nonpcppara),
-                Tppara{j} = pparanpc(T{j});
+                Tppara{j} = pparanpc(T{j},size(Gnpc{j},1));
                 
                 % Adjust the concordant signs for the concordant
                 % test. This is the same as 1-(1-P)^2, but
@@ -2453,7 +2457,7 @@ function G = fastr(M,psi,Y,m,c,plm)
 % psi : regression coefficients
 % Y   : data (demeaned)
 % plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
+%       'palm_core.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % G   : Pearson's correlation coefficient (r).
@@ -2474,7 +2478,7 @@ function G = fastrsq(M,psi,Y,m,c,plm)
 % psi : regression coefficients
 % Y   : data (demeaned)
 % plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
+%       'palm_core.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % G   : R^2, i.e., the coefficient of determination.
@@ -2502,7 +2506,7 @@ function [G,df2] = fastt(M,psi,res,m,c,plm)
 % psi : regression coefficients
 % res : residuals
 % plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
+%       'palm_core.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % G   : t statistic.
@@ -2533,7 +2537,7 @@ function [G,df2] = fastf(M,psi,res,m,c,plm)
 % psi : regression coefficients
 % res : residuals
 % plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
+%       'palm_core.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % G   : F-statistic.
@@ -2574,7 +2578,7 @@ function [G,df2] = fastv(M,psi,res,m,c,plm)
 % psi : regression coefficients
 % res : residuals
 % plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
+%       'palm_core.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % G   : Aspin-Welch v statistic.
@@ -2636,7 +2640,7 @@ function [G,df2] = fastg(M,psi,res,m,c,plm)
 % psi : regression coefficients
 % res : residuals
 % plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
+%       'palm_core.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % G   : Welch v^2 statistic.
@@ -2694,22 +2698,20 @@ df2  = 1/3./bsum;
 G    = G./(1 + 2*(plm.rC{m}(c)-1).*bsum);
 
 % ==============================================================
-function [B,S] = lowrankt(M,psi,res,m,c,plm)
+function [B,S] = lowrankfac(eC,psi,res)
 % This works only if:
 % - rank(contrast) = 1
 % - number of variance groups = 1
 %
 % Inputs:
-% M   : design matrix
+% eC  : effective contrast
 % psi : regression coefficients
 % res : residuals
-% plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % B   : p-th row of B
 % S   : p-th row of S
-B   = plm.eC{m}{c}'*psi;
+B   = eC'*psi;
 S   = sum(res.^2);
 
 % ==============================================================
@@ -2726,7 +2728,7 @@ function Q = fasttsq(M,psi,res,m,c,plm)
 % psi : regression coefficients
 % res : residuals
 % plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
+%       'palm_core.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % Q    : Hotelling's T^2 statistic.
@@ -2774,7 +2776,7 @@ function Q = fastq(M,psi,res,m,c,plm)
 % psi : regression coefficients
 % res : residuals
 % plm : a struct with many things as generated by
-%       'palm_backend.m' and 'palm_takeargs.m'
+%       'palm_core.m' and 'palm_takeargs.m'
 %
 % Outputs:
 % Q    : Multivariate (yet scalar) statistic.

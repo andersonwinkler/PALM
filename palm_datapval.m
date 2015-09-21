@@ -50,7 +50,7 @@ function pvals = palm_datapval(G,Gvals,rev)
 if rev, % if small G are significant
     
     % Sort the data and compute the empirical distribution
-    [~,cdfG,distp] = palm_csort(Gvals(:),'ascend',true);
+    [~,cdfG,distp] = palm_competitive(Gvals(:),'ascend',true);
     cdfG  = unique(cdfG);
     distp = unique(distp)./numel(Gvals);
     
@@ -64,7 +64,7 @@ if rev, % if small G are significant
 else % if large G are significant (typical case)
     
     % Sort the data and compute the empirical distribution
-    [~,cdfG,distp] = palm_csort(Gvals(:),'descend',true);
+    [~,cdfG,distp] = palm_competitive(Gvals(:),'descend',true);
     cdfG  = unique(cdfG);
     distp = flipud(unique(distp))./numel(Gvals);
     

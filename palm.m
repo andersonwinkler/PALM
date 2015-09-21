@@ -77,4 +77,4 @@ elseif nargin == 1,
 end
 
 % Now run what matters
-palm_backend(varargin{:});
+palm_core(varargin{:});

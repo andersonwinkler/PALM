@@ -71,9 +71,9 @@ if any(Pidx),
     % Number of permutations & distribution CDF
     nP   = size(Gvals,1);
     if rev,
-        [~,Gvals,Gcdf] = palm_csort(Gvals,'descend',true);
+        [~,Gvals,Gcdf] = palm_competitive(Gvals,'descend',true);
     else
-        [~,Gvals,Gcdf] = palm_csort(Gvals,'ascend',true);
+        [~,Gvals,Gcdf] = palm_competitive(Gvals,'ascend',true);
     end
     Gcdf = Gcdf/nP;
     
