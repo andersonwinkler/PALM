@@ -90,7 +90,7 @@ switch lower(meth),
         C0    = eye(size(M,2)) - C*pinv(C);
         [Z,~] = svd(M*C0);
         Z     = Z(:,1:rank(M)-rank(C));
-        X     = X-Z*xpinv(Z)*X;
+        X     = X-Z*pinv(Z)*X;
         eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
