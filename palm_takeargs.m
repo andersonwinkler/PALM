@@ -787,7 +787,7 @@ while a <= narginx,
             
         case '-saveperms', % advanced
             
-            % Allow no use of mask for 4D NIFTI files
+            % Save the permutations
             opts.saveperms = true;
             a = a + 1;
             
