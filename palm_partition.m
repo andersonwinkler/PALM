@@ -11,8 +11,9 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 % meth : Method for the partitioning. It can be:
 %        - 'Guttman'
 %        - 'Beckmann'
-%        - 'Winkler'
+%        - 'Winkler' (for testing only)
 %        - 'Ridgway'
+%        - 'none' (does nothing, X=M, Z=[])
 % Y    : (Optional) For the 'Winkler' method only.
 % 
 % Outputs:
@@ -60,13 +61,13 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 switch lower(meth),
-    case 'guttman'
+    case 'guttman',
         idx   = any(C~=0,2);
         X     = M(:,idx);
         Z     = M(:,~idx);
         eCm   = vertcat(C(idx,:),C(~idx,:));
         
-    case 'beckmann'
+    case 'beckmann',
         Cu    = null(C');
         D     = pinv(M'*M);
         CDCi  = pinv(C'*D*C);
@@ -78,14 +79,14 @@ switch lower(meth),
         eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
-    case 'winkler'
+    case 'winkler', % this is just for testing
         D     = pinv(M'*M);
         X     = M*D*C*pinv(C'*D*C);
         Z     = (M*D*M'-X*pinv(X))*Y;
         eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
-    case 'ridgway'
+    case 'ridgway',
         X     = M*pinv(C');
         C0    = eye(size(M,2)) - C*pinv(C);
         [Z,~] = svd(M*C0);
@@ -94,7 +95,7 @@ switch lower(meth),
         eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
-    case 'none'
+    case 'none',
         X     = M;
         Z     = [];
         eCm   = C;

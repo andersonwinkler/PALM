@@ -20,7 +20,8 @@ function varargout = palm_quickperms(varargin)
 %           exchangeable data, use ones(N,1). You can also leave it
 %           empty ([]) if a valid, non-empty M was supplied.
 % P       : Desired number of permutations. The actual number may be
-%           smaller if N is too small. Default is 5000.
+%           smaller if N is too small. Use 0 for exhaustive.
+%           Default is 10000.
 % EE      : True/False indicating whether to assume exchangeable errors,
 %           which allow permutations.
 % ISE     : True/False indicating whether to assume independent and
@@ -62,7 +63,7 @@ function varargout = palm_quickperms(varargin)
 % Take the inputs:
 v.M       = [];
 v.EB      = [];
-v.P       = 5000;
+v.P       = 10000;
 v.EE      = true;
 v.ISE     = false;
 v.CMCx    = false;
@@ -76,8 +77,8 @@ end
 if ~ v.EE && ~ v.ISE,
     error('At least one of EE or ISE must be given as "true".');
 end
-if v.P <= 0,
-    error('P must be larger than zero');
+if v.P < 0,
+    error('P must not be negative');
 end
 if isempty(v.M ), v.M  = 0; end
 if isempty(v.EB), v.EB = 0; end 

@@ -1,4 +1,4 @@
-function P = palm_pareto(G,Gvals,rev,Pthr)
+function P = palm_pareto(G,Gdist,rev,Pthr)
 % Compute the p-values for a set of statistics G, taking
 % as reference a set of observed values for G, from which
 % the empirical cumulative distribution function (cdf) is
@@ -61,7 +61,7 @@ function P = palm_pareto(G,Gvals,rev,Pthr)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Compute the usual permutation p-values.
-P    = palm_datapval(G,Gvals,rev);
+P    = palm_datapval(G,Gdist,rev);
 Pidx = P < Pthr; % don't replace this "<" for "<=".
 
 % If some of these are small (as specified by the user), these
@@ -69,16 +69,13 @@ Pidx = P < Pthr; % don't replace this "<" for "<=".
 if any(Pidx),
     
     % Number of permutations & distribution CDF
-    nP   = size(Gvals,1);
+    nP   = size(Gdist,1);
     if rev,
-        [~,Gvals,Gcdf] = palm_competitive(Gvals,'descend',true);
+        [~,Gdist,Gcdf] = palm_competitive(Gdist,'descend',true);
     else
-        [~,Gvals,Gcdf] = palm_competitive(Gvals,'ascend',true);
+        [~,Gdist,Gcdf] = palm_competitive(Gdist,'ascend',true);
     end
     Gcdf = Gcdf/nP;
-    
-    % Just for the stats that are significant
-    G = G(Pidx);
     
     % Keep adjusting until the fit is good. Change the step to 10 to get
     % the same result as Knijnenburg et al.
@@ -90,36 +87,36 @@ if any(Pidx),
 
         % Get the tail
         qidx  = Gcdf >= Q(q);
-        Gtail = Gvals(qidx);
+        Gtail = Gdist(qidx);
         qi    = find(qidx,1);
         if qi == 1,
-            u = Gvals(qi) - mean(Gvals(qi:qi+1));
+            u = Gdist(qi) - mean(Gdist(qi:qi+1));
         else
-            u = mean(Gvals(qi-1:qi));
+            u = mean(Gdist(qi-1:qi));
         end
         if rev,
             ytail = u - Gtail;
-            y     = u - G;
+            y     = u - G(G < u);
         else
             ytail = Gtail - u;
-            y     = G - u;
+            y     = G(G > u) - u;
         end
         
         % Estimate the distribution parameters. See §3.2 of Hosking &
         % Wallis (1987). Compared to the usual GPD parameterisation, 
         % here k = xi, and a = \tilde{\sigma}.
-        x   = mean(ytail);
-        s2  = var(ytail);
-        a   = x*(x^2/s2 + 1)/2;
-        k   =   (x^2/s2 - 1)/2;
+        x    = mean(ytail);
+        s2   = var(ytail);
+        sig2 = x*(x^2/s2 + 1)/2;
+        xi   =   (x^2/s2 - 1)/2;
         
         % Check if the fitness is good
-        A2pval = andersondarling(gpdpvals(ytail,a,k),k);
+        A2pval = andersondarling(gpdpvals(ytail,sig2,xi),xi);
             
         % If yes, keep. If not, try again with the next quantile.
         if A2pval > .05;
             cte = numel(Gtail)/nP;
-            Ptail = cte*gpdpvals(y,a,k);
+            Ptail = cte*gpdpvals(y,sig2,xi);
         else
             q = q + 1;
         end
@@ -128,7 +125,11 @@ if any(Pidx),
     % Replace the permutation p-value for the approximated
     % p-value
     if ~ isnan(Ptail),
-        P(Pidx) = Ptail;
+        if rev,
+            P(G < u) = Ptail;
+        else
+            P(G > u) = Ptail;
+        end
     end
 end
 

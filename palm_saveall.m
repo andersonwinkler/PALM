@@ -44,7 +44,7 @@ if opts.approx.noperm,
             for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave(plm.G{y}{m}{c},0,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                 end
             end
         end
@@ -53,7 +53,7 @@ if opts.approx.noperm,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 palm_quicksave(plm.Q{m}{c},0,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{m}{c}));
             end
         end
     end
@@ -225,19 +225,19 @@ if opts.saveunivariate,
                     
                     % Permutation p-value, uncorrected
                     palm_quicksave(plm.Gpperm{y}{m}{c},1,opts,plm,y,m,c, ...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     
                     % Permutation p-value, FDR adjusted
                     if opts.FDR,
                         palm_quicksave(fastfdr(plm.Gpperm{y}{m}{c}),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                 else
                     
                     % Permutation p-value
                     if opts.saveuncorrected,
                         palm_quicksave(plm.Gpperm{y}{m}{c},1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                     
                     % FWER-corrected
@@ -252,12 +252,12 @@ if opts.saveunivariate,
                     end
                     palm_quicksave( ...
                         Ptosave,1,opts,plm,y,m,c,...
-                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     
                     % Permutation p-value, FDR adjusted
                     if opts.FDR,
                         palm_quicksave(fastfdr(plm.Gpperm{y}{m}{c}),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                     
                     % Cluster statistic results.
@@ -265,7 +265,7 @@ if opts.saveunivariate,
                         
                         % Cluster statistic.
                         palm_quicksave(plm.Gclu{y}{m}{c},0,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         
                         % Cluster statistic FWER p-value
                         if opts.approx.tail,
@@ -277,7 +277,7 @@ if opts.saveunivariate,
                         end
                         palm_quicksave( ...
                             Ptosave,1,opts,plm,y,m,c,...
-                            sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                     
                     % TFCE results
@@ -285,12 +285,12 @@ if opts.saveunivariate,
                         
                         % TFCE statistic
                         palm_quicksave(plm.Gtfce{y}{m}{c},0,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         
                         % TFCE p-value
                         if opts.saveuncorrected,
                             palm_quicksave(plm.Gtfcepperm{y}{m}{c},1,opts,plm,y,m,c,...
-                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                         
                         % TFCE FWER-corrected within modality and contrast.
@@ -303,12 +303,12 @@ if opts.saveunivariate,
                         end
                         palm_quicksave( ...
                             Ptosave,1,opts,plm,y,m,c,...
-                            sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         
                         % TFCE p-value, FDR adjusted.
                         if opts.FDR,
                             palm_quicksave(fastfdr(plm.Gtfcepperm{y}{m}{c}),1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_fdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_fdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 end
@@ -317,11 +317,11 @@ if opts.saveunivariate,
                 if opts.savepara,
                     if opts.saveuncorrected,
                         P = palm_quicksave(plm.G{y}{m}{c},2,opts,plm,y,m,c,...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncparap',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncparap',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                     if opts.FDR,
                         palm_quicksave(fastfdr(P),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrparap',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fdrparap',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                 end
             end
@@ -345,7 +345,7 @@ if opts.saveunivariate,
                     for y = 1:plm.nY,
                         m = y;
                         palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                 end
             else
@@ -358,7 +358,7 @@ if opts.saveunivariate,
                         pfdradj = fastfdr(pmerged);
                         for y = 1:plm.nY,
                             palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 end
@@ -387,7 +387,7 @@ if opts.saveunivariate,
                         end
                         palm_quicksave( ...
                             Ptosave,1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                 end
             else
@@ -408,7 +408,7 @@ if opts.saveunivariate,
                             end
                             palm_quicksave( ...
                                 Ptosave,1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 end
@@ -436,7 +436,7 @@ if opts.saveunivariate,
                             end
                             palm_quicksave( ...
                                 Ptosave,1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 else
@@ -457,7 +457,7 @@ if opts.saveunivariate,
                                 end
                                 palm_quicksave( ...
                                     Ptosave,1,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                    sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                             end
                         end
                     end
@@ -486,7 +486,7 @@ if opts.saveunivariate,
                             end
                             palm_quicksave( ...
                                 Ptosave,1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 else
@@ -507,7 +507,7 @@ if opts.saveunivariate,
                                 end
                                 palm_quicksave( ...
                                     Ptosave,1,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                    sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                             end
                         end
                     end
@@ -524,7 +524,7 @@ if opts.saveunivariate,
                             for y = 1:plm.nY,
                                 m = y;
                                 palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                    sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                             end
                         end
                     else
@@ -537,7 +537,7 @@ if opts.saveunivariate,
                                 pfdradj = fastfdr(pmerged);
                                 for y = 1:plm.nY,
                                     palm_quicksave(pfdradj(plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                                        sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                        sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 end
                             end
                         end
@@ -573,7 +573,7 @@ if opts.saveunivariate,
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         palm_quicksave(pfdradj(j,:),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         j = j + 1;
                     end
                 end
@@ -610,7 +610,7 @@ if opts.saveunivariate,
                         end
                         palm_quicksave( ...
                             Ptosave,1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                 end
             end
@@ -644,7 +644,7 @@ if opts.saveunivariate,
                             end
                             palm_quicksave( ...
                                 Ptosave,1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 end
@@ -679,7 +679,7 @@ if opts.saveunivariate,
                             end
                             palm_quicksave( ...
                                 Ptosave,1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_cfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 end
@@ -704,7 +704,7 @@ if opts.saveunivariate,
                         for m = loopM,
                             for c = 1:plm.nC(m),
                                 palm_quicksave(pfdradj(j,:),1,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_cfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                    sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_cfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 j = j + 1;
                             end
                         end
@@ -741,7 +741,7 @@ if opts.saveunivariate,
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                 end
             end
@@ -779,7 +779,7 @@ if opts.saveunivariate,
                         end
                         palm_quicksave( ...
                             Ptosave,1,opts,plm,y,m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     end
                 end
             end
@@ -815,7 +815,7 @@ if opts.saveunivariate,
                             end
                             palm_quicksave( ...
                                 Ptosave,1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 end
@@ -852,7 +852,7 @@ if opts.saveunivariate,
                             end
                             palm_quicksave( ...
                                 Ptosave,1,opts,plm,y,m,c, ...
-                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mcfwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                         end
                     end
                 end
@@ -878,7 +878,7 @@ if opts.saveunivariate,
                         for m = loopM,
                             for c = 1:plm.nC(m),
                                 palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mcfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                    sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_mcfdrp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                             end
                         end
                     end
@@ -898,7 +898,7 @@ if opts.npcmod && ~ opts.npccon,
             % NPC p-value
             if opts.saveuncorrected,
                 palm_quicksave(plm.Tpperm{m}{c},1,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{m}{c}));
             end
             
             % NPC FWER-corrected
@@ -911,18 +911,18 @@ if opts.npcmod && ~ opts.npccon,
             end
             palm_quicksave( ...
                 Ptosave,1,opts,plm,[],m,c, ...
-                sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{c}));
+                sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{m}{c}));
             
             % NPC FDR
             if opts.FDR,
                 palm_quicksave(fastfdr(plm.Tpperm{m}{c}),1,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fdrp',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fdrp',plm.mstr{m},plm.cstr{m}{c}));
             end
             
             % Parametric combined pvalue
             if opts.savepara && ~ plm.nonpcppara && opts.saveuncorrected,
                 palm_quicksave(plm.Tppara{m}{c},1,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncparap',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncparap',plm.mstr{m},plm.cstr{m}{c}));
             end
             
             % Cluster statistic NPC results.
@@ -930,7 +930,7 @@ if opts.npcmod && ~ opts.npccon,
                 
                 % Cluster statistic.
                 palm_quicksave(plm.Tclu{m}{c},0,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{m}{c}));
                 
                 % Cluster statistic FWER p-value
                 if opts.approx.tail,
@@ -942,7 +942,7 @@ if opts.npcmod && ~ opts.npccon,
                 end
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,y,m,c,...
-                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{m}{c}));
             end
             
             % TFCE NPC results.
@@ -950,12 +950,12 @@ if opts.npcmod && ~ opts.npccon,
                 
                 % TFCE statistic.
                 palm_quicksave(plm.Ttfce{m}{c},0,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{m}{c}));
                 
                 % TFCE p-value
                 if opts.saveuncorrected,
                     palm_quicksave(plm.Ttfcepperm{m}{c},1,opts,plm,[],m,c,...
-                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{m}{c}));
                 end
                 
                 % TFCE FWER p-value
@@ -968,12 +968,12 @@ if opts.npcmod && ~ opts.npccon,
                 end
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,[],m,c,...
-                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{m}{c}));
                 
                 % TFCE FDR p-value
                 if opts.FDR,
                     palm_quicksave(fastfdr(plm.Ttfcepperm{m}{c}),1,opts,plm,[],m,c,...
-                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fdrp',plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fdrp',plm.mstr{m},plm.cstr{m}{c}));
                 end
             end
         end
@@ -1005,7 +1005,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
             end
             palm_quicksave( ...
                 Ptosave,1,opts,plm,[],m,c,...
-                sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{c}));
+                sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{m}{c}));
         end
     end
     
@@ -1024,7 +1024,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 palm_quicksave(pfdradj(:,j),1,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfdrp',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfdrp',plm.mstr{m},plm.cstr{m}{c}));
                 j = j + 1;
             end
         end
@@ -1052,7 +1052,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
                 end
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,[],m,c,...
-                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{m}{c}));
             end
         end
     end
@@ -1079,7 +1079,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
                 end
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,[],m,c,...
-                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{m}{c}));
             end
         end
         if opts.FDR,
@@ -1096,7 +1096,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
                     palm_quicksave(pfdradj(:,j),1,opts,plm,[],m,c, ...
-                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_cfdrp',plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_cfdrp',plm.mstr{m},plm.cstr{m}{c}));
                     j = j + 1;
                 end
             end
@@ -1322,19 +1322,19 @@ if opts.MV || opts.CCA,
             % MV p-value
             if opts.saveuncorrected,
                 palm_quicksave(plm.Qpperm{m}{c},1,opts,plm,[],[],[], ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_uncp',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_uncp',plm.mstr{m},plm.cstr{m}{c}));
             end
             
             % MV FDR
             if opts.FDR,
                 palm_quicksave(fastfdr(plm.Qpperm{m}{c}),1,opts,plm,[],[],[], ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_fdrp',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_fdrp',plm.mstr{m},plm.cstr{m}{c}));
             end
             
             % Parametric MV pvalue
             if opts.savepara && ~ plm.nomvppara && opts.saveuncorrected,
                 palm_quicksave(plm.Qppara{m}{c},1,opts,plm,[],[],[], ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_uncparap',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_uncparap',plm.mstr{m},plm.cstr{m}{c}));
             end
             
             % Only permutation p-value and its FDR ajustment are saved in the negative binomial mode.
@@ -1352,14 +1352,14 @@ if opts.MV || opts.CCA,
                 end
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,[],[],[], ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{m}{c}));
                 
                 % Cluster statistic MV results.
                 if opts.cluster.mv.do,
                     
                     % Cluster statistic.
                     palm_quicksave(plm.Qclu{m}{c},0,opts,plm,[],[],[], ...
-                        sprintf('%s',opts.o,opts.cluster.str,plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.cluster.str,plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{m}{c}));
                     
                     % Cluster statistic FWER p-value
                     if opts.approx.tail,
@@ -1371,7 +1371,7 @@ if opts.MV || opts.CCA,
                     end
                     palm_quicksave( ...
                         Ptosave,1,opts,plm,[],[],[],...
-                        sprintf('%s',opts.o,opts.cluster.str,plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.cluster.str,plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{m}{c}));
                 end
                 
                 % TFCE MV results.
@@ -1379,12 +1379,12 @@ if opts.MV || opts.CCA,
                     
                     % TFCE statistic.
                     palm_quicksave(plm.Qtfce{m}{c},0,opts,plm,[],[],[], ...
-                        sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{m}{c}));
                     
                     % TFCE p-value
                     if opts.saveuncorrected,
                         palm_quicksave(plm.Qtfcepperm{m}{c},1,opts,plm,[],[],[],...
-                            sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_uncp',plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_uncp',plm.mstr{m},plm.cstr{m}{c}));
                     end
                     
                     % TFCE FWER p-value
@@ -1397,12 +1397,12 @@ if opts.MV || opts.CCA,
                     end
                     palm_quicksave( ...
                         Ptosave,1,opts,plm,[],[],[], ...
-                        sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{m}{c}));
                     
                     % TFCE MV FDR
                     if opts.FDR,
                         palm_quicksave(fastfdr(plm.Qtfcepperm{m}{c}),1,opts,plm,[],[],[], ...
-                            sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_fdrp',plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_fdrp',plm.mstr{m},plm.cstr{m}{c}));
                     end
                 end
             end
@@ -1429,7 +1429,7 @@ if ( opts.MV || opts.CCA ) && opts.corrcon,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 palm_quicksave(pfdradj(j,:),1,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_cfdrp',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_cfdrp',plm.mstr{m},plm.cstr{m}{c}));
                 j = j + 1;
             end
         end
@@ -1460,7 +1460,7 @@ if ( opts.MV || opts.CCA ) && opts.corrcon,
                 end
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,[],m,c,...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{m}{c}));
             end
         end
         
@@ -1486,7 +1486,7 @@ if ( opts.MV || opts.CCA ) && opts.corrcon,
                     end
                     palm_quicksave( ...
                         Ptosave,1,opts,plm,[],m,c,...
-                        sprintf('%s',opts.o,opts.cluster.str,plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.cluster.str,plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{m}{c}));
                 end
             end
         end
@@ -1515,7 +1515,7 @@ if ( opts.MV || opts.CCA ) && opts.corrcon,
                     end
                     palm_quicksave( ...
                         Ptosave,1,opts,plm,[],m,c,...
-                        sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{c}));
+                        sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_cfwep',plm.mstr{m},plm.cstr{m}{c}));
                 end
             end
             
@@ -1534,7 +1534,7 @@ if ( opts.MV || opts.CCA ) && opts.corrcon,
                 for m = 1:plm.nM,
                     for c = 1:plm.nC(m),
                         palm_quicksave(pfdradj(j,:),1,opts,plm,[],m,c, ...
-                            sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_cfdrp',plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_cfdrp',plm.mstr{m},plm.cstr{m}{c}));
                         j = j + 1;
                     end
                 end

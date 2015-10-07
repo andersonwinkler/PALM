@@ -99,7 +99,7 @@ for c = 1:nC, % loop over columns
     dd = diff(S(:,c));
     if any(isnan(dd)),
         error(['Data cannot be sorted. Check for NaNs that might be present,\n', ...
-            'or precision issues that may cause over/underflow.\n%s'],'')
+            'or precision issues that may cause over/underflow.%s'],'')
     end
     f = find([false; ~logical(dd)]);
     for pos = 1:numel(f),

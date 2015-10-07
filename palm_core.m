@@ -26,8 +26,8 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Take the arguments. Save a small log if needed.
-%clear global plm opts % comment for debugging
-% global plm opts; % uncomment for debugging
+clear global plm opts; % comment for debugging
+global plm opts; % uncomment for debugging
 ticI = tic;
 [opts,plm] = palm_takeargs(varargin{:});
 
@@ -303,9 +303,20 @@ switch opts.tfce.stat,
 end
 
 % Inital strings to save the file names later.
-plm.ystr = cell(plm.nY,1);      for y = 1:plm.nY,      plm.ystr{y} = ''; end
-plm.mstr = cell(plm.nM,1);      for m = 1:plm.nM,      plm.mstr{m} = ''; end
-plm.cstr = cell(max(plm.nC),1); for c = 1:max(plm.nC), plm.cstr{c} = ''; end
+plm.ystr = cell(plm.nY,1);
+for y = 1:plm.nY,
+    plm.ystr{y} = '';
+end
+plm.mstr = cell(plm.nM,1);
+plm.cstr = cell(plm.nM,1);
+for m = 1:plm.nM,
+    plm.mstr{m} = '';
+    plm.cstr{m} = cell(plm.nC(m));
+    for c = 1:plm.nC(m),
+        plm.cstr{m}{c} = '';
+    end
+end
+
 
 % Create the function handles for the NPC.
 if opts.NPC,
@@ -560,9 +571,9 @@ for po = P_outer,
             if po == 1,
                 
                 % String with the counter
-                if (plm.nC(m) > 1 || opts.verbosefilenames),
+                if max(plm.nC) > 1 || opts.verbosefilenames,
                     ctmp = c + opts.conskipcount;
-                    plm.cstr{c} = sprintf('_c%d',ctmp);
+                    plm.cstr{m}{c} = sprintf('_c%d',ctmp);
                 end
                 
                 if opts.evperdat,
@@ -1023,7 +1034,7 @@ for po = P_outer,
                 if opts.saveperms,
                     % It's faster to write directly as below than using dlmwrite and
                     % palm_swapfmt.m
-                    fid = fopen(sprintf('%s%s%s_permidx.csv',opts.o,plm.mstr{m},plm.cstr{c}),'w');
+                    fid = fopen(sprintf('%s%s%s_permidx.csv',opts.o,plm.mstr{m},plm.cstr{m}{c}),'w');
                     for p = 1:plm.nP{m}(c),
                         fprintf(fid,'%d,',palm_perm2idx(plm.Pset{p})');
                         fseek(fid,-1,'eof');
@@ -1034,7 +1045,7 @@ for po = P_outer,
                 
                 % If the user requests, save the permutation metrics
                 if opts.savemetrics,
-                    fid = fopen(sprintf('%s%s%s_metrics.csv',opts.o,plm.mstr{m},plm.cstr{c}),'w');
+                    fid = fopen(sprintf('%s%s%s_metrics.csv',opts.o,plm.mstr{m},plm.cstr{m}{c}),'w');
                     fprintf(fid,[ ...
                         'Log of max number of permutations given the tree (W),%f\n' ...
                         'Log of max number of permutations if unrestricted (W0),%f\n' ...
@@ -1365,18 +1376,18 @@ for po = P_outer,
                             if p == 1,
                                 if opts.saveunivariate,
                                     palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
-                                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                     
                                     % Save also the degrees of freedom for the unpermuted
                                     if opts.savedof,
                                         if numel(df2{y}{m}{c}) == 1,
                                             savedof(plm.rC{m}(c),df2{y}{m}{c}, ...
-                                                horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}),'_dof.txt'));
+                                                horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}),'_dof.txt'));
                                         else
                                             savedof(plm.rC{m}(c),mean(df2{y}{m}{c}), ...
-                                                horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}),'_meandof.txt'));
+                                                horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}),'_meandof.txt'));
                                             palm_quicksave(df2{y}{m}{c},0,opts,plm,y,m,c, ...
-                                                horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}),'_dof'));
+                                                horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}),'_dof'));
                                         end
                                     end
                                 end
@@ -1385,7 +1396,7 @@ for po = P_outer,
                             % Save the stats for each permutation if that was asked
                             if opts.saveperms && ~ opts.approx.negbin && ~ opts.approx.lowrank,
                                 palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
-                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}),sprintf('_perm%06d',p)));
+                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
                             end
                         end
                         
@@ -1400,14 +1411,14 @@ for po = P_outer,
                                 plm.Gname{m}{c} = sprintf('_z%s',plm.Gname{m}{c}(2:end));
                                 if opts.saveunivariate,
                                     palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
-                                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}));
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 end
                             end
                             
                             % Save the stats for each permutation if that was asked
                             if opts.saveperms && ~ opts.approx.negbin,
                                 palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
-                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{c}),sprintf('_perm%06d',p)));
+                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
                             end
                         end
                         
@@ -1573,14 +1584,14 @@ for po = P_outer,
                     % of the two-tailed option)
                     if p == 1,
                         palm_quicksave(T{m}{c},0,opts,plm,[],m,c, ...
-                            sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{c}));
+                            sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{m}{c}));
                     end
                     
                     % If the user wants to save the NPC statistic for each
                     % permutation, save it now.
                     if opts.saveperms,
                         palm_quicksave(T{m}{c},0,opts,plm,[],m,c, ...
-                            horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{c}),sprintf('_perm%06d',p)));
+                            horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
                     end
                     
                     % Increment counters
@@ -1715,7 +1726,7 @@ for po = P_outer,
                         % Save the MV statistic
                         if p == 1,
                             palm_quicksave(Q{m}{c},0,opts,plm,[],m,c, ...
-                                sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{m}{c}));
                         end
                         
                         % Draft mode
@@ -1757,7 +1768,7 @@ for po = P_outer,
                             % not to use to much memory
                             if opts.saveperms,
                                 palm_quicksave(Q{m}{c},0,opts,plm,[],m,c, ...
-                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}),sprintf('_perm%06d',p)));
+                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
                             end
                             if p == 1,
                                 % In the first permutation, keep Q and start the counter.
@@ -1868,7 +1879,7 @@ for po = P_outer,
                         % Save the CCA statistic
                         if p == 1,
                             palm_quicksave(Q{m}{c},0,opts,plm,[],m,c, ...
-                                sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}));
+                                sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{m}{c}));
                         end
                         
                         % In p = 1, there is no counter being incremented (stays at 0) and the number
@@ -1907,7 +1918,7 @@ for po = P_outer,
                             % not to use to much memory
                             if opts.saveperms,
                                 palm_quicksave(Q{m}{c},0,opts,plm,[],m,c, ...
-                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{c}),sprintf('_perm%06d',p)));
+                                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},plm.mstr{m},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
                             end
                             
                             % In the first permutation, keep Q and start the counter.
@@ -2041,14 +2052,14 @@ for po = P_outer,
             % of the two-tailed option)
             if p == 1,
                 palm_quicksave(T{1}{c},0,opts,plm,[],1,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{1},plm.cstr{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{1},plm.cstr{m}{c}));
             end
             
             % If the user wants to save the NPC statistic for each
             % permutation, save it now.
             if opts.saveperms,
                 palm_quicksave(T{1}{c},0,opts,plm,[],1,c, ...
-                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{1},plm.cstr{c}),sprintf('_perm%06d',p)));
+                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{1},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
             end
             
             % Increment counters
@@ -2888,9 +2899,9 @@ function cc = cca(Y,X,k)
 % of nuisance (partial CCA) via Y=Rz*Y and X=Rz*X.
 % k is the k-th CC (typically we want the 1st).
 % Based on the algorithm proposed by:
-% Bjorck A, Golub GH. Numerical methods for
-% computing angles between linear subspaces.
-% Math Comput. 1973;27(123):579-579.
+% * Bjorck A, Golub GH. Numerical methods for
+%   computing angles between linear subspaces.
+%   Math Comput. 1973;27(123):579-579.
 [Qy,~]  = qr(Y,0);
 [Qx,~]  = qr(X,0);
 [~,D,~] = svd(Qy'*Qx,0);
@@ -2917,7 +2928,6 @@ P   = sgn.*cf*bsxfun(@power,T,pw');
 % ==============================================================
 function T = fisher(G,df1,df2)
 T = -2*sum(log(palm_gpval(G,df1,df2)),1);
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = fisherp(T,nG)
 P = palm_gpval(T,-1,2*nG);
@@ -2925,7 +2935,6 @@ P = palm_gpval(T,-1,2*nG);
 % ==============================================================
 function T = stouffer(G,df1,df2)
 T = sum(palm_gtoz(G,df1,df2),1)/sqrt(size(G,1));
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = stoufferp(T,~)
 P = palm_gpval(T,0);
@@ -2933,7 +2942,6 @@ P = palm_gpval(T,0);
 % ==============================================================
 function T = wilkinson(G,df1,df2,parma)
 T = sum(palm_gpval(G,df1,df2) <= parma);
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = wilkinsonp(T,nG,parma)
 lfac    = palm_factorial(nG);
@@ -2954,7 +2962,6 @@ cte = sqrt(sum(df2./(df2-2),1));
 gp  = palm_gpval(G,df1,df2);
 gt  = sign(gp-.5).*sqrt(df2./betainv(2*min(gp,1-gp),df2/2,.5)-df2); % =tinv(gp,df2)
 T   = -sum(gt)./cte;
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = winerp(T,~)
 P = palm_gcdf(-T,0);
@@ -2962,7 +2969,6 @@ P = palm_gcdf(-T,0);
 % ==============================================================
 function T = edgington(G,df1,df2)
 T = sum(palm_gpval(G,df1,df2),1);
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = edgingtonp(T,nG)
 lfac = palm_factorial(nG);
@@ -2983,7 +2989,6 @@ mhcte = sqrt(3*(5*nG+4)/nG/(5*nG+2))/pi;
 T = mhcte*sum(log(...
     palm_gcdf(G,df1,df2)./...
     palm_gpval(G,df1,df2)),1);
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = mudholkargeorgep(T,nG)
 P = palm_gpval(T,1,5*nG+4);
@@ -2992,7 +2997,6 @@ P = palm_gpval(T,1,5*nG+4);
 function [T,Gpval] = friston(G,df1,df2)
 Gpval = palm_gpval(G,df1,df2);
 T = max(Gpval,[],1);
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = fristonp(T,nG,parmu)
 P = T.^(nG - parmu + 1);
@@ -3014,7 +3018,6 @@ function T = zaykin(G,df1,df2,parma)
 P = -log10(palm_gpval(G,df1,df2));
 P(P < -log10(parma)) = 0;
 T = sum(P,1);
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = zaykinp(T,nG,parma)
 lT      = -T;
@@ -3048,7 +3051,6 @@ G       = reshape(G(idx),horzcat(parmr,size(G,2)));
 df2     = reshape(df2(idx),horzcat(parmr,size(df2,2)));
 P       = -log10(palm_gpval(G,df1,df2));
 T       = sum(P,1);
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = dudbridgekoelemanp(T,nG,parmr)
 lT = -T;
@@ -3062,7 +3064,6 @@ for v = 1:numel(lT);
     P(v) = quad(@(t)dkint(t,lp1,lT(v),nG,...
         parmr,lfac(1:parmr)),eps,1);
 end
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function T = dudbridgekoeleman2(G,df1,df2,parmr,parma)
 df2 = bsxfun(@times,ones(size(G)),df2);
@@ -3072,7 +3073,6 @@ P = -log10(palm_gpval(G,df1,df2));
 P(tmp > parmr) = 0;
 P(P < -log10(parma)) = 0;
 T = sum(P,1);
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = dudbridgekoeleman2p(T,nG,parmr,parma)
 lT = -T;
@@ -3096,7 +3096,6 @@ if k < nG,
             lfac(1:parmr)),eps,parma);
     end
 end
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function q = dkint(t,lp1,lT,K,r,lfac)
 lp2 = (K-r-1).*log(1-t);
@@ -3109,7 +3108,6 @@ lp3 = lT + (j-1)*log(r*log(t)-lT) ...
 L2  = real(lp1 + repmat(lp2,[r 1]) + lp3);
 s2  = (lT <= ltr).*sum(exp(L2));
 q   = s1 + s2;
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function A = awtk(lw,t,k,lfac)
 ltk = k.*log(t);
@@ -3127,7 +3125,7 @@ P = palm_gpval(G,df1,df2);
 [~,tmp] = sort(P);
 [~,prank] = sort(tmp);
 T = sum(1-P.*(nG+1)./prank)/nG;
-
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = taylortibshiranip(T,nG)
 P = palm_gcdf(-T./sqrt(nG),0);
 
@@ -3193,7 +3191,7 @@ else
         S = way2(X);
     end
 end
-
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function sp = way1(X)
 % Way 1: this tends to be faster for Octave and if
 % the number of levels in X is smaller than about 5.
@@ -3207,7 +3205,7 @@ for y1 = 1:nY,
         end
     end
 end
-
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function sp = way2(X)
 % Way 2: This tends to be faster in Matlab or if
 % there are many levels in X, e.g., more than about 7.
