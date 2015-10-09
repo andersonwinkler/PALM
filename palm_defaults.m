@@ -105,6 +105,7 @@ opts.approx.noperm        = false;             % Compute approximate p-vals with
 opts.approx.gamma         = false;             % Do a gamma-fit after just a few permutations
 opts.approx.lowrank       = false;             % Try a low rank approximation
 opts.approx.lowrank_val   = NaN;               % Use NaN for N*(N+1)/2. Values <=1 are fraction of voxels to use; vals >1 are number of voxels to use.
+opts.approx.lowrank_recon = false;             % Reconstruct past permutations in the new basis? This is very slow.
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within-block is also default).

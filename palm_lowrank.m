@@ -48,7 +48,7 @@ if nargin == 1,
     % Outputs
     varargout{1} = diag(diag(SSr).^-.5)*U;
     
-elseif nargin == 4,
+elseif nargin == 5,
     
     if size(G,1) > 1,
         
@@ -59,6 +59,7 @@ elseif nargin == 4,
         U     = varargin{2}; % basis
         nsel  = varargin{3}; % number of voxels to use
         Gmean = varargin{4}; % ensure outputs are all positive
+        showprogress = varargin{5};
         
         % Reconstruct the data in the new basis. Use just a subsample, so that
         % the residuals will also include this source of variability (i.e., the
@@ -66,6 +67,9 @@ elseif nargin == 4,
         Grec = zeros(size(G));
         if Gmean,
             for p = 1:nP,
+                if showprogress,
+                    fprintf('\t [Reconstructing shuffling %d/%d (variance)]\n',p,nP);
+                end
                 idx       = randperm(nV);
                 idx       = idx(1:nsel);
                 Grec(p,:) = (G(p,idx)-Gmean)*pinv(U(:,idx))*U + Gmean;
@@ -78,6 +82,9 @@ elseif nargin == 4,
             end
         else
             for p = 1:nP,
+                if showprogress,
+                    fprintf('\t [Reconstructing shuffling %d/%d (mean)]\n',p,nP);
+                end
                 idx       = randperm(nV);
                 idx       = idx(1:nsel);
                 Grec(p,:) = G(p,idx)*pinv(U(:,idx))*U;

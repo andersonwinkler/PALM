@@ -27,7 +27,7 @@ function palm_core(varargin)
 
 % Take the arguments. Save a small log if needed.
 clear global plm opts; % comment for debugging
-global plm opts; % uncomment for debugging
+%global plm opts; % uncomment for debugging
 ticI = tic;
 [opts,plm] = palm_takeargs(varargin{:});
 
@@ -1338,7 +1338,7 @@ for po = P_outer,
                                 
                                 % Some feedback of the screen
                                 if opts.showprogress,
-                                    fprintf('\t [Reconstructing past permutations in a low rank basis.]\n');
+                                    fprintf('\t [Generating an orthonormal basis.]\n');
                                 end
 
                                 % Generate new bases
@@ -1347,9 +1347,14 @@ for po = P_outer,
                                 plm.Sbasis{y}{m}{c} = palm_lowrank(bsxfun(@minus,Sperms{y}{m}{c},Smean{y}{m}{c}));
                                 
                                 % Reconstruct past permutations in these new bases
-                                Bperms{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c},plm.Bbasis{y}{m}{c},plm.nsel(y),false);
-                                Sperms{y}{m}{c} = palm_lowrank(Sperms{y}{m}{c},plm.Sbasis{y}{m}{c},plm.nsel(y),Smean{y}{m}{c});
-
+                                if opts.approx.lowrank_recon,
+                                    if opts.showprogress,
+                                        fprintf('\t [Reconstructing past shufflings in a low rank basis.]\n');
+                                    end
+                                    Bperms{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c},plm.Bbasis{y}{m}{c},plm.nsel(y),false         ,opts.showprogress);
+                                    Sperms{y}{m}{c} = palm_lowrank(Sperms{y}{m}{c},plm.Sbasis{y}{m}{c},plm.nsel(y),Smean{y}{m}{c},opts.showprogress);
+                                end
+                                
                                 % Compute G and convert to z, redefine counter
                                 Bperms{y}{m}{c}        = kappa{y}{m}{c}*Bperms{y}{m}{c}./Sperms{y}{m}{c}.^.5;
                                 Bperms{y}{m}{c}        = palm_gtoz(Bperms{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});

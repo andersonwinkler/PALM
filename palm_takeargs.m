@@ -2535,7 +2535,7 @@ if opts.approx.lowrank,
             plm.nsel(y) = ceil(opts.approx.lowrank_val*plm.Ysiz(y));
         end
     elseif opts.approx.lowrank_val > 1
-        plm.nsel(1:end) = opts.approx.lowrank_val;
+        plm.nsel(1:end) = ceil(opts.approx.lowrank_val);
     elseif isnan(opts.approx.lowrank_val),
         plm.nsel(1:end) = plm.N*(plm.N+1)/2;
     end
