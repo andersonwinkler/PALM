@@ -1260,7 +1260,7 @@ for po = P_outer,
                         elseif opts.approx.lowrank,
                             if p <= plm.nJ{m}(c),
                                 ysel{y} = true(1,plm.Ysiz(y));
-                            else
+                            elseif p == plm.nJ{m}(c)+1,
                                 ysel{y} = randperm(plm.Ysiz(y));
                                 ysel{y} = ysel{y}(1:plm.nsel(y));
                             end
@@ -1303,6 +1303,8 @@ for po = P_outer,
                             G  {y}{m}{c} = fastpiv{m}{c}(M,psi,Y);
                             df2{y}{m}{c} = NaN;
                         elseif ~ opts.approx.lowrank || p == 1,
+                            % This is needed in the 1st perm for lowrank
+                            % because of the 1st perm
                             [G{y}{m}{c},df2{y}{m}{c}] = fastpiv{m}{c}(M,psi,res);
                         end
                         
@@ -1311,7 +1313,7 @@ for po = P_outer,
                             plm.rC0{m}(c) = plm.rC{m}(c);
                             plm.rC {m}(c) = 0;
                         end
-                        
+
                         % Low rank approximation
                         if opts.approx.lowrank,
 
@@ -1319,15 +1321,15 @@ for po = P_outer,
                                 
                                 % First permutation, compute constants and init variables
                                 if p == 1,
-                                    kappa {y}{m}{c} = sqrt((plm.N-plm.rM{m}(c))/(plm.eC{m}{c}'*pinv(M'*M)*plm.eC{m}{c}));
-                                    Bperms{y}{m}{c} = zeros(plm.nJ{m}(c),plm.Ysiz(y));
-                                    Sperms{y}{m}{c} = zeros(plm.nJ{m}(c),plm.Ysiz(y));
+                                    kappa {y}{m}{c}  = sqrt((plm.N-plm.rM{m}(c))/(plm.eC{m}{c}'*pinv(M'*M)*plm.eC{m}{c}));
+                                    Bperms{y}{m}{c}  = zeros(plm.nJ{m}(c),plm.Ysiz(y));
+                                    Sperms{y}{m}{c}  = zeros(plm.nJ{m}(c),plm.Ysiz(y));
+                                    plm.df2{y}{m}{c} = df2{y}{m}{c};
                                 end
                                 
                                 % Initial permutations are done fully
                                 [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{m}{c},psi,res);
-                                if p == 1,
-                                    % First perm compute G
+                                if ~ opts.approx.lowrank_recon,
                                     G{y}{m}{c} = kappa{y}{m}{c}*Bperms{y}{m}{c}(p,:)./Sperms{y}{m}{c}(p,:).^.5;
                                 end
                                 
@@ -1335,12 +1337,15 @@ for po = P_outer,
 
                                 % Including this one
                                 [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{m}{c},psi,res);
+                                if ~ opts.approx.lowrank_recon,
+                                    G{y}{m}{c} = kappa{y}{m}{c}*Bperms{y}{m}{c}(p,:)./Sperms{y}{m}{c}(p,:).^.5;
+                                end
                                 
                                 % Some feedback of the screen
                                 if opts.showprogress,
                                     fprintf('\t [Generating an orthonormal basis.]\n');
                                 end
-
+                                
                                 % Generate new bases
                                 plm.Bbasis{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c});
                                 Smean{y}{m}{c}      = mean(Sperms{y}{m}{c}(:));
@@ -1349,20 +1354,20 @@ for po = P_outer,
                                 % Reconstruct past permutations in these new bases
                                 if opts.approx.lowrank_recon,
                                     if opts.showprogress,
-                                        fprintf('\t [Reconstructing past shufflings in a low rank basis.]\n');
+                                        fprintf('\t [Reconstructing past shufflings in the low rank basis.]\n');
                                     end
                                     Bperms{y}{m}{c} = palm_lowrank(Bperms{y}{m}{c},plm.Bbasis{y}{m}{c},plm.nsel(y),false         ,opts.showprogress);
                                     Sperms{y}{m}{c} = palm_lowrank(Sperms{y}{m}{c},plm.Sbasis{y}{m}{c},plm.nsel(y),Smean{y}{m}{c},opts.showprogress);
+                                    
+                                    % Compute G, convert to z, recompute counters
+                                    Bperms{y}{m}{c}        = kappa{y}{m}{c}*Bperms{y}{m}{c}./Sperms{y}{m}{c}.^.5;
+                                    Bperms{y}{m}{c}        = palm_gtoz(Bperms{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
+                                    if opts.twotail, Bperms{y}{m}{c} = abs(Bperms{y}{m}{c}); end
+                                    plm.G{y}{m}{c}         = Bperms{y}{m}{c}(1,:);
+                                    plm.Gpperm{y}{m}{c}    = sum(bsxfun(@ge,Bperms{y}{m}{c},plm.G{y}{m}{c}),1);
+                                    plm.Gmax{y}{m}{c}(1:p) = max(Bperms{y}{m}{c},[],2);
                                 end
                                 
-                                % Compute G and convert to z, redefine counter
-                                Bperms{y}{m}{c}        = kappa{y}{m}{c}*Bperms{y}{m}{c}./Sperms{y}{m}{c}.^.5;
-                                Bperms{y}{m}{c}        = palm_gtoz(Bperms{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
-                                if opts.twotail, Bperms{y}{m}{c} = abs(Bperms{y}{m}{c}); end
-                                plm.G{y}{m}{c}         = Bperms{y}{m}{c}(1,:);
-                                plm.Gpperm{y}{m}{c}    = sum(bsxfun(@ge,Bperms{y}{m}{c},plm.G{y}{m}{c}),1);
-                                plm.Gmax{y}{m}{c}(1:p) = max(Bperms{y}{m}{c},[],2);
-
                                 % Free up a bit of memory
                                 Bperms{y}{m}{c} = [];
                                 Sperms{y}{m}{c} = [];
@@ -1373,6 +1378,25 @@ for po = P_outer,
                                 B{y}{m}{c} = palm_lowrank(B{y}{m}{c},plm.Bbasis{y}{m}{c},ysel{y},false);
                                 S{y}{m}{c} = palm_lowrank(S{y}{m}{c},plm.Sbasis{y}{m}{c},ysel{y},Smean{y}{m}{c});
                                 G{y}{m}{c} = kappa{y}{m}{c}*B{y}{m}{c}./S{y}{m}{c}.^.5;
+                                
+                                if ~isreal(G{y}{m}{c}),
+                                    
+                                    % If this is a rare case in which the
+                                    % axes get flipped, try again with a
+                                    % different random set of voxels:
+                                    ysel{y} = randperm(plm.Ysiz(y));
+                                    ysel{y} = ysel{y}(1:plm.nsel(y));
+                                    [B{y}{m}{c},S{y}{m}{c}] = lowrankfac(plm.eC{m}{c},psi,res);
+                                    B{y}{m}{c} = palm_lowrank(B{y}{m}{c},plm.Bbasis{y}{m}{c},ysel{y},false);
+                                    S{y}{m}{c} = palm_lowrank(S{y}{m}{c},plm.Sbasis{y}{m}{c},ysel{y},Smean{y}{m}{c});
+                                    G{y}{m}{c} = kappa{y}{m}{c}*B{y}{m}{c}./S{y}{m}{c}.^.5;
+                                    
+                                    % If it still fails, give up.
+                                    if ~isreal(G{y}{m}{c}),
+                                        error(['Problem with low rank completion for your data.\n'...
+                                            'There''s nothing you can do to fix. Just don''t use it.%s'],'');
+                                    end
+                                end
                             end
                         end
                         
@@ -1406,7 +1430,9 @@ for po = P_outer,
                         end
                         
                         % Convert to z-score
-                        if ~ opts.approx.lowrank || p == 1 || p > plm.nJ{m}(c),
+                        if    ~  opts.approx.lowrank || ...
+                                (opts.approx.lowrank &&   opts.approx.lowrank_recon && p > plm.nJ{m}(c)) || ...
+                                (opts.approx.lowrank && ~ opts.approx.lowrank_recon),
                             G{y}{m}{c} = palm_gtoz(G{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
                         end
                         
@@ -1468,13 +1494,15 @@ for po = P_outer,
                             
                             % In the first permutation, keep G and df2,
                             % and start the counter.
-                            if ~ opts.approx.lowrank && p == 1,
+                            if ~ opts.approx.lowrank_recon && p == 1,
                                 plm.G  {y}{m}{c} = G  {y}{m}{c};
                                 plm.df2{y}{m}{c} = df2{y}{m}{c};
                             end
                             
                             % Increment voxelwise counter
-                            if ~ opts.approx.lowrank || p > plm.nJ{m}(c),
+                            if     ~ opts.approx.lowrank || ...
+                                    (opts.approx.lowrank &&   opts.approx.lowrank_recon && p > plm.nJ{m}(c)) || ...
+                                    (opts.approx.lowrank && ~ opts.approx.lowrank_recon),
                                 plm.Gpperm{y}{m}{c}    = plm.Gpperm{y}{m}{c} + (G{y}{m}{c} >= plm.G{y}{m}{c});
                                 plm.Gmax  {y}{m}{c}(p) = max(G{y}{m}{c},[],2);
                             end
