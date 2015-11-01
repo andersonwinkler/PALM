@@ -95,13 +95,13 @@ for y = 1:plm.nY,
         end
     end
 end
-if opts.approx.negbin,
+if opts.accel.negbin,
     plm.Gppermp                     = plm.Gpperm; % number of perms done, for the negative binomial mode
 end
-if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
     plm.Gperms                      = plm.G;      % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
 end
-if opts.approx.lowrank,
+if opts.accel.lowrank,
     Bperms                          = G;          % To store the initial full permutations (betas)
     Sperms                          = G;          % To store the initial full permutations (variances)
     plm.nJ                          = plm.rC;     % To store the number of full permutations to do
@@ -144,7 +144,7 @@ if opts.tfce.uni.do,
             plm.Gtfcemax  {y}{m}    = cell(plm.nC(m),1);
         end
     end
-    if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+    if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
         plm.Gtfceperms              = plm.Gtfce; % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
     end
 end
@@ -205,7 +205,7 @@ if opts.NPC,
         plm.Ttfcepperm              = plm.Tmax;   % counter, for the TFCE p-value
         plm.Ttfce                   = plm.Tmax;   % for the unpermuted TFCE
         plm.Ttfcemax                = plm.Tmax;   % to store the max TFCE statistic
-        if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+        if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
             plm.Ttfceperms          = plm.Ttfce;
         end
     end
@@ -262,10 +262,10 @@ if opts.MV,
             plm.Qpperm{m}{c}        = zeros(1,plm.Ysiz(1));
         end
     end
-    if opts.approx.negbin,
+    if opts.accel.negbin,
         plm.Qppermp                 = plm.Qpperm; % number of perms done, for the negative binomial mode
     end
-    if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+    if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
         plm.Qperms                  = plm.Q; % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
         if opts.tfce.mv.do,
             plm.Qtfceperms          = plm.Qtfce;
@@ -316,7 +316,6 @@ for m = 1:plm.nM,
         plm.cstr{m}{c} = '';
     end
 end
-
 
 % Create the function handles for the NPC.
 if opts.NPC,
@@ -494,7 +493,7 @@ fprintf('Elapsed time parsing inputs: ~ %g seconds.\n',tocI);
 % Create the permutation set, while taking care of the synchronized
 % permutations (see the inner loop below)
 if opts.syncperms,
-    if ~ opts.approx.noperm,
+    if ~ opts.accel.noperm,
         if isempty(plm.EB),
             if opts.savemetrics,
                 [plm.Pset,plm.nP{1}(1),plm.metr{1}{1}] = ...
@@ -520,13 +519,17 @@ if opts.syncperms,
     end
     
     % This is for the negative binomial mode
-    if opts.approx.negbin && ~ opts.saveunivariate,
+    if opts.accel.negbin && ~ opts.saveunivariate,
         dothisY = false(plm.nY,1);
     else
         dothisY = true(plm.nY,1);
     end
     dotheMVorCCA = true;
-    P_outer = 1:plm.nP{1}(1);
+    if opts.accel.noperm,
+        P_outer = 1;
+    else
+        P_outer = 1:plm.nP{1}(1);
+    end
 else
     P_outer = 1;
 end
@@ -560,7 +563,7 @@ for po = P_outer,
             
             % This is for the negative binomial mode
             if ~ opts.syncperms,
-                if opts.approx.negbin && ~ opts.saveunivariate,
+                if opts.accel.negbin && ~ opts.saveunivariate,
                     dothisY = false(plm.nY,1);
                 else
                     dothisY = true(plm.nY,1);
@@ -577,16 +580,29 @@ for po = P_outer,
                 end
                 
                 if opts.evperdat,
+
+                    fprintf(['Doing maths for -evperdat before model fitting: [Design %d/%d, Contrast %d/%d] (may take some minutes)\n'],m,plm.nM,c,plm.nC(m));
                     
                     % Partition the model, now using the method chosen by the user
                     nT = size(plm.Mset{m},3);
-                    plm.X{m}{c} = zeros(plm.N,rank(plm.Cset{m}{c}),nT);
-                    plm.Z{m}{c} = zeros(plm.N,size(plm.Mset{m},2)-rank(plm.Cset{m}{c}),nT);
-                    for t = 1:nT,
-                        [plm.X{m}{c}(:,:,t),plm.Z{m}{c}(:,:,t),plm.eCm{m}{c},plm.eCx{m}{c}] = ...
-                            palm_partition(plm.Mset{m}(:,:,t),plm.Cset{m}{c},opts.pmethodr);
+                    if strcmpi(opts.pmethodr,'guttman'),
+                        % Guttman is separate for not requiring the loop,
+                        % thus running faster.
+                        idx           = any(plm.Cset{m}{c}~=0,2);
+                        plm.X{m}{c}   = plm.Mset{m}(:, idx,:);
+                        plm.Z{m}{c}   = plm.Mset{m}(:,~idx,:);
+                        plm.eCx{m}{c} = plm.Cset{m}{c}(idx,:);
+                        plm.eCm{m}{c} = vertcat(plm.eCx{m}{c},plm.Cset{m}{c}(~idx,:));
+                        plm.Mp{m}{c}  = cat(2,plm.X{m}{c},plm.Z{m}{c}); % partitioned design matrix, joined
+                    else
+                        plm.X{m}{c}   = zeros(plm.N,rank(plm.Cset{m}{c}),nT);
+                        plm.Z{m}{c}   = zeros(plm.N,size(plm.Mset{m},2)-rank(plm.Cset{m}{c}),nT);
+                        for t = 1:nT,
+                            [plm.X{m}{c}(:,:,t),plm.Z{m}{c}(:,:,t),plm.eCm{m}{c},plm.eCx{m}{c}] = ...
+                                palm_partition(plm.Mset{m}(:,:,t),plm.Cset{m}{c},opts.pmethodr);
+                        end
+                        plm.Mp{m}{c}  = cat(2,plm.X{m}{c},plm.Z{m}{c}); % partitioned design matrix, joined
                     end
-                    plm.Mp{m}{c} = cat(2,plm.X{m}{c},plm.Z{m}{c}); % partitioned design matrix, joined
                     
                     % Some methods don't work well if Z is empty, and there is no point in
                     % using any of them all anyway.
@@ -653,7 +669,7 @@ for po = P_outer,
                 if opts.MV,
                     
                     % Make the 3D dataset
-                    if opts.approx.negbin,
+                    if opts.accel.negbin,
                         plm.Yq{m}{c} = cat(3,plm.Yset{:});
                     end
                     
@@ -726,7 +742,7 @@ for po = P_outer,
                 % low rank approximation. This number varies according to
                 % the permutation and regression strategies, but it's
                 % roughly as below:
-                if opts.approx.lowrank,
+                if opts.accel.lowrank,
                     plm.nJ{m}(c) = plm.N*(plm.N+1)/2;
                 end
                 
@@ -836,29 +852,28 @@ for po = P_outer,
                     end
                     
                     % MV/CCA/Noperm
-                    if opts.MV && ~ opts.approx.noperm,
+                    if opts.MV && ~ opts.accel.noperm,
                         if plm.rC{m}(c) == 1 && any(strcmpi(opts.mvstat,{'auto','hotellingtsq'})),
                             fastmv{m}{c} = @(M,psi,res)fasttsq3d(M,psi,res,m,c,plm);
                         else
                             fastmv{m}{c} = @(M,psi,res)fastq3d(M,psi,res,m,c,plm);
                         end
                     end
-                    if opts.CCA || opts.approx.noperm,
+                    if opts.CCA || opts.accel.noperm,
                         
                         % Residual forming matrix (Z only)
-                        plm.Rz{m}{c} = zeros(plm.N,plm.N,plm.Ysiz{1});
+                        plm.Rz{m}{c} = zeros(plm.N,plm.N,plm.Ysiz(1));
                         if strcmpi(plm.rmethod{m}{c},'noz'),
                             plm.Rz{m}{c} = bsxfun(@plus,eye(plm.N),plm.Rz{m}{c});
                         elseif ~ any(strcmpi(plm.rmethod{m}{c},{ ...
                                 'still-white','freedman-lane',  ...
                                 'kennedy','huh-jhun','smith'})),
                             I = eye(N);
-                            for t = 1:plm.Ysiz{1},
+                            for t = 1:plm.Ysiz(1),
                                 plm.Rz{m}{c}(:,:,t) = I - plm.Z{m}{c}(:,:,t)*pinv(plm.Z{m}{c}(:,:,t));
                             end
                             clear I;
                         end
-                        
                         % Make the 3D dataset & residualise wrt Z
                         plm.Yq{m}{c} = cat(3,plm.Yset{:});
                         plm.Yq{m}{c} = permute(plm.Yq{m}{c},[1 3 2]);
@@ -944,14 +959,14 @@ for po = P_outer,
                     end
                     
                     % MV/CCA/Noperm
-                    if opts.MV  && ~ opts.approx.noperm,
+                    if opts.MV  && ~ opts.accel.noperm,
                         if plm.rC{m}(c) == 1 && any(strcmpi(opts.mvstat,{'auto','hotellingtsq'})),
                             fastmv{m}{c} = @(M,psi,res)fasttsq(M,psi,res,m,c,plm);
                         else
                             fastmv{m}{c} = @(M,psi,res)fastq(M,psi,res,m,c,plm);
                         end
                     end
-                    if opts.CCA || opts.approx.noperm,
+                    if opts.CCA || opts.accel.noperm,
                         
                         % Residual forming matrix (Z only)
                         if strcmpi(plm.rmethod{m}{c},'noz'),
@@ -972,7 +987,7 @@ for po = P_outer,
                 end
                 
                 % Pick a name to save the files later.
-                if opts.pearson || opts.approx.noperm,
+                if opts.pearson || opts.accel.noperm,
                     if     plm.rC{m}(c) == 1,
                         plm.Gname{m}{c} = '_rstat';
                     elseif plm.rC{m}(c) >  1,
@@ -997,7 +1012,7 @@ for po = P_outer,
                 P_inner = po;
                 plm.nP{m}(c) = plm.nP{1}(1);
             else
-                if ~ opts.approx.noperm,
+                if ~ opts.accel.noperm,
                     if isempty(plm.EB),
                         if opts.savemetrics,
                             [plm.Pset,plm.nP{m}(c),plm.metr{m}{c}] = ...
@@ -1024,7 +1039,7 @@ for po = P_outer,
                 P_inner = 1:plm.nP{m}(c);
             end
             
-            if po == 1 && ~ opts.approx.noperm,
+            if po == 1 && ~ opts.accel.noperm,
                 % If the user wants to save the permutations, save the vectors now.
                 % This has 3 benefits: (1) the if-test below will run just once, rather
                 % than many times inside the loop, (2) if the user only wants the
@@ -1061,15 +1076,15 @@ for po = P_outer,
                 
                 % Some vars for later
                 if isterbraak, psi0 = cell(plm.nY,1); end
-                if opts.approx.negbin, ysel = cell(plm.nY,1); end
+                if opts.accel.negbin, ysel = cell(plm.nY,1); end
                 if opts.npcmod && ~ opts.npccon,
                     plm.Tmax{m}{c} = zeros(plm.nP{m}(c),1);
                 end
                 if opts.MV
-                    if ~ opts.approx.noperm,
+                    if ~ opts.accel.noperm,
                         plm.Qmax{m}{c} = zeros(plm.nP{m}(c),1);
                     end
-                    if ~ opts.approx.negbin,
+                    if ~ opts.accel.negbin,
                         psiq = zeros(plm.nEV{m}(c),plm.Ysiz(1),plm.nY);
                         resq = zeros(plm.N,plm.Ysiz(1),plm.nY);
                     end
@@ -1081,7 +1096,7 @@ for po = P_outer,
             end
             
             % Whimsical permutation p-vals using no permutations at all
-            if opts.approx.noperm,
+            if opts.accel.noperm,
                 
                 % Prepare W for the univariate (no for-loop here):
                 if opts.saveunivariate,
@@ -1105,6 +1120,7 @@ for po = P_outer,
                 % Because this all runs very quickly, the unpermuted
                 % statistics can be saved later.
                 if opts.evperdat,
+                    fprintf(['Computing statistics: [Design %d/%d, Contrast %d/%d] (may take some minutes)\n'],m,plm.nM,c,plm.nC(m));
                     if opts.saveunivariate,
                         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                         for t = 1:plm.Ysiz(y),
@@ -1252,12 +1268,12 @@ for po = P_outer,
                         end
                         
                         % Shuffle the data and/or design.
-                        if opts.approx.negbin,
+                        if opts.accel.negbin,
                             if p == 1,
                                 ysel{y} = true(1,plm.Ysiz(y));
                             end
                             [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yset{y}(:,ysel{y}));
-                        elseif opts.approx.lowrank,
+                        elseif opts.accel.lowrank,
                             if p <= plm.nJ{m}(c),
                                 ysel{y} = true(1,plm.Ysiz(y));
                             elseif p == plm.nJ{m}(c)+1,
@@ -1284,7 +1300,7 @@ for po = P_outer,
                         
                         % Unless this is negbin mode, there is no need to fit
                         % again for the MV later
-                        if opts.MV && ~ opts.approx.negbin,
+                        if opts.MV && ~ opts.accel.negbin,
                             psiq(:,:,y) = psi;
                             resq(:,:,y) = res;
                         end
@@ -1302,7 +1318,7 @@ for po = P_outer,
                         if opts.pearson,
                             G  {y}{m}{c} = fastpiv{m}{c}(M,psi,Y);
                             df2{y}{m}{c} = NaN;
-                        elseif ~ opts.approx.lowrank || p == 1,
+                        elseif ~ opts.accel.lowrank || p == 1,
                             % This is needed in the 1st perm for lowrank
                             % because of the 1st perm
                             [G{y}{m}{c},df2{y}{m}{c}] = fastpiv{m}{c}(M,psi,res);
@@ -1315,7 +1331,7 @@ for po = P_outer,
                         end
 
                         % Low rank approximation
-                        if opts.approx.lowrank,
+                        if opts.accel.lowrank,
 
                             if p < plm.nJ{m}(c),
                                 
@@ -1329,7 +1345,7 @@ for po = P_outer,
                                 
                                 % Initial permutations are done fully
                                 [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{m}{c},psi,res);
-                                if ~ opts.approx.lowrank_recon,
+                                if ~ opts.accel.lowrank_recon,
                                     G{y}{m}{c} = kappa{y}{m}{c}*Bperms{y}{m}{c}(p,:)./Sperms{y}{m}{c}(p,:).^.5;
                                 end
                                 
@@ -1337,7 +1353,7 @@ for po = P_outer,
 
                                 % Including this one
                                 [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{m}{c},psi,res);
-                                if ~ opts.approx.lowrank_recon,
+                                if ~ opts.accel.lowrank_recon,
                                     G{y}{m}{c} = kappa{y}{m}{c}*Bperms{y}{m}{c}(p,:)./Sperms{y}{m}{c}(p,:).^.5;
                                 end
                                 
@@ -1352,7 +1368,7 @@ for po = P_outer,
                                 plm.Sbasis{y}{m}{c} = palm_lowrank(bsxfun(@minus,Sperms{y}{m}{c},Smean{y}{m}{c}));
                                 
                                 % Reconstruct past permutations in these new bases
-                                if opts.approx.lowrank_recon,
+                                if opts.accel.lowrank_recon,
                                     if opts.showprogress,
                                         fprintf('\t [Reconstructing past shufflings in the low rank basis.]\n');
                                     end
@@ -1423,16 +1439,16 @@ for po = P_outer,
                             end
                             
                             % Save the stats for each permutation if that was asked
-                            if opts.saveperms && ~ opts.approx.negbin && ~ opts.approx.lowrank,
+                            if opts.saveperms && ~ opts.accel.negbin && ~ opts.accel.lowrank,
                                 palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
                                     horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
                             end
                         end
                         
                         % Convert to z-score
-                        if    ~  opts.approx.lowrank || ...
-                                (opts.approx.lowrank &&   opts.approx.lowrank_recon && p > plm.nJ{m}(c)) || ...
-                                (opts.approx.lowrank && ~ opts.approx.lowrank_recon),
+                        if    ~  opts.accel.lowrank || ...
+                                (opts.accel.lowrank &&   opts.accel.lowrank_recon && p > plm.nJ{m}(c)) || ...
+                                (opts.accel.lowrank && ~ opts.accel.lowrank_recon),
                             G{y}{m}{c} = palm_gtoz(G{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
                         end
                         
@@ -1447,7 +1463,7 @@ for po = P_outer,
                             end
                             
                             % Save the stats for each permutation if that was asked
-                            if opts.saveperms && ~ opts.approx.negbin,
+                            if opts.saveperms && ~ opts.accel.negbin,
                                 palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
                                     horzcat(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
                             end
@@ -1456,13 +1472,13 @@ for po = P_outer,
                         % This needs to be here, inside the if-condition) because of the
                         % lowrank approximation stuff
                         if opts.twotail,
-                            if ~ opts.approx.lowrank || p > plm.nJ{m}(c)
+                            if ~ opts.accel.lowrank || p > plm.nJ{m}(c)
                                 G{y}{m}{c} = abs(G{y}{m}{c});
                             end
                         end
                         
                         % Negative binomial approximation
-                        if opts.approx.negbin,
+                        if opts.accel.negbin,
                             
                             % In p = 1, there is no counter being incremented (stays at 0) and the number
                             % of permutations performed stays also at 0. In other words, in the negbin mode,
@@ -1488,27 +1504,27 @@ for po = P_outer,
                                 plm.Gpperm{y}{m}{c}(ysel{y}) = plm.Gpperm{y}{m}{c}(ysel{y}) + ...
                                     (G{y}{m}{c} >= plm.G{y}{m}{c}(ysel{y}));
                                 plm.Gppermp{y}{m}{c}(ysel{y}) = p - 1; % the -1 is to ignore the 1st perm (unpermuted)
-                                ysel{y} = plm.Gpperm{y}{m}{c} < opts.approx.negbin;
+                                ysel{y} = plm.Gpperm{y}{m}{c} < opts.accel.negbin;
                             end
                         else
                             
                             % In the first permutation, keep G and df2,
                             % and start the counter.
-                            if ~ opts.approx.lowrank_recon && p == 1,
+                            if ~ opts.accel.lowrank_recon && p == 1,
                                 plm.G  {y}{m}{c} = G  {y}{m}{c};
                                 plm.df2{y}{m}{c} = df2{y}{m}{c};
                             end
                             
                             % Increment voxelwise counter
-                            if     ~ opts.approx.lowrank || ...
-                                    (opts.approx.lowrank &&   opts.approx.lowrank_recon && p > plm.nJ{m}(c)) || ...
-                                    (opts.approx.lowrank && ~ opts.approx.lowrank_recon),
+                            if     ~ opts.accel.lowrank || ...
+                                    (opts.accel.lowrank &&   opts.accel.lowrank_recon && p > plm.nJ{m}(c)) || ...
+                                    (opts.accel.lowrank && ~ opts.accel.lowrank_recon),
                                 plm.Gpperm{y}{m}{c}    = plm.Gpperm{y}{m}{c} + (G{y}{m}{c} >= plm.G{y}{m}{c});
                                 plm.Gmax  {y}{m}{c}(p) = max(G{y}{m}{c},[],2);
                             end
                             
                             % Tail and gamma approximations
-                            if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                                 if p == 1,
                                     plm.Gperms{y}{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(y));
                                 end
@@ -1540,7 +1556,7 @@ for po = P_outer,
                                 plm.Gtfcemax{y}{m}{c}(p) = max(Gtfce{y}{m}{c},[],2);
                                 
                                 % Tail and gamma approximations
-                                if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                                     if p == 1,
                                         plm.Gtfceperms{y}{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(y));
                                     end
@@ -1548,7 +1564,7 @@ for po = P_outer,
                                 end
                             end
                         end
-                        if opts.approx.negbin && ~ any(ysel{y}),
+                        if opts.accel.negbin && ~ any(ysel{y}),
                             dothisY(y) = false;
                         end
                     end
@@ -1637,7 +1653,7 @@ for po = P_outer,
                     plm.Tmax{m}{c}(p) = npcextr(T{m}{c},[],2);
                     
                     % Tail and gamma approximations
-                    if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                    if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                         if p == 1,
                             plm.Tperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                         end
@@ -1680,7 +1696,7 @@ for po = P_outer,
                         plm.Ttfcemax{m}{c}(p) = max(Ttfce{m}{c},[],2);
                         
                         % Tail and gamma approximations
-                        if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                        if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                             if p == 1,
                                 plm.Ttfceperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                             end
@@ -1690,7 +1706,7 @@ for po = P_outer,
                 end
                 
                 % MANOVA/MANCOVA is here. CCA is in the elseif below
-                if opts.MV && ~ opts.approx.noperm,
+                if opts.MV && ~ opts.accel.noperm,
                     
                     % This "if" is for the negative binomial mode.
                     if dotheMVorCCA,
@@ -1705,7 +1721,7 @@ for po = P_outer,
                         end
                         
                         % Shuffle the data and/or design.
-                        if opts.approx.negbin,
+                        if opts.accel.negbin,
                             if p == 1,
                                 yselq = true(1,size(plm.Yq{m}{c},2),1);
                             end
@@ -1763,7 +1779,7 @@ for po = P_outer,
                         end
                         
                         % Draft mode
-                        if opts.approx.negbin,
+                        if opts.accel.negbin,
                             % In p = 1, there is no counter being incremented (stays at 0) and the number
                             % of permutations performed stays also at 0. In other words, in the negbin mode,
                             % the first permutation is entirely ignored, so that the Haldane equation can
@@ -1790,7 +1806,7 @@ for po = P_outer,
                                 plm.Qpperm{m}{c}(yselq) = plm.Qpperm{m}{c}(yselq) + ...
                                     mvrel(Q{m}{c},plm.Q{m}{c}(yselq));
                                 plm.Qppermp{m}{c}(yselq) = p - 1; % the -1 is to ignore the 1st perm (unpermuted)
-                                yselq = plm.Qpperm{m}{c} < opts.approx.negbin;
+                                yselq = plm.Qpperm{m}{c} < opts.accel.negbin;
                             end
                         else
                             
@@ -1812,7 +1828,7 @@ for po = P_outer,
                             plm.Qmax  {m}{c}(p)   = mvextr(Q{m}{c},[],2);
                             
                             % Tail and gamma approximations
-                            if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                                 if p == 1,
                                     plm.Qperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                                 end
@@ -1855,7 +1871,7 @@ for po = P_outer,
                                 plm.Qtfcemax{m}{c}(p) = max(Qtfce{m}{c},[],2);
                                 
                                 % Tail and gamma approximations
-                                if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                                     if p == 1,
                                         plm.Qtfceperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                                     end
@@ -1863,7 +1879,7 @@ for po = P_outer,
                                 end
                             end
                         end
-                        if opts.approx.negbin && ~ any(yselq),
+                        if opts.accel.negbin && ~ any(yselq),
                             dotheMVorCCA = false;
                         end
                     end
@@ -1921,7 +1937,7 @@ for po = P_outer,
                         % be applied directly.
                         % If the number of desired exceedances isn't found, this means the extra first
                         % permutation needs to be counted later, and the p-val is then computed as usual.
-                        if opts.approx.negbin,
+                        if opts.accel.negbin,
                             if p == 1,
                                 % In the first permutation, keep Q and Qdf2,
                                 % and start the counter.
@@ -1940,7 +1956,7 @@ for po = P_outer,
                                 plm.Qpperm{m}{c}(yselq) = plm.Qpperm{m}{c}(yselq) + ...
                                     (Q{m}{c}(yselq) >= plm.Q{m}{c}(yselq));
                                 plm.Qppermp{m}{c}(yselq) = p - 1;  % the -1 is to ignore the 1st perm (unpermuted)
-                                yselq = plm.Qpperm{m}{c} < opts.approx.negbin;
+                                yselq = plm.Qpperm{m}{c} < opts.accel.negbin;
                             end
                         else
                             
@@ -1963,7 +1979,7 @@ for po = P_outer,
                             plm.Qmax  {m}{c}(p)  = max(Q{m}{c},[],2);
                             
                             % Tail and gamma approximations
-                            if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                                 if p == 1,
                                     plm.Qperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                                 end
@@ -2002,7 +2018,7 @@ for po = P_outer,
                                 plm.Qtfcemax{m}{c}(p) = max(Qtfce{m}{c},[],2);
                                 
                                 % Tail and gamma approximations
-                                if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                                     if p == 1,
                                         plm.Qtfceperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                                     end
@@ -2010,7 +2026,7 @@ for po = P_outer,
                                 end
                             end
                         end
-                        if opts.approx.negbin && ~ any(yselq),
+                        if opts.accel.negbin && ~ any(yselq),
                             dotheMVorCCA = false;
                         end
                     end
@@ -2105,7 +2121,7 @@ for po = P_outer,
             plm.Tmax{1}{c}(p) = npcextr(T{1}{c},[],2);
             
             % Tail and gamma approximations
-            if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                 if p == 1,
                     plm.Tperms{1}{c} = zeros(plm.nP{1}(c),plm.Ysiz(1));
                 end
@@ -2147,7 +2163,7 @@ for po = P_outer,
                 plm.Ttfcemax{1}{c}(p) = max(Ttfce{1}{c},[],2);
                 
                 % Tail and gamma approximations
-                if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                     if p == 1,
                         plm.Ttfceperms{1}{c} = zeros(plm.nP{1}(c),plm.Ysiz(1));
                     end
@@ -2284,7 +2300,7 @@ for po = P_outer,
             plm.Tmax{j}(po) = npcextr(T{j},[],2);
             
             % Tail and gamma approximations
-            if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                 if p == 1,
                     plm.Tperms{j} = zeros(plm.nP{1}(1),size(T{j},2));
                 end
@@ -2326,7 +2342,7 @@ for po = P_outer,
                 plm.Ttfcemax{j}(po) = max(Ttfce{j},[],2);
                 
                 % Tail and gamma approximations
-                if opts.saveuncorrected && (opts.approx.tail || opts.approx.gamma),
+                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
                     if p == 1,
                         plm.Ttfceperms{j} = zeros(plm.nP{1}(1),size(T{j},2));
                     end

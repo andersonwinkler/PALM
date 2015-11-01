@@ -71,7 +71,7 @@ else
     elseif df1 == 0,
         
         % If df1 is zero, this is already a z-stat (this is here more for
-        % compatibility.
+        % compatibility).
         Z = G;
         
     else

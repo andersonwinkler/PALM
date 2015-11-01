@@ -61,7 +61,7 @@ if ~ isempty(X),
     if flg == 1 
         
         % Deal with complex values in the gamma approximation
-        if opts.approx.gamma,
+        if opts.accel.gamma,
             if ~ isreal(X),
                 iidx  = imag(X(:)) ~= 0;
                 nimag = sum(iidx);

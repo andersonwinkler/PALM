@@ -87,7 +87,6 @@ opts.zstat               = false;              % Convert G-stat to z-stat?
 opts.pearson             = false;              % Compute the Pearson's correlation coefficient (R^2 if rank(C)>1)?
 opts.noranktest          = false;              % Don't test the rank(Y) before doing MANOVA/MANCOVA.
 opts.evperdat            = false;              % Use one (single!) EV per datum?
-opts.singlevg            = false;              % use a single VG (overrides automatic VGs)
 opts.transposedata       = false;              % transpose data if 2D?
 opts.verbosefilenames    = false;              % use filenames with _i%d, _c%d, etc when there are more than one?
 opts.syncperms           = false;              % synchronize permutations (this only affects designs that can actually be synced
@@ -97,15 +96,15 @@ opts.inputmv             = false;              % treat each column of the sole i
 opts.reversemasks        = false;              % Reverse the masks?
 
 % Approximation options
-opts.approx.negbin        = 0;                 % Run a negbin scheme
-opts.approx.negbin_nexced = 2;                 % Number of exceedances for the negbin mode
-opts.approx.tail          = false;             % Use a Pareto tail approximation to the FWER-adjusted p-values?
-opts.approx.tail_thr      = 0.10;              % P-values below this will be approximated using tail approximation
-opts.approx.noperm        = false;             % Compute approximate p-vals without doing any permutation
-opts.approx.gamma         = false;             % Do a gamma-fit after just a few permutations
-opts.approx.lowrank       = false;             % Try a low rank approximation
-opts.approx.lowrank_val   = NaN;               % Use NaN for N*(N+1)/2. Values <=1 are fraction of voxels to use; vals >1 are number of voxels to use.
-opts.approx.lowrank_recon = false;             % Reconstruct past permutations in the new basis? This is very slow.
+opts.accel.negbin        = 0;                  % Run a negbin scheme
+opts.accel.negbin_nexced = 2;                  % Number of exceedances for the negbin mode
+opts.accel.tail          = false;              % Use a Pareto tail approximation to the FWER-adjusted p-values?
+opts.accel.tail_thr      = 0.10;               % P-values below this will be approximated using tail approximation
+opts.accel.noperm        = false;              % Compute approximate p-vals without doing any permutation
+opts.accel.gamma         = false;              % Do a gamma-fit after just a few permutations
+opts.accel.lowrank       = false;              % Try a low rank approximation
+opts.accel.lowrank_val   = NaN;                % Use NaN for N*(N+1)/2. Values <=1 are fraction of voxels to use; vals >1 are number of voxels to use.
+opts.accel.lowrank_recon = false;              % Reconstruct past permutations in the new basis? This is very slow.
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within-block is also default).

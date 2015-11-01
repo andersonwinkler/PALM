@@ -146,21 +146,18 @@ while a <= narginx,
             if nargin == a + 1 || ...
                     ischar(vararginx{a+2}) && ...
                     strcmpi(vararginx{a+2}(1),'-'),
-                opts.evpos{ev}(1,1) = 1; % EV position
-                opts.evpos{ev}(1,2) = 1; % Design number
-                opts.evpos{ev}(1,3) = ev; % File index (this isn't redundant)
+                opts.evpos{ev}(1) = 1;  % EV position
+                opts.evpos{ev}(2) = 1;  % Design number
                 a = a + 2;
             elseif nargin == a + 2 || ...
                     ischar(vararginx{a+3}) && ...
                     strcmpi(vararginx{a+3}(1),'-'),
-                opts.evpos{ev}(1,1) = eval(vararginx{a+2}); % EV position
-                opts.evpos{ev}(1,2) = 1; % Design number
-                opts.evpos{ev}(1,3) = ev; % File index (this isn't redundant)
+                opts.evpos{ev}(1) = eval(vararginx{a+2}); % EV position
+                opts.evpos{ev}(2) = 1;  % Design number
                 a = a + 3;
             else
-                opts.evpos{ev}(1,1) = eval(vararginx{a+2}); % EV position
-                opts.evpos{ev}(1,2) = eval(vararginx{a+3}); % Design number
-                opts.evpos{ev}(1,3) = ev; % File index (this isn't redundant)
+                opts.evpos{ev}(1) = eval(vararginx{a+2}); % EV position
+                opts.evpos{ev}(2) = eval(vararginx{a+3}); % Design number
                 a = a + 4;
             end
             ev = ev + 1;
@@ -227,10 +224,16 @@ while a <= narginx,
             
             % Get the variance groups file.
             opts.vg = vararginx{a+1};
-            opts.singlevg = false;
-            if ischar(opts.vg) && ...
-                    ~any(strcmpi(opts.vg,{'auto','automatic','default'})),
+            if     ischar(opts.vg) && ...
+                    any(strcmpi(opts.vg,{'single'})),
+                opts.vg = 'single';
+                opts.singlevg = true;
+            elseif ischar(opts.vg) && ...
+                    any(strcmpi(opts.vg,{'auto','automatic'})),
                 opts.vg = 'auto';
+                opts.singlevg = false;
+            else
+                opts.singlevg = false;
             end
             a = a + 2;
             
@@ -707,7 +710,7 @@ while a <= narginx,
             opts.FDR = true;
             a = a + 1;
         
-        case '-approx', % advanced
+        case {'-accel','-approx'}, % advanced
             
             % Choose a method to do the approximation of p-values
             if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
@@ -722,48 +725,48 @@ while a <= narginx,
                     error('Approximation method "%s" unknown.',vararginx{a+1});
                 end
                 for m = 1:numel(methlist),
-                    opts.approx.(methlist{m}) = methidx(m);
+                    opts.accel.(methlist{m}) = methidx(m);
                 end
                 
                 % Extra parameters
-                if opts.approx.negbin,
+                if opts.accel.negbin,
                     
                     % Number of exceedances:
                     if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
                         if ischar(vararginx{a+2}),
-                            opts.approx.negbin = str2double(vararginx{a+2});
+                            opts.accel.negbin = str2double(vararginx{a+2});
                         else
-                            opts.approx.negbin = vararginx{a+2};
+                            opts.accel.negbin = vararginx{a+2};
                         end
                         a = a + 3;
                     else
-                        opts.approx.negbin = opts.approx.negbin_nexced;
+                        opts.accel.negbin = opts.accel.negbin_nexced;
                         a = a + 2;
                     end
                     
-                elseif opts.approx.tail,
+                elseif opts.accel.tail,
                     
                     % Smaller p-vals than this are refined.
                     if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
                         if ischar(vararginx{a+2}),
-                            opts.approx.tail_thr = str2double(vararginx{a+2});
+                            opts.accel.tail_thr = str2double(vararginx{a+2});
                         else
-                            opts.approx.tail_thr = vararginx{a+2};
+                            opts.accel.tail_thr = vararginx{a+2};
                         end
                         a = a + 3;
                     else
                         a = a + 2;
                     end
                     
-                elseif opts.approx.lowrank,
+                elseif opts.accel.lowrank,
                     
                     % Fraction of voxels to be sampled (if < 1) or actual
                     % number of voxels to be sampled.
                     if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
                         if ischar(vararginx{a+2}),
-                            opts.approx.lowrank_val = str2double(vararginx{a+2});
+                            opts.accel.lowrank_val = str2double(vararginx{a+2});
                         else
-                            opts.approx.lowrank_val = vararginx{a+2};
+                            opts.accel.lowrank_val = vararginx{a+2};
                         end
                         a = a + 3;
                     else
@@ -1093,75 +1096,80 @@ if any([ ...
     opts.tfce.deltah = 0;
 end
 
-% Sanity checks for the approximation modes.
+% Sanity checks for the acceleration modes.
 if sum(logical([ ...
-        opts.approx.negbin, ...
-        opts.approx.tail,   ...
-        opts.approx.noperm, ...
-        opts.approx.gamma,  ...
-        opts.approx.lowrank])) > 1,
+        opts.accel.negbin, ...
+        opts.accel.tail,   ...
+        opts.accel.noperm, ...
+        opts.accel.gamma,  ...
+        opts.accel.lowrank])) > 1,
     error('Only one approximation method can be used for a given run.');
 end
-if opts.approx.negbin,
-    if opts.approx.negbin < 2,
-        error('The parameter r given to "-approx negbin <r>" must be >= 2.')
+if opts.accel.negbin,
+    if opts.accel.negbin < 2,
+        error('The parameter r given to "-accel negbin <r>" must be >= 2.')
     end
     if opts.nP0 < 3,
-        error('The option "-approx negbin <r>" needs at least 3 permutations.')
+        error('The option "-accel negbin <r>" needs at least 3 permutations.')
     end
     if ~ opts.saveuncorrected,
-        error('The option "-nouncorrected" cannot be used with "-approx negbin".');
+        error('The option "-nouncorrected" cannot be used with "-accel negbin".');
     end
     if (opts.corrmod || opts.corrcon) && ~ opts.FDR,
-        error('The option "-approx negbin" cannot be used with FWER-correction, only FDR.');
+        error('The option "-accel negbin" cannot be used with FWER-correction, only FDR.');
     end
     if opts.NPC,
-        error('The option "-approx negbin" cannot be used with NPC.');
+        error('The option "-accel negbin" cannot be used with NPC.');
     end
     if opts.spatial.do,
-        error('The option "-approx negbin" cannot be used with spatial statistics.');
+        error('The option "-accel negbin" cannot be used with spatial statistics.');
     end
     if opts.saveperms,
-        error('The option "-saveperms" cannot be used together with "-approx negbin".');
+        error('The option "-saveperms" cannot be used together with "-accel negbin".');
     end
 end
-if opts.approx.noperm,
+if opts.accel.noperm,
     if ~ opts.saveuncorrected,
-        error('The option "-nouncorrected" cannot be used with "-approx noperm".');
+        error('The option "-nouncorrected" cannot be used with "-accel noperm".');
     end
     if (opts.corrmod || opts.corrcon) && ~ opts.FDR,
-        error('The option "-approx noperm" cannot be used with FWER-correction, only FDR.');
+        error('The option "-accel noperm" cannot be used with FWER-correction, only FDR.');
     end
     if opts.NPC,
-        error('The option "-approx noperm" cannot be used with NPC.');
+        error('The option "-accel noperm" cannot be used with NPC.');
     end
     if opts.spatial.do,
-        error('The option "-approx noperm" cannot be used with spatial statistics.');
+        error('The option "-accel noperm" cannot be used with spatial statistics.');
     end
     if opts.MV,
         if ~ any(strcmpi(opts.mvstat,{'auto','pillai'})),
             warning([...
-                'With multivariate tests, the option "-approx noperm" can only be used\n'...
+                'With multivariate tests, the option "-accel noperm" can only be used\n'...
                 'with the Pillai'' trace statistic. Changing automatically to Pillai.%s'],'');
         end
         opts.mvstat = 'pillai';
     end
+    if Ni > 1 && ~ opts.MV,
+        error([...
+            'The option "-accel noperm" needs to be used with a single modality\n'...
+            '       modality or with "-mv".%s'],''); 
+    end
 end
-if opts.approx.lowrank,
+if opts.accel.lowrank,
     if opts.pearson,
-        error('The option "-approx lowrank" cannot be used with "-pearson".');
+        error('The option "-accel lowrank" cannot be used with "-pearson".');
     end
     if opts.MV,
-        error('The option "-approx lowrank" cannot be used with MV.');
+        error('The option "-accel lowrank" cannot be used with MV.');
     end
     if opts.NPC,
-        error('The option "-approx lowrank" cannot be used with NPC.');
+        error('The option "-accel lowrank" cannot be used with NPC.');
     end
     if opts.spatial.do,
-        error('The option "-approx lowrank" cannot be used with spatial statistics.');
+        error('The option "-accel lowrank" cannot be used with spatial statistics.');
     end
     if opts.evperdat,
-        error('The option "-approx lowrank" cannot be used with "-evperdat".');
+        error('The option "-accel lowrank" cannot be used with "-evperdat".');
     end
 end
 
@@ -1209,6 +1217,11 @@ else
 end
 
 % Some more warnings and sanity checks
+if opts.designperinput && Ni ~= Nd,
+    error([
+        'To use the option "-designperinput", the number of design files must\n' ...
+        'match the number of inputs.\n%s'],'');
+end
 if (Nt || Nf) && Ncon,
     error('Cannot mix options "-t" or "-f" with "-con".');
 end
@@ -1401,7 +1414,7 @@ if Nm == 1,
 end
 
 % Indices of the subjects that will be kept
-if ~isempty(opts.subjidx),
+if ~ isempty(opts.subjidx),
     plm.subjidx = palm_miscread(opts.subjidx);
     plm.subjidx = round(plm.subjidx.data);
 end
@@ -1416,185 +1429,41 @@ plm.Yarea    = cell(Ns,1);  % To store area per face or per vertex (used for clu
 plm.Ykindstr = cell(Ni,1);  % string to save the files later
 for i = 1:Ni,
     
-    % Read an initial version
+    % Read input file
     fprintf('Reading input %d/%d: %s\n',i,Ni,opts.i{i});
-    Ytmp = palm_miscread(opts.i{i},opts.useniiclass,opts.o);
-    
-    % If this is 4D read with the NIFTI class, it needs a mask now
-    if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,
-        if Nm == 0,
-            % If a mask hasn't been supplied, make one
-            tmpmsk = false(Ytmp.extra.dat.dim(1:3));
-            for a = 1:Ytmp.extra.dat.dim(2), % y coords
-                for b = 1:Ytmp.extra.dat.dim(3), % z coords
-                    I = squeeze(Ytmp.extra.dat(:,a,b,:));
-                    inan = any(isnan(I),2);
-                    iinf = any(isinf(I),2);
-                    icte = sum(diff(I,1,2).^2,2) == 0;
-                    tmpmsk(:,a,b) = ~ (inan | iinf | icte);
-                end
-            end
-            plm.masks{i} = palm_maskstruct(tmpmsk(:)',Ytmp.readwith,Ytmp.extra);
-        else
-            % If a mask was supplied, check its size
-            if any(Ytmp.extra.dat.dim(1:3) ~= size(plm.masks{i}.data)),
-                error([...
-                    'The size of the data does not match the size of the mask:\n' ...
-                    '- Data file %d (%s)\n' ...
-                    '- Mask file %d (%s)'],i,opts.i{i},i,opts.m{i})
-            end
-        end
-    end
-    
-    % Now deal with the actual data
-    if ndims(Ytmp.data) == 2, %#ok
-        
-        % Transpose if that was chosen.
-        if opts.transposedata,
-            Ytmp.data = Ytmp.data';
-        end
-        
-        % Select subjects
-        if ~isempty(plm.subjidx),
-            Ytmp.data = Ytmp.data(plm.subjidx,:);
-        end
-        
-        % For the first input data, keep the size to
-        % compare with the others, then check the size
-        if i == 1,
-            plm.N = size(Ytmp.data,1);
-        end
-        if size(Ytmp.data,1) ~= plm.N,
-            error([
-                'At least two of the input data files do not have\n' ...
-                'compatible sizes:\n' ...
-                '- File %d (%s) has %d observations\n'   ...
-                '- File %d (%s) has %d observations'], ...
-                1,opts.i{1},plm.N, ...
-                i,opts.i{i},size(Ytmp.data,1));
-        end
-        
-        % Not all later functions are defined for file_array class,
-        % so convert to double
-        if strcmp(Ytmp.readwith,'nifticlass'),
-            Ytmp.data = double(Ytmp.data);
-        end
-        
-        % This should cover the CSV files and DPX 4D files that
-        % were converted to CSV with 'dpx2csv' and then transposed.
-        plm.Yset{i} = Ytmp.data;
-        
-    elseif ndims(Ytmp.data) == 4,
-        
-        % Select subjects
-        if ~isempty(plm.subjidx),
-            Ytmp.data = Ytmp.data(:,:,:,plm.subjidx);
-        end
-        
-        % For the first input data, keep the size to
-        % compare with the others, then check the size
-        if i == 1,
-            plm.N = size(Ytmp.data,4);
-        end
-        if size(Ytmp.data,4) ~= plm.N,
-            error([
-                'At least two of the input data files do not have\n' ...
-                'compatible sizes:\n' ...
-                '- File %d (%s) has %d observations\n'   ...
-                '- File %d (%s) has %d observations'], ...
-                1,opts.i{1},plm.N, ...
-                i,opts.i{i},size(Ytmp.data,4));
-        end
-        
-        % Sort out loading for the NIFTI class
-        if strcmp(Ytmp.readwith,'nifticlass'),
-            tmpmsk = plm.masks{i}.data(:)';
-            
-            % Read each volume, reshape and apply the mask
-            plm.Yset{i} = zeros(plm.N,sum(tmpmsk));
-            for n = 1:plm.N,
-                tmp = Ytmp.extra.dat(:,:,:,n);
-                tmp = tmp(:)';
-                plm.Yset{i}(n,:) = tmp(tmpmsk);
-            end
-        else
-            % If not read with the NIFTI class, get all immediately
-            plm.Yset{i} = palm_conv4to2(Ytmp.data);
-        end
-    end
-    
-    % Check if the size of data is compatible with size of mask.
-    % If read with the NIFTI class, this was already taken care of
-    % and can be skipped.
-    if ~ strcmp(Ytmp.readwith,'nifticlass'),
-        if Nm > 0 && size(plm.Yset{i},2) ~= numel(plm.masks{i}.data),
-            error([...
-                'The size of the data does not match the size of the mask:\n' ...
-                '- Data file %d (%s)\n' ...
-                '- Mask file %d (%s)'],i,opts.i{i},i,opts.m{i})
-        end
-    end
-    
-    % Make mask that removes constant values, Inf and NaN. This will be
-    % merged with the user-supplied mask, if any, or will be the sole mask
-    % available to select the datapoints of interest.
-    if Nm == 0 && ndims(Ytmp.data) == 4 ...
-            && strcmp(Ytmp.readwith,'nifticlass'),
-        maskydat = true(1,size(plm.Yset{i},2));
+    if Nm == 0,
+        maskstruct = [];
     else
-        ynan = any(isnan(plm.Yset{i}),1);
-        yinf = any(isinf(plm.Yset{i}),1);
-        ycte = sum(diff(plm.Yset{i},1,1).^2) == 0;
-        maskydat = ~ (ynan | yinf | ycte);
+        maskstruct = plm.masks{i};
+    end
+    [plm.Yset{i},plm.masks{i},plm.Yisvol(i),plm.Ykindstr{i}] = ...
+        palm_ready(opts.i{i},maskstruct,opts);
+    
+    % Select subjects
+    if ~ isempty(plm.subjidx),
+        plm.Yset{i} = plm.Yset{i}(plm.subjidx,:);
     end
     
-    % Now apply the mask created above and the one supplied by the user
-    % for this modality. If no masks were supplied, create them, except
-    % for the NIFTI class, which should have been created above
-    if strcmp(Ytmp.readwith,'nifticlass'),
-        plm.masks{i}.data(plm.masks{i}.data) = maskydat(:);
-    else
-        if Nm == 0,
-            plm.masks{i} = palm_maskstruct(maskydat,Ytmp.readwith,Ytmp.extra);
-        else
-            maskydat = plm.masks{i}.data(:) & maskydat(:);
-            plm.masks{i}.data = reshape(maskydat,size(plm.masks{i}.data));
-        end
+    % For the first input data, keep the size to
+    % compare with the others, then check the size
+    if i == 1,
+        plm.N = size(plm.Yset{i},1);
     end
-    plm.Yset{i} = plm.Yset{i}(:,maskydat);
-    
-    % Prepare a string with a representative name for the kind of data,
-    % i.e., voxel for volumetric data,
-    switch Ytmp.readwith,
-        case {'nifticlass','fs_load_nifti','fsl_read_avw',...
-                'spm_spm_vol','nii_load_nii'},
-            plm.Yisvol(i)   = true;
-            plm.Ykindstr{i} = '_vox';
-        case {'fs_read_curv','gifti'},
-            plm.Yissrf(i)   = true;
-            plm.Ykindstr{i} = '_dpv';
-        case 'dpxread',
-            plm.Yissrf(i)   = true;
-            plm.Ykindstr{i} = '_dpx'; % this may be overriden below if a surface file is supplied
-        case 'fs_load_mgh',
-            if ndims(Ytmp.data) == 4 && ...
-                    size(Ytmp.data,2) == 1 && ...
-                    size(Ytmp.data,3) == 1,
-                plm.Yissrf(i)   = true;
-                plm.Ykindstr{i} = '_dpx'; % this may be overriden below if a surface file is supplied
-            else
-                plm.Yisvol(i)   = true;
-                plm.Ykindstr{i} = '_vox';
-            end
-        otherwise
-            plm.Ykindstr{i} = '_dat';
+    if size(plm.Yset{i},1) ~= plm.N,
+        error([
+            'At least two of the input data files do not have\n' ...
+            'compatible sizes:\n' ...
+            '- File %d (%s) has %d observations\n' ...
+            '- File %d (%s) has %d observations'], ...
+            1,opts.i{1},plm.N, ...
+            i,opts.i{i},size(plm.Yset{i},1));
     end
-    
+
     % If this is a DPX/curvature file, and if one of the spatial
     % statistics has been invoked, check if surfaces are available
     % and with compatible size, then compute the area (dpv or dpf).
     % Also take this opportunity to compute the adjacency matrix.
-    if opts.spatial.do && (plm.Yissrf(i) || strcmpi(Ytmp.readwith,'load')),
+    if opts.spatial.do && (plm.Yissrf(i) || strcmpi(plm.masks{i},'load')),
         if Ns == 0,
             error([ ...
                 'To use spatial statistics with vertexwise or facewise data it is\n'...
@@ -1653,177 +1522,122 @@ for i = 1:Ni,
         plm.Yadjacency{i} = palm_adjacency(plm.srf{s}.data.fac,plm.Yisvtx(i));
     end
 end
-plm.nY = numel(plm.Yset); % this is redefined below if opts.inputmv is set.
+plm.nmasks = numel(plm.masks);
+plm.nY     = numel(plm.Yset); % this is redefined below if opts.inputmv is set.
 
 % Some extra packages for Octave
 if opts.spatial.do && palm_isoctave && any(plm.Yisvol),
     pkg load image
 end
 
-% Read and organise the EV per datum.
+% Read and organise the EV per datum:
 if opts.evperdat,
-    plm.EVset = cell(Nevd,1);
-    for ev = 1:Nevd,
-        
-        % Read an initial version
-        fprintf('Reading EV for each datum %d/%d: %s\n',ev,Nevd,opts.i{ev});
-        EVtmp = palm_miscread(opts.evdatfile{ev},opts.useniiclass,opts.o);
-        
-        % If this is 4D read with the NIFTI class, it needs a mask now
-        if strcmp(EVtmp.readwith,'nifticlass') && ndims(EVtmp.data) == 4,
-            if Nm == 0,
-                % If a mask hasn't been supplied, make one
-                tmpmsk = false(EVtmp.extra.dat.dim(1:3));
-                for a = 1:EVtmp.extra.dat.dim(2), % y coords
-                    for b = 1:EVtmp.extra.dat.dim(3), % z coords
-                        I = squeeze(EVtmp.extra.dat(:,a,b,:));
-                        inan = any(isnan(I),2);
-                        iinf = any(isinf(I),2);
-                        icte = sum(diff(I,1,2).^2,2) == 0;
-                        tmpmsk(:,a,b) = ~ (inan | iinf | icte);
-                    end
-                end
-                plm.masks{ev} = palm_maskstruct(tmpmsk(:)',EVtmp.readwith,EVtmp.extra);
-            else
-                % If a mask was supplied, check its size
-                if any(EVtmp.extra.dat.dim(1:3) ~= size(plm.masks{ev}.data)),
-                    error([...
-                        'The size of the data does not match the size of the mask:\n' ...
-                        '- Data file %d (%s)\n' ...
-                        '- Mask file %d (%s)'],ev,opts.evdatfile{ev},ev,opts.m{ev})
-                end
-            end
-        end
-        
-        % Now deal with the actual data
-        if ndims(EVtmp.data) == 2, %#ok
-            
-            % Transpose if that was chosen.
-            if opts.transposedata,
-                EVtmp.data = EVtmp.data';
-            end
-            
-            % Select subjects
-            if ~isempty(plm.subjidx),
-                EVtmp.data = EVtmp.data(plm.subjidx,:);
-            end
-            
-            % Compare size with the others
-            if size(EVtmp.data,1) ~= plm.N,
-                error([
-                    'At least two of the input data files do not have\n' ...
-                    'compatible sizes:\n' ...
-                    '- File %d (%s) has %d observations\n'   ...
-                    '- File %d (%s) has %d observations'], ...
-                    1,opts.evdatfile{1},plm.N, ...
-                    ev,opts.evdatfile{ev},size(EVtmp.data,1));
-            end
-            
-            % Not all later functions are defined for file_array class,
-            % so convert to double
-            if strcmp(EVtmp.readwith,'nifticlass'),
-                EVtmp.data = double(EVtmp.data);
-            end
-            
-            % This should cover the CSV files and DPX 4D files that
-            % were converted to CSV with 'dpx2csv' and then transposed.
-            plm.EVset{ev} = EVtmp.data;
-            
-        elseif ndims(EVtmp.data) == 4,
-            
-            % Select subjects
-            if ~isempty(plm.subjidx),
-                EVtmp.data = EVtmp.data(:,:,:,plm.subjidx);
-            end
-            
-            % Compare size with the others
-            if size(EVtmp.data,4) ~= plm.N,
-                error([
-                    'At least two of the input data files do not have\n' ...
-                    'compatible sizes:\n' ...
-                    '- File %d (%s) has %d observations\n'   ...
-                    '- File %d (%s) has %d observations'], ...
-                    1,opts.evdatfile{1},plm.N, ...
-                    ev,opts.evdatfile{ev},size(EVtmp.data,4));
-            end
-            
-            % Sort out loading for the NIFTI class
-            if strcmp(EVtmp.readwith,'nifticlass'),
-                tmpmsk = plm.masks{ev}.data(:)';
-                
-                % Read each volume, reshape and apply the mask
-                plm.EVset{ev} = zeros(plm.N,sum(tmpmsk));
-                for n = 1:plm.N,
-                    tmp = EVtmp.extra.dat(:,:,:,n);
-                    tmp = tmp(:)';
-                    plm.EVset{ev}(n,:) = tmp(tmpmsk);
-                end
-            else
-                % If not read with the NIFTI class, get all immediately
-                plm.EVset{ev} = palm_conv4to2(EVtmp.data);
-            end
-        end
-        
-        % Check if the size of data is compatible with size of mask.
-        % If read with the NIFTI class, this was already taken care of
-        % and can be skipped.
-        if ~ strcmp(EVtmp.readwith,'nifticlass'),
-            if Nm > 0 && size(plm.EVset{ev},2) ~= numel(plm.masks{ev}.data),
-                error([...
-                    'The size of the data does not match the size of the mask:\n' ...
-                    '- Data file %d (%s)\n' ...
-                    '- Mask file %d (%s)'],ev,opts.evdatfile{ev},ev,opts.m{ev})
-            end
-        end
-        
-        % Make mask that removes constant values, Inf and NaN. This will be
-        % merged with the user-supplied mask, if any, or will be the sole mask
-        % available to select the datapoints of interest.
-        if Nm == 0 && ndims(EVtmp.data) == 4 ...
-                && strcmp(EVtmp.readwith,'nifticlass'),
-            maskydat = true(1,size(plm.EVset{ev},2));
-        else
-            ynan = any(isnan(plm.EVset{ev}),1);
-            yinf = any(isinf(plm.EVset{ev}),1);
-            ycte = sum(diff(plm.EVset{ev},1,1).^2) == 0;
-            maskydat = ~ (ynan | yinf | ycte);
-        end
-        
-        % Now apply the mask created above and the one supplied by the user
-        % for this modality. If no masks were supplied, create them, except
-        % for the NIFTI class, which should have been created above
-        if strcmp(EVtmp.readwith,'nifticlass'),
-            plm.masks{Ni+ev}.data(plm.masks{Ni+ev}.data) = maskydat(:);
-        else
-            if Nm == 0,
-                plm.masks{Ni+ev} = palm_maskstruct(maskydat,EVtmp.readwith,EVtmp.extra);
-            else
-                maskydat = plm.masks{Ni+ev}.data(:) & maskydat(:);
-                plm.masks{Ni+ev}.data = reshape(maskydat,size(plm.masks{Ni+ev}.data));
-            end
-        end
-        plm.EVset{ev} = plm.EVset{ev}(:,maskydat);
-    end
-    plm.nEVdat = numel(plm.EVset);
     
-    % Sizes of EV per datum arrays
+    % Some sanity check:
+    opts.evpos = cat(1,opts.evpos{:});
+    if size(unique(opts.evpos,'rows'),1) ~= size(opts.evpos,1);
+        error([
+            'Some EV per datum have been defined for the same\n'...
+            'position in the same design matrices.%s'],'');
+    end
+    plm.EVset  = cell(Nevd,1);
+    plm.nEVdat = Nevd;
+    
+    % If there's one design per input, use the same masks as
+    % those of the input files. Otherwise, create them.
+    if ~ opts.designperinput && Nm == 1,
+        for ev = 1:plm.nEVdat,
+            plm.masksEV{ev} = plm.masks{1};
+        end
+    elseif opts.designperinput || (plm.nY == 1 && Nd == 1),
+        for ev = 1:plm.nEVdat,
+            plm.masksEV{ev} = plm.masks{opts.evpos(ev,2)};
+        end
+    else
+        plm.masksEV = cell(plm.nEVdat,1);
+    end
+    
+    % Read input file & select subjects
+    for ev = 1:plm.nEVdat,
+        fprintf('Reading EV per datum %d/%d: %s\n',ev,plm.nEVdat,opts.evdatfile{ev});
+        [plm.EVset{ev},plm.masksEV{ev}] = palm_ready(opts.evdatfile{ev},plm.masksEV{ev},opts);
+        if ~ isempty(plm.subjidx),
+            plm.EVset{ev} = plm.EVset{ev}(plm.subjidx,:);
+        end
+    end
+    plm.nmasksEV = numel(plm.masksEV);
+    
+    % Make the intersection of the EVs that will go all in the same design
+    Dlist = unique(opts.evpos(:,2),'rows');
+    for d = 1:numel(Dlist,1),
+        evidx = find(opts.evpos(:,2) == Dlist(d));
+        if numel(evidx) > 1,
+            newmask = true(size(plm.masksEV{1}.data));
+            for ev = evidx',
+                newmask = newmask & plm.masksEV{ev}.data;
+            end
+            for ev = evidx',
+                plm.EVset{ev} = plm.EVset{ev}(:,newmask(plm.masksEV{ev}.data(:)));
+                plm.masksEV{ev}.data = newmask;
+            end
+        end
+    end
+    
+    % Then make the intersections with the respective masks of the input files
+    if (opts.designperinput || (plm.nY == 1 && Nd == 1)) && ...
+            ~ opts.npcmod && ~ opts.npccon && ~ opts.MV,
+        for ev = 1:plm.nEVdat,
+            d = opts.evpos(ev,2); % corresponding input data/design
+            newmask = plm.masksEV{ev}.data & plm.masks{d}.data;
+            plm.EVset{ev} = plm.EVset{ev}(:,newmask(plm.masksEV{ev}.data(:)));
+            plm.masksEV{ev}.data = newmask;
+            plm.Yset{d} = plm.Yset{d}(:,newmask(plm.masks{d}.data(:)));
+            plm.masks{d}.data = newmask;
+        end
+    else
+        sizy = zeros(plm.nmasks,1);
+        for y = 1:plm.nmasks,
+            sizy(y) = size(plm.masks{y},1);
+        end
+        sizev = zeros(plm.nmasksEV,1);
+        for ev = 1:plm.nmasksEV,
+            sizev(ev) = size(plm.masksEV{ev},1);
+        end
+        if  numel(unique(sizy)) > 1 || ...
+                numel(unique(sizev)) > 1 || ...
+                sizy(1) ~= sizev(1),
+            error(['For multiple "-i" and/or "-evperdat", with "-npccon",\n',...
+                'and without the option "-designperinput", the inputs, EVs \n'...
+                'and masks need to be all of the same sizes.%s'],'');
+        end
+        newmask = true(size(plm.masksEV{1}.data));
+        for y = 1:plm.nmasks,
+            newmask = newmask & plm.masks{y}.data;
+        end
+        for ev = 1:plm.nmasksEV,
+            newmask = newmask & plm.masksEV{ev}.data;
+        end
+        for y = 1:plm.nmasks,
+            plm.Yset{y} = plm.Yset{y}(:,newmask(plm.masks{y}.data(:)));
+            plm.masks{y}.data = newmask;
+        end
+        for ev = 1:plm.nmasksEV,
+            plm.EVset{ev} = plm.EVset{ev}(:,newmask(plm.masksEV{ev}.data(:)));
+            plm.masksEV{ev}.data = newmask;
+        end
+    end
+    
+    % Sizes for later
     plm.EVsiz = zeros(plm.nEVdat,1);
     for ev = 1:plm.nEVdat,
         plm.EVsiz(ev) = size(plm.EVset{ev},2);
     end
 end
-plm.nmasks = numel(plm.masks);
-
-% Make sure none of the modalities is empty
-for y = 1:plm.nY,
-    if any(size(plm.Yset{y}) == 0),
-        error('Modality %d has no data.\n',y);
-    end
-end
+clear newmask;
 
 % Create an intersection mask if NPC or MV is to be done, and further apply
 % to the data that was previously masked above, as needed.
-if opts.npcmod || opts.MV || opts.evperdat,
+if opts.npcmod || opts.MV,
     if plm.nmasks > 1,
         
         % If there is one mask per modality, make an instersection mask.
@@ -1834,16 +1648,11 @@ if opts.npcmod || opts.MV || opts.evperdat,
         
         % Note that this line below uses Ytmp, which is from the previous loop.
         % This can be used here because with NPC all data has the same size.
-        plm.maskinter = palm_maskstruct(maskinter(:)',Ytmp.readwith,Ytmp.extra);
+        plm.maskinter = palm_maskstruct(maskinter(:)',plm.masks{1}.readwith,plm.masks{1}.extra);
         
         % Apply it to further subselect data points
         for y = 1:plm.nY,
             plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{y}.data));
-        end
-        if opts.evperdat,
-            for ev = 1:plm.nEVdat,
-                plm.EVset{ev} = plm.EVset{ev}(:,plm.maskinter.data(plm.masks{plm.nY+ev}.data));
-            end
         end
     else
         
@@ -1852,14 +1661,15 @@ if opts.npcmod || opts.MV || opts.evperdat,
         for y = 1:plm.nY,
             plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{1}.data));
         end
-        if opts.evperdat,
-            for ev = 1:plm.nEVdat,
-                plm.EVset{ev} = plm.EVset{ev}(:,plm.maskinter.data(plm.masks{1}.data));
-            end
-        end
     end
 end
-clear Ytmp EVtmp
+
+% Make sure none of the modalities is empty
+for y = 1:plm.nY,
+    if any(size(plm.Yset{y}) == 0),
+        error('Modality %d has no data.\n',y);
+    end
+end
 
 % If the multiple columns of the (sole) input are to be treated
 % in a multivariate fashion
@@ -1877,7 +1687,7 @@ if opts.inputmv,
     plm.nY = numel(plm.Yset);
 end
 
-% A variable with the sizes of all modalities will be handy later
+% A variable with the cumulative sizes of all modalities will be handy later
 plm.Ysiz = zeros(plm.nY,1);
 for y = 1:plm.nY,
     plm.Ysiz(y) = size(plm.Yset{y},2);
@@ -1885,7 +1695,7 @@ end
 plm.Ycumsiz = vertcat(0,cumsum(plm.Ysiz));
 
 % Make sure that all data have the same size if NPC or MV are to be done
-if opts.npcmod || opts.MV || opts.evperdat,
+if opts.npcmod || opts.MV,
     siz1 = size(plm.Yset{1});
     for y = 1:plm.nY,
         sizy = size(plm.Yset{y});
@@ -1902,7 +1712,7 @@ if opts.savemask,
         if plm.nY == 1 || plm.nmasks == 1,
             M.filename = sprintf('%s_mask',opts.o);
         else
-            M.filename = sprintf('%s_mask_i%d',opts.o,y);
+            M.filename = sprintf('%s_mask_m%d',opts.o,y);
         end
         M.data = double(M.data);
         palm_miscwrite(M);
@@ -1969,26 +1779,25 @@ if ~opts.EE && ~opts.ISE,
 end
 
 % Read and assemble the design matrices.
+fprintf('Reading design matrix and contrasts.\n');
 if opts.evperdat,
-    evpos = cat(1,opts.evpos{:});
-    if size(unique(evpos(:,1:2),'rows'),1) ~= size(evpos,1);
-        error([
-            'Some EV per datum have been defined for the same\n'...
-            'position in the same design matrices.%s'],'');
+    plm.Mset = cell(max(Nd,max(opts.evpos(:,2))),1);
+    for m = 1:numel(plm.Mset),
+        plm.Mset{m} = ones(plm.N,1);
     end
-    desidx = unique(evpos(:,2));
-    Ndev = desidx(end);
 else
-    Ndev = 0;
+    plm.Mset = cell(max(Nd,1),1);
 end
-plm.Mset = cell(max(Nd,Ndev),1);
-% Read & assemble each design matrix
-if Nd > 0,
-    fprintf('Reading design matrix and contrasts.\n');
+plm.nM = numel(plm.Mset);
+if Nd == 0 && ~ opts.evperdat,
+    plm.Mset{1} = ones(plm.N,1);
+    opts.EE     = false;
+    opts.ISE    = true;
+elseif Nd > 0,
     for m = 1:Nd,
         Mtmp = palm_miscread(opts.d{m});
         plm.Mset{m} = Mtmp.data;
-        if ~isempty(plm.subjidx) && size(plm.Mset{m},1) ~= plm.N,
+        if ~ isempty(plm.subjidx) && size(plm.Mset{m},1) ~= plm.N,
             plm.Mset{m} = plm.Mset{m}(plm.subjidx,:);
         end
         if size(plm.Mset{m},1) ~= plm.N,
@@ -2007,46 +1816,19 @@ if Nd > 0,
         end
     end
 end
-plm.nM = numel(plm.Mset);
+
 % Include the EV per datum
-if Ndev > 0,
-    for m = desidx',
-        evposm = evpos(evpos(:,2) == m,:);
-        if isempty(plm.Mset{m}),
-            tmp = zeros(plm.N,size(evposm,1),plm.EVsiz(evposm(1,3)));
-            for ev = 1:size(evposm,1),
-                tmp(:,ev,:) = permute(plm.EVset{evposm(ev,3)},[1 3 2]);
-            end
-        else
-            tmp = zeros(plm.N,size(evposm,1)+size(plm.Mset{m},2),plm.EVsiz(evposm(1,3)));
-            idx = true(1,size(evposm,1)+size(plm.Mset{m},2));
-            idx(evposm(:,1)) = false;
-            tmp(:,idx,:) = repmat(plm.Mset{m},[1 1 plm.EVsiz(evposm(1,3))]);
-            for ev = 1:size(evposm,1),
-                tmp(:,find(~idx,ev),:) = permute(plm.EVset{evposm(ev,3)},[1 3 2]);
-                plm.EVset{evposm(ev,3)} = [];
-                plm.EVsiz(evposm(1,3)) = NaN;
-            end
+if opts.evperdat,
+    for ev = 1:plm.nEVdat,
+        if ndims(plm.Mset{opts.evpos(ev,2)}) == 2,
+            plm.Mset{ev} = repmat(plm.Mset{ev},[1 1 plm.EVsiz(ev)]);
         end
-        plm.Mset{m} = tmp;
+        plm.Mset{ev}(:,opts.evpos(ev,1),:) = permute(plm.EVset{ev},[1 3 2]);
     end
     plm = rmfield(plm,{'EVset','EVsiz'});
-    plm.evperdat = false(plm.nM,1);
-    plm.evperdat(desidx) = true;
 end
-% If no design was specified
-if Nd == 0 && Ndev == 0,
-    plm.Mset{1} = ones(plm.N,1);
-    opts.EE  = false;
-    opts.ISE = true;
-    plm.nM   = numel(plm.Mset);
-end
+
 % Some related sanity checks
-if opts.designperinput && plm.nY ~= plm.nM,
-    error([
-        'To use the option "-designperinput", the number of design files must\n' ...
-        'match the number of inputs.\n%s'],'');
-end
 if opts.evperdat,
     for m = 1:plm.nM,
         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
@@ -2121,7 +1903,7 @@ elseif Ncon,
         if strcmpi(tmp.readwith,'mset'),
             Ccon{con} = tmp.data;
         else
-            error(['Files given to the option "-con" must be in .mset format.' ...
+            error(['Files given to the option "-con" must be in .mset format.\n' ...
                 'For .csv or .con files, use "-t"; for .fts files, use "-f".%s'],'');
         end
         if isempty(opts.Dcon{con}),
@@ -2133,7 +1915,7 @@ elseif Ncon,
             if strcmpi(tmp.readwith,'mset'),
                 Dcon{con} = tmp.data;
             else
-                error(['Files given to the option "-con" must be in .mset format.' ...
+                error(['Files given to the option "-con" must be in .mset format.\n' ...
                     'For .csv or .con files, use "-t"; for .fts files, use "-f".%s'],'');
             end
         end
@@ -2307,11 +2089,15 @@ else
     tmp = sum(diff(seqtmp,1,2).^2,2);
     if (opts.corrcon || opts.npccon) && any(tmp(:) ~= 0),
         warning([ ...
-            'You chose to correct over contrasts, or run NPC between contrasts, but with\n' ...
-            '         the design(s) and contrasts given, it is not possible to run synchronized\n' ...
-            '         permutations without ignoring repeated elements in the design matrix (or\n' ...
-            '         matrices). To solve this, adding the option -cmcx automatically.\n' ...
-            '         If this isn''t what you want, consider the option -pmethodp Guttman.%s\n'],'');
+            'You chose to correct over contrasts, or run NPC\n'    ...
+            '         between contrasts, but with the design(s) and,\n'  ...
+            '         contrasts given it is not possible to run\n'      ...
+            '         synchronised permutations without ignoring repeated\n'...
+            '         elements in the design matrix (or matrices). To\n'   ...
+            '         solve this, adding the option "-cmcx" automatically.\n'  ...
+            '         If this isn''t what you want, consider the option\n'         ...
+            '         "-pmethodp Guttman". Otherwise, you can safely\n'    ...
+            '         ignore this message.%s\n'],'');
         opts.cmcx = true;
     end
     if opts.corrcon || opts.npccon,
@@ -2343,8 +2129,8 @@ else
     elseif opts.within || opts.whole,
         warning([ ...
             'Options -within and/or -whole ignored, as the file defining\n' ...
-            '         the exchangeability blocks (option -eb) already defines\n' ...
-            '         how the data should be shuffled.%s'],'');
+            '         the exchangeability blocks (option -eb) already \n' ...
+            '         defines how the data should be shuffled.%s'],'');
     end
     plm.EB = palm_reindex(plm.EB,'fixleaves');
 end
@@ -2372,6 +2158,7 @@ else
 end
 [tmp,~,plm.VG] = unique(plm.VG);
 plm.nVG = numel(tmp);
+if plm.nVG == 1, opts.singlevg = true; end
 
 % MV can't yet be used if nVG>1, although NPC remains an option
 if opts.MV && plm.nVG > 1,
@@ -2509,9 +2296,9 @@ if opts.vgdemean,
 end
 
 % Number of tests to be selected for the low rank approximation
-if opts.approx.lowrank,
+if opts.accel.lowrank,
     if plm.nVG > 1,
-        error('The option "-approx lowrank" cannot be used with more than one variance group.');
+        error('The option "-accel lowrank" cannot be used with more than one variance group.');
     end
     if opts.nP0 == 0,
         error('With lowrank approximation you must indicate a larger-than-zero number of permutations.');
@@ -2530,13 +2317,13 @@ if opts.approx.lowrank,
             '         or run the full permutation test, or just drop spatial statistics.%s'],'');
     end
     plm.nsel = zeros(plm.nY,1);
-    if opts.approx.lowrank_val <= 1,
+    if opts.accel.lowrank_val <= 1,
         for y = 1:plm.nY,
-            plm.nsel(y) = ceil(opts.approx.lowrank_val*plm.Ysiz(y));
+            plm.nsel(y) = ceil(opts.accel.lowrank_val*plm.Ysiz(y));
         end
-    elseif opts.approx.lowrank_val > 1
-        plm.nsel(1:end) = ceil(opts.approx.lowrank_val);
-    elseif isnan(opts.approx.lowrank_val),
+    elseif opts.accel.lowrank_val > 1
+        plm.nsel(1:end) = ceil(opts.accel.lowrank_val);
+    elseif isnan(opts.accel.lowrank_val),
         plm.nsel(1:end) = plm.N*(plm.N+1)/2;
     end
 end
