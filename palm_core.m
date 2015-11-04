@@ -581,7 +581,7 @@ for po = P_outer,
                 
                 if opts.evperdat,
 
-                    fprintf(['Doing maths for -evperdat before model fitting: [Design %d/%d, Contrast %d/%d] (may take some minutes)\n'],m,plm.nM,c,plm.nC(m));
+                    fprintf(['Doing maths for -evperdat before model fitting: [Design %d/%d, Contrast %d/%d] (may take several minutes)\n'],m,plm.nM,c,plm.nC(m));
                     
                     % Partition the model, now using the method chosen by the user
                     nT = size(plm.Mset{m},3);

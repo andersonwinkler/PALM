@@ -38,6 +38,10 @@ function [Y,maskstruct,Yisvol,Ykindstr] = palm_ready(Yfile,maskstruct,opts)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Yisvol   = false;
+Yissrf   = false;
+Ykindstr = '_dat';
+
 % Read a temporary version
 Ytmp     = palm_miscread(Yfile,opts.useniiclass,opts.o);
 
