@@ -70,7 +70,7 @@ opts.s    = cell(Ns,1);   % Surface file(s)
 opts.sa   = cell(Ns,1);   % Area file(s) or weight(s)
 opts.d    = cell(Nd,1);   % Design file(s)
 opts.t    = cell(Nt,1);   % t contrast file(s)
-opts.f    = cell(Nf,1);   % F contrast file(s)
+opts.f    = opts.t;       % F contrast file(s)
 opts.Ccon = cell(Ncon,1); % Contrast file(s) (t or F, mset format)
 opts.Dcon = cell(Ncon,1); % Contrast file(s) (multivariate, mset format)
 opts.eb       = [];       % File with definition of exchangeability blocks
@@ -172,8 +172,10 @@ while a <= narginx,
         case '-f', % basic
             
             % Get the F contrast files.
-            opts.f{f} = vararginx{a+1};
-            f = f + 1;
+            if t == 1,
+                error('The option "-f" cannot be specified before its respective "-t".');
+            end
+            opts.f{t-1} = vararginx{a+1};
             a = a + 2;
             
         case '-con', % advanced
@@ -724,8 +726,8 @@ while a <= narginx,
                 if ~ any(methidx);
                     error('Approximation method "%s" unknown.',vararginx{a+1});
                 end
-                for m = 1:numel(methlist),
-                    opts.accel.(methlist{m}) = methidx(m);
+                for mm = 1:numel(methlist),
+                    opts.accel.(methlist{mm}) = methidx(mm);
                 end
                 
                 % Extra parameters
@@ -1848,7 +1850,8 @@ plm.Dset = cell(plm.nM,1);
 plm.nC   = zeros(plm.nM,1);
 plm.nD   = zeros(plm.nM,1);
 if Nt || Nf,
-    % Load FSL style t and F contrasts
+    
+    % Load FSL style t contrasts
     tcon = cell(Nt,1);
     for t = 1:Nt,
         tmp = palm_miscread(opts.t{t});
@@ -1858,13 +1861,17 @@ if Nt || Nf,
             error('Invalid t contrast file: %s',opts.t{t});
         end
     end
-    fcon = cell(Nf,1);
-    for f = 1:Nf,
-        tmp = palm_miscread(opts.f{f});
-        if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
-            fcon{f} = tmp.data;
-        else
-            error('Invalid F contrast file: %s',opts.f{f});
+    
+    % Load FSL style F contrasts
+    fcon = cell(Nt,1);
+    for t = 1:Nt,
+        if ~ isempty(opts.f{t}),
+            tmp = palm_miscread(opts.f{t});
+            if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
+                fcon{t} = tmp.data;
+            else
+                error('Invalid F contrast file: %s',opts.f{t});
+            end
         end
     end
     
@@ -1880,8 +1887,8 @@ if Nt || Nf,
             plm.Cset{m}{c} = tcon{t}(j,:)';
             c = c + 1;
         end
-        if numel(fcon),
-            for j = 1:size(fcon{t},1),
+        for j = 1:size(fcon{t},1),
+            if ~ isempty(fcon{t}),
                 plm.Cset{m}{c} = tcon{t}(logical(fcon{t}(j,:)),:)';
                 c = c + 1;
             end
@@ -1904,7 +1911,7 @@ elseif Ncon,
             Ccon{con} = tmp.data;
         else
             error(['Files given to the option "-con" must be in .mset format.\n' ...
-                'For .csv or .con files, use "-t"; for .fts files, use "-f".%s'],'');
+                'For .csv/.con/.fts files, use "-t" or "-f".%s'],'');
         end
         if isempty(opts.Dcon{con}),
             for c = 1:numel(Ccon{con}),
@@ -1916,7 +1923,7 @@ elseif Ncon,
                 Dcon{con} = tmp.data;
             else
                 error(['Files given to the option "-con" must be in .mset format.\n' ...
-                    'For .csv or .con files, use "-t"; for .fts files, use "-f".%s'],'');
+                    'For .csv/.con/.fts files, use "-t" or "-f".%s'],'');
             end
         end
     end
