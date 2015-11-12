@@ -780,7 +780,7 @@ while a <= narginx,
                 end
             else
                 error([...
-                    'The option "-approx" requires a method to be specified.\n' ...
+                    'The option "-accel" requires a method to be specified.\n' ...
                     'Consult the documentation.']);
             end
             
@@ -1698,13 +1698,18 @@ plm.Ycumsiz = vertcat(0,cumsum(plm.Ysiz));
 
 % Make sure that all data have the same size if NPC or MV are to be done
 if opts.npcmod || opts.MV,
-    siz1 = size(plm.Yset{1});
-    for y = 1:plm.nY,
-        sizy = size(plm.Yset{y});
-        if any(siz1 ~= sizy),
-            error('The sizes of some of the imaging modalities don''t match');
+    usiz = unique(plm.Ysiz);
+    if numel(usiz) > 2 || (numel(usiz) == 2 && min(usiz) ~= 1),
+        error('The sizes of some of the imaging modalities don''t match');
+    elseif numel(usiz) == 2 && min(usiz) == 1,
+        for y = 1:plm.nY,
+            if plm.Ysiz(y) == 1,
+                plm.Yset{y} = repmat(plm.Yset{y},[1 max(usiz)]);
+                fprintf('Expanding modality #%d to match the size of the others\n',y);
+            end
         end
     end
+    clear usiz;
 end
 
 % Take this opportunity to save the masks if the user requested.
@@ -2096,15 +2101,12 @@ else
     tmp = sum(diff(seqtmp,1,2).^2,2);
     if (opts.corrcon || opts.npccon) && any(tmp(:) ~= 0),
         warning([ ...
-            'You chose to correct over contrasts, or run NPC\n'    ...
-            '         between contrasts, but with the design(s) and,\n'  ...
-            '         contrasts given it is not possible to run\n'      ...
+            'You chose to correct over contrasts, or run NPC\n'             ...
+            '         between contrasts, but with the design(s) and,\n'     ...
+            '         contrasts given it is not possible to run\n'          ...
             '         synchronised permutations without ignoring repeated\n'...
-            '         elements in the design matrix (or matrices). To\n'   ...
-            '         solve this, adding the option "-cmcx" automatically.\n'  ...
-            '         If this isn''t what you want, consider the option\n'         ...
-            '         "-pmethodp Guttman". Otherwise, you can safely\n'    ...
-            '         ignore this message.%s\n'],'');
+            '         elements in the design matrix (or matrices). To\n'    ...
+            '         solve this, adding the option "-cmcx" automatically.%s\n'],'');
         opts.cmcx = true;
     end
     if opts.corrcon || opts.npccon,

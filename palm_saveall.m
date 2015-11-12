@@ -1559,6 +1559,7 @@ padj = padj(oidxR);
 
 % ==============================================================
 function pvals = approxgamma(G,Gdist,rev,prepl)
+
 % Shortcut to the calls for Gamma approximation.
 [mu,s2,gamm1] = palm_moments(Gdist);
 pvals = palm_gamma(G,mu,s2,gamm1,rev,prepl);

@@ -59,7 +59,7 @@ function P = palm_pareto(G,Gdist,rev,Pthr)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+Gdist = Gdist(2:end);
 % Compute the usual permutation p-values.
 P    = palm_datapval(G,Gdist,rev);
 Pidx = P < Pthr; % don't replace this "<" for "<=".
