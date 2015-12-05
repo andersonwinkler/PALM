@@ -53,6 +53,7 @@ switch lower(readwith),
         
         % If the original data is a CSV or VEST file.
         S.data = mask;
+        S.extra = extra;
         
     case 'wb_command',
         S.data  = mask;
@@ -61,8 +62,9 @@ switch lower(readwith),
     case 'nifticlass',
         
         % If the original data is NIFTI and was read witht the NIFTI class
-        S.data      = palm_conv2to4(mask,extra.dat.dim(1:3));
-        S.extra.mat = extra.mat;
+        S.data          = palm_conv2to4(mask,extra.dat.dim(1:3));
+        S.extra.mat     = extra.mat;
+        S.extra.dat.dim = extra.dat.dim;
         
     case 'spm_spm_vol',
         

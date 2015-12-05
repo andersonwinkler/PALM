@@ -1637,6 +1637,33 @@ if opts.evperdat,
 end
 clear newmask;
 
+% Make sure that all data have the same size if NPC or MV are to be done
+if opts.npcmod || opts.MV,
+    % The plm.Ysiz is redefined below.
+    for y = 1:plm.nY,
+        plm.Ysiz(y) = size(plm.Yset{y},2);
+    end
+    [usiz,uidx] = unique(plm.Ysiz);
+    if numel(usiz) > 2 || (numel(usiz) == 2 && min(usiz) ~= 1),
+        error('The sizes of some of the imaging modalities don''t match');
+    elseif numel(usiz) == 2 && usiz(1) == 1,
+        for y = 1:plm.nY,
+            if plm.Ysiz(y) == 1,
+                fprintf('Expanding modality #%d to match the size of the others.\n',y);
+                plm.Yset{y} = repmat(plm.Yset{y},[1 usiz(2)]);
+                if plm.nmasks > 1,
+                    if numel(plm.masks{y}.data) == 1,
+                        plm.masks{y}.data = plm.masks{uidx(2)}.data;
+                    else
+                        error('Modality expansion is only allowed for single input variables.')
+                    end
+                end
+            end
+        end
+    end
+    clear usiz;
+end
+
 % Create an intersection mask if NPC or MV is to be done, and further apply
 % to the data that was previously masked above, as needed.
 if opts.npcmod || opts.MV,
@@ -1695,22 +1722,6 @@ for y = 1:plm.nY,
     plm.Ysiz(y) = size(plm.Yset{y},2);
 end
 plm.Ycumsiz = vertcat(0,cumsum(plm.Ysiz));
-
-% Make sure that all data have the same size if NPC or MV are to be done
-if opts.npcmod || opts.MV,
-    usiz = unique(plm.Ysiz);
-    if numel(usiz) > 2 || (numel(usiz) == 2 && min(usiz) ~= 1),
-        error('The sizes of some of the imaging modalities don''t match');
-    elseif numel(usiz) == 2 && min(usiz) == 1,
-        for y = 1:plm.nY,
-            if plm.Ysiz(y) == 1,
-                plm.Yset{y} = repmat(plm.Yset{y},[1 max(usiz)]);
-                fprintf('Expanding modality #%d to match the size of the others\n',y);
-            end
-        end
-    end
-    clear usiz;
-end
 
 % Take this opportunity to save the masks if the user requested.
 if opts.savemask,
