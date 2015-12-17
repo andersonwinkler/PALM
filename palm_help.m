@@ -129,7 +129,8 @@ fprintf('-pearson : Instead of t, F, v or G, compute either the Pearson"s\n');
 fprintf('	correlation coefficient, r (if the constrast has rank = 1), or the\n');
 fprintf('	coefficient of determination R^2 (if the constrast has rank > 1).\n');
 fprintf('	For the contrasts in which some EVs are zeroed out, this option\n');
-fprintf('	computes the partial correlation (or partial R^2).\n\n');
+fprintf('	computes the multiple correlation coefficient (or R^2)\n');
+fprintf('	corresponding to the EVs of interest.\n\n');
 
 fprintf('-T : Enable TFCE inference for univariate (partial) tests, as well as\n');
 fprintf('	for NPC and/or MV if these options have been enabled.\n\n');
@@ -188,7 +189,7 @@ function advanced_help
 
 fprintf('\nThe advanced or less commonly used options are:\n\n');
 
-fprintf('-approx <method> : Run one of various approximation methods available.\n\n');
+fprintf('-approx <method> : Run one of various approximation methods available.\n');
 fprintf('	This is very experimental. See the source code for details.\n\n');
 
 fprintf('-con <file1> <file2> : Contrast file(s) in .mset format. For hypotheses\n');
@@ -279,6 +280,8 @@ fprintf('-savemetrics : Save a csv file with various permutation metrics.\n\n');
 
 fprintf('-saveparametric : Save also uncorrected parametric p-values. These are only\n');
 fprintf('	valid if all assumptions are met, including iid and normality.\n\n');
+
+fprintf('-saveglm : Save COPEs and VARCOPEs in the first permutation.\n\n');
 
 fprintf('-saveperms : Save one statistic image per permutation, as well as a csv\n');
 fprintf('	file with the permutation indices (one permutation per row, one\n');

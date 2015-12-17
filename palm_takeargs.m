@@ -55,7 +55,7 @@ else
 end
 
 % Number of input images/masks/surfaces
-% These are NOT meant to be edited. Don't edit this!
+% These are NOT meant to be edited.
 Ni   = sum(strcmp(vararginx,'-i'));         % number of data inputs
 Nm   = sum(strcmp(vararginx,'-m'));         % number of masks
 Ns   = sum(strcmp(vararginx,'-s'));         % number of surfaces
@@ -85,7 +85,7 @@ opts.subjidx  = [];       % Filename of the indices of subjects to keep
 plm.subjidx   = [];       % Indices of subjects to keep
 
 % These are to be incremented below
-a = 1; i = 1; m = 1; d = 1;
+i = 1; m = 1; d = 1;
 t = 1; f = 1; s = 1;
 con = 1; ev = 1;
 
@@ -96,6 +96,7 @@ end
 narginx = numel(vararginx);
 
 % Take the input arguments
+a = 1;
 while a <= narginx,
     switch vararginx{a},
         case {'-help','-?','-basic','-advanced'},
@@ -152,12 +153,24 @@ while a <= narginx,
             elseif nargin == a + 2 || ...
                     ischar(vararginx{a+3}) && ...
                     strcmpi(vararginx{a+3}(1),'-'),
-                opts.evpos{ev}(1) = eval(vararginx{a+2}); % EV position
+                if ischar(vararginx{a+2}), % EV position
+                    opts.evpos{ev}(1) = eval(vararginx{a+2});
+                else
+                    opts.evpos{ev}(1) = vararginx{a+2};
+                end
                 opts.evpos{ev}(2) = 1;  % Design number
                 a = a + 3;
             else
-                opts.evpos{ev}(1) = eval(vararginx{a+2}); % EV position
-                opts.evpos{ev}(2) = eval(vararginx{a+3}); % Design number
+                if ischar(vararginx{a+2}), % EV position
+                    opts.evpos{ev}(1) = eval(vararginx{a+2});
+                else
+                    opts.evpos{ev}(1) = vararginx{a+2};
+                end
+                if ischar(vararginx{a+3}), % Design number
+                    opts.evpos{ev}(2) = eval(vararginx{a+3});
+                else
+                    opts.evpos{ev}(2) = vararginx{a+3};
+                end
                 a = a + 4;
             end
             ev = ev + 1;
@@ -466,7 +479,7 @@ while a <= narginx,
             
         case '-reversemasks', % basic
             
-            % Reverse masks
+            % Reverse masks.
             opts.reversemasks = true;
             a = a + 1;
             
@@ -484,8 +497,15 @@ while a <= narginx,
             
         case '-saveparametric', % advanced
             
-            % If the user wants to have also the parametric p-values
+            % If the user wants to have also the parametric p-values.
             opts.savepara = true;
+            a = a + 1;
+            
+        case '-saveglm', % advanced
+            
+            % If the user wants, save COPE and VARCOPEs in the 1st
+            % permutation.
+            opts.saveglm = true;
             a = a + 1;
             
         case {'-savecdf','-save1-p'}, % basic
@@ -496,17 +516,17 @@ while a <= narginx,
             
         case '-logp',  % basic
             
-            % Convert the P-values or (1-P)-values to -log10 before saving
+            % Convert the P-values or (1-P)-values to -log10 before saving.
             opts.savelogp = true;
             a = a + 1;
             
         case '-savemask', % advanced
             
-            % If the user wants to have also the masks used for each
+            % If the user wants to have also the masks used for each.
             % modality
             opts.savemask = true;
             a = a + 1;
-            
+ 
         case '-rmethod', % advanced
             
             % Which method to use for the regression/permutation?
@@ -1018,12 +1038,19 @@ while a <= narginx,
                     'Consult the documentation.']);
             end
             
+        case '-forceintersectionmask', % currently not in the help
+            
+            % Force the generation of an intersection mask, even if there
+            % is no MV or NPC (useful for mediation analysis).
+            opts.forcemaskinter = true;
+            a = a + 1;
+            
         otherwise
             error('Unknown option: "%s"',vararginx{a});
     end
 end
 
-% Check for the existance of other programs for input/output
+% Check for the existence of other programs for input/output
 palm_checkprogs;
 
 % Make sure the NPC options make sense
@@ -1038,15 +1065,12 @@ end
 % A quick check for the case of 1 EV per column of Y.
 if opts.evperdat,
     if any([...
-            opts.cmcx
             opts.ev4vg
             opts.pearson]),
         error([...
             'The option "-evperdat" is incompatible with the options listed below:\n' ...
-            '"-cmcx"\n' ...
             '"-ev4vg"\n' ...
-            '"-pearson"\n' ...
-            'None of these can be enabled with "-evperdat".%s'],'');
+            '"-pearson"%s'],'');
     end
     if strcmpi(opts.rmethod,'terBraak'),
         error('The option "-evperdat" cannot be used with the ter Braak method (not implemented)');
@@ -1248,11 +1272,9 @@ elseif Ncon,
     end
 end
 if opts.pearson && (opts.NPC || opts.MV),
-    warning([ ...
-        'It''s not possible to compute the Pearson''s r or R^2 together with NPC or\n', ...
-        '         multivariate methods. Disabling the options "-npc" and "-mv".%s'],'');
-    opts.NPC = false;
-    opts.MV  = false;
+    error([ ...
+        'It isn''t possible to compute the Pearson''s r or R^2 together with NPC or\n', ...
+        '         multivariate methods.%s'],'');
 end
 if opts.pearson && ~ opts.demean,
     warning([ ...
@@ -1588,13 +1610,22 @@ if opts.evperdat,
     % Then make the intersections with the respective masks of the input files
     if (opts.designperinput || (plm.nY == 1 && Nd == 1)) && ...
             ~ opts.npcmod && ~ opts.npccon && ~ opts.MV,
-        for ev = 1:plm.nEVdat,
-            d = opts.evpos(ev,2); % corresponding input data/design
-            newmask = plm.masksEV{ev}.data & plm.masks{d}.data;
-            plm.EVset{ev} = plm.EVset{ev}(:,newmask(plm.masksEV{ev}.data(:)));
-            plm.masksEV{ev}.data = newmask;
+        for d = unique(opts.evpos(:,2))',
+            EV = find(opts.evpos(:,2) == d);
+            newmask = zeros(numel(plm.masks{d}.data),numel(EV)+1);
+            c = 1;
+            for ev = EV',
+                newmask(:,c) = plm.masksEV{ev}.data(:);
+                c = c + 1;
+            end
+            newmask(:,c) = plm.masks{d}.data(:);
+            newmask = reshape(all(newmask,2),size(plm.masks{d}.data));
+            for ev = EV',
+                plm.EVset{ev} = plm.EVset{ev}(:,newmask(plm.masksEV{ev}.data(:)));
+                plm.masksEV{ev}.data = newmask;
+            end
             plm.Yset{d} = plm.Yset{d}(:,newmask(plm.masks{d}.data(:)));
-            plm.masks{d}.data = newmask;
+            plm.masks{d}.data    = newmask;
         end
     else
         sizy = zeros(plm.nmasks,1);
@@ -1628,17 +1659,58 @@ if opts.evperdat,
             plm.masksEV{ev}.data = newmask;
         end
     end
-    
-    % Sizes for later
+end
+clear('newmask');
+
+% Create an intersection mask if NPC or MV is to be done, and further apply
+% to the data that was previously masked above, as needed.
+if opts.npcmod || opts.MV || opts.forcemaskinter,
+    if plm.nmasks > 1,
+        
+        % If there is one mask per modality, make an instersection mask.
+        maskinter = true(size(plm.masks{1}.data));
+        for m = 1:plm.nmasks,
+            maskinter = maskinter & plm.masks{m}.data;
+        end
+        if opts.evperdat,
+            for ev = 1:plm.nEVdat,
+                maskinter = maskinter & plm.masksEV{ev}.data;
+            end
+        end
+        
+        % Note that this line below uses Ytmp, which is from the previous loop.
+        % This can be used here because with NPC all data has the same size.
+        plm.maskinter = palm_maskstruct(maskinter(:)',plm.masks{1}.readwith,plm.masks{1}.extra);
+        
+        % Apply it to further subselect data points
+        for y = 1:plm.nY,
+            plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{y}.data));
+        end
+        if opts.evperdat,
+            for ev = 1:plm.nEVdat,
+                plm.EVset{ev} = plm.EVset{ev}(:,plm.maskinter.data(plm.masksEV{ev}.data));
+            end
+        end
+    else
+        
+        % If only one mask was given.
+        plm.maskinter = plm.masks{1};
+        for y = 1:plm.nY,
+            plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{1}.data));
+        end
+    end
+end
+
+% Sizes for later
+if opts.evperdat,
     plm.EVsiz = zeros(plm.nEVdat,1);
     for ev = 1:plm.nEVdat,
         plm.EVsiz(ev) = size(plm.EVset{ev},2);
     end
 end
-clear newmask;
 
 % Make sure that all data have the same size if NPC or MV are to be done
-if opts.npcmod || opts.MV,
+if opts.npcmod || opts.MV || opts.forcemaskinter,
     % The plm.Ysiz is redefined below.
     for y = 1:plm.nY,
         plm.Ysiz(y) = size(plm.Yset{y},2);
@@ -1662,35 +1734,6 @@ if opts.npcmod || opts.MV,
         end
     end
     clear usiz;
-end
-
-% Create an intersection mask if NPC or MV is to be done, and further apply
-% to the data that was previously masked above, as needed.
-if opts.npcmod || opts.MV,
-    if plm.nmasks > 1,
-        
-        % If there is one mask per modality, make an instersection mask.
-        maskinter = true(size(plm.masks{1}.data));
-        for m = 1:plm.nmasks,
-            maskinter = maskinter & plm.masks{m}.data;
-        end
-        
-        % Note that this line below uses Ytmp, which is from the previous loop.
-        % This can be used here because with NPC all data has the same size.
-        plm.maskinter = palm_maskstruct(maskinter(:)',plm.masks{1}.readwith,plm.masks{1}.extra);
-        
-        % Apply it to further subselect data points
-        for y = 1:plm.nY,
-            plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{y}.data));
-        end
-    else
-        
-        % If only one mask was given.
-        plm.maskinter = plm.masks{1};
-        for y = 1:plm.nY,
-            plm.Yset{y} = plm.Yset{y}(:,plm.maskinter.data(plm.masks{1}.data));
-        end
-    end
 end
 
 % Make sure none of the modalities is empty
@@ -1735,7 +1778,7 @@ if opts.savemask,
         M.data = double(M.data);
         palm_miscwrite(M);
     end
-    if plm.nY > 1 && (opts.npcmod || opts.MV || opts.evperdat),
+    if plm.nY > 1 && (opts.npcmod || opts.MV || opts.forcemaskinter),
         M          = plm.maskinter;
         M.filename = sprintf('%s_intersection_mask',opts.o);
         M.data     = double(M.data);
@@ -1839,9 +1882,11 @@ end
 if opts.evperdat,
     for ev = 1:plm.nEVdat,
         if ndims(plm.Mset{opts.evpos(ev,2)}) == 2,
-            plm.Mset{ev} = repmat(plm.Mset{ev},[1 1 plm.EVsiz(ev)]);
+            plm.Mset{opts.evpos(ev,2)} = ...
+                repmat(plm.Mset{opts.evpos(ev,2)},[1 1 plm.EVsiz(ev)]);
         end
-        plm.Mset{ev}(:,opts.evpos(ev,1),:) = permute(plm.EVset{ev},[1 3 2]);
+        plm.Mset{opts.evpos(ev,2)}(:,opts.evpos(ev,1),:) = ...
+            permute(plm.EVset{ev},[1 3 2]);
     end
     plm = rmfield(plm,{'EVset','EVsiz'});
 end

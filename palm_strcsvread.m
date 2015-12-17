@@ -83,7 +83,7 @@ for r = 1:numel(eolpos)-1,
         
         % If the content can be converted to number, do so
         % and deal with the NaN case
-        if isempty(table{r,c}) || strcmpi(strtrim(table(r,c)),'NaN'),
+        if isempty(deblank(table{r,c})) || strcmpi(strtrim(table(r,c)),'NaN'),
             table{r,c} = NaN;
         end
         testnum = str2double(table{r,c});

@@ -129,7 +129,7 @@ if ~ isempty(X),
         S.data     = X;
     else
         % Choose an appropriate mask struct.
-        if opts.npcmod || opts.MV,
+        if opts.npcmod || opts.MV || opts.forcemaskinter,
             S = plm.maskinter;
         else
             if plm.nmasks == 1,

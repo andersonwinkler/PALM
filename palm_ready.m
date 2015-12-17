@@ -1,4 +1,4 @@
-function [Y,maskstruct,Yisvol,Ykindstr] = palm_ready(Yfile,maskstruct,opts)
+function [Y,maskstruct,Yisvol,Ykindstr,Ytmp] = palm_ready(Yfile,maskstruct,opts)
 % An intermediate function to read input data (-i) and
 % voxelwise EVs (-evperdat).
 %
@@ -177,4 +177,12 @@ if nargout > 2,
         otherwise
             Ykindstr = '_dat';
     end
+end
+
+% If the Ytmp will also be returned (used in the palm_mediation). Unless
+% this is a sigle vector, there is no need to keep the actual data; it's
+% the mask that matters.
+if nargout == 5 && numel(maskstruct.data) > 1,
+    Ytmp.data = [];
+    Yset = [];
 end

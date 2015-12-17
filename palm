@@ -3,6 +3,9 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # PALM -- Permutation Analysis of Linear Models
 # Copyright (C) 2015 Anderson M. Winkler
+# FMRIB / Univ. of Oxford
+# Mar/2014
+# http://brainder.org
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +20,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# This is a wrapper to call PALM in Octave or Matlab, depending
+# on the user's preferences and what is available in the system.
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # =========================================================================
 # Do you prefer Matlab or Octave? Octave is free (it doesn't need licences),
 # is faster to load, but somewhat slower to run. Matlab uses licenses (this
 # may bother other users in a network), is slower to load, but runs faster
-# once loaded. In the var below, use 1 for Octave, 2 for Matlab:
+# once loaded. In the variable below, use 1 for Octave, 2 for Matlab:
 WHICH_TO_RUN=1
 
 # If Octave isn't in the path, or to use a specific version,
@@ -37,14 +43,6 @@ MATLABPATH=/opt/11b/MATLAB_R2011b.app/bin/
 #MATLABPATH=/usr/local/bin/
 
 # =========================================================================
-# This is a wrapper to call PALM in Octave or Matlab, depending
-# on the user's preferences and what is available in the system.
-# 
-# _____________________________________
-# Anderson M. Winkler
-# FMRIB / Univ. of Oxford
-# Mar/2014
-# http://brainder.org
 # Normally there is no need to edit below this line:
 
 # Locate PALM

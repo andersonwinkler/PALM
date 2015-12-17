@@ -1298,6 +1298,29 @@ for po = P_outer,
                             res = Y - M*psi;
                         end
                         
+                        % Save COPE and VARCOPE if requested (option -saveglm)
+                        if p == 1 && opts.saveglm && plm.rC{m}(c) == 1,
+                            cope  = plm.eC{m}{c}'*psi;
+                            sigsq = sum(res.^2,1)./(plm.N-plm.rM{m}(c));
+                            cohen = cope./sigsq.^.5;
+                            if opts.evperdat,
+                                MtM = zeros(1,size(psi,2));
+                                for t = 1:size(psi,2),
+                                    MtM(t) = plm.eC{m}{c}'/(M(:,:,t)'*M(:,:,t))*plm.eC{m}{c};
+                                end
+                                varcope = MtM .* sigsq;
+                            else
+                                varcope = plm.eC{m}{c}'/(M'*M)*plm.eC{m}{c} * sigsq;
+                            end
+                            palm_quicksave(cope,0,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,plm.Ykindstr{y},'_cope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                            palm_quicksave(varcope,0,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,plm.Ykindstr{y},'_varcope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                            palm_quicksave(cohen,0,opts,plm,y,m,c, ...
+                                sprintf('%s',opts.o,plm.Ykindstr{y},'_cohen',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                            clear('cope','varcope','cohen');
+                        end
+                        
                         % Unless this is negbin mode, there is no need to fit
                         % again for the MV later
                         if opts.MV && ~ opts.accel.negbin,
@@ -1319,8 +1342,6 @@ for po = P_outer,
                             G  {y}{m}{c} = fastpiv{m}{c}(M,psi,Y);
                             df2{y}{m}{c} = NaN;
                         elseif ~ opts.accel.lowrank || p == 1,
-                            % This is needed in the 1st perm for lowrank
-                            % because of the 1st perm
                             [G{y}{m}{c},df2{y}{m}{c}] = fastpiv{m}{c}(M,psi,res);
                         end
                         
@@ -2354,9 +2375,7 @@ for po = P_outer,
 end
 tocP = toc(ticP);
 fprintf('Elapsed time with permutations: ~ %g seconds.\n',tocP);
-
-% Free up a bit of memory after the loop.
-clear M Y psi res G df2 T Q;
+clear('M','Y','psi','res','G','df2','T','Q');
 
 % Save everything, except the few bits saved above
 ticS = tic;
