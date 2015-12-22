@@ -1,23 +1,30 @@
 function X = palm_miscread(filename,useniiclass,tmppath)
 % Read various scalar data formats based on the file extension.
 %
-% X = palm_miscread(filename,useniiclass);
+% X = palm_miscread(filename,useniiclass,tmppath);
+%
+% filename    : File to be read.
+% useniiclass : True/False. Use the NIFTI class when reading
+%               NIFTI files. It requires less memory.
+% tmppath     : For some file types, indicate whether to store
+%               temporary data.
 %
 % X is a struct that contains the fields:
-% X.filename : Contains the name of the file.
-% X.readwith : This tells which program or function was used
-%              to read the data. This is useful when saving the
-%              data back, to use a compatible function.
-% X.data     : Array with the actual data. The size can vary
-%              according to what was read.
-% X.extra    : Contain extra information, depending on the kind
-%              of data that was read and the function or
-%              program used for reading.
+% X.filename  : Contains the name of the file.
+% X.readwith  : This tells which program or function was used
+%               to read the data. This is useful when saving the
+%               data back, to use a compatible function.
+% X.data      : Array with the actual data. The size can vary
+%               according to what was read.
+% X.extra     : Contain extra information, depending on the kind
+%               of data that was read and the function or
+%               program used for reading.
 %
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
-% Aug/2013
+% Aug/2013 (first version)
+% Dec/2015 (this version)
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

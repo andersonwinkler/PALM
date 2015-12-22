@@ -34,6 +34,8 @@ elseif strcmpi(varargin{1},'advanced'),
     showdate;
 elseif strcmpi(varargin{1},'logo'),
     showlogo;
+elseif strcmpi(varargin{1},'date'),
+    showdate;
 end
 
 % ==============================================================
@@ -229,6 +231,9 @@ fprintf('-evperdat : Treat the design matrix supplied with -d as having one colu
 fprintf('	for each column in the observed data (entered with -i). This\n');
 fprintf('	enables voxelwise/facewise/vertexwise regressors.\n\n');
 
+fprintf('-forceintersectionmask : Force the use of an intersection mask across\n');
+fprintf('	inputs and pointwise EVs, even if not using NPC or MV.\n\n');
+
 fprintf('-inormal : Apply an inverse-normal transformation to the data.\n');
 fprintf('	This procedure can go faster if the data is known to be quantitative\n');
 fprintf('	(in which case, use "-inormal quanti"). There are four different\n');
@@ -281,7 +286,8 @@ fprintf('-savemetrics : Save a csv file with various permutation metrics.\n\n');
 fprintf('-saveparametric : Save also uncorrected parametric p-values. These are only\n');
 fprintf('	valid if all assumptions are met, including iid and normality.\n\n');
 
-fprintf('-saveglm : Save COPEs and VARCOPEs in the first permutation.\n\n');
+fprintf('-saveglm : Save COPEs, VARCOPEs, and Cohen''s d in the first permutation\n');
+fprintf('	for the contrasts that have rank = 1.\n\n');
 
 fprintf('-saveperms : Save one statistic image per permutation, as well as a csv\n');
 fprintf('	file with the permutation indices (one permutation per row, one\n');
