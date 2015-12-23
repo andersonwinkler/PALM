@@ -52,4 +52,7 @@ PPH = str2double(PPH)'; % if there is no PPH, this returns NaN
 
 % Reshape to a matrix
 M = str2double(tmp{1}(find(strcmp(tmp{1},'/Matrix'))+1:end));
+if isempty(M),
+    error('File not in the correct format: %s\n',filename);
+end
 M = reshape(M,[nW,nP])';
