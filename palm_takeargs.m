@@ -123,7 +123,7 @@ while a <= narginx,
             opts.m{m} = vararginx{a+1};
             m = m + 1;
             a = a + 2;
-        
+            
         case {'-s','-surf'}, % basic
             
             % Get the filenames for the surfaces, if any.
@@ -311,7 +311,7 @@ while a <= narginx,
                 opts.cluster.mv.thr = str2double(opts.cluster.mv.thr);
             end
             a = a + 2;
- 
+            
         case '-Cuni', % advanced
             
             % Threshold for cluster statistic, univariate
@@ -370,7 +370,7 @@ while a <= narginx,
                 error('TFCE statistic "%s" unknown.',opts.tfce.stat);
             end
             a = a + 2;
-        
+            
         case '-Tuni', % advanced
             
             % Do TFCE for uni?
@@ -390,7 +390,7 @@ while a <= narginx,
             opts.MV = true;
             opts.tfce.mv.do = true;
             a = a + 1;
-  
+            
         case '-tfce1D', % basic
             
             % Shortcut for -tfce_H 2 -tfce_E 2 -tfce_C 6,
@@ -448,7 +448,7 @@ while a <= narginx,
                 end
             end
             a = a + 2;
-               
+            
         case '-within', % basic
             
             % Define whether should permute blocks as a whole or not
@@ -551,7 +551,7 @@ while a <= narginx,
             % modality
             opts.savemask = true;
             a = a + 1;
- 
+            
         case '-rmethod', % advanced
             
             % Which method to use for the regression/permutation?
@@ -577,7 +577,7 @@ while a <= narginx,
                     'The option -rmethod requires a method to be specified.\n'...
                     'Consult the documentation.']);
             end
-           
+            
         case '-npc' % basic
             
             % This is a shortcut to enable NPC with the default settings.
@@ -761,7 +761,7 @@ while a <= narginx,
             % Compute FDR-adjusted p-values
             opts.FDR = true;
             a = a + 1;
-        
+            
         case {'-accel','-approx'}, % advanced
             
             % Choose a method to do the approximation of p-values
@@ -1209,7 +1209,7 @@ if opts.accel.noperm,
     if Ni > 1 && ~ opts.MV,
         error([...
             'The option "-accel noperm" needs to be used with a single modality\n'...
-            '       modality or with "-mv".%s'],''); 
+            '       modality or with "-mv".%s'],'');
     end
 end
 if opts.accel.lowrank,
@@ -1536,7 +1536,7 @@ for i = 1:Ni,
             1,opts.i{1},plm.N, ...
             i,opts.i{i},size(plm.Yset{i},1));
     end
-
+    
     % If this is a DPX/curvature file, and if one of the spatial
     % statistics has been invoked, check if surfaces are available
     % and with compatible size, then compute the area (dpv or dpf).
@@ -1788,7 +1788,7 @@ if opts.npcmod || opts.MV || opts.forcemaskinter,
             end
         end
     end
-    clear usiz;
+    clear('usiz');
 end
 
 % Make sure none of the modalities is empty
@@ -2254,6 +2254,8 @@ else
             'Options -within and/or -whole ignored, as the file defining\n' ...
             '         the exchangeability blocks (option -eb) already \n' ...
             '         defines how the data should be shuffled.%s'],'');
+    elseif ~ isempty(plm.subjidx),
+        error('Cannot use "-subjidx" with multi-level blocks.');
     end
     plm.EB = palm_reindex(plm.EB,'fixleaves');
 end
@@ -2278,6 +2280,9 @@ else
     % a file with the custom definitions.
     plm.VG = palm_miscread(opts.vg);
     plm.VG = plm.VG.data;
+end
+if ~ isempty(plm.subjidx) && size(plm.VG,1) ~= plm.N,
+    plm.VG = plm.VG(plm.subjidx,:);
 end
 [tmp,~,plm.VG] = unique(plm.VG);
 plm.nVG = numel(tmp);

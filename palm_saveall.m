@@ -893,36 +893,37 @@ if opts.npcmod && ~ opts.npccon,
     fprintf('Saving p-values for NPC between modalities (uncorrected and corrected within contrasts).\n');
     if opts.designperinput, loopM = 1; else loopM = 1:plm.nM; end
     for m = loopM,
+        if opts.designperinput, mstr = ''; else mstr = plm.mstr{m}; end
         for c = 1:plm.nC(m),
             
             % NPC p-value
             if opts.saveuncorrected,
                 palm_quicksave(plm.Tpperm{m}{c},1,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{m}{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',mstr,plm.cstr{m}{c}));
             end
             
             % NPC FWER-corrected
             if opts.accel.tail,
-                Ptosave = palm_pareto  (plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,opts.accel.tail_thr);
+                Ptosave = palm_pareto(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,opts.accel.tail_thr);
             elseif opts.accel.gamma,
-                Ptosave = approxgamma  (plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,1/plm.nP{m}(c));
+                Ptosave = approxgamma(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,1/plm.nP{m}(c));
             else
                 Ptosave = palm_datapval(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev);
             end
             palm_quicksave( ...
                 Ptosave,1,opts,plm,[],m,c, ...
-                sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{m}{c}));
+                sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',mstr,plm.cstr{m}{c}));
             
             % NPC FDR
             if opts.FDR,
                 palm_quicksave(fastfdr(plm.Tpperm{m}{c}),1,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fdrp',plm.mstr{m},plm.cstr{m}{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fdrp',mstr,plm.cstr{m}{c}));
             end
             
             % Parametric combined pvalue
             if opts.savepara && ~ plm.nonpcppara && opts.saveuncorrected,
                 palm_quicksave(plm.Tppara{m}{c},1,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncparap',plm.mstr{m},plm.cstr{m}{c}));
+                    sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncparap',mstr,plm.cstr{m}{c}));
             end
             
             % Cluster statistic NPC results.
@@ -930,19 +931,19 @@ if opts.npcmod && ~ opts.npccon,
                 
                 % Cluster statistic.
                 palm_quicksave(plm.Tclu{m}{c},0,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{m}{c}));
+                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,mstr,plm.cstr{m}{c}));
                 
                 % Cluster statistic FWER p-value
                 if opts.accel.tail,
-                    Ptosave = palm_pareto  (plm.Tclu{m}{c},plm.Tclumax{m}{c},false,opts.accel.tail_thr);
+                    Ptosave = palm_pareto(plm.Tclu{m}{c},plm.Tclumax{m}{c},false,opts.accel.tail_thr);
                 elseif opts.accel.gamma,
-                    Ptosave = approxgamma  (plm.Tclu{m}{c},plm.Tclumax{m}{c},false,1/plm.nP{m}(c));
+                    Ptosave = approxgamma(plm.Tclu{m}{c},plm.Tclumax{m}{c},false,1/plm.nP{m}(c));
                 else
                     Ptosave = palm_datapval(plm.Tclu{m}{c},plm.Tclumax{m}{c},false);
                 end
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,y,m,c,...
-                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{m}{c}));
+                    sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_fwep',mstr,plm.cstr{m}{c}));
             end
             
             % TFCE NPC results.
@@ -950,30 +951,30 @@ if opts.npcmod && ~ opts.npccon,
                 
                 % TFCE statistic.
                 palm_quicksave(plm.Ttfce{m}{c},0,opts,plm,[],m,c, ...
-                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,plm.mstr{m},plm.cstr{m}{c}));
+                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,mstr,plm.cstr{m}{c}));
                 
                 % TFCE p-value
                 if opts.saveuncorrected,
                     palm_quicksave(plm.Ttfcepperm{m}{c},1,opts,plm,[],m,c,...
-                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_uncp',plm.mstr{m},plm.cstr{m}{c}));
+                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_uncp',mstr,plm.cstr{m}{c}));
                 end
                 
                 % TFCE FWER p-value
                 if opts.accel.tail,
-                    Ptosave = palm_pareto  (plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,opts.accel.tail_thr);
+                    Ptosave = palm_pareto(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,opts.accel.tail_thr);
                 elseif opts.accel.gamma,
-                    Ptosave = approxgamma  (plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,1/plm.nP{m}(c));
+                    Ptosave = approxgamma(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,1/plm.nP{m}(c));
                 else
                     Ptosave = palm_datapval(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false);
                 end
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,[],m,c,...
-                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fwep',plm.mstr{m},plm.cstr{m}{c}));
+                    sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fwep',mstr,plm.cstr{m}{c}));
                 
                 % TFCE FDR p-value
                 if opts.FDR,
                     palm_quicksave(fastfdr(plm.Ttfcepperm{m}{c}),1,opts,plm,[],m,c,...
-                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fdrp',plm.mstr{m},plm.cstr{m}{c}));
+                        sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fdrp',mstr,plm.cstr{m}{c}));
                 end
             end
         end
@@ -985,27 +986,29 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     fprintf('Saving p-values for NPC between modalities (corrected across contrasts).\n');
     
     % FWER correction (non-spatial stats)
+    if opts.designperinput, loopM = 1; else loopM = 1:plm.nM; end
     distmax = zeros(plm.nP{1}(1),sum(plm.nC));
     j = 1;
-    for m = 1:plm.nM,
+    for m = loopM,
         for c = 1:plm.nC(m),
             distmax(:,j) = plm.Tmax{m}{c};
             j = j + 1;
         end
     end
     distmax = max(distmax,[],2);
-    for m = 1:plm.nM,
+    for m = loopM,
+        if opts.designperinput, mstr = ''; else mstr  = plm.mstr{m}; end
         for c = 1:plm.nC(m),
             if opts.accel.tail,
-                Ptosave = palm_pareto  (plm.T{m}{c},distmax,plm.npcrev,opts.accel.tail_thr);
+                Ptosave = palm_pareto(plm.T{m}{c},distmax,plm.npcrev,opts.accel.tail_thr);
             elseif opts.accel.gamma,
-                Ptosave = approxgamma  (plm.T{m}{c},distmax,plm.npcrev,1/plm.nP{1}(1));
+                Ptosave = approxgamma(plm.T{m}{c},distmax,plm.npcrev,1/plm.nP{1}(1));
             else
                 Ptosave = palm_datapval(plm.T{m}{c},distmax,plm.npcrev);
             end
             palm_quicksave( ...
                 Ptosave,1,opts,plm,[],m,c,...
-                sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfwep',plm.mstr{m},plm.cstr{m}{c}));
+                sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfwep',mstr,plm.cstr{m}{c}));
         end
     end
     

@@ -102,13 +102,13 @@ fprintf('-ise : Assume independent and symmetric errors (ISE), to allow\n');
 fprintf('	sign-flipping.\n\n');
 
 fprintf('-vg <file> : Variance groups file, in csv or vest format. If omitted,\n');
-fprintf('	all observations are assumed to belong to the same variance group (i.e.\n');
-fprintf('	the data is treated as homoscedastic. Use "-vg auto" to define the\n');
-fprintf('	automatically using a structure that is compatible with the\n');
+fprintf('	all observations are assumed to belong to the same variance group\n');
+fprintf('	(i.e., the data is treated as homoscedastic. Use "-vg auto" to\n');
+fprintf('	define automatically using a structure that is compatible with the\n');
 fprintf('	exchangeability blocks (option -eb).\n\n');
 
-fprintf('-npc <method> : Specify the combining function for the non-parametric\n');
-fprintf('	combination (NPC), which can be one of: Tippett, Fisher,\n');
+fprintf('-npcmethod <method> : Specify the combining function for NPC (Non-\n');
+fprintf('	Parametric Combination), which can be one of: Tippett, Fisher,\n');
 fprintf('	Pearson-David, Stouffer, Wilkinson <alpha>, Winer, Edgington,\n');
 fprintf('	Mudholkar-George, Friston, Darlington-Hayes <r>, Zaykin <alpha>,\n');
 fprintf('	Dudbridge-Koeleman <r>, Dudbridge-Koeleman2 <r> <alpha>,\n');
@@ -120,6 +120,8 @@ fprintf('	produce parametric p-values and spatial statistics.\n\n');
 fprintf('-npcmod : Enable NPC over modalities.\n\n');
 
 fprintf('-npccon : Enable NPC over contrasts.\n\n');
+
+fprintf('-npc : Shortcut to "-npcmethod <default method> -npcmod".\n\n');
 
 fprintf('-mv <statistic> : Do classical multivariate analysis (MV), such as\n');
 fprintf('	MANOVA and MANCOVA, using the the specified statistic, which can\n');
@@ -146,8 +148,8 @@ fprintf('-Cstat <name> : Choose which cluster statistic should be used. Accepted
 fprintf('	statistics are "extent" and "mass" (see the source code for\n');
 fprintf('	experimental possibilities).\n\n');
 
-fprintf('-tfce1D : Set TFCE parameters for 1D data (synchronised timeseries) i.e.,\n');
-fprintf('	H = 2, E = 2, C = 6. Use this option together with -T.\n\n');
+fprintf('-tfce1D : Set TFCE parameters for 1D data (synchronised timeseries)\n');
+fprintf('	i.e., H = 2, E = 2, C = 6. Use this option together with -T.\n\n');
 
 fprintf('-tfce2D : Set TFCE parameters for 2D data (surface, TBSS)  i.e.,\n');
 fprintf('	H = 2, E = 1, C = 26. Use this option together with -T.\n\n');
@@ -165,8 +167,8 @@ fprintf('	Default is palm.\n\n');
 
 fprintf('-save1-p : Save (1-p) instead of the actual p-values.\n\n');
 
-fprintf('-logp : Save the output p-values as -log(p) (or -log(1-p) if the option\n');
-fprintf('	-save1-p is used).\n\n');
+fprintf('-logp : Save the output p-values as -log(p) (or -log(1-p) if the\n');
+fprintf('	option -save1-p is used).\n\n');
 
 fprintf('-demean : Mean center the data, as well as all columns of the design\n');
 fprintf('	matrix. If the design has an intercept, the intercept is removed.\n\n');
@@ -174,11 +176,11 @@ fprintf('	matrix. If the design has an intercept, the intercept is removed.\n\n'
 fprintf('-twotail : Run two-tailed tests for all the t-contrasts instead of\n');
 fprintf('	one-tailed. If NPC is used, it naturally becomes two-tailed.\n\n');
 
-fprintf('-concordant : For the NPC, favour alternative hypotheses with concordant\n');
-fprintf('	signs. Cannot be used with "-twotail".\n\n');
+fprintf('-concordant : For the NPC, favour alternative hypotheses with\n');
+fprintf('	concordant signs. Cannot be used with "-twotail".\n\n');
 
-fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values are\n');
-fprintf('	then used to select the voxels/vertices/faces.\n\n');
+fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values\n');
+fprintf('	are then used to select the voxels/vertices/faces.\n\n');
 
 fprintf('-quiet : Don''t show progress as the shufflings are performed.\n\n');
 
@@ -252,6 +254,8 @@ fprintf('-inputmv : Treat the (sole) input as multivariate, that is, each column
 fprintf('	a variable in a multivariate model, as opposed to independent univariate\n');
 fprintf('	tests. Useful with non-imaging data. When used, the option "-nounivariate"\n');
 fprintf('	is automatically set.\n\n');
+
+fprintf('-mcar : Assume that data is missing completely at random.\n\n');
 
 fprintf('-noniiclass : Do not use the NIFTI class (use this option only if you\n');
 fprintf('	have problems and even so, only for small datasets).\n\n');

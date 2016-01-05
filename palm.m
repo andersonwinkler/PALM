@@ -75,6 +75,7 @@ elseif nargin == 1,
         return;
     end
 end
+palm_help('logo');
 
 % Now run what matters
 palm_core(varargin{:});
