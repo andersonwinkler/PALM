@@ -191,8 +191,13 @@ function advanced_help
 
 fprintf('\nThe advanced or less commonly used options are:\n\n');
 
-fprintf('-approx <method> : Run one of various approximation methods available.\n');
-fprintf('	This is very experimental. See the source code for details.\n\n');
+fprintf('-approx/-accel <method> : Run one of various approximation methods\n');
+fprintf('	available. This feature is very experimental.\n');
+fprintf('	See the source code for details.\n\n');
+
+fprintf('-imiss <file> : Missing data indicators for the input(s).\n\n');
+
+fprintf('-dmiss <file> : Missing data indicators for the design(s).\n\n');
 
 fprintf('-con <file1> <file2> : Contrast file(s) in .mset format. For hypotheses\n');
 fprintf('	of the form H0: C''*Psi*D, file1 contains a set of C contrasts, and\n');

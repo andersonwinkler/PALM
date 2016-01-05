@@ -56,23 +56,27 @@ end
 
 % Number of input images/masks/surfaces
 % These are NOT meant to be edited.
-Ni   = sum(strcmp(vararginx,'-i'));         % number of data inputs
-Nm   = sum(strcmp(vararginx,'-m'));         % number of masks
-Ns   = sum(strcmp(vararginx,'-s'));         % number of surfaces
-Nd   = sum(strcmp(vararginx,'-d'));         % number of design files
-Nt   = sum(strcmp(vararginx,'-t'));         % number of t-contrast files
-Nf   = sum(strcmp(vararginx,'-f'));         % number of F-test files
-Ncon = sum(strcmp(vararginx,'-con'));       % number of contrast files (t or F, mset format)
-Nevd  = sum(strcmp(vararginx,'-evperdat')); % number of EV per datum inputs
-opts.i    = cell(Ni,1);   % Input files (to constitute Y later)
-opts.m    = cell(Nm,1);   % Mask file(s)
-opts.s    = cell(Ns,1);   % Surface file(s)
-opts.sa   = cell(Ns,1);   % Area file(s) or weight(s)
-opts.d    = cell(Nd,1);   % Design file(s)
-opts.t    = cell(Nt,1);   % t contrast file(s)
-opts.f    = opts.t;       % F contrast file(s)
-opts.Ccon = cell(Ncon,1); % Contrast file(s) (t or F, mset format)
-opts.Dcon = cell(Ncon,1); % Contrast file(s) (multivariate, mset format)
+Ni     = sum(strcmp(vararginx,'-i'));        % number of data inputs
+Nm     = sum(strcmp(vararginx,'-m'));        % number of masks
+Ns     = sum(strcmp(vararginx,'-s'));        % number of surfaces
+Nd     = sum(strcmp(vararginx,'-d'));        % number of design files
+Nimiss = sum(strcmp(vararginx,'-imiss'));    % number of missing indicators for inputs
+Ndmiss = sum(strcmp(vararginx,'-dmiss'));    % number of missing indicators for designs
+Nt     = sum(strcmp(vararginx,'-t'));        % number of t-contrast files
+Nf     = sum(strcmp(vararginx,'-f'));        % number of F-test files
+Ncon   = sum(strcmp(vararginx,'-con'));      % number of contrast files (t or F, mset format)
+Nevd   = sum(strcmp(vararginx,'-evperdat')); % number of EV per datum inputs
+opts.i     = cell(Ni,1);   % Input files (to constitute Y later)
+opts.m     = cell(Nm,1);   % Mask file(s)
+opts.s     = cell(Ns,1);   % Surface file(s)
+opts.sa    = cell(Ns,1);   % Area file(s) or weight(s)
+opts.d     = cell(Nd,1);   % Design file(s)
+opts.imiss = cell(Nd,1);   % Design file(s)
+opts.dmiss = cell(Nd,1);   % Design file(s)
+opts.t     = cell(Nt,1);   % t contrast file(s)
+opts.f     = opts.t;       % F contrast file(s)
+opts.Ccon  = cell(Ncon,1); % Contrast file(s) (t or F, mset format)
+opts.Dcon  = cell(Ncon,1); % Contrast file(s) (multivariate, mset format)
 opts.eb       = [];       % File with definition of exchangeability blocks
 opts.vg       = [];       % File with definition of variance groups
 opts.EE       = false;    % To be filled below (don't edit this!)
@@ -88,6 +92,7 @@ plm.subjidx   = [];       % Indices of subjects to keep
 i = 1; m = 1; d = 1;
 t = 1; f = 1; s = 1;
 con = 1; ev = 1;
+imiss = 1; dmiss = 1;
 
 % Remove trailing empty arguments. This is useful for some Octave versions.
 while numel(vararginx) > 0 && isempty(vararginx{1}),
@@ -174,6 +179,26 @@ while a <= narginx,
                 a = a + 4;
             end
             ev = ev + 1;
+            
+        case '-imiss', % basic
+            
+            % Get the filenames for the missing data indicators (inputs).
+            opts.imiss{imiss} = vararginx{a+1};
+            imiss = imiss + 1;
+            a = a + 2;
+            
+        case '-dmiss', % basic
+            
+            % Get the filenames for the missing data indicators (designs).
+            opts.dmiss{dmiss} = vararginx{a+1};
+            dmiss = dmiss + 1;
+            a = a + 2;
+            
+        case '-mcar',
+            
+            % For the missing data, treat as missing completely at random.
+            opts.mcar = true;
+            a = a + 1;
             
         case '-t', % basic
             
@@ -552,13 +577,18 @@ while a <= narginx,
                     'The option -rmethod requires a method to be specified.\n'...
                     'Consult the documentation.']);
             end
+           
+        case '-npc' % basic
             
-        case '-npc', % basic
+            % This is a shortcut to enable NPC with the default settings.
+            opts.NPC = true;
+            a = a + 1;
+            
+        case '-npcmethod', % basic
             
             % Do the non-parametric combination?
-            opts.NPC = true;
             if nargin == a || (nargin > a && strcmp(vararginx{a+1}(1),'-')),
-                a = a + 1;
+                error('The option "-npcmethod" requires a combining method to be indicated.');
                 
             elseif nargin > a,
                 
@@ -1170,8 +1200,9 @@ if opts.accel.noperm,
     if opts.MV,
         if ~ any(strcmpi(opts.mvstat,{'auto','pillai'})),
             warning([...
-                'With multivariate tests, the option "-accel noperm" can only be used\n'...
-                'with the Pillai'' trace statistic. Changing automatically to Pillai.%s'],'');
+                'With multivariate tests, the option "-accel noperm" can\n' ...
+                '         only be used with the Pillai'' trace statistic.\n' ...
+                '         Changing automatically to Pillai.%s'],'');
         end
         opts.mvstat = 'pillai';
     end
@@ -1196,6 +1227,29 @@ if opts.accel.lowrank,
     end
     if opts.evperdat,
         error('The option "-accel lowrank" cannot be used with "-evperdat".');
+    end
+end
+
+% Some options can't be used with missing data
+if Nimiss || Ndmiss,
+    opts.missingdata = true;
+    if opts.MV,
+        error('The option "-mv" cannot be used with missing data.');
+    end
+    if ~ opts.zstat && ~ opts.mcar,
+        warning([...
+            'With missing data MNAR, the option "-zstat" is mandatory.\n' ...
+            '         Adding it automatically.%s'],'');
+        opts.zstat = true;
+    end
+    if ~ opts.cmcx && ~ opts.mcar,
+        warning([...
+            'With missing data, the option "-cmcx" is mandatory.\n' ...
+            '         Adding it automatically.%s'],'');
+        opts.cmcx = true;
+    end
+    if opts.ev4vg || opts.removevgbysize > 0,
+        error('Missing data cannot be used with "-ev4vg" or "-removevgbysize".')
     end
 end
 
@@ -1554,7 +1608,7 @@ if opts.spatial.do && palm_isoctave && any(plm.Yisvol),
     pkg load image
 end
 
-% Read and organise the EV per datum:
+% Read the EV per datum:
 if opts.evperdat,
     
     % Some sanity check:
@@ -2110,13 +2164,16 @@ end
 
 % Check if the contrasts have all the same rank for correction over
 % contrasts. If not, convert to zstat.
-if opts.corrcon,
+if opts.corrcon && ~ opts.zstat,
     rC1 = plm.rC{1}(1);
     rD1 = plm.rD{1}(1);
     for m = 1:plm.nM,
         brflag = false;
         for c = 1:plm.nC(m),
             if rC1 ~= plm.rC{m}(c) || rD1 ~= plm.rD{m}(c);
+                warning([...
+                    'Not all contrasts have the same rank, and the option "-corrcon" was used.\n' ...
+                    '         Adding the option "-zstat" automatically.%s'],'');
                 opts.zstat = true;
                 brflag = true;
                 break;
@@ -2229,6 +2286,96 @@ if plm.nVG == 1, opts.singlevg = true; end
 % MV can't yet be used if nVG>1, although NPC remains an option
 if opts.MV && plm.nVG > 1,
     error('There are more than one variance group. MV cannot be used (but NPC can).');
+end
+
+% There should be no more missing indicators than modalities, or designs.
+% These need to be either 1 or the same as the corresponding numbers of
+% modalities/designs.
+if Nimiss > Ni,
+    error([...
+        'There are more missing indicators supplied with "-imiss" (%d) than\n'...
+        'modalities supplied with "-i" (%d)'],Nimiss,Ni);
+elseif Nimiss > 1 && Nimiss ~= Ni,
+    error([...
+        'The number of missing indicators supplied with "-imiss" (%d) is larger,\n'...
+        'than 1, but still not the same as the number of modalities supplied with\n'...
+        'the option "-i" (%d).'],Nimiss,Ni);
+end
+if Ndmiss > Nd,
+    error([...
+        'There are more missing indicators supplied with "-dmiss" (%d) than\n'...
+        'designs supplied with "-d" (%d)'],Nimiss,Ni);
+elseif Ndmiss > 1 && Ndmiss ~= Nd,
+    error([...
+        'The number of missing indicators supplied with "-dmiss" (%d) is larger,\n'...
+        'than 1, but still not the same as the number of modalities supplied with\n'...
+        'the option "-d" (%d).'],Ndmiss,Nd);
+end
+
+% Load the missing indicators for the data ("imiss"):
+for i = 1:Nimiss,
+    tmp = palm_miscread(opts.imiss{i});
+    tmp = tmp.data;
+    if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N,
+        tmp = tmp(plm.subjidx,:);
+    end
+    u = unique(tmp(:));
+    if numel(tmp) ~= size(tmp,1) || size(tmp,1) ~= plm.N ...
+            || numel(u) > 2 || min(abs(u)),
+        error([ ...
+            'The missing data indicator ("-imiss") must:\n', ...
+            '- Be a column vector;\n', ...
+            '- Have the same lengh as the input data;\n', ...
+            '- Be a binary logical indicator (0/1).%s'],'');
+    end
+    plm.Ymiss{i} = tmp;
+end
+if Nimiss == 1,
+    for i = 2:Ni,
+        plm.Ymiss{i} = plm.Ymiss{1};
+    end
+end
+
+% Load the missing indicators for the design ("dmiss"):
+for d = 1:Ndmiss,
+    tmp = palm_miscread(opts.dmiss{d});
+    tmp = tmp.data;
+    if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N,
+        tmp = tmp(plm.subjidx,:);
+    end
+    u = unique(tmp(:));
+    if size(tmp,1) ~= plm.N || numel(u) > 2 || min(abs(u)),
+        error([ ...
+            'The missing data indicator ("-dmiss") must:\n', ...
+            '- Have the same size as the respective design;\n', ...
+            '- Have the same lengh as the input data;\n', ...
+            '- Be a binary logical indicator (0/1).%s'],'');
+    end
+    plm.Mmiss{d} = tmp;
+end
+if Ndmiss == 1,
+    for d = 2:Nd,
+        plm.Mmiss{d} = plm.Mmiss{1};
+    end
+end
+for d = 1:Ndmiss,
+    if any(size(plm.Mmiss{d}) ~= size(plm.Mset{d})),
+        error([ ...
+            'The missing data indicator ("-dmiss") must have\n', ...
+            'the same size as the respective design.%s'],'');
+    end
+end
+
+% If only data or design missing indicators are missing, fill the other
+% with all-false indicators.
+if     Nimiss && ~ Ndmiss,
+    for m = 1:plm.nM,
+        plm.Mmiss{m} = false(size(plm.Mset{m}));
+    end
+elseif Ndmiss && ~ Nimiss
+    for y = 1:plm.nY,
+        plm.Ymiss{y} = false(size(plm.Yset{y}));
+    end
 end
 
 % Remove the variance groups with tiny sample sizes?
@@ -2372,7 +2519,7 @@ if opts.accel.lowrank,
     if opts.nP0 < plm.N*(plm.N+1)/2,
         error([ ...
             'Too few permutations selected to use with lowrank approximation.\n' ...
-            'Use at least plm.N*(plm.N+1)/2 = %d to note a speed difference and have reasonably accurate results.\n'...
+            'Use at least N*(N+1)/2 = %d to note a speed difference and have reasonably accurate results.\n'...
             'Otherwise, don''t bother using lowrank approximation.\n'],plm.N*(plm.N+1)/2);
     end
     if opts.spatial.do,
@@ -2393,3 +2540,4 @@ if opts.accel.lowrank,
         plm.nsel(1:end) = plm.N*(plm.N+1)/2;
     end
 end
+

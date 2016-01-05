@@ -3,7 +3,7 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 % nuisance according to a given contrast.
 % 
 % Usage
-% [X,Z] = partition(M,C,meth,Y)
+% [X,Z] = palm_partition(M,C,meth,Y)
 % 
 % Inputs:
 % M    : Design matrix, to be partitioned.
@@ -39,7 +39,8 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 % A. Winkler, G. Ridgway & T. Nichols
 % FMRIB / University of Oxford
 % Mar/2012 (1st version)
-% Aug/2013 (this version)
+% Aug/2013 (major revision)
+% Dec/2015 (this version)
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -61,41 +62,57 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 switch lower(meth),
-    case 'guttman',
+    case 'guttman', % works for evperdat (3D)
         idx   = any(C~=0,2);
-        X     = M(:,idx);
-        Z     = M(:,~idx);
+        X     = M(:,idx,:);
+        Z     = M(:,~idx,:);
         eCm   = vertcat(C(idx,:),C(~idx,:));
         
-    case 'beckmann',
+    case 'beckmann', % works for evperdat (3D)
         Cu    = null(C');
-        D     = pinv(M'*M);
-        CDCi  = pinv(C'*D*C);
-        Pc    = C*CDCi*C'*D;
-        Cv    = Cu - Pc*Cu;
-        F3    = pinv(Cv'*D*Cv);
-        X     = M*D*C*CDCi;
-        Z     = M*D*Cv*F3;
-        eCm   = vertcat(eye(size(X,2)),...
+        for t = 1:size(M,3),
+            D        = pinv(M(:,:,t)'*M(:,:,t));
+            CDCi     = pinv(C'*D*C);
+            Pc       = C*CDCi*C'*D;
+            Cv       = Cu - Pc*Cu;
+            F3       = pinv(Cv'*D*Cv);
+            if t == 1,
+                X = zeros(size(M,1),size(CDCi,2),size(M,3));
+                Z = zeros(size(M,1),size(F3,2),size(M,3));
+            end
+            X(:,:,t) = M*D*C*CDCi;
+            Z(:,:,t) = M*D*Cv*F3;
+        end
+        eCm = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
-    case 'winkler', % this is just for testing
+    case 'winkler', % this is just for testing, and doesn't work with evperdat
         D     = pinv(M'*M);
         X     = M*D*C*pinv(C'*D*C);
         Z     = (M*D*M'-X*pinv(X))*Y;
         eCm   = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
-    case 'ridgway',
-        X     = M*pinv(C');
+    case 'ridgway', % works for evperdat (3D)
+        rC    = rank(C);
+        rM    = rank(M(:,:,ceil(size(M,3)/2)));
+        rZ    = rM - rC;
+        pinvC = pinv(C');
         C0    = eye(size(M,2)) - C*pinv(C);
-        [Z,~] = svd(M*C0);
-        Z     = Z(:,1:rank(M)-rank(C));
-        X     = X-Z*pinv(Z)*X;
-        eCm   = vertcat(eye(size(X,2)),...
+        for t = 1:size(M,3),
+            if t == 1,
+                X = zeros(size(M,1),size(pinvC,2),size(M,3));
+                Z = zeros(size(M,1),rZ,size(M,3));
+            end
+            tmpX = M(:,:,t)*pinvC;
+            [tmpZ,~]  = svd(M(:,:,t)*C0);
+            Z(:,:,t) = tmpZ(:,1:rZ);
+            X(:,:,t) = tmpX-Z(:,:,t)*pinv(Z(:,:,t))*tmpX;
+        end
+        eCm = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
-    case 'none',
+    case 'none', % works for evperdat (3D)
         X     = M;
         Z     = [];
         eCm   = C;

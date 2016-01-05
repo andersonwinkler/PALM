@@ -44,14 +44,24 @@ function Z = palm_gtoz(G,df1,df2)
 % If df2 is NaN, this is r or R^2
 if isnan(df2(1)),
     
-    if df1 == 1,
+    if df1 == 0,
+        
+        % If df1 is zero, this is already a z-stat (this is here more for
+        % compatibility).
+        Z = G;
+        
+    elseif df1 == 1,
+        
         % If rank(C) = 1, i.e., df1 = 1, this is r, so
         % do a Fisher's r-to-z stransformation
         Z = atanh(G);
+        
     elseif df1 > 1,
+        
         % If rank(C) > 1, i.e., df1 > 1, this is R^2, so
         % use a probit transformation.
         Z = erfinv(2*G-1)*sqrt(2); %Z = norminv(G);
+        
     end
 
 else
