@@ -1,4 +1,4 @@
-function P = palm_pareto(G,Gdist,rev,Pthr)
+function P = palm_pareto(G,Gdist,rev,Pthr,dropG0)
 % Compute the p-values for a set of statistics G, taking
 % as reference a set of observed values for G, from which
 % the empirical cumulative distribution function (cdf) is
@@ -10,16 +10,18 @@ function P = palm_pareto(G,Gdist,rev,Pthr)
 % P = palm_pareto(G,Gdist,rev,Pthr)
 %
 % Inputs:
-% G     : Vector of Nx1 statistics to be converted to p-values
-% Gdist : A Mx1 vector of observed values for the same statistic
-%         from which the empirical cdf is build and p-values
-%         obtained. It doesn't have to be sorted.
-% rev   : If true, indicates that the smallest values in G and
-%         Gvals, rather than the largest, are the most significant.
-% Pthr  : P-values below this will be refined using GPD tail.
+% G      : Vector of Nx1 statistics to be converted to p-values
+% Gdist  : A Mx1 vector of observed values for the same statistic
+%          from which the empirical cdf is build and p-values
+%          obtained. It doesn't have to be sorted.
+% rev    : If true, indicates that the smallest values in G and
+%          Gvals, rather than the largest, are the most significant.
+% Pthr   : P-values below this will be refined using GPD tail.
+% dropG0 : Boolean indicating whether G0 should be removed from the null
+%          distribution.
 %
 % Output:
-% P     : P-values.
+% P      : P-values.
 %
 % This function is based in the following papers:
 % * Knijnenburg TA, Wessels LFA, Reinders MJT, Shmulevich I. Fewer
@@ -59,8 +61,11 @@ function P = palm_pareto(G,Gdist,rev,Pthr)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Gdist = Gdist(2:end);
+
 % Compute the usual permutation p-values.
+if dropG0,
+    Gdist = Gdist(2:end,:);
+end
 P    = palm_datapval(G,Gdist,rev);
 Pidx = P < Pthr; % don't replace this "<" for "<=".
 

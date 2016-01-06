@@ -263,9 +263,11 @@ fprintf('	have problems and even so, only for small datasets).\n\n');
 fprintf('-noranktest : For MV, don''t check the rank of the data before trying to\n');
 fprintf('	compute the multivariate statistics.\n\n');
 
-fprintf('-nounivariate : Don''t save univariate resuts.\n\n')
+fprintf('-nounivariate : Don''t save univariate resuts.\n\n');
 
-fprintf('-nouncorrected : Don''t save uncorrected resuts.\n\n')
+fprintf('-nouncorrected : Don''t save uncorrected p-values.\n\n');
+
+fprintf('-saveuncorrected : Save uncorrected p-values if an earlier option disabled it.\n\n');
 
 fprintf('-pmethodp : Partition method used when defining the set of permutations.\n');
 fprintf('	Cab be "Guttman", "Beckmann", "Ridgway" or "None".\n');
@@ -345,7 +347,7 @@ fprintf('	the MV statistics) to a normally distributed, z-statistic.\n\n');
 
 % ==============================================================
 function showlogo
-% Show just the logo
+% Show the logo
 fprintf('=======================================================================\n');
 fprintf('             ___         ___                         ___\n');
 fprintf('            /  /\\       /  /\\                       /__/\\\n');

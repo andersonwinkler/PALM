@@ -109,6 +109,8 @@ opts.accel.gamma         = false;              % Do a gamma-fit after just a few
 opts.accel.lowrank       = false;              % Try a low rank approximation
 opts.accel.lowrank_val   = NaN;                % Use NaN for N*(N+1)/2. Values <=1 are fraction of voxels to use; vals >1 are number of voxels to use.
 opts.accel.lowrank_recon = false;              % Reconstruct past permutations in the new basis? This is very slow.
+opts.accel.dropG0        = true;               % Drop the unpermuted statistic from the null for the FWER p-values when using tail or gamma. For the
+                                               % uncorrected it's always kept (hard coded as "false" in palm_saveall.m).
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded (EE is default, within-block is also default).

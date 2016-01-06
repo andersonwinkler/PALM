@@ -36,7 +36,7 @@ function varargout = palm_boxcox(varargin)
 X = varargin{1};
 if nargin == 1,
     Lfun = @(L)loglike(X,L);
-    L    = fminsearch(Lfun,0,optimset('Display','off','MaxFunEvals', 1000));
+    L    = fminsearch(Lfun,0,optimset('Display','off','MaxFunEvals',1000));
     varargout{1} = bct(X,L);
 else
     L = varargin{2};

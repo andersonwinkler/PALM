@@ -809,6 +809,13 @@ while a <= narginx,
                     else
                         a = a + 2;
                     end
+                    opts.saveuncorrected = false;
+                    
+                elseif opts.accel.gamma,
+                    
+                    % Disable uncorrected by default.
+                    opts.saveuncorrected = false;
+                    a = a + 2;
                     
                 elseif opts.accel.lowrank,
                     
@@ -1014,6 +1021,12 @@ while a <= narginx,
             
             % Save or not uncorrected p-vals
             opts.saveuncorrected = false;
+            a = a + 1;
+            
+        case '-saveuncorrected',  % advanced
+            
+            % Save or not uncorrected p-vals
+            opts.saveuncorrected = true;
             a = a + 1;
             
         case '-savedof', % advanced
