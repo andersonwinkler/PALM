@@ -1446,6 +1446,7 @@ if opts.spatial.do && Ns > 0,
     for s = 1:Ns,
         
         % Load surface
+        fprintf('Loading surface %d/%d: %s\n',s,Ns,opts.s{s});
         plm.srf{s} = palm_miscread(opts.s{s});
         
         % Load areas
@@ -1527,7 +1528,7 @@ for i = 1:Ni,
     else
         maskstruct = plm.masks{i};
     end
-    [plm.Yset{i},plm.masks{i},plm.Yisvol(i),plm.Ykindstr{i}] = ...
+    [plm.Yset{i},plm.masks{i},plm.Yisvol(i),plm.Yissrf(i),plm.Ykindstr{i}] = ...
         palm_ready(opts.i{i},maskstruct,opts);
     
     % Select subjects

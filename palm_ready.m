@@ -1,4 +1,4 @@
-function [Y,maskstruct,Yisvol,Ykindstr,Ytmp] = palm_ready(Yfile,maskstruct,opts)
+function [Y,maskstruct,Yisvol,Yissrf,Ykindstr,Ytmp] = palm_ready(Yfile,maskstruct,opts)
 % An intermediate function to read input data (-i) and
 % voxelwise EVs (-evperdat).
 %
