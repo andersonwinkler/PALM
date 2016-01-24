@@ -78,9 +78,9 @@ mz = double(mz);
 % multiple loops and conditions for the up-to-eight equations.
 isdiscrete = false;
 if isempty(mz),
-    if       all(iy) &   all(ix), % 1
+    if       all(iy) &   all(ix), % Case 1
         Pidx{1} = [];  Y{1} = [];  X{1} = x;  Z{1} = [];  eC{1} = ecm;
-    elseif ~ all(iy) &   all(ix), % 2
+    elseif ~ all(iy) &   all(ix), % Case 2
         if mcar,
             Pidx{1} = iy;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
         else
@@ -88,7 +88,7 @@ if isempty(mz),
             Pidx{2} = [];  Y{2} = my;       X{2} = x;               Z{2} = [];  eC{2} = ecm;
             isdiscrete = [false false];
         end
-    elseif   all(iy) & ~ all(ix), % 3
+    elseif   all(iy) & ~ all(ix), % Case 3
         if mcar,
             Pidx{1} = ix;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
         else
@@ -96,7 +96,7 @@ if isempty(mz),
             Pidx{2} = [];  Y{2} = [];       X{2} = mx;              Z{2} = [];  eC{2} = mkcon(X{2},Z{2});
             isdiscrete = [false false];
         end
-    elseif ~ all(iy) & ~ all(ix), % 5
+    elseif ~ all(iy) & ~ all(ix), % Case 5
         if mcar,
             Pidx{1} = iy & ix;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
         else
@@ -108,9 +108,9 @@ if isempty(mz),
         end
     end
 else
-    if       all(iy) &   all(ix) &   all(iz), % 1
+    if       all(iy) &   all(ix) &   all(iz), % Case 1
         Pidx{1} = [];  Y{1} = [];  X{1} = x;  Z{1} = z;  eC{1} = ecm;
-    elseif ~ all(iy) &   all(ix) &   all(iz), % 2
+    elseif ~ all(iy) &   all(ix) &   all(iz), % Case 2
         if mcar,
             Pidx{1} = iy;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
         else
@@ -118,7 +118,7 @@ else
             Pidx{2} = [];  Y{2} = my;       X{2} = x;               Z{2} = z;               eC{2} = ecm;
             isdiscrete = [false false];
         end
-    elseif   all(iy) & ~ all(ix) &   all(iz), % 3
+    elseif   all(iy) & ~ all(ix) &   all(iz), % Case 3
         if mcar,
             Pidx{1} = ix;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
         else
@@ -126,7 +126,7 @@ else
             Pidx{2} = [];  Y{2} = [];       X{2} = mx;              Z{2} = z;               eC{2} = mkcon(X{2},Z{2});
             isdiscrete = [false false];
         end
-    elseif   all(iy) &   all(ix) & ~ all(iz), % 4
+    elseif   all(iy) &   all(ix) & ~ all(iz), % Case 4
         if mcar,
             Pidx{1} = iz;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
         else
@@ -134,7 +134,7 @@ else
             Pidx{2} = [];  Y{2} = [];       X{2} = x;               Z{2} = mz;              eC{2} = mkcon(ecx,Z{2});
             isdiscrete = [false false];
         end
-    elseif ~ all(iy) & ~ all(ix) &   all(iz), % 5
+    elseif ~ all(iy) & ~ all(ix) &   all(iz), % Case 5
         if mcar,
             Pidx{1} = iy & ix;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
         else
@@ -144,7 +144,7 @@ else
             Pidx{4} = [];       Y{4} = my;           X{4} = mx;              Z{4} = z;               eC{4} = mkcon(X{4},Z{4}); % discrete
             isdiscrete = [false false false true];
         end
-    elseif ~ all(iy) &   all(ix) & ~ all(iz), % 6
+    elseif ~ all(iy) &   all(ix) & ~ all(iz), % Case 6
         if mcar,
             Pidx{1} = iy & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
         else
@@ -154,7 +154,7 @@ else
             Pidx{4} = [];       Y{4} = my;           X{4} = x;               Z{4} = mz;              eC{4} = mkcon(ecx,Z{4});
             isdiscrete = [false false false false];
         end
-    elseif   all(iy) & ~ all(ix) & ~ all(iz), % 7
+    elseif   all(iy) & ~ all(ix) & ~ all(iz), % Case 7
         if mcar,
             Pidx{1} = ix & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
         else
@@ -164,7 +164,7 @@ else
             Pidx{4} = [];       Y{4} = [];           X{4} = mx;              Z{4} = mz;              eC{4} = mkcon(X{4},Z{4});
             isdiscrete = [false false false false];
         end
-    elseif ~ all(iy) & ~ all(ix) & ~ all(iz), % 8
+    elseif ~ all(iy) & ~ all(ix) & ~ all(iz), % Case 8
         if mcar,
             Pidx{1} = iy & ix & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
         else
@@ -181,15 +181,45 @@ else
     end
 end
 
-% Partition each of these models using the method indicated by the user.
+for o = 1:numel(Y),
+    if ~isempty(Y{o}) && ~islogical(Y{o}),
+        Y{o} = bsxfun(@minus,Y{o},mean(Y{o},1));
+    end
+    X{o} = bsxfun(@minus,X{o},mean(X{o},1));
+    Z{o} = bsxfun(@minus,Z{o},mean(Z{o},1));
+end
+
+% PCA of Z:
+for o = 1:numel(Z),
+    sX = size(X{o},2);
+    [u,s,~] = svd(Z{o},'econ');
+    ds = diag(s);
+    tol = 10 * max(size(Z{o})) * eps(max(ds));
+    idx = ds > tol;
+    Z{o} = u(:,idx)*s(idx,idx);
+    eC{o} = [eC{o}(1:sX,:); zeros(size(Z{o},2),size(eC{o},2))];
+end
+
+% Partition each of these models using the method indicated by the user:
+eCm = cell(size(X));
+eCx = eCm;
 for o = 1:numel(Y),
     [X{o},Z{o},eCm{o},eCx{o}] = palm_partition(horzcat(X{o},Z{o}),eC{o},meth);
+end
+
+% Remove bits that are all zeroes (this needs to be adapted for voxelwise):
+for o = numel(Y):-1:1,
+    if  (~isempty(Y{o}) && ~islogical(Y{o}) && all(Y{o} == 0,1)) || all(X{o}(:,1,1) == 0,1),
+        Pidx(o) = []; Y(o) = []; X(o) = []; Z(o) = [];
+        eCm(o) = []; eCx(o) = [];
+        isdiscrete(o) = [];
+    end
 end
 
 % ==============================================================
 function eC = mkcon(X,Z);
 % Shortcut to create the effective contrast.
-if size(X,1) == size(Z,1),
+if isempty(Z) || size(X,1) == size(Z,1),
     % Typical case, X is X and Z is Z.
     eC = vertcat(eye(size(X,2)),zeros(size(Z,2),size(X,2)));
 else

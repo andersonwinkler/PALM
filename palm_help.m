@@ -1,4 +1,4 @@
-function palm_help(varargin)
+function varargout = palm_help(varargin)
 % Shows a help text. Call palm_help('logo') to show just the logo.
 % _____________________________________
 % Anderson M. Winkler
@@ -36,6 +36,12 @@ elseif strcmpi(varargin{1},'logo'),
     showlogo;
 elseif strcmpi(varargin{1},'date'),
     showdate;
+elseif strcmpi(varargin{1},'version'),
+    if nargout == 0,
+        fprintf(showversion);
+    else
+        varargout{1} = showversion;
+    end
 end
 
 % ==============================================================
@@ -372,5 +378,15 @@ function showdate
 fprintf('_____________________________________\n');
 fprintf('Anderson M. Winkler\n');
 fprintf('FMRIB / University of Oxford\n');
-fprintf('%s',palm_version);
+fprintf('%s',showversion);
 fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
+
+function vstr = showversion
+% Read the file with the version
+fid = fopen(fullfile(fileparts(mfilename('fullpath')),'palm_version.txt'),'r');
+vstr = textscan(fid,'%s');
+fclose(fid);
+
+% Assemble back as a string
+vstr = sprintf('%s ',vstr{1}{:});
+vstr = sprintf('%s\n',vstr(1:end-1));

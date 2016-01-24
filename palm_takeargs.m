@@ -767,7 +767,7 @@ while a <= narginx,
             % Choose a method to do the approximation of p-values
             if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
                 methlist = {   ...
-                    'negbin',   ...
+                    'negbin',  ...
                     'tail',    ...
                     'noperm',  ...
                     'gamma',   ...
@@ -1260,6 +1260,12 @@ if Nimiss || Ndmiss,
             'With missing data, the option "-cmcx" is mandatory.\n' ...
             '         Adding it automatically.%s'],'');
         opts.cmcx = true;
+    end
+    if ~ opts.demean && ~ opts.mcar,
+        warning([...
+            'With missing data, the option "-demean" is mandatory.\n' ...
+            '         Adding it automatically.%s'],'');
+        opts.demean = true;
     end
     if opts.ev4vg || opts.removevgbysize > 0,
         error('Missing data cannot be used with "-ev4vg" or "-removevgbysize".')
@@ -2477,7 +2483,9 @@ end
 % Remove intercept from the design for the options -demean and -vgdemean
 if opts.demean || opts.vgdemean,
     for m = 1:plm.nM,
-        intercp = all(bsxfun(@eq,plm.Mset{m}(1,:),plm.Mset{m}),1);
+        tmp = plm.Mset{m};
+        siz = size(tmp);
+        intercp = all(bsxfun(@eq,reshape(plm.Mset{m}(1,:),[1 siz(2:end)]),plm.Mset{m}),1);
         if any(intercp),
             for c = 1:plm.nC(m),
                 if any(intercp*plm.Cset{m}{c}~=0,2),

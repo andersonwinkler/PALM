@@ -46,7 +46,7 @@ if nargin == 1,
 elseif nargin == 2,
     
     % Version & environment
-    ver = fliplr(strtok(fliplr(palm_version),' '));
+    ver = fliplr(strtok(fliplr(palm_help('version')),' '));
     ver = strtok(ver,')');
     if palm_isoctave,
         envrun = 'Octave';
