@@ -74,11 +74,11 @@ if opts.saveuncorrected || opts.FDR,
                     plm.Gpperm{y}{m}{c}(~idx) = (plm.Gpperm{y}{m}{c}(~idx) + 1)./plm.nP{m}(c); % the unpermuted isn't counted here, hence the +1. Also, this is the same as if dividing by (plm.Gppermp{y}{m}{c}(~idx) + 1)
                 elseif opts.accel.tail,
                     for t = 1:plm.Ysiz(y),
-                        plm.Gpperm{y}{m}{c}(1,t) = palm_pareto(plm.G{y}{m}{c}(1,t),plm.Gperms{y}{m}{c}(:,t),false,opts.accel.tail_thr,false);
+                        plm.Gpperm{y}{m}{c}(1,t) = palm_pareto(plm.G{y}{m}{c}(1,t),plm.Gperms{y}{m}{c}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                     end
                 elseif opts.accel.gamma,
                     for t = 1:plm.Ysiz(y),
-                        plm.Gpperm{y}{m}{c}(1,t) = approxgamma(plm.G{y}{m}{c}(1,t),plm.Gperms{y}{m}{c}(:,t),false,1/plm.nP{m}(c),false);
+                        plm.Gpperm{y}{m}{c}(1,t) = approxgamma(plm.G{y}{m}{c}(1,t),plm.Gperms{y}{m}{c}(:,t),false,1/plm.nP{m}(c),opts.accel.G1out);
                     end
                 elseif ~ opts.accel.noperm, % the "noperm" case is already treated
                     plm.Gpperm{y}{m}{c} = plm.Gpperm{y}{m}{c}/plm.nP{m}(c);
@@ -93,11 +93,11 @@ if opts.saveuncorrected || opts.FDR,
                 for c = 1:plm.nC(m),
                     if opts.accel.tail,
                         for t = 1:plm.Ysiz(y),
-                            plm.Gtfcepperm{y}{m}{c}(1,t) = palm_pareto(plm.Gtfce{y}{m}{c}(1,t),plm.Gtfceperms{y}{m}{c}(:,t),false,opts.accel.tail_thr,false);
+                            plm.Gtfcepperm{y}{m}{c}(1,t) = palm_pareto(plm.Gtfce{y}{m}{c}(1,t),plm.Gtfceperms{y}{m}{c}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                         end
                     elseif opts.accel.gamma,
                         for t = 1:plm.Ysiz(y),
-                            plm.Gtfcepperm{y}{m}{c}(1,t) = approxgamma(plm.Gtfce{y}{m}{c}(1,t),plm.Gtfceperms{y}{m}{c}(:,t),false,1/plm.nP{m}(c),false);
+                            plm.Gtfcepperm{y}{m}{c}(1,t) = approxgamma(plm.Gtfce{y}{m}{c}(1,t),plm.Gtfceperms{y}{m}{c}(:,t),false,1/plm.nP{m}(c),opts.accel.G1out);
                         end
                     else
                         plm.Gtfcepperm{y}{m}{c} = plm.Gtfcepperm{y}{m}{c}/plm.nP{m}(c);
@@ -113,11 +113,11 @@ if opts.saveuncorrected || opts.FDR,
                 for c = 1:plm.nC(m),
                     if opts.accel.tail,
                         for t = 1:plm.Ysiz(1),
-                            plm.Tpperm{m}{c}(1,t) = palm_pareto(plm.T{m}{c}(1,t),plm.Tperms{m}{c}(:,t),plm.npcrev,opts.accel.tail_thr,false);
+                            plm.Tpperm{m}{c}(1,t) = palm_pareto(plm.T{m}{c}(1,t),plm.Tperms{m}{c}(:,t),plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
                         end
                     elseif opts.accel.gamma,
                         for t = 1:plm.Ysiz(1),
-                            plm.Tpperm{m}{c}(1,t) = approxgamma(plm.T{m}{c}(1,t),plm.Tperms{m}{c}(:,t),plm.npcrev,1/plm.nP{m}(c),false);
+                            plm.Tpperm{m}{c}(1,t) = approxgamma(plm.T{m}{c}(1,t),plm.Tperms{m}{c}(:,t),plm.npcrev,1/plm.nP{m}(c),opts.accel.G1out);
                         end
                     else
                         plm.Tpperm{m}{c} = plm.Tpperm{m}{c}/plm.nP{m}(c);
@@ -129,11 +129,11 @@ if opts.saveuncorrected || opts.FDR,
                     for c = 1:plm.nC(m),
                         if opts.accel.tail,
                             for t = 1:plm.Ysiz(1),
-                                plm.Ttfcepperm{m}{c}(1,t) = palm_pareto(plm.Ttfce{m}{c}(1,t),plm.Ttfceperms{m}{c}(:,t),false,opts.accel.tail_thr,false);
+                                plm.Ttfcepperm{m}{c}(1,t) = palm_pareto(plm.Ttfce{m}{c}(1,t),plm.Ttfceperms{m}{c}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                             end
                         elseif opts.accel.gamma,
                             for t = 1:plm.Ysiz(1),
-                                plm.Ttfcepperm{m}{c}(1,t) = approxgamma(plm.Ttfce{m}{c}(1,t),plm.Ttfceperms{m}{c}(:,t),false,1/plm.nP{m}(c),false);
+                                plm.Ttfcepperm{m}{c}(1,t) = approxgamma(plm.Ttfce{m}{c}(1,t),plm.Ttfceperms{m}{c}(:,t),false,1/plm.nP{m}(c),opts.accel.G1out);
                             end
                         else
                             plm.Ttfcepperm{m}{c} = plm.Ttfcepperm{m}{c}/plm.nP{m}(c);
@@ -145,11 +145,11 @@ if opts.saveuncorrected || opts.FDR,
             for j = 1:numel(plm.Tmax),
                 if opts.accel.tail,
                     for t = 1:plm.Ysiz(1),
-                        plm.Tpperm{j}(1,t) = palm_pareto(plm.T{j}(1,t),plm.Tperms{j}(:,t),plm.npcrev,opts.accel.tail_thr,false);
+                        plm.Tpperm{j}(1,t) = palm_pareto(plm.T{j}(1,t),plm.Tperms{j}(:,t),plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
                     end
                 elseif opts.accel.gamma,
                     for t = 1:plm.Ysiz(1),
-                        plm.Tpperm{j}(1,t) = approxgamma(plm.T{j}(1,t),plm.Tperms{j}(:,t),plm.npcrev,1/plm.nP{1}(1),false);
+                        plm.Tpperm{j}(1,t) = approxgamma(plm.T{j}(1,t),plm.Tperms{j}(:,t),plm.npcrev,1/plm.nP{1}(1),opts.accel.G1out);
                     end
                 else
                     plm.Tpperm{j} = plm.Tpperm{j}/size(plm.Tmax{j},1);
@@ -159,11 +159,11 @@ if opts.saveuncorrected || opts.FDR,
                 for j = 1:numel(plm.Tmax),
                     if opts.accel.tail,
                         for t = 1:plm.Ysiz(1),
-                            plm.Ttfcepperm{j}(1,t) = palm_pareto(plm.Ttfce{j}(1,t),plm.Ttfceperms{j}(:,t),false,opts.accel.tail_thr,false);
+                            plm.Ttfcepperm{j}(1,t) = palm_pareto(plm.Ttfce{j}(1,t),plm.Ttfceperms{j}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                         end
                     elseif opts.accel.gamma,
                         for t = 1:plm.Ysiz(1),
-                            plm.Ttfcepperm{j}(1,t) = approxgamma(plm.Ttfce{j}(1,t),plm.Ttfceperms{j}(:,t),false,1/plm.nP{1}(1),false);
+                            plm.Ttfcepperm{j}(1,t) = approxgamma(plm.Ttfce{j}(1,t),plm.Ttfceperms{j}(:,t),false,1/plm.nP{1}(1),opts.accel.G1out);
                         end
                     else
                         plm.Ttfcepperm{j} = plm.Ttfcepperm{j}/size(plm.Ttfcemax{j},1);
@@ -181,11 +181,11 @@ if opts.saveuncorrected || opts.FDR,
                     plm.Qpperm{m}{c}(~idx) = (plm.Qpperm{m}{c}(~idx) + 1)./plm.nP{m}(c); % same as if dividing by (plm.Qppermp{m}{c}(~idx) + 1)
                 elseif opts.accel.tail,
                     for t = 1:plm.Ysiz(1),
-                        plm.Qpperm{m}{c}(1,t) = palm_pareto(plm.Q{m}{c}(1,t),plm.Qperms{m}{c}(:,t),plm.mvrev{m}{c},opts.accel.tail_thr,false);
+                        plm.Qpperm{m}{c}(1,t) = palm_pareto(plm.Q{m}{c}(1,t),plm.Qperms{m}{c}(:,t),plm.mvrev{m}{c},opts.accel.tail_thr,opts.accel.G1out);
                     end
                 elseif opts.accel.gamma,
                     for t = 1:plm.Ysiz(1),
-                        plm.Qpperm{m}{c}(1,t) = approxgamma(plm.Q{m}{c}(1,t),plm.Qperms{m}{c}(:,t),plm.mvrev{m}{c},1/plm.nP{m}(c),false);
+                        plm.Qpperm{m}{c}(1,t) = approxgamma(plm.Q{m}{c}(1,t),plm.Qperms{m}{c}(:,t),plm.mvrev{m}{c},1/plm.nP{m}(c),opts.accel.G1out);
                     end
                 elseif ~ opts.accel.noperm, % the "noperm" case is already treated
                     plm.Qpperm{m}{c} = plm.Qpperm{m}{c}/plm.nP{m}(c);
@@ -197,11 +197,11 @@ if opts.saveuncorrected || opts.FDR,
                 for c = 1:plm.nC(m),
                     if opts.accel.tail,
                         for t = 1:plm.Ysiz(1),
-                            plm.Qtfcepperm{m}{c}(1,t) = palm_pareto(plm.Qtfce{m}{c}(1,t),plm.Qtfceperms{m}{c}(:,t),false,opts.accel.tail_thr,false);
+                            plm.Qtfcepperm{m}{c}(1,t) = palm_pareto(plm.Qtfce{m}{c}(1,t),plm.Qtfceperms{m}{c}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                         end
                     elseif opts.accel.gamma,
                         for t = 1:plm.Ysiz(1),
-                            plm.Qtfcepperm{m}{c}(1,t) = approxgamma(plm.Qtfce{m}{c}(1,t),plm.Qtfceperms{m}{c}(:,t),false,1/plm.nP{m}(c),false);
+                            plm.Qtfcepperm{m}{c}(1,t) = approxgamma(plm.Qtfce{m}{c}(1,t),plm.Qtfceperms{m}{c}(:,t),false,1/plm.nP{m}(c),opts.accel.G1out);
                         end
                     else
                         plm.Qtfcepperm{m}{c} = plm.Qtfcepperm{m}{c}/plm.nP{m}(c);
@@ -242,11 +242,11 @@ if opts.saveunivariate,
                     
                     % FWER-corrected
                     if opts.accel.tail,
-                        Ptosave = palm_pareto(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false,opts.accel.tail_thr,opts.accel.dropG0);
+                        Ptosave = palm_pareto(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false,opts.accel.tail_thr,opts.accel.G1out);
                     elseif opts.accel.noperm,
                         Ptosave = [];
                     elseif opts.accel.gamma,
-                        Ptosave = approxgamma(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false,1/plm.nP{m}(c),opts.accel.dropG0);
+                        Ptosave = approxgamma(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false,1/plm.nP{m}(c),opts.accel.G1out);
                     else
                         Ptosave = palm_datapval(plm.G{y}{m}{c},plm.Gmax{y}{m}{c},false);
                     end
@@ -269,9 +269,9 @@ if opts.saveunivariate,
                         
                         % Cluster statistic FWER p-value
                         if opts.accel.tail,
-                            Ptosave = palm_pareto(plm.Gclu{y}{m}{c},plm.Gclumax{y}{m}{c},false,opts.accel.tail_thr,opts.accel.dropG0);
+                            Ptosave = palm_pareto(plm.Gclu{y}{m}{c},plm.Gclumax{y}{m}{c},false,opts.accel.tail_thr,opts.accel.G1out);
                         elseif opts.accel.gamma,
-                            Ptosave = approxgamma(plm.Gclu{y}{m}{c},plm.Gclumax{y}{m}{c},false,1/plm.nP{m}(c),opts.accel.dropG0);
+                            Ptosave = approxgamma(plm.Gclu{y}{m}{c},plm.Gclumax{y}{m}{c},false,1/plm.nP{m}(c),opts.accel.G1out);
                         else
                             Ptosave = palm_datapval(plm.Gclu{y}{m}{c},plm.Gclumax{y}{m}{c},false);
                         end
@@ -295,9 +295,9 @@ if opts.saveunivariate,
                         
                         % TFCE FWER-corrected within modality and contrast.
                         if opts.accel.tail,
-                            Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false,opts.accel.tail_thr,opts.accel.dropG0);
+                            Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false,opts.accel.tail_thr,opts.accel.G1out);
                         elseif opts.accel.gamma,
-                            Ptosave = approxgamma(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false,1/plm.nP{m}(c),opts.accel.dropG0);
+                            Ptosave = approxgamma(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false,1/plm.nP{m}(c),opts.accel.G1out);
                         else
                             Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},plm.Gtfcemax{y}{m}{c},false);
                         end
@@ -379,9 +379,9 @@ if opts.saveunivariate,
                     for y = 1:plm.nY,
                         m = y;
                         if opts.accel.tail,
-                            Ptosave = palm_pareto(plm.G{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                            Ptosave = palm_pareto(plm.G{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                         elseif opts.accel.gamma,
-                            Ptosave = approxgamma(plm.G{y}{m}{c},distmax,false,1/plm.nP{1}(c),opts.accel.dropG0);
+                            Ptosave = approxgamma(plm.G{y}{m}{c},distmax,false,1/plm.nP{1}(c),opts.accel.G1out);
                         else
                             Ptosave = palm_datapval(plm.G{y}{m}{c},distmax,false);
                         end
@@ -400,9 +400,9 @@ if opts.saveunivariate,
                         distmax = max(distmax,[],2);
                         for y = 1:plm.nY,
                             if opts.accel.tail,
-                                Ptosave = palm_pareto(plm.G{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                Ptosave = palm_pareto(plm.G{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                             elseif opts.accel.gamma,
-                                Ptosave = approxgamma(plm.G{y}{m}{c},distmax,false,1/plm.nP{m}(c),opts.accel.dropG0);
+                                Ptosave = approxgamma(plm.G{y}{m}{c},distmax,false,1/plm.nP{m}(c),opts.accel.G1out);
                             else
                                 Ptosave = palm_datapval(plm.G{y}{m}{c},distmax,false);
                             end
@@ -428,9 +428,9 @@ if opts.saveunivariate,
                         for y = 1:plm.nY,
                             m = y;
                             if opts.accel.tail,
-                                Ptosave = palm_pareto(plm.Gclu{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                Ptosave = palm_pareto(plm.Gclu{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                             elseif opts.accel.gamma,
-                                Ptosave = approxgamma(plm.Gclu{y}{m}{c},distmax,false,1/plm.nP{1}(c),opts.accel.dropG0);
+                                Ptosave = approxgamma(plm.Gclu{y}{m}{c},distmax,false,1/plm.nP{1}(c),opts.accel.G1out);
                             else
                                 Ptosave = palm_datapval(plm.Gclu{y}{m}{c},distmax,false);
                             end
@@ -449,9 +449,9 @@ if opts.saveunivariate,
                             distmax = max(distmax,[],2);
                             for y = 1:plm.nY,
                                 if opts.accel.tail,
-                                    Ptosave = palm_pareto(plm.Gclu{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                    Ptosave = palm_pareto(plm.Gclu{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                                 elseif opts.accel.gamma,
-                                    Ptosave = approxgamma(plm.Gclu{y}{m}{c},distmax,false,1/plm.nP{m}(c),opts.accel.dropG0);
+                                    Ptosave = approxgamma(plm.Gclu{y}{m}{c},distmax,false,1/plm.nP{m}(c),opts.accel.G1out);
                                 else
                                     Ptosave = palm_datapval(plm.Gclu{y}{m}{c},distmax,false);
                                 end
@@ -478,9 +478,9 @@ if opts.saveunivariate,
                         for y = 1:plm.nY,
                             m = y;
                             if opts.accel.tail,
-                                Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                             elseif opts.accel.gamma,
-                                Ptosave = approxgamma(plm.Gtfce{y}{m}{c},distmax,false,1/plm.nP{1}(c),opts.accel.dropG0);
+                                Ptosave = approxgamma(plm.Gtfce{y}{m}{c},distmax,false,1/plm.nP{1}(c),opts.accel.G1out);
                             else
                                 Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},distmax,false);
                             end
@@ -499,9 +499,9 @@ if opts.saveunivariate,
                             distmax = max(distmax,[],2);
                             for y = 1:plm.nY,
                                 if opts.accel.tail,
-                                    Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                    Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                                 elseif opts.accel.gamma,
-                                    Ptosave = approxgamma(plm.Gtfce{y}{m}{c},distmax,false,1/plm.nP{m}(c),opts.accel.dropG0);
+                                    Ptosave = approxgamma(plm.Gtfce{y}{m}{c},distmax,false,1/plm.nP{m}(c),opts.accel.G1out);
                                 else
                                     Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},distmax,false);
                                 end
@@ -602,9 +602,9 @@ if opts.saveunivariate,
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         if opts.accel.tail,
-                            Ptosave = palm_pareto(plm.G{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                            Ptosave = palm_pareto(plm.G{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                         elseif opts.accel.gamma,
-                            Ptosave = approxgamma(plm.G{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                            Ptosave = approxgamma(plm.G{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                         else
                             Ptosave = palm_datapval(plm.G{y}{m}{c},distmax,false);
                         end
@@ -636,9 +636,9 @@ if opts.saveunivariate,
                     for m = loopM,
                         for c = 1:plm.nC(m),
                             if opts.accel.tail,
-                                Ptosave = palm_pareto(plm.Gclu{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                Ptosave = palm_pareto(plm.Gclu{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                             elseif opts.accel.gamma,
-                                Ptosave = approxgamma(plm.Gclu{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                                Ptosave = approxgamma(plm.Gclu{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                             else
                                 Ptosave = palm_datapval(plm.Gclu{y}{m}{c},distmax,false);
                             end
@@ -671,9 +671,9 @@ if opts.saveunivariate,
                     for m = loopM,
                         for c = 1:plm.nC(m),
                             if opts.accel.tail,
-                                Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                             elseif opts.accel.gamma,
-                                Ptosave = approxgamma(plm.Gtfce{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                                Ptosave = approxgamma(plm.Gtfce{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                             else
                                 Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},distmax,false);
                             end
@@ -771,9 +771,9 @@ if opts.saveunivariate,
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         if opts.accel.tail,
-                            Ptosave = palm_pareto(plm.G{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                            Ptosave = palm_pareto(plm.G{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                         elseif opts.accel.gamma,
-                            Ptosave = approxgamma(plm.G{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                            Ptosave = approxgamma(plm.G{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                         else
                             Ptosave = palm_datapval(plm.G{y}{m}{c},distmax,false);
                         end
@@ -807,9 +807,9 @@ if opts.saveunivariate,
                     for m = loopM,
                         for c = 1:plm.nC(m),
                             if opts.accel.tail,
-                                Ptosave = palm_pareto(plm.Gclu{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                Ptosave = palm_pareto(plm.Gclu{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                             elseif opts.accel.gamma,
-                                Ptosave = approxgamma(plm.Gclu{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                                Ptosave = approxgamma(plm.Gclu{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                             else
                                 Ptosave = palm_datapval(plm.Gclu{y}{m}{c},distmax,false);
                             end
@@ -844,9 +844,9 @@ if opts.saveunivariate,
                     for m = loopM,
                         for c = 1:plm.nC(m),
                             if opts.accel.tail,
-                                Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                                Ptosave = palm_pareto(plm.Gtfce{y}{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                             elseif opts.accel.gamma,
-                                Ptosave = approxgamma(plm.Gtfce{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                                Ptosave = approxgamma(plm.Gtfce{y}{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                             else
                                 Ptosave = palm_datapval(plm.Gtfce{y}{m}{c},distmax,false);
                             end
@@ -904,9 +904,9 @@ if opts.npcmod && ~ opts.npccon,
             
             % NPC FWER-corrected
             if opts.accel.tail,
-                Ptosave = palm_pareto(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,opts.accel.tail_thr,opts.accel.dropG0);
+                Ptosave = palm_pareto(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
             elseif opts.accel.gamma,
-                Ptosave = approxgamma(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,1/plm.nP{m}(c),opts.accel.dropG0);
+                Ptosave = approxgamma(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev,1/plm.nP{m}(c),opts.accel.G1out);
             else
                 Ptosave = palm_datapval(plm.T{m}{c},plm.Tmax{m}{c},plm.npcrev);
             end
@@ -935,9 +935,9 @@ if opts.npcmod && ~ opts.npccon,
                 
                 % Cluster statistic FWER p-value
                 if opts.accel.tail,
-                    Ptosave = palm_pareto(plm.Tclu{m}{c},plm.Tclumax{m}{c},false,opts.accel.tail_thr,opts.accel.dropG0);
+                    Ptosave = palm_pareto(plm.Tclu{m}{c},plm.Tclumax{m}{c},false,opts.accel.tail_thr,opts.accel.G1out);
                 elseif opts.accel.gamma,
-                    Ptosave = approxgamma(plm.Tclu{m}{c},plm.Tclumax{m}{c},false,1/plm.nP{m}(c),opts.accel.dropG0);
+                    Ptosave = approxgamma(plm.Tclu{m}{c},plm.Tclumax{m}{c},false,1/plm.nP{m}(c),opts.accel.G1out);
                 else
                     Ptosave = palm_datapval(plm.Tclu{m}{c},plm.Tclumax{m}{c},false);
                 end
@@ -961,9 +961,9 @@ if opts.npcmod && ~ opts.npccon,
                 
                 % TFCE FWER p-value
                 if opts.accel.tail,
-                    Ptosave = palm_pareto(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,opts.accel.tail_thr,opts.accel.dropG0);
+                    Ptosave = palm_pareto(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,opts.accel.tail_thr,opts.accel.G1out);
                 elseif opts.accel.gamma,
-                    Ptosave = approxgamma(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,1/plm.nP{m}(c),opts.accel.dropG0);
+                    Ptosave = approxgamma(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false,1/plm.nP{m}(c),opts.accel.G1out);
                 else
                     Ptosave = palm_datapval(plm.Ttfce{m}{c},plm.Ttfcemax{m}{c},false);
                 end
@@ -1000,9 +1000,9 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         if opts.designperinput, mstr = ''; else mstr  = plm.mstr{m}; end
         for c = 1:plm.nC(m),
             if opts.accel.tail,
-                Ptosave = palm_pareto(plm.T{m}{c},distmax,plm.npcrev,opts.accel.tail_thr,opts.accel.dropG0);
+                Ptosave = palm_pareto(plm.T{m}{c},distmax,plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
             elseif opts.accel.gamma,
-                Ptosave = approxgamma(plm.T{m}{c},distmax,plm.npcrev,1/plm.nP{1}(1),opts.accel.dropG0);
+                Ptosave = approxgamma(plm.T{m}{c},distmax,plm.npcrev,1/plm.nP{1}(1),opts.accel.G1out);
             else
                 Ptosave = palm_datapval(plm.T{m}{c},distmax,plm.npcrev);
             end
@@ -1047,9 +1047,9 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 if opts.accel.tail,
-                    Ptosave = palm_pareto(plm.Tclu{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                    Ptosave = palm_pareto(plm.Tclu{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                 elseif opts.accel.gamma,
-                    Ptosave = approxgamma(plm.Tclu{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                    Ptosave = approxgamma(plm.Tclu{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                 else
                     Ptosave = palm_datapval(plm.Tclu{m}{c},distmax,false);
                 end
@@ -1074,9 +1074,9 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 if opts.accel.tail,
-                    Ptosave = palm_pareto(plm.Ttfce{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                    Ptosave = palm_pareto(plm.Ttfce{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                 elseif opts.accel.gamma,
-                    Ptosave = approxgamma(plm.Ttfce{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                    Ptosave = approxgamma(plm.Ttfce{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                 else
                     Ptosave = palm_datapval(plm.Ttfce{m}{c},distmax,false);
                 end
@@ -1121,9 +1121,9 @@ if opts.npccon,
 
         % NPC FWER-corrected
         if opts.accel.tail,
-            Ptosave = palm_pareto(plm.T{j},plm.Tmax{j},plm.npcrev,opts.accel.tail_thr,opts.accel.dropG0);
+            Ptosave = palm_pareto(plm.T{j},plm.Tmax{j},plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
         elseif opts.accel.gamma,
-            Ptosave = approxgamma(plm.T{j},plm.Tmax{j},plm.npcrev,1/plm.nP{1}(1),opts.accel.dropG0);
+            Ptosave = approxgamma(plm.T{j},plm.Tmax{j},plm.npcrev,1/plm.nP{1}(1),opts.accel.G1out);
         else
             Ptosave = palm_datapval(plm.T{j},plm.Tmax{j},plm.npcrev);
         end
@@ -1152,9 +1152,9 @@ if opts.npccon,
             
             % Cluster statistic FWER p-value
             if opts.accel.tail,
-                Ptosave = palm_pareto(plm.Tclu{j},plm.Tclumax{j},false,opts.accel.tail_thr,opts.accel.dropG0);
+                Ptosave = palm_pareto(plm.Tclu{j},plm.Tclumax{j},false,opts.accel.tail_thr,opts.accel.G1out);
             elseif opts.accel.gamma,
-                Ptosave = approxgamma(plm.Tclu{j},plm.Tclumax{j},false,1/plm.nP{1}(1),opts.accel.dropG0);
+                Ptosave = approxgamma(plm.Tclu{j},plm.Tclumax{j},false,1/plm.nP{1}(1),opts.accel.G1out);
             else
                 Ptosave = palm_datapval(plm.Tclu{j},plm.Tclumax{j},false);
             end
@@ -1178,9 +1178,9 @@ if opts.npccon,
             
             % TFCE FWER p-value
             if opts.accel.tail,
-                Ptosave = palm_pareto(plm.Ttfce{j},plm.Ttfcemax{j},false,opts.accel.tail_thr,opts.accel.dropG0);
+                Ptosave = palm_pareto(plm.Ttfce{j},plm.Ttfcemax{j},false,opts.accel.tail_thr,opts.accel.G1out);
             elseif opts.accel.gamma,
-                Ptosave = approxgamma(plm.Ttfce{j},plm.Ttfcemax{j},false,1/plm.nP{1}(1),opts.accel.dropG0);
+                Ptosave = approxgamma(plm.Ttfce{j},plm.Ttfcemax{j},false,1/plm.nP{1}(1),opts.accel.G1out);
             else
                 Ptosave = palm_datapval(plm.Ttfce{j},plm.Ttfcemax{j},false);
             end
@@ -1205,9 +1205,9 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
     distmax = npcextr(cat(2,plm.Tmax{:}),2);
     for y = 1:numel(plm.nY),
         if opts.accel.tail,
-            Ptosave = palm_pareto(plm.T{y},distmax,plm.npcrev,opts.accel.tail_thr,opts.accel.dropG0);
+            Ptosave = palm_pareto(plm.T{y},distmax,plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
         elseif opts.accel.gamma,
-            Ptosave = approxgamma(plm.T{y},distmax,plm.npcrev,1/plm.nP{1}(1),opts.accel.dropG0);
+            Ptosave = approxgamma(plm.T{y},distmax,plm.npcrev,1/plm.nP{1}(1),opts.accel.G1out);
         else
             Ptosave = palm_datapval(plm.T{y},distmax,plm.npcrev);
         end
@@ -1239,9 +1239,9 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
     distmax = npcextr(cat(2,plm.Tmax{:}),2);
     for y = 1:numel(plm.nY),
         if opts.accel.tail,
-            Ptosave = palm_pareto(plm.T{y},distmax,plm.npcrev,opts.accel.tail_thr,opts.accel.dropG0);
+            Ptosave = palm_pareto(plm.T{y},distmax,plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
         elseif opts.accel.gamma,
-            Ptosave = approxgamma(plm.T{y},distmax,plm.npcrev,1/plm.nP{1}(1),opts.accel.dropG0);
+            Ptosave = approxgamma(plm.T{y},distmax,plm.npcrev,1/plm.nP{1}(1),opts.accel.G1out);
         else
             Ptosave = palm_datapval(plm.T{y},distmax,plm.npcrev);
         end
@@ -1267,9 +1267,9 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
             
             % Cluster statistic FWER p-value
             if opts.accel.tail,
-                Ptosave = palm_pareto(plm.Tclu{y},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                Ptosave = palm_pareto(plm.Tclu{y},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
             elseif opts.accel.gamma,
-                Ptosave = approxgamma(plm.Tclu{y},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                Ptosave = approxgamma(plm.Tclu{y},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
             else
                 Ptosave = palm_datapval(plm.Tclu{y},distmax,false);
             end
@@ -1290,9 +1290,9 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
             
             % Cluster statistic FWER p-value
             if opts.accel.tail,
-                Ptosave = palm_pareto(plm.Ttfce{y},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                Ptosave = palm_pareto(plm.Ttfce{y},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
             elseif opts.accel.gamma,
-                Ptosave = approxgamma(plm.Ttfce{y},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                Ptosave = approxgamma(plm.Ttfce{y},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
             else
                 Ptosave = palm_datapval(plm.Ttfce{y},distmax,false);
             end
@@ -1345,11 +1345,11 @@ if opts.MV || opts.CCA,
                 
                 % MV FWER-corrected within modality and contrast.
                 if opts.accel.tail,
-                    Ptosave = palm_pareto(plm.Q{m}{c},plm.Qmax{m}{c},plm.mvrev{m}{c},opts.accel.tail_thr,opts.accel.dropG0);
+                    Ptosave = palm_pareto(plm.Q{m}{c},plm.Qmax{m}{c},plm.mvrev{m}{c},opts.accel.tail_thr,opts.accel.G1out);
                 elseif opts.accel.noperm,
                     Ptosave = [];
                 elseif opts.accel.gamma,
-                    Ptosave = approxgamma(plm.Q{m}{c},plm.Qmax{m}{c},plm.mvrev{m}{c},1/plm.nP{m}(c),opts.accel.dropG0);
+                    Ptosave = approxgamma(plm.Q{m}{c},plm.Qmax{m}{c},plm.mvrev{m}{c},1/plm.nP{m}(c),opts.accel.G1out);
                 else
                     Ptosave = palm_datapval(plm.Q{m}{c},plm.Qmax{m}{c},plm.mvrev{m}{c});
                 end
@@ -1366,9 +1366,9 @@ if opts.MV || opts.CCA,
                     
                     % Cluster statistic FWER p-value
                     if opts.accel.tail,
-                        Ptosave = palm_pareto(plm.Qclu{m}{c},plm.Qclumax{m}{c},false,opts.accel.tail_thr,opts.accel.dropG0);
+                        Ptosave = palm_pareto(plm.Qclu{m}{c},plm.Qclumax{m}{c},false,opts.accel.tail_thr,opts.accel.G1out);
                     elseif opts.accel.gamma,
-                        Ptosave = approxgamma(plm.Qclu{m}{c},plm.Qclumax{m}{c},false,1/plm.nP{m}(c),opts.accel.dropG0);
+                        Ptosave = approxgamma(plm.Qclu{m}{c},plm.Qclumax{m}{c},false,1/plm.nP{m}(c),opts.accel.G1out);
                     else
                         Ptosave = palm_datapval(plm.Qclu{m}{c},plm.Qclumax{m}{c},false);
                     end
@@ -1392,9 +1392,9 @@ if opts.MV || opts.CCA,
                     
                     % TFCE FWER p-value
                     if opts.accel.tail,
-                        Ptosave = palm_pareto(plm.Qtfce{m}{c},plm.Qtfcemax{m}{c},false,opts.accel.tail_thr,opts.accel.dropG0);
+                        Ptosave = palm_pareto(plm.Qtfce{m}{c},plm.Qtfcemax{m}{c},false,opts.accel.tail_thr,opts.accel.G1out);
                     elseif opts.accel.gamma,
-                        Ptosave = approxgamma(plm.Qtfce{m}{c},plm.Qtfcemax{m}{c},false,1/plm.nP{m}(c),opts.accel.dropG0);
+                        Ptosave = approxgamma(plm.Qtfce{m}{c},plm.Qtfcemax{m}{c},false,1/plm.nP{m}(c),opts.accel.G1out);
                     else
                         Ptosave = palm_datapval(plm.Qtfce{m}{c},plm.Qtfcemax{m}{c},false);
                     end
@@ -1455,9 +1455,9 @@ if ( opts.MV || opts.CCA ) && opts.corrcon,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 if opts.accel.tail,
-                    Ptosave = palm_pareto(plm.Q{m}{c},distmax,plm.mvrev{m}{c},opts.accel.tail_thr,opts.accel.dropG0);
+                    Ptosave = palm_pareto(plm.Q{m}{c},distmax,plm.mvrev{m}{c},opts.accel.tail_thr,opts.accel.G1out);
                 elseif opts.accel.gamma,
-                    Ptosave = approxgamma(plm.Q{m}{c},distmax,plm.mvrev{m}{c},1/plm.nP{1}(1),opts.accel.dropG0);
+                    Ptosave = approxgamma(plm.Q{m}{c},distmax,plm.mvrev{m}{c},1/plm.nP{1}(1),opts.accel.G1out);
                 else
                     Ptosave = palm_datapval(plm.Q{m}{c},distmax,plm.mvrev{m}{c});
                 end
@@ -1481,9 +1481,9 @@ if ( opts.MV || opts.CCA ) && opts.corrcon,
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
                     if opts.accel.tail,
-                        Ptosave = palm_pareto(plm.Qclu{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                        Ptosave = palm_pareto(plm.Qclu{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                     elseif opts.accel.gamma,
-                        Ptosave = approxgamma(plm.Qclu{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                        Ptosave = approxgamma(plm.Qclu{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                     else
                         Ptosave = palm_datapval(plm.Qclu{m}{c},distmax,false);
                     end
@@ -1510,9 +1510,9 @@ if ( opts.MV || opts.CCA ) && opts.corrcon,
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
                     if opts.accel.tail,
-                        Ptosave = palm_pareto(plm.Qtfce{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.dropG0);
+                        Ptosave = palm_pareto(plm.Qtfce{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
                     elseif opts.accel.gamma,
-                        Ptosave = approxgamma(plm.Qtfce{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.dropG0);
+                        Ptosave = approxgamma(plm.Qtfce{m}{c},distmax,false,1/plm.nP{1}(1),opts.accel.G1out);
                     else
                         Ptosave = palm_datapval(plm.Qtfce{m}{c},distmax,false);
                     end
@@ -1561,9 +1561,9 @@ end
 padj = padj(oidxR);
 
 % ==============================================================
-function pvals = approxgamma(G,Gdist,rev,prepl,dropG0)
+function pvals = approxgamma(G,Gdist,rev,prepl,G1out)
 % Shortcut to the calls for Gamma approximation.
-if dropG0,
+if G1out,
     Gdist = Gdist(2:end,:);
 end
 [mu,s2,gamm1] = palm_moments(Gdist);

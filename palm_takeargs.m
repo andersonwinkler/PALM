@@ -798,24 +798,51 @@ while a <= narginx,
                     
                 elseif opts.accel.tail,
                     
-                    % Smaller p-vals than this are refined.
+                    % Define whether include or not the unpermuted stat:
                     if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
                         if ischar(vararginx{a+2}),
-                            opts.accel.tail_thr = str2double(vararginx{a+2});
+                            if     any(strcmpi(vararginx{a+2},{'out','G1out','T1out','true', '1'})),
+                                opts.accel.G1out = true;
+                                opts.saveuncorrected = false;
+                            elseif any(strcmpi(vararginx{a+2},{'in', 'G1in', 'T1in', 'false','0'})),
+                                opts.accel.G1out = false;
+                            end
                         else
-                            opts.accel.tail_thr = vararginx{a+2};
+                            if vararginx{a+2},
+                                opts.accel.G1out = true;
+                                opts.saveuncorrected = false;
+                            else
+                                opts.accel.G1out = false;
+                            end
                         end
                         a = a + 3;
                     else
                         a = a + 2;
                     end
-                    opts.saveuncorrected = false;
                     
                 elseif opts.accel.gamma,
                     
-                    % Disable uncorrected by default.
-                    opts.saveuncorrected = false;
-                    a = a + 2;
+                    % Define whether include or not the unpermuted stat:
+                    if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
+                        if ischar(vararginx{a+2}),
+                            if     any(strcmpi(vararginx{a+2},{'out','G1out','T1out','true', '1'})),
+                                opts.accel.G1out = true;
+                                opts.saveuncorrected = false;
+                            elseif any(strcmpi(vararginx{a+2},{'in', 'G1in', 'T1in', 'false','0'})),
+                                opts.accel.G1out = false;
+                            end
+                        else
+                            if vararginx{a+2},
+                                opts.accel.G1out = true;
+                                opts.saveuncorrected = false;
+                            else
+                                opts.accel.G1out = false;
+                            end
+                        end
+                        a = a + 3;
+                    else
+                        a = a + 2;
+                    end
                     
                 elseif opts.accel.lowrank,
                     
