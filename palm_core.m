@@ -724,15 +724,15 @@ for m = 1:plm.nM,
                     switch lower(plm.rmethod{y}{m}{c}{o}),
                         
                         case 'noz',
-                            prepglm               = @noz3d;
+                            prepglm{m}{c}         = @noz3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
                             
                         case 'exact',
-                            prepglm               = @exact3d;
+                            prepglm{m}{c}         = @exact3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
                             
                         case 'draper-stoneman',
-                            prepglm               = @draperstoneman3d;
+                            prepglm{m}{c}         = @draperstoneman3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
                             
                         case 'still-white',
@@ -740,7 +740,7 @@ for m = 1:plm.nM,
                             for t = 1:size(plm.Mset{m},3),
                                 plm.Rz{y}{m}{c}{o}(:,:,t) = eye(plm.N) - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
                             end
-                            prepglm               = @stillwhite3d;
+                            prepglm{m}{c}         = @stillwhite3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
                             
                         case 'freedman-lane',
@@ -750,12 +750,12 @@ for m = 1:plm.nM,
                                 plm.Hz{y}{m}{c}{o}(:,:,t) = plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
                                 plm.Rz{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hz{y}{m}{c}{o}(:,:,t);
                             end
-                            prepglm               = @freedmanlane3d;
+                            prepglm{m}{c}         = @freedmanlane3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
                             
                         case 'terbraak',
                             isterbraak            = true;
-                            prepglm               = @terbraak3d;
+                            prepglm{m}{c}         = @terbraak3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
                             
                         case 'kennedy',
@@ -763,11 +763,11 @@ for m = 1:plm.nM,
                             for t = 1:size(plm.Mset{m},3),
                                 plm.Rz{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
                             end
-                            prepglm               = @kennedy3d;
+                            prepglm{m}{c}         = @kennedy3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
                             
                         case 'manly',
-                            prepglm               = @manly; % same as the usual Manly
+                            prepglm{m}{c}         = @manly; % same as the usual Manly
                             plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
                             
                         case 'huh-jhun',
@@ -782,7 +782,7 @@ for m = 1:plm.nM,
                                 end
                                 plm.hj{y}{m}{c}{o}(:,:,t) = Q;
                             end
-                            prepglm               = @huhjhun3d;
+                            prepglm{m}{c}         = @huhjhun3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
                             
                         case 'smith',
@@ -790,7 +790,7 @@ for m = 1:plm.nM,
                             for t = 1:size(plm.Mset{m},3),
                                 plm.Rz{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
                             end
-                            prepglm               = @smith3d;
+                            prepglm{m}{c}         = @smith3d;
                             plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
                     end
                     
@@ -798,19 +798,19 @@ for m = 1:plm.nM,
                     % and the name to save the files later.
                     if opts.pearson,
                         if     plm.rC{m}(c) == 1,
-                            fastpiv = @fastr3d;
+                            fastpiv{m}{c} = @fastr3d;
                         elseif plm.rC{m}(c) >  1,
-                            fastpiv = @fastrsq3d;
+                            fastpiv{m}{c} = @fastrsq3d;
                         end
                     else
                         if     plm.rC{m}(c) == 1 && plm.nVG == 1,
-                            fastpiv = @fastt3d;
+                            fastpiv{m}{c} = @fastt3d;
                         elseif plm.rC{m}(c) >  1 && plm.nVG == 1,
-                            fastpiv = @fastf3d;
+                            fastpiv{m}{c} = @fastf3d;
                         elseif plm.rC{m}(c) == 1 && plm.nVG >  1,
-                            fastpiv = @fastv3d;
+                            fastpiv{m}{c} = @fastv3d;
                         elseif plm.rC{m}(c) >  1 && plm.nVG >  1,
-                            fastpiv = @fastg3d;
+                            fastpiv{m}{c} = @fastg3d;
                         end
                     end
                 end
@@ -869,36 +869,36 @@ for m = 1:plm.nM,
                     switch lower(plm.rmethod{y}{m}{c}{o}),
                         
                         case 'noz',
-                            prepglm                  = @noz;
+                            prepglm{m}{c}            = @noz;
                             plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
                             
                         case 'exact',
-                            prepglm                  = @exact;
+                            prepglm{m}{c}            = @exact;
                             plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
                             
                         case 'draper-stoneman',
-                            prepglm                  = @draperstoneman;
+                            prepglm{m}{c}            = @draperstoneman;
                             plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
                             
                         case 'still-white',
                             plm.Rz{y}{m}{c}{o}       = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
-                            prepglm                  = @stillwhite;
+                            prepglm{m}{c}            = @stillwhite;
                             plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
                             
                         case 'freedman-lane',
                             plm.Hz{y}{m}{c}{o}       = plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
                             plm.Rz{y}{m}{c}{o}       = eye(N) - plm.Hz{y}{m}{c}{o};
-                            prepglm                  = @freedmanlane;
+                            prepglm{m}{c}            = @freedmanlane;
                             plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
                             
                         case 'terbraak',
                             isterbraak               = true;
-                            prepglm                  = @terbraak;
+                            prepglm{m}{c}            = @terbraak;
                             plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
                             
                         case 'kennedy',
                             plm.Rz {y}{m}{c}{o}      = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
-                            prepglm                  = @kennedy;
+                            prepglm{m}{c}            = @kennedy;
                             plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
                             
                         case 'manly',
@@ -910,12 +910,12 @@ for m = 1:plm.nM,
                             [plm.hj{y}{m}{c}{o},D]   = schur(plm.Rz{y}{m}{c}{o});
                             D                        = abs(diag(D)) < 10*eps;
                             plm.hj {y}{m}{c}{o}(:,D) = [];
-                            prepglm                  = @huhjhun;
+                            prepglm{m}{c}            = @huhjhun;
                             plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
                             
                         case 'smith',
                             plm.Rz {y}{m}{c}{o}      = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
-                            prepglm                  = @smith;
+                            prepglm{m}{c}            = @smith;
                             plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
                     end
                     
@@ -924,20 +924,20 @@ for m = 1:plm.nM,
                     if opts.pearson,
                         if     plm.rC{m}(c) == 1,
                             %fastpiv  {y}{m}{c}{o} = @(M,psi,Y)fastr(M,psi,Y,y,m,c,o,plm);
-                            fastpiv = @fastr;
+                            fastpiv{m}{c} = @fastr;
                         elseif plm.rC{m}(c) >  1,
                             %fastpiv  {y}{m}{c}{o} = @(M,psi,Y)fastrsq(M,psi,Y,y,m,c,o,plm);
-                            fastpiv = @fastrsq;
+                            fastpiv{m}{c} = @fastrsq;
                         end
                     else
                         if     plm.rC{m}(c) == 1 && plm.nVG == 1,
-                            fastpiv = @fastt;
+                            fastpiv{m}{c} = @fastt;
                         elseif plm.rC{m}(c) >  1 && plm.nVG == 1,
-                            fastpiv = @fastf;
+                            fastpiv{m}{c} = @fastf;
                         elseif plm.rC{m}(c) == 1 && plm.nVG >  1,
-                            fastpiv = @fastv;
+                            fastpiv{m}{c} = @fastv;
                         elseif plm.rC{m}(c) >  1 && plm.nVG >  1,
-                            fastpiv = @fastg;
+                            fastpiv{m}{c} = @fastg;
                         end
                     end
                 end
@@ -1213,7 +1213,7 @@ for po = P_outer,
                                 % If rank(C)=1, the test can be two-tailed,
                                 % under the assumption that it's symmetric
                                 if opts.ISE && plm.rC{m}(c) == 1 && ~ opts.twotail,
-                                    [M,Y] = prepglm(eye(plm.N),plm.Yset{y},y,m,c,1,plm);
+                                    [M,Y] = prepglm{m}{c}(eye(plm.N),plm.Yset{y},y,m,c,1,plm);
                                     psi   = zeros(size(M,2),plm.Ysiz(y));
                                     for tt = 1:plm.Ysiz(y),
                                         psi(:,tt) = M(:,:,tt)\Y(:,tt);
@@ -1268,7 +1268,7 @@ for po = P_outer,
                             % If rank(C)=1, the test can be two-tailed,
                             % under the assumption that it's symmetric
                             if opts.ISE && plm.rC{m}(c) == 1 && ~ opts.twotail,
-                                [M,Y] = prepglm(eye(plm.N),plm.Yset{y},y,m,c,1,plm);
+                                [M,Y] = prepglm{m}{c}(eye(plm.N),plm.Yset{y},y,m,c,1,plm);
                                 sgn   = sign(plm.eC{m}{c}'*(M\Y));
                                 isgn  = sgn < 0;
                                 plm.G{y}{m}{c} = plm.G{y}{m}{c}.^.5.*sgn;
@@ -1346,7 +1346,7 @@ for po = P_outer,
                             if p == 1,
                                 ysel{y} = true(1,plm.Ysiz(y));
                             end
-                            [M,Y] = prepglm(plm.Pset{p},plm.Yset{y}(:,ysel{y}),y,m,c,1,plm);
+                            [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yset{y}(:,ysel{y}),y,m,c,1,plm);
                         elseif opts.accel.lowrank,
                             if p <= plm.nJ{m}(c),
                                 ysel{y} = true(1,plm.Ysiz(y));
@@ -1354,7 +1354,7 @@ for po = P_outer,
                                 ysel{y} = randperm(plm.Ysiz(y));
                                 ysel{y} = ysel{y}(1:plm.nsel(y));
                             end
-                            [M,Y] = prepglm(plm.Pset{p},plm.Yset{y}(:,ysel{y}),y,m,c,1,plm);
+                            [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yset{y}(:,ysel{y}),y,m,c,1,plm);
                         elseif opts.missingdata,
                             nO = numel(plm.X{y}{m}{c});
                             loopO = 1:nO;
@@ -1378,7 +1378,7 @@ for po = P_outer,
                                 if isempty(plm.Z{y}{m}{c}{o}),
                                     [MM{o},YY{o}] = noz(Ptmp,Ytmp,y,m,c,o,plm);
                                 else
-                                    [MM{o},YY{o}] = prepglm(Ptmp,Ytmp,y,m,c,o,plm);
+                                    [MM{o},YY{o}] = prepglm{m}{c}(Ptmp,Ytmp,y,m,c,o,plm);
                                 end
                             end; clear o;
                             if opts.mcar,
@@ -1387,12 +1387,12 @@ for po = P_outer,
                                 M = MM;    Y = YY;
                             end
                         else
-                            [M,Y] = prepglm(plm.Pset{p},plm.Yset{y},y,m,c,1,plm);
+                            [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yset{y},y,m,c,1,plm);
                         end
                         
                         % Do the GLM fit.
                         if opts.missingdata && ~ opts.mcar,
-                            [G{y}{m}{c},df2{y}{m}{c}] = fastmiss(Y,M,y,m,c,plm,fastpiv);
+                            [G{y}{m}{c},df2{y}{m}{c}] = fastmiss(Y,M,y,m,c,plm,fastpiv{m}{c});
                         else
                             if opts.evperdat,
                                 psi = zeros(size(M,2),plm.Ysiz(y));
@@ -1450,7 +1450,7 @@ for po = P_outer,
                                 G  {y}{m}{c} = fastpiv(M,psi,Y,y,m,c,1,plm);
                                 df2{y}{m}{c} = NaN;
                             elseif ~ opts.accel.lowrank || p == 1,
-                                [G{y}{m}{c},df2{y}{m}{c}] = fastpiv(M,psi,res,y,m,c,1,plm);
+                                [G{y}{m}{c},df2{y}{m}{c}] = fastpiv{m}{c}(M,psi,res,y,m,c,1,plm);
                             end
                         end
                         
@@ -1576,7 +1576,7 @@ for po = P_outer,
                         end
                         
                         % Convert to z-score
-                        if  ~ opts.missingdata && ( ~ opts.accel.lowrank || ...
+                        if   ( ~ opts.accel.lowrank || ...
                                 (opts.accel.lowrank &&   opts.accel.lowrank_recon && p > plm.nJ{m}(c)) || ...
                                 (opts.accel.lowrank && ~ opts.accel.lowrank_recon)),
                             G{y}{m}{c} = palm_gtoz(G{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
@@ -1859,7 +1859,7 @@ for po = P_outer,
                                 psiq = zeros(plm.nEV{m}(c),sum(yselq),plm.nY);
                                 resq = zeros(plm.N,size(psiq,2),plm.nY);
                                 for y = 1:plm.nY,
-                                    [M,Y] = prepglm(plm.Pset{p},plm.Yq{m}{c}(:,yselq,y),y,m,c,1,plm);
+                                    [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yq{m}{c}(:,yselq,y),y,m,c,1,plm);
                                     psiq(:,:,y) = M\Y;
                                     resq(:,:,y) = Y - M*psiq(:,:,y);
                                 end
@@ -2740,7 +2740,8 @@ for j = 1:size(cte,2),
 end
 G   = sum(tmp.*psi,1);
 ete = sum(res.^2,1);
-G   = G./ete*df2/plm.rC{m}(c);
+rC0 = plm.rC0{m}(c);
+G   = G./ete*df2/plm.rC0{m}(c);
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastf3d(M,psi,res,y,m,c,o,plm)
 df2 = size(M,1)-plm.rM{y}{m}{c}{o};
@@ -2755,7 +2756,7 @@ ppsi = sum(bsxfun(@times,ppsi,cte),1);
 ppsi = permute(ppsi,[2 3 1]);
 G    = sum(ppsi.*psi,1);
 ete  = sum(res.^2,1);
-G    = G./ete*df2/plm.rC{m}(c);
+G    = G./ete*df2/plm.rC0{m}(c);
 
 % ==============================================================
 function [G,df2] = fastv(M,psi,res,y,m,c,o,plm)
@@ -2852,7 +2853,7 @@ G = zeros(1,nT);
 for t = 1:nT,
     A = psi(:,t)'*plm.eC{m}{c};
     G(t) = A/(plm.eC{y}{m}{c}{o}'/(reshape(cte(:,t),[r r]))* ...
-        plm.eC{y}{m}{c}{o})*A'/plm.rC{m}(c);
+        plm.eC{y}{m}{c}{o})*A'/plm.rC0{m}(c);
 end
 sW1  = sum(W,1);
 bsum = sum(bsxfun(@rdivide,(1-bsxfun(@rdivide,W,sW1)).^2,dRmb),1);
@@ -2879,7 +2880,7 @@ G = zeros(1,nT);
 for t = 1:nT,
     A = psi(:,t)'*plm.eC{y}{m}{c}{o};
     G(t) = A/(plm.eC{y}{m}{c}{o}'/cte(:,:,t) * ...
-        plm.eC{y}{m}{c}{o})*A'/plm.rC{m}(c);
+        plm.eC{y}{m}{c}{o})*A'/plm.rC0{m}(c);
 end
 sW1  = sum(W,1);
 bsum = sum((1-bsxfun(@rdivide,W,sW1)).^2./dRmb,1);

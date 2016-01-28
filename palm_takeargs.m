@@ -2153,6 +2153,7 @@ if opts.tonly,
                 plm.Cset{m}(c) = [];
                 plm.Dset{m}(c) = [];
                 plm.rC{m}(c)   = [];
+                plm.rC0{m}(c)   = [];
             end
         end
         plm.nC(m) = numel(plm.Cset{m});
@@ -2165,6 +2166,7 @@ elseif opts.fonly,
                 plm.Cset{m}(c) = [];
                 plm.Dset{m}(c) = [];
                 plm.rC{m}(c)   = [];
+                plm.rC0{m}(c)   = [];
             end
         end
         plm.nC(m) = numel(plm.Cset{m});
