@@ -184,9 +184,9 @@ if nargout > 2,
 end
 
 % If the Ytmp will also be returned (used in the palm_mediation). Unless
-% this is a sigle vector, there is no need to keep the actual data; it's
+% this is a single vector, there is no need to keep the actual data; it's
 % the mask that matters.
-if nargout == 5 && numel(maskstruct.data) > 1,
+if nargout == 6 && numel(maskstruct.data) > 1,
     Ytmp.data = [];
     Yset = [];
 end

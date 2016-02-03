@@ -1,4 +1,4 @@
-function P = palm_pareto(G,Gdist,rev,Pthr,dropG0)
+function [P,apar,kpar,upar] = palm_pareto(G,Gdist,rev,Pthr,G1out)
 % Compute the p-values for a set of statistics G, taking
 % as reference a set of observed values for G, from which
 % the empirical cumulative distribution function (cdf) is
@@ -17,11 +17,14 @@ function P = palm_pareto(G,Gdist,rev,Pthr,dropG0)
 % rev    : If true, indicates that the smallest values in G and
 %          Gvals, rather than the largest, are the most significant.
 % Pthr   : P-values below this will be refined using GPD tail.
-% dropG0 : Boolean indicating whether G0 should be removed from the null
+% G1out  : Boolean indicating whether G1 should be removed from the null
 %          distribution.
 %
 % Output:
 % P      : P-values.
+% apar   : Scale parameter of the GPD.
+% kpar   : Shape parameter of the GPD.
+% upar   : Location parameter of the GPD.
 %
 % This function is based in the following papers:
 % * Knijnenburg TA, Wessels LFA, Reinders MJT, Shmulevich I. Fewer
@@ -63,7 +66,7 @@ function P = palm_pareto(G,Gdist,rev,Pthr,dropG0)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Compute the usual permutation p-values.
-if dropG0,
+if G1out,
     Gdist = Gdist(2:end,:);
 end
 P    = palm_datapval(G,Gdist,rev);
@@ -95,33 +98,33 @@ if any(Pidx),
         Gtail = Gdist(qidx);
         qi    = find(qidx,1);
         if qi == 1,
-            u = Gdist(qi) - mean(Gdist(qi:qi+1));
+            upar = Gdist(qi) - mean(Gdist(qi:qi+1));
         else
-            u = mean(Gdist(qi-1:qi));
+            upar = mean(Gdist(qi-1:qi));
         end
         if rev,
-            ytail = u - Gtail;
-            y     = u - G(G < u);
+            ytail = upar - Gtail;
+            y     = upar - G((G < upar) & Pidx);
         else
-            ytail = Gtail - u;
-            y     = G(G > u) - u;
+            ytail = Gtail - upar;
+            y     = G((G > upar) & Pidx) - upar;
         end
         
         % Estimate the distribution parameters. See §3.2 of Hosking &
         % Wallis (1987). Compared to the usual GPD parameterisation, 
-        % here k = xi, and a = \tilde{\sigma}.
+        % here k = shape (xi), and a = scale.
         x    = mean(ytail);
         s2   = var(ytail);
-        sig2 = x*(x^2/s2 + 1)/2;
-        xi   =   (x^2/s2 - 1)/2;
+        apar = x*(x^2/s2 + 1)/2;
+        kpar =   (x^2/s2 - 1)/2;
         
         % Check if the fitness is good
-        A2pval = andersondarling(gpdpvals(ytail,sig2,xi),xi);
+        A2pval = andersondarling(gpdpvals(ytail,apar,kpar),kpar);
             
         % If yes, keep. If not, try again with the next quantile.
         if A2pval > .05;
             cte = numel(Gtail)/nP;
-            Ptail = cte*gpdpvals(y,sig2,xi);
+            Ptail = cte*gpdpvals(y,apar,kpar);
         else
             q = q + 1;
         end
@@ -131,24 +134,24 @@ if any(Pidx),
     % p-value
     if ~ isnan(Ptail),
         if rev,
-            P(G < u) = Ptail;
+            P((G < upar) & Pidx) = Ptail;
         else
-            P(G > u) = Ptail;
+            P((G > upar) & Pidx) = Ptail;
         end
     end
 end
 
 % ==============================================================
-function z = gpdpvals(x,a,k)
-% Compute the p-values (here called z) for a GPD with
-% parameters a (scale) and k (shape).
+function p = gpdpvals(x,a,k)
+% Compute the p-values for a GPD with parameters a (scale)
+% and k (shape).
 if abs(k) < eps;
-    z = exp(-x/a);
+    p = exp(-x/a);
 else
-    z = (1 - k*x/a).^(1/k);
+    p = (1 - k*x/a).^(1/k);
 end
 if k > 0;
-    z(x > a/k) = 0;
+    p(x > a/k) = 0;
 end
 
 % ==============================================================

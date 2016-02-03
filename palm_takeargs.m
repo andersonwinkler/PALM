@@ -555,7 +555,7 @@ while a <= narginx,
         case '-rmethod', % advanced
             
             % Which method to use for the regression/permutation?
-            if nargin > a,
+            if narginx > a,
                 methlist = {           ...
                     'Draper-Stoneman', ...
                     'Still-White',     ...
@@ -575,7 +575,7 @@ while a <= narginx,
             else
                 error([...
                     'The option -rmethod requires a method to be specified.\n'...
-                    'Consult the documentation.']);
+                    'Consult the documentation.%s'],'');
             end
             
         case '-npc' % basic
@@ -765,7 +765,7 @@ while a <= narginx,
         case {'-accel','-approx'}, % advanced
             
             % Choose a method to do the approximation of p-values
-            if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
+            if narginx > a && ~strcmpi(vararginx{a+1}(1),'-'),
                 methlist = {   ...
                     'negbin',  ...
                     'tail',    ...
@@ -784,7 +784,7 @@ while a <= narginx,
                 if opts.accel.negbin,
                     
                     % Number of exceedances:
-                    if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
+                    if narginx > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
                         if ischar(vararginx{a+2}),
                             opts.accel.negbin = str2double(vararginx{a+2});
                         else
@@ -799,7 +799,7 @@ while a <= narginx,
                 elseif opts.accel.tail,
                     
                     % Define whether include or not the unpermuted stat:
-                    if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
+                    if narginx > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
                         if ischar(vararginx{a+2}),
                             if     any(strcmpi(vararginx{a+2},{'out','G1out','T1out','true', '1'})),
                                 opts.accel.G1out = true;
@@ -823,7 +823,7 @@ while a <= narginx,
                 elseif opts.accel.gamma,
                     
                     % Define whether include or not the unpermuted stat:
-                    if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
+                    if narginx > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
                         if ischar(vararginx{a+2}),
                             if     any(strcmpi(vararginx{a+2},{'out','G1out','T1out','true', '1'})),
                                 opts.accel.G1out = true;
@@ -848,7 +848,7 @@ while a <= narginx,
                     
                     % Fraction of voxels to be sampled (if < 1) or actual
                     % number of voxels to be sampled.
-                    if nargin > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
+                    if narginx > a+1 && ~strcmpi(vararginx{a+2}(1),'-'),
                         if ischar(vararginx{a+2}),
                             opts.accel.lowrank_val = str2double(vararginx{a+2});
                         else
@@ -864,8 +864,8 @@ while a <= narginx,
                 end
             else
                 error([...
-                    'The option "-accel" requires a method to be specified.\n' ...
-                    'Consult the documentation.']);
+                    'The options "-accel" and "-approx" require a method to.\n' ...
+                    'be specified. Consult the documentation.%s'],'');
             end
             
         case '-noniiclass', % advanced
@@ -894,12 +894,12 @@ while a <= narginx,
             
             % Take the parameters given to -inormal
             parms = {};
-            if nargin - a >= 1,
+            if narginx - a >= 1,
                 if ~strcmp(vararginx{a+1}(1),'-'),
                     parms{1} = vararginx{a+1};
                 end
             end
-            if nargin - a >= 2,
+            if narginx - a >= 2,
                 if ~strcmp(vararginx{a+2}(1),'-'),
                     parms{2} = vararginx{a+2};
                 end
@@ -1066,7 +1066,7 @@ while a <= narginx,
             
             % Which method to use to partition the model when defining
             % the permutations?
-            if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
+            if narginx > a && ~strcmpi(vararginx{a+1}(1),'-'),
                 methlist = {    ...
                     'Guttman',  ...
                     'Beckmann', ...
@@ -1089,7 +1089,7 @@ while a <= narginx,
             
             % Which method to use to partition the model when defining
             % doing the actual regression?
-            if nargin > a && ~strcmpi(vararginx{a+1}(1),'-'),
+            if narginx > a && ~strcmpi(vararginx{a+1}(1),'-'),
                 methlist = {    ...
                     'Guttman',  ...
                     'Beckmann', ...
@@ -2237,18 +2237,7 @@ end
 % Partition the model according to the contrasts and design matrix.
 % The partitioning needs to be done now, because of the need for
 % synchronised permutations/sign-flips
-if opts.cmcx,
-    plm.seq = cell(plm.nM,1);
-    for m = 1:plm.nM,
-        plm.seq{m} = cell(plm.nC(m),1);
-        for c = 1:plm.nC(m),
-            plm.seq{m}{c} = (1:plm.N)';
-        end
-    end
-    if opts.corrcon || opts.npccon,
-        opts.syncperms = true;
-    end
-else
+if ~ opts.cmcx,
     seqtmp = zeros(plm.N,sum(plm.nC));
     j = 1;
     plm.seq = cell(plm.nM,1);
@@ -2262,7 +2251,7 @@ else
         end
     end
     tmp = sum(diff(seqtmp,1,2).^2,2);
-    if (opts.corrcon || opts.npccon) && any(tmp(:) ~= 0),
+    if (opts.corrcon || opts.npccon || opts.syncperms) && any(tmp(:) ~= 0),
         warning([ ...
             'You chose to correct over contrasts, or run NPC\n'             ...
             '         between contrasts, but with the design(s) and,\n'     ...
@@ -2271,6 +2260,15 @@ else
             '         elements in the design matrix (or matrices). To\n'    ...
             '         solve this, adding the option "-cmcx" automatically.%s\n'],'');
         opts.cmcx = true;
+    end
+end
+if opts.cmcx,
+    plm.seq = cell(plm.nM,1);
+    for m = 1:plm.nM,
+        plm.seq{m} = cell(plm.nC(m),1);
+        for c = 1:plm.nC(m),
+            plm.seq{m}{c} = (1:plm.N)';
+        end
     end
     if opts.corrcon || opts.npccon,
         opts.syncperms = true;

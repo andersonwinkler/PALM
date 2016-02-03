@@ -80,8 +80,8 @@ switch lower(meth),
                 X = zeros(size(M,1),size(CDCi,2),size(M,3));
                 Z = zeros(size(M,1),size(F3,2),size(M,3));
             end
-            X(:,:,t) = M*D*C*CDCi;
-            Z(:,:,t) = M*D*Cv*F3;
+            X(:,:,t) = M(:,:,t)*D*C*CDCi;
+            Z(:,:,t) = M(:,:,t)*D*Cv*F3;
         end
         eCm = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));

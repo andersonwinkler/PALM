@@ -57,6 +57,7 @@ end
 % Load the defaults
 medi = palm_defaults;
 medi.transposedata = false;
+medi.fdr = false;
 
 % List of forbidden options with mediation analysis:
 forbidden_opts = {                                    ...
@@ -153,7 +154,7 @@ fprintf('Mediation stage I: Data and model preparation.\n');
 N = zeros(3,1);
 for i = 1:3,
     fprintf('Reading input %d/%d: %s\n',i,3,medi.i{i});
-    [I{i},maskstruct{i},~,Itmp{i}] = palm_ready(medi.i{i},[],medi);
+    [I{i},maskstruct{i},~,~,~,Itmp{i}] = palm_ready(medi.i{i},[],medi);
     [siz(i,1),siz(i,2),siz(i,3)] = size(maskstruct{i}.data);
     N(i) = size(I{i},1);
 end
@@ -186,7 +187,7 @@ end
 if isempty(maskinter) && Nevd > 0,
     r = 0;
     fprintf('Reading file: %s\n',medi.evdatfile{1});
-    [~,maskstruct,~,~,EVtmp] = palm_ready(medi.evdatfile{1},[],medi);
+    [~,maskstruct,~,~,~,EVtmp] = palm_ready(medi.evdatfile{1},[],medi);
     maskinter = maskstruct.data;
 end
 
@@ -347,7 +348,7 @@ fprintf('Finished stage I.\n');
 % ==============================================================
 fprintf('=======================================================================\n');
 fprintf('Mediation stage II: Permutation test.\n');
-palm(...
+ palm(...
     opts_step1{:},opts_step2{:},opts_step3a{:},palmopts{:},...
     '-o',sprintf('%s_1+2+3a',medi.o),'-corrcon','-cmcx');
 palm(opts_step3b{:},palmopts3b{:},...
@@ -388,7 +389,7 @@ S1 = palm_miscread( ...
 S3b = palm_miscread( ...
     sprintf('%s_3b_%s_cope%s',medi.o,Ykindstr{1},fext),...
     medi.useniiclass,medi.o);
-S3b_mask = S1.data > S3b.data;
+S3b_mask = double(S1.data) > double(S3b.data);
 
 % Check places where steps 1, 2 and 3a are significant. Do it as a
 % conjunction.
@@ -399,9 +400,9 @@ for f = 1:numel(Ykindstr),
             sprintf('%s_1+2+3a_%s_%s_fwep_m%d_d%d%s',medi.o,Ykindstr{f},statname,r,r,fext),...
             medi.useniiclass,medi.o);
         if isempty(S),
-            S = R.data;
+            S = double(R.data);
         else
-            S = min(S,R.data);
+            S = min(S,double(R.data));
         end
     end
     S = S .* S3b_mask;
@@ -419,9 +420,9 @@ if medi.fdr,
                 sprintf('%s_1+2+3a_%s_%s_fdrp_m%d_d%d%s',medi.o,Ykindstr{f},statname,r,r,fext),...
                 medi.useniiclass,medi.o);
             if isempty(S),
-                S = R.data;
+                S = double(R.data);
             else
-                S = min(S,R.data);
+                S = min(S,double(R.data));
             end
         end
         S = S .* S3b_mask;

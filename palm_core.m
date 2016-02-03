@@ -485,127 +485,86 @@ fprintf('Elapsed time parsing inputs: ~ %g seconds.\n',tocI);
 % For each design matrix and contrast:
 for m = 1:plm.nM,
     for c = 1:plm.nC(m),
-
+        
         % If there are voxelwise EVs:
         if opts.evperdat,
             fprintf(['Doing maths for -evperdat before model fitting: [Design %d/%d, Contrast %d/%d] (may take several minutes)\n'],m,plm.nM,c,plm.nC(m));
-
-            % Partition the model, now using the method chosen by the user
-            if opts.missingdata,
-                if opts.showprogress,
-                    fprintf('Preparing designs for missing data [Design: %d/%d, Contrast %d/%d]\n',m,plm.nM,c,plm.nC(m));
-                end
-                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-                for y = loopY,
-                    [plm.X{y}{m}{c},plm.Z{y}{m}{c},...
-                        plm.eCm{y}{m}{c},plm.eCx{y}{m}{c},...
-                        plm.Ymissidx{y}{m}{c},plm.Pidx{y}{m}{c},...
-                        plm.isdiscrete{y}{m}{c}] = ...
-                        palm_misspart(plm.Mset{m},plm.Cset{m}{c},...
-                        opts.pmethodr,plm.Ymiss{y},plm.Mmiss{m},opts.mcar);
-                end
-            else
-                y = 1; o = 1;
-                if strcmpi(opts.pmethodr,'guttman'),
-                    % Guttman is separate for not requiring the loop,
-                    % over voxels, thus running faster.
-                    idx                 = any(plm.Cset{m}{c}~=0,2);
-                    plm.X{y}{m}{c}{o}   = plm.Mset{m}(:, idx,:);
-                    plm.Z{y}{m}{c}{o}   = plm.Mset{m}(:,~idx,:);
-                    plm.eCx{y}{m}{c}{o} = plm.Cset{m}{c}(idx,:);
-                    plm.eCm{y}{m}{c}{o} = vertcat(plm.eCx{y}{m}{c}{o},plm.Cset{m}{c}(~idx,:));
-                    plm.Mp{y}{m}{c}{o}  = cat(2,plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o}); % partitioned design matrix, joined
-                else
-                    nT = size(plm.Mset{m},3);
-                    plm.X{y}{m}{c}{o}   = zeros(plm.N,rank(plm.Cset{m}{c}),nT);
-                    plm.Z{y}{m}{c}{o}   = zeros(plm.N,size(plm.Mset{m},2)-rank(plm.Cset{m}{c}),nT);
-                    for t = 1:nT,
-                        [plm.X{y}{m}{c}{o}(:,:,t),plm.Z{y}{m}{c}{o}(:,:,t),plm.eCm{y}{m}{c}{o},plm.eCx{y}{m}{c}{o}] = ...
-                            palm_partition(plm.Mset{m}(:,:,t),plm.Cset{m}{c},opts.pmethodr);
-                    end
-                    plm.Mp{y}{m}{c}{o} = cat(2,plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o}); % partitioned design matrix, joined
-                end
-                clear y o;
-                loopY = 1;
-            end
-            for y = loopY,
-                if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
-                for o = loopO,
-                    N = size(plm.Mp{y}{m}{c}{o},1);
-                    plm.Hm{y}{m}{c}{o} = zeros(N,N,nT);
-                    plm.Rm{y}{m}{c}{o} = zeros(N,N,nT);
-                    for t = 1:nT,
-                        plm.Hm {y}{m}{c}{o}(:,:,t) = plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t));
-                        plm.Rm {y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hm{y}{m}{c}{o}(:,:,t);
-                        plm.dRm{y}{m}{c}{o}(:,t)   = diag(plm.Rm{y}{m}{c}{o}(:,:,t)); % this is used for the pivotal statistic
-                    end
-                    plm.rM {y}{m}{c}{o} = size(plm.X{y}{m}{c}{o},1) - round(sum(plm.dRm{y}{m}{c}{o}(:,1,1))); % this is faster than rank(M)
-                    plm.nEV{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},2);  % number of regressors in the design
-                end
-            end
-            clear y o;
-        else % i.e., if not evperdat
-            % Partition the model, now using the method chosen by the user
+        end
+        
+        % Partition the model, now using the method chosen by the user
+        if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
+        if opts.missingdata,
             if opts.showprogress,
                 fprintf('Preparing designs for missing data [Design: %d/%d, Contrast %d/%d]\n',m,plm.nM,c,plm.nC(m));
             end
-            if opts.missingdata,
-                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-                for y = loopY,
-                    [plm.X{y}{m}{c},plm.Z{y}{m}{c},...
-                        plm.eCm{y}{m}{c},plm.eCx{y}{m}{c},...
-                        plm.Ymissidx{y}{m}{c},plm.Pidx{y}{m}{c},...
-                        plm.isdiscrete{y}{m}{c}] = ...
-                        palm_misspart(plm.Mset{m},plm.Cset{m}{c},...
-                        opts.pmethodr,plm.Ymiss{y},plm.Mmiss{m},opts.mcar);
-                end
-            else
-                y = 1; o = 1;
-                [plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o},plm.eCm{y}{m}{c}{o},plm.eCx{y}{m}{c}{o}] = ...
-                    palm_partition(plm.Mset{m},plm.Cset{m}{c},opts.pmethodr);
-                loopY = 1;
-            end
+            % Partition the design
             for y = loopY,
-                if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
-                plm.Mp{y}{m}{c} = cell(size(plm.X{y}{m}{c}));
-                for o = loopO,
-                    
-                    % Partitioned design matrix, joined
-                    plm.Mp{y}{m}{c}{o} = horzcat(plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o});
-                    
-                    % To avoid rank deficiency issues after partitioning, remove
-                    % columns that are all equal to zero. This won't be done for 
-                    % evperdat because it's too slow and can make the designs too
-                    % different if EVs are dropped from just some of the tests.
+                [plm.X{y}{m}{c},plm.Z{y}{m}{c},...
+                    plm.eCm{y}{m}{c},plm.eCx{y}{m}{c},...
+                    plm.Ymissidx{y}{m}{c},plm.Pidx{y}{m}{c},...
+                    plm.isdiscrete{y}{m}{c}] = ...
+                    palm_misspart(plm.Mset{m},plm.Cset{m}{c},...
+                    opts.pmethodr,plm.Ymiss{y},plm.Mmiss{m},opts.mcar);
+                for o = 1:numel(plm.X{y}{m}{c}),
+                    plm.Mp{y}{m}{c}{o} = cat(2,plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o});
+                end
+            end
+        else
+            y = m; o = 1;
+            % Partition the design
+            [plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o},plm.eCm{y}{m}{c}{o},plm.eCx{y}{m}{c}{o}] = ...
+                palm_partition(plm.Mset{m},plm.Cset{m}{c},opts.pmethodr);
+            plm.Mp{y}{m}{c}{o} = cat(2,plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o});
+            for y = loopY,
+                if y ~= m,
+                    plm.X{y}{m}{c}{o}   = plm.X{m}{m}{c}{o};
+                    plm.Z{y}{m}{c}{o}   = plm.Z{m}{m}{c}{o};
+                    plm.eCm{y}{m}{c}{o} = plm.eCm{m}{m}{c}{o};
+                    plm.eCx{y}{m}{c}{o} = plm.eCx{m}{m}{c}{o};
+                    plm.Mp{y}{m}{c}{o}  = plm.Mp{m}{m}{c}{o};
+                end
+            end
+            clear y o;
+        end
+        for y = loopY,
+            if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
+            for o = loopO,
+                
+                % To avoid rank deficiency issues after partitioning, remove
+                % columns that are all equal to zero. This won't be done for
+                % evperdat because it's too slow and can make the designs too
+                % different if EVs are dropped from just some of the tests.
+                if ~ opts.evperdat,
                     idx = all(plm.X{y}{m}{c}{o}  == 0,1);
                     plm.X{y}{m}{c}{o}(:,idx)   = [];
                     plm.eCx{y}{m}{c}{o}(idx,:) = [];
                     idx = all(plm.Mp{y}{m}{c}{o} == 0,1);
                     plm.Mp{y}{m}{c}{o}(:,idx)  = [];
                     plm.eCm{y}{m}{c}{o}(idx,:) = [];
-                    
-                    % Residual-forming matrix. This is used by the ter Braak method and
-                    % also to compute some of the stats later. Note that, even though the
-                    % residual-forming matrix changes at every permutation, the trace
-                    % for each VG remains unchanged, hence it's not necessary to recompute
-                    % it for every permutation.
-                    plm.Hm {y}{m}{c}{o} = plm.Mp{y}{m}{c}{o}*pinv(plm.Mp{y}{m}{c}{o});
-                    plm.Rm {y}{m}{c}{o} = eye(size(plm.X{y}{m}{c}{o},1)) - plm.Hm{y}{m}{c}{o};
-                    plm.dRm{y}{m}{c}{o} = diag(plm.Rm{y}{m}{c}{o}); % this is used for the pivotal statistic
-                    plm.rM {y}{m}{c}{o} = size(plm.X{y}{m}{c}{o},1) - round(sum(plm.dRm{y}{m}{c}{o})); % this is faster than rank(M)
-                    plm.nEV{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},2);  % number of regressors in the design
                 end
+                
+                % Residual-forming matrix. This is used by the ter Braak method and
+                % also to compute some of the stats later. Note that, even though the
+                % residual-forming matrix changes at every permutation, the trace
+                % for each VG remains unchanged, hence it's not necessary to recompute
+                % it for every permutation.
+                [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
+                plm.Hm{y}{m}{c}{o} = zeros(N,N,nT);
+                plm.Rm{y}{m}{c}{o} = zeros(N,N,nT);
+                for t = 1:nT,
+                    plm.Hm {y}{m}{c}{o}(:,:,t) = plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t));
+                    plm.Rm {y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hm{y}{m}{c}{o}(:,:,t);
+                    plm.dRm{y}{m}{c}{o}(:,t)   = diag(plm.Rm{y}{m}{c}{o}(:,:,t)); % this is used for the pivotal statistic
+                end
+                plm.rM {y}{m}{c}{o} = size(plm.X{y}{m}{c}{o},1) - round(sum(plm.dRm{y}{m}{c}{o}(:,1,1))); % this is faster than rank(M)
+                plm.nEV{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},2);  % number of regressors in the design
             end
-            clear y o;
         end
+        clear y o;
 
         % Some methods don't work well if Z is empty, and there is no point in
         % using any of them all anyway.
-        if opts.missingdata,
-            if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-        else
-            loopY = 1;
-        end
+        if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
         for y = loopY,
             if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
             for o = loopO,
@@ -710,11 +669,7 @@ for m = 1:plm.nM,
         % this all runs just for the 1st permutation.
         isterbraak = false;
         if opts.evperdat,
-            if opts.missingdata,
-                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-            else
-                loopY = 1;
-            end
+            if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
             for y = loopY,
                 if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
                 for o = loopO,
@@ -902,7 +857,7 @@ for m = 1:plm.nM,
                             plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
                             
                         case 'manly',
-                            prepglm                  = @manly;
+                            prepglm{m}{c}            = @manly;
                             plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
                             
                         case 'huh-jhun',
@@ -1158,7 +1113,7 @@ for po = P_outer,
                         plm.Qmax{m}{c} = zeros(plm.nP{m}(c),1);
                     end
                     if ~ opts.accel.negbin,
-                        psiq = zeros(plm.nEV{m}(c),plm.Ysiz(1),plm.nY);
+                        psiq = zeros(plm.nEV{y}{m}{c}{o},plm.Ysiz(1),plm.nY);
                         resq = zeros(plm.N,plm.Ysiz(1),plm.nY);
                     end
                 end
@@ -1170,6 +1125,7 @@ for po = P_outer,
             
             % Whimsical permutation p-vals using no permutations at all
             if opts.accel.noperm,
+                o = 1;
                 
                 % Prepare W for the univariate (no for-loop here):
                 if opts.saveunivariate,
@@ -1185,7 +1141,7 @@ for po = P_outer,
                     end
                 end
                 if opts.savepara,
-                    plm.df2{y}{m}{c} = plm.N - plm.rM{m}(c);
+                    plm.df2{y}{m}{c} = plm.N - plm.rM{y}{m}{c}{o};
                 end
                 
                 % For four cases below, compute the statistic trace(AW),
@@ -1218,7 +1174,7 @@ for po = P_outer,
                                     for tt = 1:plm.Ysiz(y),
                                         psi(:,tt) = M(:,:,tt)\Y(:,tt);
                                     end
-                                    sgn   = sign(plm.eC{m}{c}'*psi);
+                                    sgn   = sign(plm.eC{y}{m}{c}{o}'*psi);
                                     isgn  = sgn < 0;
                                     plm.G{y}{m}{c} = plm.G{y}{m}{c}.^.5.*sgn;
                                     plm.Gpperm{y}{m}{c} = plm.Gpperm{y}{m}{c}./2;
@@ -1269,7 +1225,7 @@ for po = P_outer,
                             % under the assumption that it's symmetric
                             if opts.ISE && plm.rC{m}(c) == 1 && ~ opts.twotail,
                                 [M,Y] = prepglm{m}{c}(eye(plm.N),plm.Yset{y},y,m,c,1,plm);
-                                sgn   = sign(plm.eC{m}{c}'*(M\Y));
+                                sgn   = sign(plm.eC{y}{m}{c}{o}'*(M\Y));
                                 isgn  = sgn < 0;
                                 plm.G{y}{m}{c} = plm.G{y}{m}{c}.^.5.*sgn;
                                 plm.Gpperm{y}{m}{c} = plm.Gpperm{y}{m}{c}./2;
@@ -1380,7 +1336,8 @@ for po = P_outer,
                                 else
                                     [MM{o},YY{o}] = prepglm{m}{c}(Ptmp,Ytmp,y,m,c,o,plm);
                                 end
-                            end; clear o;
+                            end
+                            clear o;
                             if opts.mcar,
                                 M = MM{1}; Y = YY{1};
                             else
@@ -1408,17 +1365,18 @@ for po = P_outer,
                             
                             % Save COPE and VARCOPE if requested (option -saveglm)
                             if p == 1 && opts.saveglm && plm.rC{m}(c) == 1,
-                                cope  = plm.eC{m}{c}'*psi;
-                                sigsq = sum(res.^2,1)./(plm.N-plm.rM{m}(c));
+                                o     = 1;
+                                cope  = plm.eC{y}{m}{c}{o}'*psi;
+                                sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
                                 cohen = cope./sigsq.^.5;
                                 if opts.evperdat,
                                     MtM = zeros(1,size(psi,2));
                                     for t = 1:size(psi,2),
-                                        MtM(t) = plm.eC{m}{c}'/(M(:,:,t)'*M(:,:,t))*plm.eC{m}{c};
+                                        MtM(t) = plm.eC{y}{m}{c}{o}'/(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o};
                                     end
                                     varcope = MtM .* sigsq;
                                 else
-                                    varcope = plm.eC{m}{c}'/(M'*M)*plm.eC{m}{c} * sigsq;
+                                    varcope = plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o} * sigsq;
                                 end
                                 palm_quicksave(cope,0,opts,plm,y,m,c, ...
                                     sprintf('%s',opts.o,plm.Ykindstr{y},'_cope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
@@ -1426,7 +1384,7 @@ for po = P_outer,
                                     sprintf('%s',opts.o,plm.Ykindstr{y},'_varcope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 palm_quicksave(cohen,0,opts,plm,y,m,c, ...
                                     sprintf('%s',opts.o,plm.Ykindstr{y},'_cohen',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
-                                clear('cope','varcope','cohen');
+                                clear('cope','varcope','cohen','o');
                             end
                             
                             % Unless this is negbin mode, there is no need to fit
@@ -1447,7 +1405,7 @@ for po = P_outer,
                             
                             % Compute the pivotal statistic.
                             if opts.pearson,
-                                G  {y}{m}{c} = fastpiv(M,psi,Y,y,m,c,1,plm);
+                                G  {y}{m}{c} = fastpiv{m}{c}(M,psi,Y,y,m,c,1,plm);
                                 df2{y}{m}{c} = NaN;
                             elseif ~ opts.accel.lowrank || p == 1,
                                 [G{y}{m}{c},df2{y}{m}{c}] = fastpiv{m}{c}(M,psi,res,y,m,c,1,plm);
@@ -1467,14 +1425,14 @@ for po = P_outer,
                                 
                                 % First permutation, compute constants and init variables
                                 if p == 1,
-                                    kappa {y}{m}{c}  = sqrt((plm.N-plm.rM{m}(c))/(plm.eC{m}{c}'*pinv(M'*M)*plm.eC{m}{c}));
+                                    kappa {y}{m}{c}  = sqrt((plm.N-plm.rM{y}{m}{c}{o})/(plm.eC{y}{m}{c}{o}'*pinv(M'*M)*plm.eC{y}{m}{c}{o}));
                                     Bperms{y}{m}{c}  = zeros(plm.nJ{m}(c),plm.Ysiz(y));
                                     Sperms{y}{m}{c}  = zeros(plm.nJ{m}(c),plm.Ysiz(y));
                                     plm.df2{y}{m}{c} = df2{y}{m}{c};
                                 end
                                 
                                 % Initial permutations are done fully
-                                [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{m}{c},psi,res);
+                                [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{y}{m}{c}{o},psi,res);
                                 if ~ opts.accel.lowrank_recon,
                                     G{y}{m}{c} = kappa{y}{m}{c}*Bperms{y}{m}{c}(p,:)./Sperms{y}{m}{c}(p,:).^.5;
                                 end
@@ -1482,7 +1440,7 @@ for po = P_outer,
                             elseif p == plm.nJ{m}(c),
                                 
                                 % Including this one
-                                [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{m}{c},psi,res);
+                                [Bperms{y}{m}{c}(p,:),Sperms{y}{m}{c}(p,:)] = lowrankfac(plm.eC{y}{m}{c}{o},psi,res);
                                 if ~ opts.accel.lowrank_recon,
                                     G{y}{m}{c} = kappa{y}{m}{c}*Bperms{y}{m}{c}(p,:)./Sperms{y}{m}{c}(p,:).^.5;
                                 end
@@ -1520,7 +1478,7 @@ for po = P_outer,
                                 
                             else
                                 % Once a basis is known, use it.
-                                [B{y}{m}{c},S{y}{m}{c}] = lowrankfac(plm.eC{m}{c},psi,res);
+                                [B{y}{m}{c},S{y}{m}{c}] = lowrankfac(plm.eC{y}{m}{c}{o},psi,res);
                                 B{y}{m}{c} = palm_lowrank(B{y}{m}{c},plm.Bbasis{y}{m}{c},ysel{y},false);
                                 S{y}{m}{c} = palm_lowrank(S{y}{m}{c},plm.Sbasis{y}{m}{c},ysel{y},Smean{y}{m}{c});
                                 G{y}{m}{c} = kappa{y}{m}{c}*B{y}{m}{c}./S{y}{m}{c}.^.5;
@@ -1532,7 +1490,7 @@ for po = P_outer,
                                     % different random set of voxels:
                                     ysel{y} = randperm(plm.Ysiz(y));
                                     ysel{y} = ysel{y}(1:plm.nsel(y));
-                                    [B{y}{m}{c},S{y}{m}{c}] = lowrankfac(plm.eC{m}{c},psi,res);
+                                    [B{y}{m}{c},S{y}{m}{c}] = lowrankfac(plm.eC{y}{m}{c}{o},psi,res);
                                     B{y}{m}{c} = palm_lowrank(B{y}{m}{c},plm.Bbasis{y}{m}{c},ysel{y},false);
                                     S{y}{m}{c} = palm_lowrank(S{y}{m}{c},plm.Sbasis{y}{m}{c},ysel{y},Smean{y}{m}{c});
                                     G{y}{m}{c} = kappa{y}{m}{c}*B{y}{m}{c}./S{y}{m}{c}.^.5;
@@ -1856,7 +1814,7 @@ for po = P_outer,
                                 yselq = true(1,size(plm.Yq{m}{c},2),1);
                             end
                             if any(yselq),
-                                psiq = zeros(plm.nEV{m}(c),sum(yselq),plm.nY);
+                                psiq = zeros(plm.nEV{y}{m}{c}{o},sum(yselq),plm.nY);
                                 resq = zeros(plm.N,size(psiq,2),plm.nY);
                                 for y = 1:plm.nY,
                                     [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yq{m}{c}(:,yselq,y),y,m,c,1,plm);
@@ -2560,6 +2518,11 @@ Mr = plm.Mp{y}{m}{c}{o};
 Yr = (P'*plm.Rz{y}{m}{c}{o} + plm.Hz{y}{m}{c}{o})*Y;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [Mr,Yr] = freedmanlane3d(P,Y,y,m,c,o,plm)
+% size(plm.Mp)
+% size(plm.Mp{y})
+% size(plm.Mp{y}{m})
+% size(plm.Mp{y}{m}{c})
+% size(plm.Mp{y}{m}{c}{o})
 Mr = plm.Mp{y}{m}{c}{o};
 Yr = zeros(size(Y));
 for t = 1:size(Y,2),
@@ -2851,7 +2814,7 @@ for b = 1:plm.nVG,
 end
 G = zeros(1,nT);
 for t = 1:nT,
-    A = psi(:,t)'*plm.eC{m}{c};
+    A = psi(:,t)'*plm.eC{y}{m}{c}{o};
     G(t) = A/(plm.eC{y}{m}{c}{o}'/(reshape(cte(:,t),[r r]))* ...
         plm.eC{y}{m}{c}{o})*A'/plm.rC0{m}(c);
 end
@@ -2937,9 +2900,9 @@ nT  = size(res,3);
 df0 = plm.M-plm.rM{1}{m}{c}{1};
 S = spr(res)/df0;
 Q = zeros(1,nT);
-cte2 = plm.eC{m}{c}'/(M'*M)*plm.eC{m}{c};
+cte2 = plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o};
 for t = 1:nT,
-    cte1 = plm.eC{m}{c}'*psi(:,:,t)*plm.Dset{m}{c};
+    cte1 = plm.eC{y}{m}{c}{o}'*psi(:,:,t)*plm.Dset{y}{m}{c}{o};
     Q(1,t) = cte1/(plm.Dset{m}{c}'*S(:,:,t)*plm.Dset{m}{c})/cte2*cte1';
 end
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2951,8 +2914,8 @@ df0 = plm.N-plm.rM{1}{m}{c}{1};
 S = spr(res)/df0;
 Q = zeros(1,nT);
 for t = 1:nT,
-    cte1 = plm.eC{m}{c}'*psi(:,:,t)*plm.Dset{m}{c};
-    cte2 = plm.eC{m}{c}'/(M(:,:,t)'*M(:,:,t))*plm.eC{m}{c};
+    cte1 = plm.eC{y}{m}{c}{o}'*psi(:,:,t)*plm.Dset{m}{c};
+    cte2 = plm.eC{y}{m}{c}{o}'/(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o};
     Q(1,t) = cte1/(plm.Dset{m}{c}'*S(:,:,t)*plm.Dset{m}{c})/cte2*cte1';
 end
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2982,11 +2945,11 @@ function Q = fastq(M,psi,res,m,c,plm)
 res = permute(res,[1 3 2]);
 psi = permute(psi,[1 3 2]);
 nT   = size(res,3);
-cte2 = plm.eC{m}{c}'/(M'*M)*plm.eC{m}{c};
+cte2 = plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o};
 E    = spr(res);
 Q    = zeros(1,nT);
 for t = 1:nT,
-    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{m}{c};
+    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{y}{m}{c}{o};
     H      = cte1/cte2*cte1';
     Q(1,t) = plm.qfun(plm.Dset{m}{c}'*E(:,:,t)*plm.Dset{m}{c},H);
 end
@@ -2998,8 +2961,8 @@ nT   = size(res,3);
 E    = spr(res);
 Q    = zeros(1,nT);
 for t = 1:nT,
-    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{m}{c};
-    cte2   = plm.eC{m}{c}'/(M(:,:,t)'*M(:,:,t))*plm.eC{m}{c};
+    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{y}{m}{c}{o};
+    cte2   = plm.eC{y}{m}{c}{o}'/(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o};
     H      = cte1/cte2*cte1';
     Q(1,t) = plm.qfun(plm.Dset{m}{c}'*E(:,:,t)*plm.Dset{m}{c},H);
 end
