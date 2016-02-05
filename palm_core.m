@@ -27,7 +27,7 @@ function palm_core(varargin)
 
 % Take the arguments. Save a small log if needed.
 clear global plm opts; % comment for debugging
-%global plm opts; % uncomment for debugging
+global plm opts; % uncomment for debugging
 ticI = tic;
 [opts,plm] = palm_takeargs(varargin{:});
 
@@ -806,11 +806,7 @@ for m = 1:plm.nM,
             
         else % i.e., if not evperdat
             
-            if opts.missingdata,
-                if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-            else
-                loopY = 1;
-            end
+            if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
             for y = loopY,
                 if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
                 tmp = cell(numel(loopO),1);
