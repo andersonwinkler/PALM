@@ -131,9 +131,9 @@ fprintf('-npc : Shortcut to "-npcmethod <default method> -npcmod".\n\n');
 
 fprintf('-mv <statistic> : Do classical multivariate analysis (MV), such as\n');
 fprintf('	MANOVA and MANCOVA, using the the specified statistic, which can\n');
-fprintf('	be one of: Wilks, Hotelling, Pillai, Roy_ii or Roy_iii. All but\n');
-fprintf('	the last can also be used to calculate parametric p-values and\n');
-fprintf('	spatial statistics.\n\n');
+fprintf('	be one of: Wilks, HotellingTsq, Lawley, Pillai, Roy_ii, Roy_iii,\n');
+fprintf('	or CCA. All but Roy_iii can also be used to calculate parametric\n');
+fprintf('	p-values and spatial statistics.\n\n');
 
 fprintf('-pearson : Instead of t, F, v or G, compute either the Pearson"s\n');
 fprintf('	correlation coefficient, r (if the constrast has rank = 1), or the\n');

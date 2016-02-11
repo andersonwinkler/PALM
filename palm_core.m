@@ -26,8 +26,8 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Take the arguments. Save a small log if needed.
-clear global plm opts; % comment for debugging
-global plm opts; % uncomment for debugging
+%clear global plm opts; % comment for debugging
+%global plm opts; % uncomment for debugging
 ticI = tic;
 [opts,plm] = palm_takeargs(varargin{:});
 

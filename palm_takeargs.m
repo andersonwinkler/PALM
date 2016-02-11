@@ -587,6 +587,7 @@ while a <= narginx,
         case '-npcmethod', % basic
             
             % Do the non-parametric combination?
+            opts.NPC = true;
             if nargin == a || (nargin > a && strcmp(vararginx{a+1}(1),'-')),
                 error('The option "-npcmethod" requires a combining method to be indicated.');
                 
@@ -1432,9 +1433,6 @@ end
 if Ni > 1 && opts.inputmv,
     error('Option "-inputmv" cannot be used with more than one "-i".')
 end
-if opts.inputmv,
-    opts.saveunivariate = false;
-end
 if opts.concordant && ~ opts.NPC,
     error('The option "-concordant" is for use with NPC only.');
 end
@@ -1850,7 +1848,7 @@ end
 if opts.inputmv,
     tmp1 = plm.Yset{1};
     tmp2 = plm.Ykindstr{1};
-    nY  = size(tmp1,2);
+    nY   = size(tmp1,2);
     plm.Yset     = cell(nY,1);
     plm.Ykindstr = cell(nY,1);
     for y = 1:nY,
