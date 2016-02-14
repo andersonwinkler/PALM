@@ -510,8 +510,8 @@ for m = 1:plm.nM,
                 end
             end
         else
-            y = m; o = 1;
             % Partition the design
+            y = m; o = 1;
             [plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o},plm.eCm{y}{m}{c}{o},plm.eCx{y}{m}{c}{o}] = ...
                 palm_partition(plm.Mset{m},plm.Cset{m}{c},opts.pmethodr);
             plm.Mp{y}{m}{c}{o} = cat(2,plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o});
@@ -527,7 +527,7 @@ for m = 1:plm.nM,
             clear y o;
         end
         for y = loopY,
-            if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
+            if opts.missingdata, loopO = 1:numel(plm.Mp{y}{m}{c}); else loopO = 1; end
             for o = loopO,
                 
                 % To avoid rank deficiency issues after partitioning, remove
@@ -548,16 +548,43 @@ for m = 1:plm.nM,
                 % residual-forming matrix changes at every permutation, the trace
                 % for each VG remains unchanged, hence it's not necessary to recompute
                 % it for every permutation.
-                [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
-                plm.Hm{y}{m}{c}{o} = zeros(N,N,nT);
-                plm.Rm{y}{m}{c}{o} = zeros(N,N,nT);
-                for t = 1:nT,
-                    plm.Hm {y}{m}{c}{o}(:,:,t) = plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t));
-                    plm.Rm {y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hm{y}{m}{c}{o}(:,:,t);
-                    plm.dRm{y}{m}{c}{o}(:,t)   = diag(plm.Rm{y}{m}{c}{o}(:,:,t)); % this is used for the pivotal statistic
+                if plm.nVG == 1,
+                    if strcmpi(opts.rmethod,'terbraak'),
+                        [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
+                        I = eye(N);
+                        plm.Hm{y}{m}{c}{o} = zeros(N,N,nT);
+                        plm.Rm{y}{m}{c}{o} = zeros(N,N,nT);
+                        for t = 1:nT,
+                            plm.Hm{y}{m}{c}{o}(:,:,t) = plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t));
+                            plm.Rm{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hm{y}{m}{c}{o}(:,:,t);
+                        end
+                        plm.rM{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},1) - round(sum(diag(plm.Rm{y}{m}{c}{o}(:,:,1)))); % this is faster than rank(M)
+                    else
+                        plm.rM{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},1) - rank(plm.Mp{y}{m}{c}{o}(:,:,1));
+                    end
+                else % that is, if plm.nVG > 1
+                    if strcmpi(opts.rmethod,'terbraak'),
+                        [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
+                        I = eye(N);
+                        plm.Hm{y}{m}{c}{o}  = zeros(N,N,nT);
+                        plm.Rm{y}{m}{c}{o}  = zeros(N,N,nT);
+                        plm.dRm{y}{m}{c}{o} = zeros(N,nT);
+                        for t = 1:nT,
+                            plm.Hm{y}{m}{c}{o}(:,:,t) = plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t));
+                            plm.Rm{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hm{y}{m}{c}{o}(:,:,t);
+                            plm.dRm{y}{m}{c}{o}(:,t)  = diag(plm.Rm{y}{m}{c}{o}(:,:,t)); % this is used for the pivotal statistic
+                        end
+                    else
+                        [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
+                        I = eye(N);
+                        plm.dRm{y}{m}{c}{o} = zeros(N,nT);
+                        for t = 1:nT,
+                            plm.dRm{y}{m}{c}{o}(:,t) = diag(I - plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t))); % this is used for the pivotal statistic
+                        end
+                    end
+                    plm.rM{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},1) - round(sum(plm.dRm{y}{m}{c}{o}(:,1))); % this is faster than rank(M)
                 end
-                plm.rM {y}{m}{c}{o} = size(plm.X{y}{m}{c}{o},1) - round(sum(plm.dRm{y}{m}{c}{o}(:,1,1))); % this is faster than rank(M)
-                plm.nEV{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},2);  % number of regressors in the design
+                plm.nEV{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},2);
             end
         end
         clear y o;
@@ -566,12 +593,16 @@ for m = 1:plm.nM,
         % using any of them all anyway.
         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
         for y = loopY,
-            if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
-            for o = loopO,
-                if isempty(plm.Z{y}{m}{c}{o}),
-                    plm.rmethod{y}{m}{c}{o} = 'noz';
-                else
-                    plm.rmethod{y}{m}{c}{o} = opts.rmethod;
+            if opts.missingdata, loopO = 1:numel(plm.Mp{y}{m}{c}); else loopO = 1; end
+            if ~ opts.missingdata && y > 1,
+                plm.rmethod{y}{m}{c}{o} = plm.rmethod{1}{m}{c}{1};
+            else
+                for o = loopO,
+                    if isempty(plm.Z{y}{m}{c}{o}),
+                        plm.rmethod{y}{m}{c}{o} = 'noz';
+                    else
+                        plm.rmethod{y}{m}{c}{o} = opts.rmethod;
+                    end
                 end
             end
         end
@@ -671,7 +702,11 @@ for m = 1:plm.nM,
         if opts.evperdat,
             if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
             for y = loopY,
-                if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
+                if opts.missingdata, loopO = 1:numel(plm.Mp{y}{m}{c}); else loopO = 1; end
+                tmp = cell(numel(loopO),1);
+                plm.eC{y}{m}{c} = tmp;
+                plm.Hz{y}{m}{c} = tmp;
+                plm.Rz{y}{m}{c} = tmp;
                 for o = loopO,
                     
                     % Pick the regression/permutation method
@@ -679,74 +714,126 @@ for m = 1:plm.nM,
                     switch lower(plm.rmethod{y}{m}{c}{o}),
                         
                         case 'noz',
-                            prepglm{m}{c}         = @noz3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
-                            
-                        case 'exact',
-                            prepglm{m}{c}         = @exact3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
-                            
-                        case 'draper-stoneman',
-                            prepglm{m}{c}         = @draperstoneman3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
-                            
-                        case 'still-white',
-                            plm.Rz {y}{m}{c}{o}   = zeros(N,N,size(plm.Mset{m},3));
-                            for t = 1:size(plm.Mset{m},3),
-                                plm.Rz{y}{m}{c}{o}(:,:,t) = eye(plm.N) - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                prepglm{m}{c}      = @noz3d;
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
-                            prepglm{m}{c}         = @stillwhite3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
+
+                        case 'exact',
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}      = @exact3d;
+                            end
+
+                        case 'draper-stoneman',
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @draperstoneman3d;
+                            end
+
+                        case 'still-white',
+                            if ~ opts.missingdata && y > 1,
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Rz{y}{m}{c}{o} = zeros(N,N,size(plm.Mset{m},3));
+                                I = eye(N);
+                                for t = 1:size(plm.Mset{m},3),
+                                    plm.Rz{y}{m}{c}{o}(:,:,t) = I - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
+                                end
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}      = @stillwhite3d;
+                            end
                             
                         case 'freedman-lane',
-                            plm.Hz {y}{m}{c}{o}   = zeros(N,N,size(plm.Mset{m},3));
-                            plm.Rz {y}{m}{c}{o}   = plm.Hz{y}{m}{c}{o};
-                            for t = 1:size(plm.Mset{m},3),
-                                plm.Hz{y}{m}{c}{o}(:,:,t) = plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
-                                plm.Rz{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hz{y}{m}{c}{o}(:,:,t);
+                            if ~ opts.missingdata && y > 1,
+                                plm.Hz{y}{m}{c}{o} = plm.Hz{1}{m}{c}{1};
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                            else
+                                plm.Hz{y}{m}{c}{o} = zeros(N,N,size(plm.Mset{m},3));
+                                plm.Rz{y}{m}{c}{o} = plm.Hz{y}{m}{c}{o};
+                                I = eye(N);
+                                for t = 1:size(plm.Mset{m},3),
+                                    plm.Hz{y}{m}{c}{o}(:,:,t) = plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
+                                    plm.Rz{y}{m}{c}{o}(:,:,t) = I - plm.Hz{y}{m}{c}{o}(:,:,t);
+                                end
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @freedmanlane3d;
                             end
-                            prepglm{m}{c}         = @freedmanlane3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
                             
                         case 'terbraak',
-                            isterbraak            = true;
-                            prepglm{m}{c}         = @terbraak3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
-                            
+                            isterbraak = true;
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @terbraak3d;
+                            end
+
                         case 'kennedy',
-                            plm.Rz {y}{m}{c}{o}   = zeros(N,N,size(plm.Mset{m},3));
-                            for t = 1:size(plm.Mset{m},3),
-                                plm.Rz{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
-                            end
-                            prepglm{m}{c}         = @kennedy3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
-                            
-                        case 'manly',
-                            prepglm{m}{c}         = @manly; % same as the usual Manly
-                            plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
-                            
-                        case 'huh-jhun',
-                            plm.Rz {y}{m}{c}{o}   = zeros(N,N,size(plm.Mset{m},3));
-                            for t = 1:size(plm.Mset{m},3),
-                                plm.Rz{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
-                                [Q,D]             = schur(plm.Rz{y}{m}{c}{o}(:,:,t));
-                                D                 = abs(diag(D)) < 10*eps;
-                                Q(:,D)            = [];
-                                if t == 1,
-                                    plm.hj{y}{m}{c}{o} = zeros([size(Q) size(plm.Mset{m},3)]);
+                            if ~ opts.missingdata && y > 1,
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Rz{y}{m}{c}{o} = zeros(N,N,size(plm.Mset{m},3));
+                                I = eye(N);
+                                for t = 1:size(plm.Mset{m},3),
+                                    plm.Rz{y}{m}{c}{o}(:,:,t) = I - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
                                 end
-                                plm.hj{y}{m}{c}{o}(:,:,t) = Q;
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}      = @kennedy3d;
                             end
-                            prepglm{m}{c}         = @huhjhun3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCx{y}{m}{c}{o};
+
+                        case 'manly',
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @manly; % same as the usual Manly
+                            end
+
+                        case 'huh-jhun',
+                            if ~ opts.missingdata && y > 1,
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.hj{y}{m}{c}{o} = plm.hj{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Rz{y}{m}{c}{o} = zeros(N,N,size(plm.Mset{m},3));
+                                I = eye(N);
+                                for t = 1:size(plm.Mset{m},3),
+                                    plm.Rz{y}{m}{c}{o}(:,:,t) = I - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
+                                    [Q,D]          = schur(plm.Rz{y}{m}{c}{o}(:,:,t));
+                                    D              = abs(diag(D)) < 10*eps;
+                                    Q(:,D)         = [];
+                                    if t == 1,
+                                        plm.hj{y}{m}{c}{o} = zeros([size(Q) size(plm.Mset{m},3)]);
+                                    end
+                                    plm.hj{y}{m}{c}{o}(:,:,t) = Q;
+                                end
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}      = @huhjhun3d;
+                            end
                             
                         case 'smith',
-                            plm.Rz {y}{m}{c}{o}   = zeros(N,N,size(plm.Mset{m},3));
-                            for t = 1:size(plm.Mset{m},3),
-                                plm.Rz{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
+                            if ~ opts.missingdata && y > 1,
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Rz{y}{m}{c}{o} = zeros(N,N,size(plm.Mset{m},3));
+                                I = eye(N);
+                                for t = 1:size(plm.Mset{m},3),
+                                    plm.Rz{y}{m}{c}{o}(:,:,t) = I - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
+                                end
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @smith3d;
                             end
-                            prepglm{m}{c}         = @smith3d;
-                            plm.eC {y}{m}{c}{o}   = plm.eCm{y}{m}{c}{o};
                     end
                     
                     % Pick a name for the function that will compute the statistic
@@ -808,7 +895,7 @@ for m = 1:plm.nM,
             
             if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
             for y = loopY,
-                if opts.missingdata, loopO = 1:numel(plm.X{y}{m}{c}); else loopO = 1; end
+                if opts.missingdata, loopO = 1:numel(plm.Mp{y}{m}{c}); else loopO = 1; end
                 tmp = cell(numel(loopO),1);
                 plm.eC{y}{m}{c} = tmp;
                 plm.Hz{y}{m}{c} = tmp;
@@ -820,64 +907,109 @@ for m = 1:plm.nM,
                     switch lower(plm.rmethod{y}{m}{c}{o}),
                         
                         case 'noz',
-                            prepglm{m}{c}            = @noz;
-                            plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
-                            
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}      = @noz;
+                            end
+
                         case 'exact',
-                            prepglm{m}{c}            = @exact;
-                            plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
-                            
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}      = @exact;
+                            end
+
                         case 'draper-stoneman',
-                            prepglm{m}{c}            = @draperstoneman;
-                            plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
-                            
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @draperstoneman;
+                            end
+
                         case 'still-white',
-                            plm.Rz{y}{m}{c}{o}       = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
-                            prepglm{m}{c}            = @stillwhite;
-                            plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
+                            if ~ opts.missingdata && y > 1,
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Rz{y}{m}{c}{o} = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}      = @stillwhite;
+                            end
                             
                         case 'freedman-lane',
-                            plm.Hz{y}{m}{c}{o}       = plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
-                            plm.Rz{y}{m}{c}{o}       = eye(N) - plm.Hz{y}{m}{c}{o};
-                            prepglm{m}{c}            = @freedmanlane;
-                            plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
-                            
+                            if ~ opts.missingdata && y > 1,
+                                plm.Hz{y}{m}{c}{o} = plm.Hz{1}{m}{c}{1};
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Hz{y}{m}{c}{o} = plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
+                                plm.Rz{y}{m}{c}{o} = eye(N) - plm.Hz{y}{m}{c}{o};
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @freedmanlane;
+                            end
+
                         case 'terbraak',
-                            isterbraak               = true;
-                            prepglm{m}{c}            = @terbraak;
-                            plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
-                            
+                            isterbraak = true;
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @terbraak;
+                            end
+
                         case 'kennedy',
-                            plm.Rz {y}{m}{c}{o}      = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
-                            prepglm{m}{c}            = @kennedy;
-                            plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
-                            
+                            if ~ opts.missingdata && y > 1,
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Rz{y}{m}{c}{o} = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
+                                plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}      = @kennedy;
+                            end
+
                         case 'manly',
-                            prepglm{m}{c}            = @manly;
-                            plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
-                            
+                            if ~ opts.missingdata && y > 1,
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}      = @manly;
+                            end
+
                         case 'huh-jhun',
-                            plm.Rz {y}{m}{c}{o}      = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
-                            [plm.hj{y}{m}{c}{o},D]   = schur(plm.Rz{y}{m}{c}{o});
-                            D                        = abs(diag(D)) < 10*eps;
-                            plm.hj {y}{m}{c}{o}(:,D) = [];
-                            prepglm{m}{c}            = @huhjhun;
-                            plm.eC {y}{m}{c}{o}      = plm.eCx{y}{m}{c}{o};
+                            if ~ opts.missingdata && y > 1,
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.hj{y}{m}{c}{o} = plm.hj{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Rz{y}{m}{c}{o}       = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
+                                [plm.hj{y}{m}{c}{o},D]   = schur(plm.Rz{y}{m}{c}{o});
+                                D                        = abs(diag(D)) < 10*eps;
+                                plm.hj{y}{m}{c}{o}(:,D)  = [];
+                                plm.eC{y}{m}{c}{o}       = plm.eCx{y}{m}{c}{o};
+                                prepglm{m}{c}            = @huhjhun;
+                            end
                             
                         case 'smith',
-                            plm.Rz {y}{m}{c}{o}      = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
-                            prepglm{m}{c}            = @smith;
-                            plm.eC {y}{m}{c}{o}      = plm.eCm{y}{m}{c}{o};
+                            if ~ opts.missingdata && y > 1,
+                                plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
+                                plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
+                            else
+                                plm.Rz{y}{m}{c}{o}       = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
+                                plm.eC{y}{m}{c}{o}       = plm.eCm{y}{m}{c}{o};
+                                prepglm{m}{c}            = @smith;
+                            end
                     end
                     
                     % Pick a name for the function that will compute the statistic
                     % and the name to save the files later.
                     if opts.pearson,
                         if     plm.rC{m}(c) == 1,
-                            %fastpiv  {y}{m}{c}{o} = @(M,psi,Y)fastr(M,psi,Y,y,m,c,o,plm);
                             fastpiv{m}{c} = @fastr;
                         elseif plm.rC{m}(c) >  1,
-                            %fastpiv  {y}{m}{c}{o} = @(M,psi,Y)fastrsq(M,psi,Y,y,m,c,o,plm);
                             fastpiv{m}{c} = @fastrsq;
                         end
                     else
@@ -1164,7 +1296,7 @@ for po = P_outer,
                                 
                                 % If rank(C)=1, the test can be two-tailed,
                                 % under the assumption that it's symmetric
-                                if opts.ISE && plm.rC{m}(c) == 1 && ~ opts.twotail,
+                                if plm.rC{m}(c) == 1 && ~ opts.twotail,
                                     [M,Y] = prepglm{m}{c}(eye(plm.N),plm.Yset{y},y,m,c,1,plm);
                                     psi   = zeros(size(M,2),plm.Ysiz(y));
                                     for tt = 1:plm.Ysiz(y),
@@ -1219,7 +1351,7 @@ for po = P_outer,
                             
                             % If rank(C)=1, the test can be two-tailed,
                             % under the assumption that it's symmetric
-                            if opts.ISE && plm.rC{m}(c) == 1 && ~ opts.twotail,
+                            if plm.rC{m}(c) == 1 && ~ opts.twotail,
                                 [M,Y] = prepglm{m}{c}(eye(plm.N),plm.Yset{y},y,m,c,1,plm);
                                 sgn   = sign(plm.eC{y}{m}{c}{o}'*(M\Y));
                                 isgn  = sgn < 0;
@@ -2514,11 +2646,6 @@ Mr = plm.Mp{y}{m}{c}{o};
 Yr = (P'*plm.Rz{y}{m}{c}{o} + plm.Hz{y}{m}{c}{o})*Y;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [Mr,Yr] = freedmanlane3d(P,Y,y,m,c,o,plm)
-% size(plm.Mp)
-% size(plm.Mp{y})
-% size(plm.Mp{y}{m})
-% size(plm.Mp{y}{m}{c})
-% size(plm.Mp{y}{m}{c}{o})
 Mr = plm.Mp{y}{m}{c}{o};
 Yr = zeros(size(Y));
 for t = 1:size(Y,2),

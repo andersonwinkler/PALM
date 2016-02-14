@@ -143,7 +143,14 @@ if ~ isempty(X),
         mask         = S.data;
         S.data       = double(S.data);
         S.data(mask) = X;
-        S.filename   = filename;
+        if strcmpi(lower(S.readwith),'dpxread') && (...
+                strcmpi(plm.Ykindstr{y},'_dpv') || ...
+                strcmpi(plm.Ykindstr{y},'_dpf') || ...
+                strcmpi(plm.Ykindstr{y},'_dpx') ),
+            S.filename = sprintf('%s.%s',filename,plm.Ykindstr{y}(2:end));
+        else
+            S.filename = filename;
+        end
     end
     
     % Save
