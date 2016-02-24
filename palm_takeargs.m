@@ -1124,6 +1124,10 @@ end
 % Check for the existence of other programs for input/output
 palm_checkprogs;
 
+if Ni == 0,
+    error('Missing input data (missing "-i").');
+end
+
 % Make sure the NPC options make sense
 % - if -npc only, it's -npcmod
 % - if -npcmod only, it's -npcmod
@@ -1586,7 +1590,7 @@ for i = 1:Ni,
     % statistics has been invoked, check if surfaces are available
     % and with compatible size, then compute the area (dpv or dpf).
     % Also take this opportunity to compute the adjacency matrix.
-    if opts.spatial.do || strcmpi(plm.masks{i},'load'),
+    if opts.spatial.do && strcmpi(plm.masks{i},'load'),
         if Ns == 0,
             error([ ...
                 'To use spatial statistics with vertexwise or facewise data it is\n'...
