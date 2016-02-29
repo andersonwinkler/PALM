@@ -1071,8 +1071,6 @@ for m = 1:plm.nM,
     end
 end
 
-plm.prepglm = prepglm;
-
 % Create the permutation set, while taking care of the synchronized
 % permutations (see the inner loop below)
 if opts.syncperms,
@@ -1476,6 +1474,7 @@ for po = P_outer,
                         % Do the GLM fit.
                         if opts.missingdata && ~ opts.mcar,
                             [G{y}{m}{c},df2{y}{m}{c}] = fastmiss(Y,M,y,m,c,plm,fastpiv{m}{c});
+                            
                         else
                             if opts.evperdat,
                                 psi = zeros(size(M,2),plm.Ysiz(y));
@@ -1662,14 +1661,17 @@ for po = P_outer,
                         % Convert to z-score
                         if   ( ~ opts.accel.lowrank || ...
                                 (opts.accel.lowrank &&   opts.accel.lowrank_recon && p > plm.nJ{m}(c)) || ...
-                                (opts.accel.lowrank && ~ opts.accel.lowrank_recon)),
+                                (opts.accel.lowrank && ~ opts.accel.lowrank_recon)) && ...
+                                (~ opts.missingdata || opts.mcar),
                             G{y}{m}{c} = palm_gtoz(G{y}{m}{c},plm.rC0{m}(c),df2{y}{m}{c});
                         end
                         
                         % Save the unpermuted statistic if z-score
                         if opts.zstat,
-                            if p == 1 && y == 1,
-                                plm.Gname{m}{c} = sprintf('_z%s',plm.Gname{m}{c}(2:end));
+                            if p == 1,
+                                if plm.Gname{m}{c}(2) ~= 'z',
+                                    plm.Gname{m}{c} = sprintf('_z%s',plm.Gname{m}{c}(2:end));
+                                end
                                 if opts.saveunivariate,
                                     palm_quicksave(G{y}{m}{c},0,opts,plm,y,m,c, ...
                                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));

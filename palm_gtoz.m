@@ -14,6 +14,7 @@ function Z = palm_gtoz(G,df1,df2)
 %
 % If df2 = NaN and df1 = 1, G is treated as Pearson's r.
 % If df2 = NaN and df1 > 1, G is treated as R^2.
+% If df2 = NaN and df1 = 0, G is treated as z already.
 % 
 % _____________________________________
 % Anderson Winkler
@@ -41,7 +42,7 @@ function Z = palm_gtoz(G,df1,df2)
 
 % Note that for speed, there's no argument checking.
 
-% If df2 is NaN, this is r or R^2
+% If df2 is NaN, this is r, R^2, or z already
 if isnan(df2(1)),
     
     if df1 == 0,

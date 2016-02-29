@@ -1283,7 +1283,7 @@ if Nimiss || Ndmiss,
     end
     if ~ opts.zstat && ~ opts.mcar,
         warning([...
-            'With missing data MNAR, the option "-zstat" is mandatory.\n' ...
+            'With missing data MAR/MNAR, the option "-zstat" is mandatory.\n' ...
             '         Adding it automatically.%s'],'');
         opts.zstat = true;
     end
@@ -1590,7 +1590,8 @@ for i = 1:Ni,
     % statistics has been invoked, check if surfaces are available
     % and with compatible size, then compute the area (dpv or dpf).
     % Also take this opportunity to compute the adjacency matrix.
-    if opts.spatial.do && strcmpi(plm.masks{i},'load'),
+    if opts.spatial.do && ...
+            any(strcmpi(plm.masks{i}.readwith,{'load','fs_load_mgh'})),
         if Ns == 0,
             error([ ...
                 'To use spatial statistics with vertexwise or facewise data it is\n'...
@@ -1602,14 +1603,14 @@ for i = 1:Ni,
         end
         
         % String defining the types, for the filenames and other tasks.
-        if size(plm.srf{s}.data.vtx,1) == ...
-                max(size(plm.masks{i}.data));
+        if any(size(plm.srf{s}.data.vtx,1) == ...
+                size(plm.masks{i}.data));
             plm.Yissrf(i)   = true;
             plm.Yisvtx(i)   = true;
             plm.Yisfac(i)   = false;
             plm.Ykindstr{i} = '_dpv';
-        elseif size(plm.srf{s}.data.fac,1) == ...
-                max(size(plm.masks{i}.data));
+        elseif any(size(plm.srf{s}.data.fac,1) == ...
+                size(plm.masks{i}.data));
             plm.Yissrf(i)   = true;
             plm.Yisvtx(i)   = false;
             plm.Yisfac(i)   = true;
@@ -2377,12 +2378,13 @@ for i = 1:Nimiss,
     end
     u = unique(tmp(:));
     if numel(tmp) ~= size(tmp,1) || size(tmp,1) ~= plm.N ...
-            || numel(u) > 2 || min(abs(u)),
+            || numel(u) ~= 2 || min(abs(u)),
         error([ ...
             'The missing data indicator ("-imiss") must:\n', ...
             '- Be a column vector;\n', ...
             '- Have the same lengh as the input data;\n', ...
-            '- Be a binary logical indicator (0/1).%s'],'');
+            '- Be a binary logical indicator (0/1);\n',...
+            '- Contain both zeroes and ones.%s'],'');
     end
     plm.Ymiss{i} = tmp;
 end
