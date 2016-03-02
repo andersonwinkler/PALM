@@ -560,7 +560,7 @@ for m = 1:plm.nM,
                         end
                         plm.rM{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},1) - round(sum(diag(plm.Rm{y}{m}{c}{o}(:,:,1)))); % this is faster than rank(M)
                     else
-                        plm.rM{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},1) - rank(plm.Mp{y}{m}{c}{o}(:,:,1));
+                        plm.rM{y}{m}{c}{o} = rank(plm.Mp{y}{m}{c}{o}(:,:,1));
                     end
                 else % that is, if plm.nVG > 1
                     if strcmpi(opts.rmethod,'terbraak'),
@@ -1237,7 +1237,7 @@ for po = P_outer,
                         plm.Qmax{m}{c} = zeros(plm.nP{m}(c),1);
                     end
                     if ~ opts.accel.negbin,
-                        psiq = zeros(plm.nEV{y}{m}{c}{o},plm.Ysiz(1),plm.nY);
+                        psiq = zeros(plm.nEV{1}{m}{c}{1},plm.Ysiz(1),plm.nY);
                         resq = zeros(plm.N,plm.Ysiz(1),plm.nY);
                     end
                 end
@@ -1942,7 +1942,7 @@ for po = P_outer,
                                 yselq = true(1,size(plm.Yq{m}{c},2),1);
                             end
                             if any(yselq),
-                                psiq = zeros(plm.nEV{y}{m}{c}{o},sum(yselq),plm.nY);
+                                psiq = zeros(plm.nEV{1}{m}{c}{1},sum(yselq),plm.nY);
                                 resq = zeros(plm.N,size(psiq,2),plm.nY);
                                 for y = 1:plm.nY,
                                     [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yq{m}{c}(:,yselq,y),y,m,c,1,plm);
@@ -3020,12 +3020,12 @@ function Q = fasttsq(M,psi,res,m,c,plm)
 res = permute(res,[1 3 2]);
 psi = permute(psi,[1 3 2]);
 nT  = size(res,3);
-df0 = plm.M-plm.rM{1}{m}{c}{1};
+df0 = plm.N-plm.rM{1}{m}{c}{1};
 S = spr(res)/df0;
 Q = zeros(1,nT);
-cte2 = plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o};
+cte2 = plm.eC{1}{m}{c}{1}'/(M'*M)*plm.eC{1}{m}{c}{1};
 for t = 1:nT,
-    cte1 = plm.eC{y}{m}{c}{o}'*psi(:,:,t)*plm.Dset{y}{m}{c}{o};
+    cte1 = plm.eC{1}{m}{c}{1}'*psi(:,:,t)*plm.Dset{m}{c};
     Q(1,t) = cte1/(plm.Dset{m}{c}'*S(:,:,t)*plm.Dset{m}{c})/cte2*cte1';
 end
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3037,8 +3037,8 @@ df0 = plm.N-plm.rM{1}{m}{c}{1};
 S = spr(res)/df0;
 Q = zeros(1,nT);
 for t = 1:nT,
-    cte1 = plm.eC{y}{m}{c}{o}'*psi(:,:,t)*plm.Dset{m}{c};
-    cte2 = plm.eC{y}{m}{c}{o}'/(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o};
+    cte1 = plm.eC{1}{m}{c}{1}'*psi(:,:,t)*plm.Dset{m}{c};
+    cte2 = plm.eC{1}{m}{c}{1}'/(M(:,:,t)'*M(:,:,t))*plm.eC{1}{m}{c}{1};
     Q(1,t) = cte1/(plm.Dset{m}{c}'*S(:,:,t)*plm.Dset{m}{c})/cte2*cte1';
 end
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -3068,11 +3068,11 @@ function Q = fastq(M,psi,res,m,c,plm)
 res = permute(res,[1 3 2]);
 psi = permute(psi,[1 3 2]);
 nT   = size(res,3);
-cte2 = plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o};
+cte2 = plm.eC{1}{m}{c}{1}'/(M'*M)*plm.eC{1}{m}{c}{1};
 E    = spr(res);
 Q    = zeros(1,nT);
 for t = 1:nT,
-    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{y}{m}{c}{o};
+    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{1}{m}{c}{1};
     H      = cte1/cte2*cte1';
     Q(1,t) = plm.qfun(plm.Dset{m}{c}'*E(:,:,t)*plm.Dset{m}{c},H);
 end
@@ -3084,8 +3084,8 @@ nT   = size(res,3);
 E    = spr(res);
 Q    = zeros(1,nT);
 for t = 1:nT,
-    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{y}{m}{c}{o};
-    cte2   = plm.eC{y}{m}{c}{o}'/(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o};
+    cte1   = plm.Dset{m}{c}'*psi(:,:,t)'*plm.eC{1}{m}{c}{1};
+    cte2   = plm.eC{1}{m}{c}{1}'/(M(:,:,t)'*M(:,:,t))*plm.eC{1}{m}{c}{1};
     H      = cte1/cte2*cte1';
     Q(1,t) = plm.qfun(plm.Dset{m}{c}'*E(:,:,t)*plm.Dset{m}{c},H);
 end
