@@ -26,8 +26,8 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Take the arguments. Save a small log if needed.
-clear global plm opts; % comment for debugging
-global plm opts; % uncomment for debugging
+%clear global plm opts; % comment for debugging
+%global plm opts; % uncomment for debugging
 ticI = tic;
 [opts,plm] = palm_takeargs(varargin{:});
 
@@ -141,10 +141,10 @@ end
 
 % Variables for NPC
 if opts.NPC,
-    plm.npcstr = '_npc_';                      % default string for the filenames.
+    plm.npcstr = '_npc_';                        % default string for the filenames.
     if       opts.npcmod && ~ opts.npccon,
-        Gnpc                        = cell(1);              % to store the G-stats ready for NPC
-        df2npc                      = cell(1);              % to store the df2 ready for NPC
+        Gnpc                        = cell(1);         % to store the G-stats ready for NPC
+        df2npc                      = cell(1);         % to store the df2 ready for NPC
         Gnpc  {1}                   = zeros(plm.nY,plm.Ysiz(1));
         df2npc{1}                   = zeros(plm.nY,plm.Ysiz(1));
         T                           = cell(plm.nM,1);  % to store T at each permutation
@@ -501,15 +501,16 @@ for m = 1:plm.nM,
             for y = loopY,
                 [plm.X{y}{m}{c},plm.Z{y}{m}{c},...
                     plm.eCm{y}{m}{c},plm.eCx{y}{m}{c},...
-                    plm.Ymissidx{y}{m}{c},plm.Pidx{y}{m}{c},...
+                    plm.Ymiss{y},...
+                    plm.imov{y}{m}{c},plm.ifix{y}{m}{c},...
                     plm.isdiscrete{y}{m}{c}] = ...
                     palm_misspart(plm.Mset{m},plm.Cset{m}{c},...
-                    opts.pmethodr,plm.Ymiss{y},plm.Mmiss{m},opts.mcar);
+                    opts.pmethodr,plm.Ymiss{y},plm.Mmiss{m},opts.mcar,opts.rmethod);
                 for o = 1:numel(plm.X{y}{m}{c}),
                     plm.Mp{y}{m}{c}{o} = cat(2,plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o});
                 end
             end
-        else
+        else % not missing data
             % Partition the design
             y = m; o = 1;
             [plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o},plm.eCm{y}{m}{c}{o},plm.eCx{y}{m}{c}{o}] = ...
@@ -908,7 +909,11 @@ for m = 1:plm.nM,
                             else
                                 plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @noz;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @nozm;
+                            else
+                                prepglm{m}{c} = @noz;
+                            end
                             
                         case 'exact',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -916,7 +921,11 @@ for m = 1:plm.nM,
                             else
                                 plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @exact;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @exactm;
+                            else
+                                prepglm{m}{c} = @exact;
+                            end
                             
                         case 'draper-stoneman',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -924,7 +933,11 @@ for m = 1:plm.nM,
                             else
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @draperstoneman;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @draperstonemanm;
+                            else
+                                prepglm{m}{c} = @draperstoneman;
+                            end
                             
                         case 'still-white',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -934,7 +947,11 @@ for m = 1:plm.nM,
                                 plm.Rz{y}{m}{c}{o} = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
                                 plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @stillwhite;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @stillwhitem;
+                            else
+                                prepglm{m}{c} = @stillwhite;
+                            end
                             
                         case 'freedman-lane',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -946,7 +963,11 @@ for m = 1:plm.nM,
                                 plm.Rz{y}{m}{c}{o} = eye(N) - plm.Hz{y}{m}{c}{o};
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @freedmanlane;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @freedmanlanem;
+                            else
+                                prepglm{m}{c} = @freedmanlane;
+                            end
                             
                         case 'terbraak',
                             isterbraak = true;
@@ -955,7 +976,11 @@ for m = 1:plm.nM,
                             else
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @terbraak;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @terbraakm;
+                            else
+                                prepglm{m}{c} = @terbraak;
+                            end
                             
                         case 'kennedy',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -965,7 +990,11 @@ for m = 1:plm.nM,
                                 plm.Rz{y}{m}{c}{o} = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
                                 plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @kennedy;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @kennedym;
+                            else
+                                prepglm{m}{c} = @kennedy;
+                            end
                             
                         case 'manly',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -973,7 +1002,11 @@ for m = 1:plm.nM,
                             else
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @manly;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @manlym;
+                            else
+                                prepglm{m}{c} = @manly;
+                            end
                             
                         case 'huh-jhun',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -987,7 +1020,11 @@ for m = 1:plm.nM,
                                 plm.hj{y}{m}{c}{o}(:,D)  = [];
                                 plm.eC{y}{m}{c}{o}       = plm.eCx{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @huhjhun;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @huhjhunm;
+                            else
+                                prepglm{m}{c} = @huhjhun;
+                            end
                             
                         case 'smith',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -997,7 +1034,11 @@ for m = 1:plm.nM,
                                 plm.Rz{y}{m}{c}{o}       = eye(N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
                                 plm.eC{y}{m}{c}{o}       = plm.eCm{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @smith;
+                            if opts.missingdata,
+                                prepglm{m}{c} = @smithm;
+                            else
+                                prepglm{m}{c} = @smith;
+                            end
                     end
                     
                     % Pick a name for the function that will compute the statistic
@@ -1437,28 +1478,42 @@ for po = P_outer,
                             [M,Y] = prepglm{m}{c}(plm.Pset{p},plm.Yset{y}(:,ysel{y}),y,m,c,1,plm);
                         elseif opts.missingdata,
                             nO = numel(plm.X{y}{m}{c});
-                            loopO = 1:nO;
                             MM = cell(1,nO);
                             YY = cell(1,nO);
+                            loopO = 1:nO;
                             for o = loopO,
-                                if     isempty(plm.Ymissidx{y}{m}{c}{o}),
+
+                                % Prepare permutation matrix and indices of data and
+                                % design that will be removed
+                                Ptmp  = plm.Pset{p};
+                                ikeep = true(plm.N,1);
+                                if isempty(plm.imov{y}{m}{c}{o}),
+                                    if isempty(plm.ifix{y}{m}{c}{o}),
+                                        % do nothing, it's faster this here
+                                    else
+                                        Ptmp  = plm.Pset{p}(plm.ifix{y}{m}{c}{o},:);
+                                        ikeep = plm.ifix{y}{m}{c}{o};
+                                    end
+                                else
+                                    if isempty(plm.ifix{y}{m}{c}{o}),
+                                        Ptmp  = plm.Pset{p}(any(plm.Pset{p}(:,plm.imov{y}{m}{c}{o}),2),:);
+                                        ikeep = ~~(plm.Pset{p}*plm.imov{y}{m}{c}{o});
+                                    else
+                                        Ptmp  = plm.Pset{p}(any(plm.Pset{p}(:,plm.imov{y}{m}{c}{o}),2) & plm.ifix{y}{m}{c}{o},:);
+                                        ikeep = ~~(plm.Pset{p}*plm.imov{y}{m}{c}{o}) & plm.ifix{y}{m}{c}{o};
+                                    end
+                                end
+                                if isempty(plm.Ymiss{y}{o}),
                                     Ytmp = plm.Yset{y};
-                                elseif islogical(plm.Ymissidx{y}{m}{c}{o}),
-                                    Ytmp = plm.Yset{y}(plm.Ymissidx{y}{m}{c}{o},:);
                                 else
-                                    Ytmp = plm.Ymissidx{y}{m}{c}{o};
+                                    Ytmp = plm.Ymiss{y}{o};
                                 end
-                                if isempty(plm.Pidx{y}{m}{c}{o}),
-                                    Ptmp = plm.Pset{p};
-                                else
-                                    idxr = logical(plm.Pset{p}*plm.Pidx{y}{m}{c}{o});
-                                    idxc = plm.Pidx{y}{m}{c}{o};
-                                    Ptmp = plm.Pset{p}(idxr,idxc);
-                                end
+                                
+                                % Select pieces for the data and design
                                 if isempty(plm.Z{y}{m}{c}{o}),
-                                    [MM{o},YY{o}] = noz(Ptmp,Ytmp,y,m,c,o,plm);
+                                    [MM{o},YY{o}] = nozm(Ptmp,Ytmp,y,m,c,o,plm,ikeep);
                                 else
-                                    [MM{o},YY{o}] = prepglm{m}{c}(Ptmp,Ytmp,y,m,c,o,plm);
+                                    [MM{o},YY{o}] = prepglm{m}{c}(Ptmp,Ytmp,y,m,c,o,plm,ikeep);
                                 end
                             end
                             clear o;
@@ -2596,6 +2651,10 @@ Mr = zeros(size(plm.X{y}{m}{c}{o}));
 for t = 1:size(Y,2),
     Mr(:,:,t) = P*plm.X{y}{m}{c}{o}(:,:,t);
 end
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Y] = nozm(P,Y,y,m,c,o,plm,ikeep)
+Y  = Y(ikeep,:);
+Mr = P*plm.X{y}{m}{c}{o};
 
 % ==============================================================
 function [Mr,Yr] = exact(P,Y,y,m,c,o,plm)
@@ -2611,6 +2670,12 @@ for t = 1:size(Y,2),
     Yr(:,t)   = Y(:,t) - plm.Z{y}{m}{c}{o}(:,:,t)*plm.g;
     Mr(:,:,t) = P*plm.X{y}{m}{c}{o}(:,:,t);
 end
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Yr] = exacmt(P,Y,y,m,c,o,plm,ikeep)
+% The "exact" method, in which the coefficients for
+% the nuisance are known.
+Yr = Y(ikeep,:) - plm.Z{y}{m}{c}{o}(ikeep,:)*plm.g;
+Mr = P*plm.X{y}{m}{c}{o};
 
 % ==============================================================
 function [Mr,Y] = draperstoneman(P,Y,y,m,c,o,plm)
@@ -2623,6 +2688,10 @@ Mr = zeros(size(plm.Mp{y}{m}{c}{o}));
 for t = 1:size(Y,2),
     Mr(:,:,t) = horzcat(P*plm.X{y}{m}{c}{o}(:,:,t),plm.Z{y}{m}{c}{o}(:,:,t));
 end
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Yr] = draperstonemanm(P,Y,y,m,c,o,plm,ikeep)
+Mr = horzcat(P*plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o}(ikeep,:));
+Yr = Y(ikeep,:);
 
 % ==============================================================
 function [Mr,Yr] = stillwhite(P,Y,y,m,c,o,plm)
@@ -2638,6 +2707,10 @@ for t = 1:size(Y,2),
     Yr(:,t)   = plm.Rz{y}{m}{c}{o}*Y(:,t);
     Mr(:,:,t) = P*plm.X{y}{m}{c}{o}(:,:,t);
 end
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Yr] = stillwhitem(P,Y,y,m,c,o,plm,ikeep)
+Yr = plm.Rz{y}{m}{c}{o}(ikeep,:)*Y;
+Mr = P*plm.X{y}{m}{c}{o};
 
 % ==============================================================
 function [Mr,Yr] = freedmanlane(P,Y,y,m,c,o,plm)
@@ -2651,6 +2724,10 @@ Yr = zeros(size(Y));
 for t = 1:size(Y,2),
     Yr(:,t) = (P'*plm.Rz{y}{m}{c}{o}(:,:,t) + plm.Hz{y}{m}{c}{o}(:,:,t))*Y(:,t);
 end
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Yr] = freedmanlanem(P,Y,y,m,c,o,plm,ikeep)
+Mr = plm.Mp{y}{m}{c}{o}(ikeep,:);
+Yr = (P*plm.Rz{y}{m}{c}{o} + plm.Hz{y}{m}{c}{o}(ikeep,:))*Y;
 
 % ==============================================================
 function [Mr,Yr] = manly(P,Y,y,m,c,o,plm)
@@ -2658,6 +2735,10 @@ function [Mr,Yr] = manly(P,Y,y,m,c,o,plm)
 % There's no need for a 3D version of this method.
 Mr = plm.Mp{y}{m}{c}{o};
 Yr = P'*Y;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Yr] = manlym(P,Y,y,m,c,o,plm,ikeep)
+Mr = plm.Mp{y}{m}{c}{o}(ikeep,:);
+Yr = P*Y;
 
 % ==============================================================
 function [Mr,Yr] = terbraak(P,Y,y,m,c,o,plm)
@@ -2672,6 +2753,10 @@ Yr = zeros(size(Y));
 for t = 1:size(Y,2),
     Yr(:,t) = (P'*plm.Rm{y}{m}{c}{o}(:,:,t) + plm.Hm{y}{m}{c}{o}(:,:,t))*Y(:,t); % original method
 end
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Yr] = terbraakm(P,Y,y,m,c,o,plm,ikeep)
+Mr = plm.Mp{y}{m}{c}{o}(ikeep,:);
+Yr = (P'*plm.Rm{y}{m}{c}{o} + plm.Hm{y}{m}{c}{o}(ikeep,:))*Y; % original method
 
 % ==============================================================
 function [Mr,Yr] = kennedy(P,Y,y,m,c,o,plm)
@@ -2686,6 +2771,10 @@ for t = 1:size(Y,2),
     Mr(:,:,t) = plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t);
     Yr(:,t) = P'*plm.Rz{y}{m}{c}{o}(:,:,t)*Y(:,t);
 end
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Yr] = kennedym(P,Y,y,m,c,o,plm,ikeep)
+Mr = plm.Rz{y}{m}{c}{o}(ikeep,:)*plm.X{y}{m}{c}{o};
+Yr = P*plm.Rz{y}{m}{c}{o}*Y;
 
 % ==============================================================
 function [Mr,Yr] = huhjhun(P,Y,y,m,c,o,plm)
@@ -2713,9 +2802,17 @@ Mr = zeros(size(plm.Mp{y}{m}{c}{o}));
 for t = 1:size(Y,2),
     Mr(:,:,t) = horzcat(P*plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t),plm.Z{y}{m}{c}{o}(:,:,t));
 end
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [Mr,Y] = smithm(P,Y,y,m,c,o,plm,ikeep)
+Mr = horzcat(P*plm.Rz{y}{m}{c}{o}*plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o}(ikeep,:));
 
 % ==============================================================
 % Below are the functions to compute univariate statistics:
+% ==============================================================
+% Reference:
+% * Winkler AM, Ridgway GR, Webster MA, Smith SM, Nichols TE.
+%   Permutation inference for the general linear model.
+%   NeuroImage, 2014;92:381-397 (Open Access)
 % ==============================================================
 function G = fastr(M,psi,Y,y,m,c,o,plm)
 % This only works if:
@@ -2986,18 +3083,25 @@ for o = 1:nO,
         Gtmp(o,:) = yates(Y{o},M{o});
     else
         psi = M{o}\Y{o};
-        %if rank(M{o}) < size(M{o},2), o, M{o}, end
         res = Y{o} - M{o}*psi;
         Gtmp(o,:) = fastpiv(M{o},psi,res,y,m,c,o,plm);
+        if o > 1,
+            Gtmp(o,:) = abs(Gtmp(o,:));
+        end
         Gtmp(o,:) = palm_gtoz(Gtmp(o,:),plm.rC0{m}(c),size(M{o},1)-size(M{o},2));
     end
-end; clear o
+end
 G = plm.fastnpc(Gtmp,0,df2);
 P = plm.pparanpc(G,nO);
 Z = sqrt(2)*erfcinv(2*P);
 
 % ==============================================================
 % Below are the functions to compute multivariate statistics:
+% ==============================================================
+% Reference:
+% * Winkler AM, Webster MA, Brooks JC, Tracey I, Smith SM, Nichols TE.
+%   Non-Parametric Combination and related permutation tests for
+%   neuroimaging. Hum Brain Mapp. 2016 Apr;37(4):1486-511. (Open Access)
 % ==============================================================
 function Q = fasttsq(M,psi,res,m,c,plm)
 % This works only if:
@@ -3180,6 +3284,11 @@ cc      = max(min(D(k,k),1),0);
 
 % ==============================================================
 % Below are the functions to combine statistics:
+% ==============================================================
+% Reference:
+% * Winkler AM, Webster MA, Brooks JC, Tracey I, Smith SM, Nichols TE.
+%   Non-Parametric Combination and related permutation tests for
+%   neuroimaging. Hum Brain Mapp. 2016 Apr;37(4):1486-511. (Open Access)
 % ==============================================================
 function T = tippett(G,df1,df2)
 T = min(palm_gpval(G,df1,df2),[],1);
@@ -3488,8 +3597,9 @@ end
 function Z = yates(Y,X);
 % Compute a Chi^2 test in a 2x2 contingency table, using the
 % Yates correction, then convert to a z-statistic.
-% Reference: Yates F. Contingency Tables Involving Small Numbers
-% and the Chi^2 test. Suppl to J R Stat Soc. 1934;1(2):217-35.
+% Reference:
+% * Yates F. Contingency tables involving small numbers and the
+%   Chi^2 test. Suppl to J R Stat Soc. 1934;1(2):217-35.
 
 % Make sure it's all binary:
 Y  = Y > 0;

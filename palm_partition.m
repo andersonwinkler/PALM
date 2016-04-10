@@ -105,7 +105,7 @@ switch lower(meth),
                 Z = zeros(size(M,1),rZ,size(M,3));
             end
             tmpX = M(:,:,t)*pinvC;
-            [tmpZ,~]  = svd(M(:,:,t)*C0);
+            [tmpZ,~,~]  = svd(M(:,:,t)*C0);
             Z(:,:,t) = tmpZ(:,1:rZ);
             X(:,:,t) = tmpX-Z(:,:,t)*pinv(Z(:,:,t))*tmpX;
         end

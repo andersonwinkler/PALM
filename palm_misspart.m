@@ -1,4 +1,4 @@
-function [X,Z,eCm,eCx,Y,Pidx,isdiscrete] = palm_misspart(M,C,meth,my,mm,mcar)
+function [X,Z,eCm,eCx,Y,imov,ifix,isdiscrete] = palm_misspart(M,C,meth,my,mm,mcar,rmethod)
 % Partition the model for missing data, generating all the sub-models
 % that can later be subjected to NPC.
 %
@@ -22,7 +22,7 @@ function [X,Z,eCm,eCx,Y,Pidx,isdiscrete] = palm_misspart(M,C,meth,my,mm,mcar)
 % eCx  : Same as above, but considering only X.
 % Y    : Cell array with indices (logical) or data for regression (double).
 %        If empty, it's equivalent to a vector index full of ones.
-% Pidx : Cell array of indices to select the rows of the permutation
+% idx  : Cell array of indices to select the rows of the permutation
 %        matrices.
 % isdiscrete : Vector indicating if the respective cell array contains both
 %        discrete (binary) X and Y, such that the Chi^2 (Yates) test can be
@@ -68,6 +68,7 @@ mx = all(mx,2);
 iy = ~ my;
 ix = ~ any(mx,2);
 iz = ~ any(mz,2); % if mz is empty, iz is also empty
+ia = true(size(iy));
 
 % These are the actual missing indicators (double) that go in the design:
 my = double(my);
@@ -79,128 +80,178 @@ mz = double(mz);
 isdiscrete = false;
 if isempty(mz),
     if       all(iy) &   all(ix), % Case 1
-        Pidx{1} = [];  Y{1} = [];  X{1} = x;  Z{1} = [];  eC{1} = ecm;
+        idx{1}     = [ia ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
     elseif ~ all(iy) &   all(ix), % Case 2
         if mcar,
-            Pidx{1} = iy;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
+            idx{1} = [iy ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
         else
-            Pidx{1} = iy;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
-            Pidx{2} = [];  Y{2} = my;       X{2} = x;               Z{2} = [];  eC{2} = ecm;
+            idx{1} = [iy ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{2} = [ia ia];      Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
             isdiscrete = [false false];
         end
     elseif   all(iy) & ~ all(ix), % Case 3
         if mcar,
-            Pidx{1} = ix;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
+            idx{1} = [ia ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
         else
-            Pidx{1} = ix;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
-            Pidx{2} = [];  Y{2} = [];       X{2} = mx;              Z{2} = [];  eC{2} = mkcon(X{2},Z{2});
+            idx{1} = [ia ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{2} = [ia ia];      Y{2} = [];   X{2} = mx;   Z{2} = [];   eC{2} = mkcon(X{2},Z{2});
             isdiscrete = [false false];
         end
     elseif ~ all(iy) & ~ all(ix), % Case 5
         if mcar,
-            Pidx{1} = iy & ix;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
+            idx{1} = [iy ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
         else
-            Pidx{1} = iy & ix;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = [];  eC{1} = ecm;
-            Pidx{2} = ix;       Y{2} = my(Pidx{2});  X{2} = x(Pidx{2},:,:);  Z{2} = [];  eC{2} = ecm;
-            Pidx{3} = iy;       Y{3} = Pidx{3};      X{3} = mx(Pidx{3});     Z{3} = [];  eC{3} = ecm;
-            Pidx{4} = [];       Y{4} = my;           X{4} = mx;              Z{4} = [];  eC{4} = ecm; % discrete
+            idx{1} = [iy ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{2} = [ia ix];      Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
+            idx{3} = [iy ia];      Y{3} = [];   X{3} = mx;   Z{3} = [];   eC{3} = ecm;
+            idx{4} = [ia ia];      Y{4} = my;   X{4} = mx;   Z{4} = [];   eC{4} = ecm; % discrete
             isdiscrete = [false false false true];
         end
     end
 else
     if       all(iy) &   all(ix) &   all(iz), % Case 1
-        Pidx{1} = [];  Y{1} = [];  X{1} = x;  Z{1} = z;  eC{1} = ecm;
+        idx{1}     = [ia ia ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
     elseif ~ all(iy) &   all(ix) &   all(iz), % Case 2
         if mcar,
-            Pidx{1} = iy;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
+            idx{1} = [iy ia ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
         else
-            Pidx{1} = iy;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
-            Pidx{2} = [];  Y{2} = my;       X{2} = x;               Z{2} = z;               eC{2} = ecm;
+            idx{1} = [iy ia ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
+            idx{2} = [ia ia ia];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
             isdiscrete = [false false];
         end
     elseif   all(iy) & ~ all(ix) &   all(iz), % Case 3
         if mcar,
-            Pidx{1} = ix;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
+            idx{1} = [ia ix ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
         else
-            Pidx{1} = ix;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
-            Pidx{2} = [];  Y{2} = [];       X{2} = mx;              Z{2} = z;               eC{2} = mkcon(X{2},Z{2});
+            idx{1} = [ia ix ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
+            idx{2} = [ia ia ia];   Y{2} = [];   X{2} = mx;   Z{2} = z;    eC{2} = mkcon(X{2},Z{2});
             isdiscrete = [false false];
         end
     elseif   all(iy) &   all(ix) & ~ all(iz), % Case 4
         if mcar,
-            Pidx{1} = iz;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
+            idx{1} = [ia ia iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
         else
-            Pidx{1} = iz;  Y{1} = Pidx{1};  X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
-            Pidx{2} = [];  Y{2} = [];       X{2} = x;               Z{2} = mz;              eC{2} = mkcon(ecx,Z{2});
+            idx{1} = [ia ia iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
+            idx{2} = [ia ia ia];   Y{2} = [];   X{2} = x;    Z{2} = mz;   eC{2} = mkcon(ecx,Z{2});
             isdiscrete = [false false];
         end
     elseif ~ all(iy) & ~ all(ix) &   all(iz), % Case 5
         if mcar,
-            Pidx{1} = iy & ix;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
+            idx{1} = [iy ix ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
         else
-            Pidx{1} = iy & ix;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
-            Pidx{2} = ix;       Y{2} = my(Pidx{2});  X{2} = x(Pidx{2},:,:);  Z{2} = z(Pidx{2},:,:);  eC{2} = ecm;
-            Pidx{3} = iy;       Y{3} = Pidx{3};      X{3} = mx(Pidx{3});     Z{3} = z(Pidx{3},:,:);  eC{3} = mkcon(X{3},Z{3});
-            Pidx{4} = [];       Y{4} = my;           X{4} = mx;              Z{4} = z;               eC{4} = mkcon(X{4},Z{4}); % discrete
+            idx{1} = [iy ix ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
+            idx{2} = [ia ix ia];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
+            idx{3} = [iy ia ia];   Y{3} = [];   X{3} = mx;   Z{3} = z;    eC{3} = mkcon(X{3},Z{3});
+            idx{4} = [ia ia ia];   Y{4} = my;   X{4} = mx;   Z{4} = z;    eC{4} = mkcon(X{4},Z{4}); % discrete
             isdiscrete = [false false false true];
         end
     elseif ~ all(iy) &   all(ix) & ~ all(iz), % Case 6
         if mcar,
-            Pidx{1} = iy & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
+            idx{1} = [iy ia iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
         else
-            Pidx{1} = iy & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
-            Pidx{2} = iz;       Y{2} = my(Pidx{2});  X{2} = x(Pidx{2},:,:);  Z{2} = z(Pidx{2},:,:);  eC{2} = ecm;
-            Pidx{3} = iy;       Y{3} = Pidx{3};      X{3} = x(Pidx{3},:,:);  Z{3} = mz(Pidx{3});     eC{3} = mkcon(ecx,Z{3});
-            Pidx{4} = [];       Y{4} = my;           X{4} = x;               Z{4} = mz;              eC{4} = mkcon(ecx,Z{4});
+            idx{1} = [iy ia iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
+            idx{2} = [ia ia iz];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
+            idx{3} = [iy ia ia];   Y{3} = [];   X{3} = x;    Z{3} = mz;   eC{3} = mkcon(ecx,Z{3});
+            idx{4} = [ia ia ia];   Y{4} = my;   X{4} = x;    Z{4} = mz;   eC{4} = mkcon(ecx,Z{4});
             isdiscrete = [false false false false];
         end
     elseif   all(iy) & ~ all(ix) & ~ all(iz), % Case 7
         if mcar,
-            Pidx{1} = ix & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
+            idx{1} = [ia ix iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
         else
-            Pidx{1} = ix & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
-            Pidx{2} = iz;       Y{2} = Pidx{2};      X{2} = mx(Pidx{2});     Z{2} = z(Pidx{2},:,:);  eC{2} = mkcon(X{2},Z{2});
-            Pidx{3} = ix;       Y{3} = Pidx{3};      X{3} = x(Pidx{3},:,:);  Z{3} = mz(Pidx{3});     eC{3} = mkcon(ecx,Z{3});
-            Pidx{4} = [];       Y{4} = [];           X{4} = mx;              Z{4} = mz;              eC{4} = mkcon(X{4},Z{4});
+            idx{1} = [ia ix iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
+            idx{2} = [ia ia iz];   Y{2} = [];   X{2} = mx;   Z{2} = z;    eC{2} = mkcon(X{2},Z{2});
+            idx{3} = [ia ix ia];   Y{3} = [];   X{3} = x;    Z{3} = mz;   eC{3} = mkcon(ecx, Z{3});
+            idx{4} = [ia ia ia];   Y{4} = [];   X{4} = mx;   Z{4} = mz;   eC{4} = mkcon(X{4},Z{4});
             isdiscrete = [false false false false];
         end
     elseif ~ all(iy) & ~ all(ix) & ~ all(iz), % Case 8
         if mcar,
-            Pidx{1} = iy & ix & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
+            idx{1} = [iy ix iz];  Y{1} = [];   X{1} = x;     Z{1} = z;    eC{1} = ecm;
         else
-            Pidx{1} = iy & ix & iz;  Y{1} = Pidx{1};      X{1} = x(Pidx{1},:,:);  Z{1} = z(Pidx{1},:,:);  eC{1} = ecm;
-            Pidx{2} = ix & iz;       Y{2} = my(Pidx{2});  X{2} = x(Pidx{2},:,:);  Z{2} = z(Pidx{2},:,:);  eC{2} = ecm;
-            Pidx{3} = iy & iz;       Y{3} = Pidx{3};      X{3} = mx(Pidx{3});     Z{3} = z(Pidx{3},:,:);  eC{3} = mkcon(X{3},Z{3});
-            Pidx{4} = iy & ix;       Y{4} = Pidx{4};      X{4} = x(Pidx{4},:,:);  Z{4} = mz(Pidx{4});     eC{4} = mkcon(ecx,Z{4});
-            Pidx{5} = iz;            Y{5} = my(Pidx{5});  X{5} = mx(Pidx{5});     Z{5} = z(Pidx{5},:,:);  eC{5} = mkcon(X{5},Z{5}); % discrete?
-            Pidx{6} = ix;            Y{6} = my(Pidx{6});  X{6} = x(Pidx{6},:,:);  Z{6} = mz(Pidx{6});     eC{6} = mkcon(ecx,Z{6});
-            Pidx{7} = iy;            Y{7} = Pidx{7};      X{7} = mx(Pidx{7});     Z{7} = mz(Pidx{7});     eC{7} = mkcon(X{7},Z{7});
-            Pidx{8} = [];            Y{8} = my;           X{8} = mx;              Z{8} = mz;              eC{8} = mkcon(X{8},Z{8}); % discrete
+            idx{1} = [iy ix iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
+            idx{2} = [ia ix iz];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
+            idx{3} = [iy ia iz];   Y{3} = [];   X{3} = mx;   Z{3} = z;    eC{3} = mkcon(X{3},Z{3});
+            idx{4} = [iy ix ia];   Y{4} = [];   X{4} = x;    Z{4} = mz;   eC{4} = mkcon(ecx, Z{4});
+            idx{5} = [ia ia iz];   Y{5} = my;   X{5} = mx;   Z{5} = z;    eC{5} = mkcon(X{5},Z{5}); % discrete?
+            idx{6} = [ia ix ia];   Y{6} = my;   X{6} = x;    Z{6} = mz;   eC{6} = mkcon(ecx, Z{6});
+            idx{7} = [iy ia ia];   Y{7} = [];   X{7} = mx;   Z{7} = mz;   eC{7} = mkcon(X{7},Z{7});
+            idx{8} = [ia ia ia];   Y{8} = my;   X{8} = mx;   Z{8} = mz;   eC{8} = mkcon(X{8},Z{8}); % discrete
             isdiscrete = [false false false false false false false true];
         end
     end
 end
+nO = numel(idx);
 
-for o = 1:numel(Y),
-    if ~isempty(Y{o}) && ~islogical(Y{o}),
-        Y{o} = bsxfun(@minus,Y{o},mean(Y{o},1));
+% PCA of Z, via SVD.
+if ~ strcmpi(rmethod,'noz'),
+    [Z,eC] = svdz(Z,eC);
+end
+
+% Prepare the indices used to modify the permutation matrix and the
+% remainder of the model. That is:
+% - The non-permutable parts of the design will be: (P*imov & ifix).
+% - The permutation matrix will be:  P(P(:,imov) & ifix,:) = [].
+imov = cell(nO,1);
+ifix = imov;
+if isempty(Z{1}),
+    rmethod = 'noz';
+end
+switch lower(rmethod),
+    case 'noz',
+        for o = 1:nO,
+            imov{o} = idx{o}(:,2);
+            ifix{o} = idx{o}(:,1);
+        end
+    case 'draper-stoneman',
+        for o = 1:nO,
+            imov{o} = idx{o}(:,2);
+            ifix{o} = all(idx{o}(:,[1 3]),2);
+        end
+    case 'still-white',
+        for o = 1:nO,
+            imov{o} = [];
+            ifix{o} = all(idx{o}(:,1:2),2);
+        end
+    case 'freedman-lane',
+        for o = 1:nO,
+            imov{o} = [];
+            ifix{o} = all(idx{o}(:,1:2),2);
+        end
+    case 'manly',
+        for o = 1:nO,
+            imov{o} = idx{o}(:,1);
+            ifix{o} = all(idx{o}(:,2:3),2);
+        end
+    case 'terbraak',
+        for o = 1:nO,
+            imov{o} = [];
+            ifix{o} = idx{o}(:,1);
+        end
+    case 'kennedy',
+        for o = 1:nO,
+            imov{o} = [];
+            ifix{o} = all(idx{o}(:,1:2),2);
+        end
+    case 'smith',
+        for o = 1:nO,
+            imov{o} = [];
+            ifix{o} = all(idx{o}(:,1:2),2);
+        end
+end
+[Y,X,Z] = meancenter(Y,X,Z);
+
+% Remove all the full true indices, for speed later:
+for o = 1:nO,
+    if all(imov{o}),
+        imov{o} = [];
     end
-    X{o} = bsxfun(@minus,X{o},mean(X{o},1));
-    Z{o} = bsxfun(@minus,Z{o},mean(Z{o},1));
+    if all(ifix{o}),
+        ifix{o} = [];
+    end
 end
 
-% PCA of Z:
-for o = 1:numel(Z),
-    sX = size(X{o},2);
-    [u,s,~] = svd(Z{o},'econ');
-    ds = diag(s);
-    tol = 10 * max(size(Z{o})) * eps(max(ds));
-    idx = ds > tol;
-    Z{o} = u(:,idx)*s(idx,idx);
-    eC{o} = [eC{o}(1:sX,:); zeros(size(Z{o},2),size(eC{o},2))];
-end
-
-% Partition each of these models using the method indicated by the user:
+% Partition again each of these models using the method indicated by the user:
 eCm = cell(size(X));
 eCx = eCm;
 for o = 1:numel(Y),
@@ -210,14 +261,14 @@ end
 % Remove bits that are all zeroes (this needs to be adapted for voxelwise):
 for o = numel(Y):-1:1,
     if  (~isempty(Y{o}) && ~islogical(Y{o}) && all(Y{o} == 0,1)) || all(X{o}(:,1,1) == 0,1),
-        Pidx(o) = []; Y(o) = []; X(o) = []; Z(o) = [];
+        idx(o) = []; Y(o) = []; X(o) = []; Z(o) = [];
         eCm(o) = []; eCx(o) = [];
         isdiscrete(o) = [];
     end
 end
 
 % ==============================================================
-function eC = mkcon(X,Z);
+function eC = mkcon(X,Z)
 % Shortcut to create the effective contrast.
 if isempty(Z) || size(X,1) == size(Z,1),
     % Typical case, X is X and Z is Z.
@@ -225,4 +276,29 @@ if isempty(Z) || size(X,1) == size(Z,1),
 else
     % Here X is C, and Z is Z.
     eC = vertcat(X,zeros(size(Z,2),size(X,2)));
+end
+
+% ==============================================================
+function [Y,X,Z] = meancenter(Y,X,Z)
+% Mean center data and design.
+for o = 1:numel(Y),
+    if ~isempty(Y{o}) && ~islogical(Y{o}),
+        Y{o} = bsxfun(@minus,Y{o},mean(Y{o},1));
+    end
+    X{o} = bsxfun(@minus,X{o},mean(X{o},1));
+    Z{o} = bsxfun(@minus,Z{o},mean(Z{o},1));
+end
+
+% ==============================================================
+function [Z,eC] = svdz(Z,eC)
+% PCA of Z, via SVD.
+for o = 1:numel(Z),
+    sZ1 = size(Z{o},2);
+    [u,s,~] = svd(Z{o},'econ');
+    ds = diag(s);
+    tol = 10 * max(size(Z{o})) * eps(max(ds));
+    abv = ds > tol;
+    Z{o} = u(:,abv)*s(abv,abv);
+    sZ2  = size(Z{o},2);
+    eC{o} = eC{o}(1:end-(sZ1-sZ2),:);
 end
