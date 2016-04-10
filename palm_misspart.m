@@ -293,12 +293,12 @@ end
 function [Z,eC] = svdz(Z,eC)
 % PCA of Z, via SVD.
 for o = 1:numel(Z),
-    sZ1 = size(Z{o},2);
+    sZ1     = size(Z{o},2);
     [u,s,~] = svd(Z{o},'econ');
-    ds = diag(s);
-    tol = 10 * max(size(Z{o})) * eps(max(ds));
-    abv = ds > tol;
-    Z{o} = u(:,abv)*s(abv,abv);
-    sZ2  = size(Z{o},2);
-    eC{o} = eC{o}(1:end-(sZ1-sZ2),:);
+    ds      = diag(s);
+    tol     = 100 * max(size(Z{o})) * eps(max(ds));
+    abv     = ds > tol;
+    Z{o}    = u(:,abv)*s(abv,abv);
+    sZ2     = size(Z{o},2);
+    eC{o}   = eC{o}(1:end-(sZ1-sZ2),:);
 end

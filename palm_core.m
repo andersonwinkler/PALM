@@ -46,7 +46,6 @@ plm.eCm      = tmp; % effective contrast (for Mp)
 plm.eCx      = tmp; % effective contrast (for the effective regressors only)
 plm.eC       = tmp; % final effective contrast (depends on the method)
 plm.Mp       = tmp; % partitioned model, joined
-plm.rmethod  = tmp; % regression method (to allow the case of 'noz')
 plm.nEV      = tmp; % number of regressors
 plm.Hm       = tmp; % hat (projection) matrix
 plm.Rm       = tmp; % residual forming matrix
@@ -539,6 +538,8 @@ for m = 1:plm.nM,
                     idx = all(plm.X{y}{m}{c}{o}  == 0,1);
                     plm.X{y}{m}{c}{o}(:,idx)   = [];
                     plm.eCx{y}{m}{c}{o}(idx,:) = [];
+                    idx = all(plm.Z{y}{m}{c}{o}  == 0,1);
+                    plm.Z{y}{m}{c}{o}(:,idx)   = [];
                     idx = all(plm.Mp{y}{m}{c}{o} == 0,1);
                     plm.Mp{y}{m}{c}{o}(:,idx)  = [];
                     plm.eCm{y}{m}{c}{o}(idx,:) = [];
@@ -590,20 +591,20 @@ for m = 1:plm.nM,
         end
         clear y o;
         
-        % Some methods don't work well if Z is empty, and there is no point in
-        % using any of them all anyway.
-        if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-        for y = loopY,
-            if opts.missingdata, loopO = 1:numel(plm.Mp{y}{m}{c}); else loopO = 1; end
-            for o = loopO,
-                if isempty(plm.Z{y}{m}{c}{o}),
-                    plm.rmethod{y}{m}{c}{o} = 'noz';
-                else
-                    plm.rmethod{y}{m}{c}{o} = opts.rmethod;
-                end
-            end
-        end
-        clear y o;
+%         % Some methods don't work well if Z is empty, and there is no point in
+%         % using any of them all anyway.
+%         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
+%         for y = loopY,
+%             if opts.missingdata, loopO = 1:numel(plm.Mp{y}{m}{c}); else loopO = 1; end
+%             for o = loopO,
+%                 if isempty(plm.Z{y}{m}{c}{o}),
+%                     opts.rmethod{y}{m}{c}{o} = 'noz';
+%                 else
+%                     opts.rmethod{y}{m}{c}{o} = opts.rmethod;
+%                 end
+%             end
+%         end
+%         clear y o;
         
         % MV/CCA
         %%% DOUBLE-CHECK THE DEGREES-OF-FREEDOM!!
@@ -708,7 +709,7 @@ for m = 1:plm.nM,
                     
                     % Pick the regression/permutation method
                     N = size(plm.Mp{y}{m}{c}{o},1);
-                    switch lower(plm.rmethod{y}{m}{c}{o}),
+                    switch lower(opts.rmethod),
                         
                         case 'noz',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -868,9 +869,9 @@ for m = 1:plm.nM,
                 y = 1; o = 1;
                 % Residual forming matrix (Z only)
                 plm.Rz{y}{m}{c}{o} = zeros(plm.N,plm.N,plm.Ysiz(1));
-                if strcmpi(plm.rmethod{y}{m}{c}{o},'noz'),
+                if isempty(plm.Z{y}{m}{c}{o}),
                     plm.Rz{y}{m}{c}{o} = bsxfun(@plus,eye(plm.N),plm.Rz{y}{m}{c}{o});
-                elseif ~ any(strcmpi(plm.rmethod{y}{m}{c}{o},{ ...
+                elseif ~ any(strcmpi(opts.rmethod,{ ...
                         'still-white','freedman-lane',  ...
                         'kennedy','huh-jhun','smith'})),
                     I = eye(plm.N);
@@ -901,7 +902,7 @@ for m = 1:plm.nM,
                     
                     % Pick the regression/permutation method
                     N = size(plm.Mp{y}{m}{c}{o},1);
-                    switch lower(plm.rmethod{y}{m}{c}{o}),
+                    switch lower(opts.rmethod),
                         
                         case 'noz',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -1075,9 +1076,9 @@ for m = 1:plm.nM,
             if opts.CCA || opts.accel.noperm,
                 
                 % Residual forming matrix (Z only)
-                if strcmpi(plm.rmethod{m}{c},'noz'),
+                if isempty(plm.Z{y}{m}{c}{o}),
                     plm.Rz{m}{c} = eye(plm.N);
-                elseif ~ any(strcmpi(plm.rmethod{m}{c},{ ...
+                elseif ~ any(strcmpi(opts.rmethod,{ ...
                         'still-white','freedman-lane',  ...
                         'kennedy','huh-jhun','smith'})),
                     plm.Rz{m}{c} = eye(plm.N) - plm.Z{m}{c}*pinv(plm.Z{m}{c});
@@ -2886,6 +2887,7 @@ df2 = size(M,1)-plm.rM{y}{m}{c}{o};
 G   = plm.eC{y}{m}{c}{o}'*psi;
 den = sqrt(plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o}*sum(res.^2)./df2);
 G   = G./den;
+
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastt3d(M,psi,res,y,m,c,o,plm)
 df2 = size(M,1)-plm.rM{y}{m}{c}{o};
