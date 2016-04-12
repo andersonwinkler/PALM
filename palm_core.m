@@ -26,8 +26,8 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Take the arguments. Save a small log if needed.
-clear global plm opts; % comment for debugging
-global plm opts; % uncomment for debugging
+%clear global plm opts; % comment for debugging
+%global plm opts; % uncomment for debugging
 ticI = tic;
 [opts,plm] = palm_takeargs(varargin{:});
 
@@ -594,6 +594,21 @@ for m = 1:plm.nM,
         end
         clear y o;
         
+        % Some methods don't work well if Z is empty, and there is no point in
+        % using any of them all anyway.
+        if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
+        for y = loopY,
+            if opts.missingdata, loopO = 1:numel(plm.Mp{y}{m}{c}); else loopO = 1; end
+            for o = loopO,
+                if isempty(plm.Z{y}{m}{c}{o}),
+                    plm.rmethod{y}{m}{c}{o} = 'noz';
+                else
+                    plm.rmethod{y}{m}{c}{o} = opts.rmethod;
+                end
+            end
+        end
+        clear y o;
+        
         % MV/CCA
         %%% DOUBLE-CHECK THE DEGREES-OF-FREEDOM!!
         if opts.MV,
@@ -697,7 +712,7 @@ for m = 1:plm.nM,
                     
                     % Pick the regression/permutation method
                     N = size(plm.Mp{y}{m}{c}{o},1);
-                    switch lower(opts.rmethod),
+                    switch lower(plm.rmethod{y}{m}{c}{o}),
                         
                         case 'noz',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -890,7 +905,7 @@ for m = 1:plm.nM,
                     
                     % Pick the regression/permutation method
                     N = size(plm.Mp{y}{m}{c}{o},1);
-                    switch lower(opts.rmethod),
+                    switch lower(plm.rmethod{y}{m}{c}{o}),
                         
                         case 'noz',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
@@ -3068,9 +3083,11 @@ df2 = NaN;
 persistent Gtmp; % persistent so as to avoid re-allocing
 Gtmp = zeros(numel(Y),size(Y{1},2));
 nO = numel(Y);
-for o = 1:nO,
+for o = nO:-1:1,
     if plm.isdiscrete{y}{m}{c}(o),
         Gtmp(o,:) = yates(Y{o},M{o});
+    elseif testzeros(Y{o},M{o},y,m,c,o,plm),
+        Gtmp(o,:) = [];
     else
         psi = M{o}\Y{o};
         res = Y{o} - M{o}*psi;
@@ -3084,6 +3101,11 @@ end
 G = plm.fastnpc(Gtmp,0,df2);
 P = plm.pparanpc(G,nO);
 Z = sqrt(2)*erfcinv(2*P);
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function result = testzeros(Y,M,y,m,c,o,plm)
+Mhaszero = any(all(M(:,any(plm.eCm{y}{m}{c}{o},2)) == 0,1),2);
+Yhaszero = all(Y(:) == 0);
+result = Yhaszero | Mhaszero;
 
 % ==============================================================
 % Below are the functions to compute multivariate statistics:

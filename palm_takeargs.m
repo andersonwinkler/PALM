@@ -2370,20 +2370,27 @@ end
 
 % Load the missing indicators for the data ("imiss"):
 for i = 1:Nimiss,
-    tmp = palm_miscread(opts.imiss{i});
-    tmp = tmp.data;
-    if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N,
-        tmp = tmp(plm.subjidx,:);
-    end
-    u = unique(tmp(:));
-    if numel(tmp) ~= size(tmp,1) || size(tmp,1) ~= plm.N ...
-            || numel(u) ~= 2 || min(abs(u)),
-        error([ ...
-            'The missing data indicator ("-imiss") must:\n', ...
-            '- Be a column vector;\n', ...
-            '- Have the same lengh as the input data;\n', ...
-            '- Be a binary logical indicator (0/1);\n',...
-            '- Contain both zeroes and ones.%s'],'');
+    if strcmpi(opts.imiss{i},'none'),
+        if isempty(plm.subjidx)
+            tmp = zeros(plm.N,1);
+        else
+            tmp = zeros(size(plm.subjidx,1),1);
+        end
+    else
+        tmp = palm_miscread(opts.imiss{i});
+        tmp = tmp.data;
+        if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N,
+            tmp = tmp(plm.subjidx,:);
+        end
+        u = unique(tmp(:));
+        if numel(tmp) ~= size(tmp,1) || size(tmp,1) ~= plm.N ...
+                || numel(u) > 2 || min(abs(u)),
+            error([ ...
+                'The missing data indicator ("-imiss") must:\n', ...
+                '- Be a column vector;\n', ...
+                '- Have the same lengh as the input data;\n', ...
+                '- Be a binary logical indicator (0/1).%s'],'');
+        end
     end
     plm.Ymiss{i} = tmp;
 end
@@ -2395,18 +2402,26 @@ end
 
 % Load the missing indicators for the design ("dmiss"):
 for d = 1:Ndmiss,
-    tmp = palm_miscread(opts.dmiss{d});
-    tmp = tmp.data;
-    if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N,
-        tmp = tmp(plm.subjidx,:);
-    end
-    u = unique(tmp(:));
-    if size(tmp,1) ~= plm.N || numel(u) > 2 || min(abs(u)),
-        error([ ...
-            'The missing data indicator ("-dmiss") must:\n', ...
-            '- Have the same size as the respective design;\n', ...
-            '- Have the same lengh as the input data;\n', ...
-            '- Be a binary logical indicator (0/1).%s'],'');
+    if strcmpi(opts.dmiss{d},'none'),
+        if isempty(plm.subjidx)
+            tmp = zeros(plm.N,1);
+        else
+            tmp = zeros(size(plm.subjidx,1),1);
+        end
+    else
+        tmp = palm_miscread(opts.dmiss{d});
+        tmp = tmp.data;
+        if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N,
+            tmp = tmp(plm.subjidx,:);
+        end
+        u = unique(tmp(:));
+        if size(tmp,1) ~= plm.N || numel(u) > 2 || min(abs(u)),
+            error([ ...
+                'The missing data indicator ("-dmiss") must:\n', ...
+                '- Have the same size as the respective design;\n', ...
+                '- Have the same lengh as the input data;\n', ...
+                '- Be a binary logical indicator (0/1).%s'],'');
+        end
     end
     plm.Mmiss{d} = tmp;
 end
@@ -2417,9 +2432,15 @@ if Ndmiss == 1,
 end
 for d = 1:Ndmiss,
     if any(size(plm.Mmiss{d}) ~= size(plm.Mset{d})),
-        error([ ...
-            'The missing data indicator ("-dmiss") must have\n', ...
-            'the same size as the respective design.%s'],'');
+        if strcmpi(opts.dmiss{d},'none'),
+            plm.Mmiss{d} = repmat(plm.Mmiss{d},[1 size(plm.Mset{d},2)]);
+        else
+            size(plm.Mmiss{d})
+            size(plm.Mset{d})
+            error([ ...
+                'The missing data indicator ("-dmiss") must have\n', ...
+                'the same size as the respective design.%s'],'');
+        end
     end
 end
 
