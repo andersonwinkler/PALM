@@ -26,13 +26,16 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Take the arguments. Save a small log if needed.
-%clear global plm opts; % comment for debugging
-%global plm opts; % uncomment for debugging
+clear global plm opts; % comment for debugging
+global plm opts; % uncomment for debugging
 ticI = tic;
 [opts,plm] = palm_takeargs(varargin{:});
 
 % Variables to store stuff for later.
-if opts.missingdata, nY = plm.nY; else nY = 1; end
+if opts.missingdata,
+    nY = plm.nY; else nY = 1;
+    plm.Ymissp = cell(plm.nY,1);
+end
 tmp = cell(nY,1);
 for y = 1:nY,
     tmp{y} = cell(plm.nM,1);
@@ -500,7 +503,7 @@ for m = 1:plm.nM,
             for y = loopY,
                 [plm.X{y}{m}{c},plm.Z{y}{m}{c},...
                     plm.eCm{y}{m}{c},plm.eCx{y}{m}{c},...
-                    plm.Ymiss{y},...
+                    plm.Ymissp{y},...
                     plm.imov{y}{m}{c},plm.ifix{y}{m}{c},...
                     plm.isdiscrete{y}{m}{c}] = ...
                     palm_misspart(plm.Mset{m},plm.Cset{m}{c},...
@@ -590,21 +593,6 @@ for m = 1:plm.nM,
             end
         end
         clear y o;
-        
-%         % Some methods don't work well if Z is empty, and there is no point in
-%         % using any of them all anyway.
-%         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
-%         for y = loopY,
-%             if opts.missingdata, loopO = 1:numel(plm.Mp{y}{m}{c}); else loopO = 1; end
-%             for o = loopO,
-%                 if isempty(plm.Z{y}{m}{c}{o}),
-%                     opts.rmethod{y}{m}{c}{o} = 'noz';
-%                 else
-%                     opts.rmethod{y}{m}{c}{o} = opts.rmethod;
-%                 end
-%             end
-%         end
-%         clear y o;
         
         % MV/CCA
         %%% DOUBLE-CHECK THE DEGREES-OF-FREEDOM!!
@@ -1504,10 +1492,10 @@ for po = P_outer,
                                         ikeep = ~~(plm.Pset{p}*plm.imov{y}{m}{c}{o}) & plm.ifix{y}{m}{c}{o};
                                     end
                                 end
-                                if isempty(plm.Ymiss{y}{o}),
+                                if isempty(plm.Ymissp{y}{o}),
                                     Ytmp = plm.Yset{y};
                                 else
-                                    Ytmp = plm.Ymiss{y}{o};
+                                    Ytmp = plm.Ymissp{y}{o};
                                 end
                                 
                                 % Select pieces for the data and design

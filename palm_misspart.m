@@ -77,7 +77,6 @@ mz = double(mz);
 
 % It's simpler and faster to fork the code 16 times than have
 % multiple loops and conditions for the up-to-eight equations.
-isdiscrete = false;
 if isempty(mz),
     if       all(iy) &   all(ix), % Case 1
         idx{1}     = [ia ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
@@ -87,7 +86,6 @@ if isempty(mz),
         else
             idx{1} = [iy ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
             idx{2} = [ia ia];      Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
-            isdiscrete = [false false];
         end
     elseif   all(iy) & ~ all(ix), % Case 3
         if mcar,
@@ -95,7 +93,6 @@ if isempty(mz),
         else
             idx{1} = [ia ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
             idx{2} = [ia ia];      Y{2} = [];   X{2} = mx;   Z{2} = [];   eC{2} = mkcon(X{2},Z{2});
-            isdiscrete = [false false];
         end
     elseif ~ all(iy) & ~ all(ix), % Case 5
         if mcar,
@@ -105,7 +102,6 @@ if isempty(mz),
             idx{2} = [ia ix];      Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
             idx{3} = [iy ia];      Y{3} = [];   X{3} = mx;   Z{3} = [];   eC{3} = ecm;
             idx{4} = [ia ia];      Y{4} = my;   X{4} = mx;   Z{4} = [];   eC{4} = ecm; % discrete
-            isdiscrete = [false false false true];
         end
     end
 else
@@ -117,7 +113,6 @@ else
         else
             idx{1} = [iy ia ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ia ia];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
-            isdiscrete = [false false];
         end
     elseif   all(iy) & ~ all(ix) &   all(iz), % Case 3
         if mcar,
@@ -125,7 +120,6 @@ else
         else
             idx{1} = [ia ix ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ia ia];   Y{2} = [];   X{2} = mx;   Z{2} = z;    eC{2} = mkcon(X{2},Z{2});
-            isdiscrete = [false false];
         end
     elseif   all(iy) &   all(ix) & ~ all(iz), % Case 4
         if mcar,
@@ -133,7 +127,6 @@ else
         else
             idx{1} = [ia ia iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ia ia];   Y{2} = [];   X{2} = x;    Z{2} = mz;   eC{2} = mkcon(ecx,Z{2});
-            isdiscrete = [false false];
         end
     elseif ~ all(iy) & ~ all(ix) &   all(iz), % Case 5
         if mcar,
@@ -143,7 +136,6 @@ else
             idx{2} = [ia ix ia];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
             idx{3} = [iy ia ia];   Y{3} = [];   X{3} = mx;   Z{3} = z;    eC{3} = mkcon(X{3},Z{3});
             idx{4} = [ia ia ia];   Y{4} = my;   X{4} = mx;   Z{4} = z;    eC{4} = mkcon(X{4},Z{4}); % discrete
-            isdiscrete = [false false false true];
         end
     elseif ~ all(iy) &   all(ix) & ~ all(iz), % Case 6
         if mcar,
@@ -153,7 +145,6 @@ else
             idx{2} = [ia ia iz];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
             idx{3} = [iy ia ia];   Y{3} = [];   X{3} = x;    Z{3} = mz;   eC{3} = mkcon(ecx,Z{3});
             idx{4} = [ia ia ia];   Y{4} = my;   X{4} = x;    Z{4} = mz;   eC{4} = mkcon(ecx,Z{4});
-            isdiscrete = [false false false false];
         end
     elseif   all(iy) & ~ all(ix) & ~ all(iz), % Case 7
         if mcar,
@@ -163,11 +154,10 @@ else
             idx{2} = [ia ia iz];   Y{2} = [];   X{2} = mx;   Z{2} = z;    eC{2} = mkcon(X{2},Z{2});
             idx{3} = [ia ix ia];   Y{3} = [];   X{3} = x;    Z{3} = mz;   eC{3} = mkcon(ecx, Z{3});
             idx{4} = [ia ia ia];   Y{4} = [];   X{4} = mx;   Z{4} = mz;   eC{4} = mkcon(X{4},Z{4});
-            isdiscrete = [false false false false];
         end
     elseif ~ all(iy) & ~ all(ix) & ~ all(iz), % Case 8
         if mcar,
-            idx{1} = [iy ix iz];  Y{1} = [];   X{1} = x;     Z{1} = z;    eC{1} = ecm;
+            idx{1} = [iy ix iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
         else
             idx{1} = [iy ix iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ix iz];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
@@ -177,15 +167,19 @@ else
             idx{6} = [ia ix ia];   Y{6} = my;   X{6} = x;    Z{6} = mz;   eC{6} = mkcon(ecx, Z{6});
             idx{7} = [iy ia ia];   Y{7} = [];   X{7} = mx;   Z{7} = mz;   eC{7} = mkcon(X{7},Z{7});
             idx{8} = [ia ia ia];   Y{8} = my;   X{8} = mx;   Z{8} = mz;   eC{8} = mkcon(X{8},Z{8}); % discrete
-            isdiscrete = [false false false false false false false true];
         end
     end
 end
 nO = numel(idx);
 
-% PCA of Z, via SVD.
+% PCA of Z, via SVD, then add an intercept
+%[Y,X,Z] = meancenter(Y,X,Z);
 if ~ strcmpi(rmethod,'noz'),
     [Z,eC] = svdz(Z,eC);
+end
+for o = 1:nO,
+    Z{o}  = horzcat(Z{o},ones(size(Z{o},1),1));
+    eC{o} = vertcat(eC{o},zeros(1,size(eC{o},2)));
 end
 
 % Prepare the indices used to modify the permutation matrix and the
@@ -239,7 +233,6 @@ switch lower(rmethod),
             ifix{o} = all(idx{o}(:,1:2),2);
         end
 end
-[Y,X,Z] = meancenter(Y,X,Z);
 
 % Remove all the full true indices, for speed later:
 for o = 1:nO,
@@ -254,8 +247,12 @@ end
 % Partition again each of these models using the method indicated by the user:
 eCm = cell(size(X));
 eCx = eCm;
+isdiscrete = false(1,numel(Z));
 for o = 1:numel(Y),
     [X{o},Z{o},eCm{o},eCx{o}] = palm_partition(horzcat(X{o},Z{o}),eC{o},meth);
+    if ~ isempty(Y{o}) && size(unique(X{o},'rows'),1) == 2,
+        isdiscrete(o) = true;
+    end
 end
 
 % Remove bits that are all zeroes (this needs to be adapted for voxelwise):
@@ -294,7 +291,8 @@ function [Z,eC] = svdz(Z,eC)
 % PCA of Z, via SVD.
 for o = 1:numel(Z),
     sZ1     = size(Z{o},2);
-    [u,s,~] = svd(Z{o},'econ');
+    Z0      = bsxfun(@minus,Z{o},mean(Z{o},1));
+    [u,s,~] = svd(Z0,'econ');
     ds      = diag(s);
     tol     = 100 * max(size(Z{o})) * eps(max(ds));
     abv     = ds > tol;

@@ -587,7 +587,6 @@ while a <= narginx,
         case '-npcmethod', % basic
             
             % Do the non-parametric combination?
-            opts.NPC = true;
             if nargin == a || (nargin > a && strcmp(vararginx{a+1}(1),'-')),
                 error('The option "-npcmethod" requires a combining method to be indicated.');
                 

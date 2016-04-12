@@ -112,4 +112,4 @@ opts.accel.lowrank_recon = false;              % Reconstruct past permutations i
 opts.accel.G1out         = false;              % Exclude (true) or not (false) the unpermuted statistic in the null distribution for tail and gamma?
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
-% These are hard coded (EE is default, within-block is also default).
+% These are hard coded and not meant to be ever changed (EE is default, within-block is also default).
