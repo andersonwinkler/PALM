@@ -96,10 +96,8 @@ opts.designperinput      = false;              % use one design for each input?
 opts.showprogress        = true;               % print progress as the permutations are performed? (use -quiet to disable)
 opts.inputmv             = false;              % treat each column of the sole input as a separate input for MV/NPC/CCA?
 opts.reversemasks        = false;              % Reverse the masks?
-opts.missingdata         = false;              % Are there missing data?
-opts.mcar                = false;              % Data missing completely at random?
 
-% Approximation options
+% Approximation options:
 opts.accel.negbin        = 0;                  % Run a negbin scheme
 opts.accel.negbin_nexced = 2;                  % Number of exceedances for the negbin mode
 opts.accel.tail          = false;              % Use a Pareto tail approximation to the FWER-adjusted p-values?
@@ -110,6 +108,11 @@ opts.accel.lowrank       = false;              % Try a low rank approximation
 opts.accel.lowrank_val   = NaN;                % Use NaN for N*(N+1)/2. Values <=1 are fraction of voxels to use; vals >1 are number of voxels to use.
 opts.accel.lowrank_recon = false;              % Reconstruct past permutations in the new basis? This is very slow.
 opts.accel.G1out         = false;              % Exclude (true) or not (false) the unpermuted statistic in the null distribution for tail and gamma?
+
+% Missing data options:
+opts.missingdata         = false;              % Are there missing data?
+opts.mcar                = false;              % Data missing completely at random?
+opts.npcmethodmiss       = 'Fisher';           % Combination method for missing data.
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded and not meant to be ever changed (EE is default, within-block is also default).

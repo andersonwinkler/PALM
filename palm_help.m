@@ -288,7 +288,7 @@ fprintf('	observations that are in VGs of size smaller or equal than specified.\
 fprintf('	This is specially useful with the option "-vg auto".\n\n')
 
 fprintf('-rmethod <string> : Method for regression/permutation. It can be one of\n');
-fprintf('	Freedman-Lane, Smith, terBraak, Manly, Draper-Stoneman,\n');
+fprintf('	Freedman-Lane, Dekker, terBraak, Manly, Draper-Stoneman,\n');
 fprintf('	Still-White and Huh-Jhun. Default, and recommended, is\n');
 fprintf('	Freedman-Lane.\n\n');
 

@@ -293,7 +293,7 @@ switch opts.tfce.stat,
         tfcefunc = @palm_tfde;
         opts.tfce.str = '_tfde';
 end
-clear('y','m','c');
+clear y m c;
 
 % Inital strings to save the file names later.
 plm.ystr = cell(plm.nY,1);
@@ -309,176 +309,22 @@ for m = 1:plm.nM,
         plm.cstr{m}{c} = '';
     end
 end
-clear('y','m','c');
+clear y m c;
 
-% Create the function handles for the NPC.
-if opts.NPC || opts.missingdata,
-    
+% Create the function handles for the NPC and function overloading
+% for the missing data cases.
+if opts.NPC,
     plm.Tname = lower(opts.npcmethod);
-    switch plm.Tname,
-        
-        case 'tippett',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)min( ...
-                    tippett( G,df1,df2),   ...
-                    tippett(-G,df1,df2));
-            else
-                plm.fastnpc = @(G,df1,df2)tippett(G,df1,df2);
-            end
-            plm.pparanpc    = @(T,nG)tippettp(T,nG);
-            plm.npcrev  = true;
-            
-        case 'fisher',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max( ...
-                    fisher( G,df1,df2),    ...
-                    fisher(-G,df1,df2));
-            else
-                plm.fastnpc = @(G,df1,df2)fisher(G,df1,df2);
-            end
-            plm.pparanpc    = @(T,nG)fisherp(T,nG);
-            plm.npcrev  = false;
-            
-        case 'stouffer',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max( ...
-                    stouffer( G,df1,df2),  ...
-                    stouffer(-G,df1,df2));
-            else
-                plm.fastnpc = @(G,df1,df2)stouffer(G,df1,df2);
-            end
-            plm.pparanpc    = @(T,nG)stoufferp(T,nG);
-            plm.npcrev  = false;
-            
-        case 'wilkinson',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max(             ...
-                    wilkinson( G,df1,df2,plm.npcparm), ...
-                    wilkinson(-G,df1,df2,plm.npcparm));
-            else
-                plm.fastnpc = @(G,df1,df2)wilkinson(G,df1,df2,plm.npcparm);
-            end
-            plm.pparanpc    = @(T,nG)wilkinsonp(T,nG,plm.npcparm);
-            plm.npcrev  = false;
-            
-        case 'winer',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max( ...
-                    winer( G,df1,df2),     ...
-                    winer(-G,df1,df2));
-            else
-                plm.fastnpc = @(G,df1,df2)winer(G,df1,df2);
-            end
-            plm.pparanpc    = @(T,nG)winerp(T,nG);
-            plm.npcrev  = false;
-            
-        case 'edgington',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)min( ...
-                    edgington( G,df1,df2), ...
-                    edgington(-G,df1,df2));
-            else
-                plm.fastnpc = @(G,df1,df2)edgington(G,df1,df2);
-            end
-            plm.pparanpc    = @(T,nG)edgingtonp(T,nG);
-            plm.npcrev  = true;
-            
-        case 'mudholkar-george',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max(       ...
-                    mudholkargeorge( G,df1,df2), ...
-                    mudholkargeorge(-G,df1,df2));
-            else
-                plm.fastnpc = @(G,df1,df2)mudholkargeorge(G,df1,df2);
-            end
-            plm.pparanpc    = @(T,nG)mudholkargeorgep(T,nG);
-            plm.npcrev  = false;
-            
-        case 'friston',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)min( ...
-                    friston( G,df1,df2),   ...
-                    friston(-G,df1,df2));
-            else
-                plm.fastnpc = @(G,df1,df2)friston(G,df1,df2);
-            end
-            plm.pparanpc    = @(T,nG)fristonp(T,nG,plm.npcparm);
-            plm.npcrev  = true;
-            
-        case 'darlington-hayes',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max(                   ...
-                    darlingtonhayes( G,df1,df2,plm.npcparm), ...
-                    darlingtonhayes(-G,df1,df2,plm.npcparm));
-            else
-                plm.fastnpc = @(G,df1,df2)darlingtonhayes(G,df1,df2,plm.npcparm);
-            end
-            plm.npcrev  = false;
-            
-        case 'zaykin',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max(          ...
-                    zaykin( G,df1,df2,plm.npcparm), ...
-                    zaykin(-G,df1,df2,plm.npcparm));
-            else
-                plm.fastnpc = @(G,df1,df2)zaykin(G,df1,df2,plm.npcparm);
-            end
-            plm.pparanpc    = @(T,nG)zaykinp(T,nG,plm.npcparm);
-            plm.npcrev  = false;
-            
-        case 'dudbridge-koeleman',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max(                     ...
-                    dudbridgekoeleman( G,df1,df2,plm.npcparm), ...
-                    dudbridgekoeleman(-G,df1,df2,plm.npcparm));
-            else
-                plm.fastnpc = @(G,df1,df2)dudbridgekoeleman(G,df1,df2,plm.npcparm);
-            end
-            plm.pparanpc    = @(T,nG)dudbridgekoelemanp(T,nG,plm.npcparm);
-            plm.npcrev  = false;
-            
-        case 'dudbridge-koeleman2',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max(                                   ...
-                    dudbridgekoeleman2( G,df1,df2,plm.npcparm,plm.npcparm2), ...
-                    dudbridgekoeleman2(-G,df1,df2,plm.npcparm,plm.npcparm2));
-            else
-                plm.fastnpc = @(G,df1,df2)dudbridgekoeleman2(G,df1,df2,plm.npcparm,plm.npcparm2);
-            end
-            plm.pparanpc    = @(T,nG)dudbridgekoeleman2p(T,nG,plm.npcparm,plm.npcparm2);
-            plm.npcrev  = false;
-            
-        case 'taylor-tibshirani',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max(        ...
-                    taylortibshirani( G,df1,df2), ...
-                    taylortibshirani(-G,df1,df2));
-            else
-                plm.fastnpc = @(G,df1,df2)taylortibshirani(G,df1,df2);
-            end
-            plm.pparanpc    = @(T,nG)taylortibshiranip(T,nG);
-            plm.npcrev  = false;
-            
-        case 'jiang',
-            if opts.concordant,
-                plm.fastnpc = @(G,df1,df2)max(         ...
-                    jiang( G,df1,df2,plm.npcparm), ...
-                    jiang(-G,df1,df2,plm.npcparm));
-            else
-                plm.fastnpc = @(G,df1,df2)jiang(G,df1,df2,plm.npcparm);
-            end
-            plm.npcrev  = false;
-    end
-    
-    % For the NPC methods in which the most significant stats are the
-    % smallest, rather than the largest, use reverse comparisons.
-    if plm.npcrev,
-        npcrel  = @le;
-        npcextr = @min;
-    else
-        npcrel  = @ge;
-        npcextr = @max;
-    end
+    [plm.fastnpc,plm.pparanpc,plm.npcrev,...
+        plm.npcrel,plm.npcextr] = npchandles(plm.Tname,opts.concordant);
+end
+if opts.missingdata,
+    [plm.fastnpcmiss,plm.pparanpcmiss] = npchandles(opts.npcmethodmiss,opts.concordant);
+    plm.mldiv = @mldiv;
+    plm.mrdiv = @mrdiv;
+else
+    plm.mldiv = @mldivide;
+    plm.mrdiv = @mrdivide;
 end
 
 tocI = toc(ticI);
@@ -822,7 +668,7 @@ for m = 1:plm.nM,
                             end
                             prepglm{m}{c} = @huhjhun3d;
                             
-                        case 'smith',
+                        case 'dekker',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
                                 plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
                                 plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
@@ -834,7 +680,7 @@ for m = 1:plm.nM,
                                 end
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
-                            prepglm{m}{c} = @smith3d;
+                            prepglm{m}{c} = @dekker3d;
                     end
                     
                     % Pick a name for the function that will compute the statistic
@@ -876,7 +722,7 @@ for m = 1:plm.nM,
                     plm.Rz{y}{m}{c}{o} = bsxfun(@plus,eye(plm.N),plm.Rz{y}{m}{c}{o});
                 elseif ~ any(strcmpi(opts.rmethod,{ ...
                         'still-white','freedman-lane',  ...
-                        'kennedy','huh-jhun','smith'})),
+                        'kennedy','huh-jhun','dekker'})),
                     I = eye(plm.N);
                     for t = 1:plm.Ysiz(1),
                         plm.Rz{y}{m}{c}{o}(:,:,t) = I - plm.Z{y}{m}{c}{o}(:,:,t)*pinv(plm.Z{y}{m}{c}{o}(:,:,t));
@@ -914,7 +760,7 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @nozm;
+                                prepglm{m}{c}{o} = @nozm;
                             else
                                 prepglm{m}{c} = @noz;
                             end
@@ -926,7 +772,7 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @exactm;
+                                prepglm{m}{c}{o} = @exactm;
                             else
                                 prepglm{m}{c} = @exact;
                             end
@@ -938,7 +784,7 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @draperstonemanm;
+                                prepglm{m}{c}{o} = @draperstonemanm;
                             else
                                 prepglm{m}{c} = @draperstoneman;
                             end
@@ -952,7 +798,7 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @stillwhitem;
+                                prepglm{m}{c}{o} = @stillwhitem;
                             else
                                 prepglm{m}{c} = @stillwhite;
                             end
@@ -968,7 +814,7 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @freedmanlanem;
+                                prepglm{m}{c}{o} = @freedmanlanem;
                             else
                                 prepglm{m}{c} = @freedmanlane;
                             end
@@ -981,7 +827,7 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @terbraakm;
+                                prepglm{m}{c}{o} = @terbraakm;
                             else
                                 prepglm{m}{c} = @terbraak;
                             end
@@ -995,7 +841,7 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o} = plm.eCx{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @kennedym;
+                                prepglm{m}{c}{o} = @kennedym;
                             else
                                 prepglm{m}{c} = @kennedy;
                             end
@@ -1007,7 +853,7 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o} = plm.eCm{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @manlym;
+                                prepglm{m}{c}{o} = @manlym;
                             else
                                 prepglm{m}{c} = @manly;
                             end
@@ -1025,12 +871,12 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o}       = plm.eCx{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @huhjhunm;
+                                prepglm{m}{c}{o} = @huhjhunm;
                             else
                                 prepglm{m}{c} = @huhjhun;
                             end
                             
-                        case 'smith',
+                        case 'dekker',
                             if ~ opts.missingdata && ~ opts.designperinput && y > 1,
                                 plm.Rz{y}{m}{c}{o} = plm.Rz{1}{m}{c}{1};
                                 plm.eC{y}{m}{c}{o} = plm.eC{1}{m}{c}{1};
@@ -1039,9 +885,9 @@ for m = 1:plm.nM,
                                 plm.eC{y}{m}{c}{o}       = plm.eCm{y}{m}{c}{o};
                             end
                             if opts.missingdata,
-                                prepglm{m}{c} = @smithm;
+                                prepglm{m}{c}{o} = @dekkerm;
                             else
-                                prepglm{m}{c} = @smith;
+                                prepglm{m}{c} = @dekker;
                             end
                     end
                     
@@ -1083,7 +929,7 @@ for m = 1:plm.nM,
                     plm.Rz{m}{c} = eye(plm.N);
                 elseif ~ any(strcmpi(opts.rmethod,{ ...
                         'still-white','freedman-lane',  ...
-                        'kennedy','huh-jhun','smith'})),
+                        'kennedy','huh-jhun','dekker'})),
                     plm.Rz{m}{c} = eye(plm.N) - plm.Z{m}{c}*pinv(plm.Z{m}{c});
                 end
                 
@@ -1517,7 +1363,7 @@ for po = P_outer,
                                 if isempty(plm.Z{y}{m}{c}{o}),
                                     [MM{o},YY{o}] = nozm(Ptmp,Ytmp,y,m,c,o,plm,ikeep);
                                 else
-                                    [MM{o},YY{o}] = prepglm{m}{c}(Ptmp,Ytmp,y,m,c,o,plm,ikeep);
+                                    [MM{o},YY{o}] = prepglm{m}{c}{o}(Ptmp,Ytmp,y,m,c,o,plm,ikeep);
                                 end
                             end
                             clear o;
@@ -1532,18 +1378,18 @@ for po = P_outer,
                         
                         % Do the GLM fit.
                         if opts.missingdata && ~ opts.mcar,
-                            [G{y}{m}{c},df2{y}{m}{c}] = fastmiss(Y,M,y,m,c,plm,fastpiv{m}{c});
+                            [G{y}{m}{c},df2{y}{m}{c}] = fastmiss(Y,M,y,m,c,plm,opts,fastpiv{m}{c});
                             
                         else
                             if opts.evperdat,
                                 psi = zeros(size(M,2),plm.Ysiz(y));
                                 res = zeros(size(Y));
                                 for t = 1:plm.Ysiz(y),
-                                    psi(:,t) = M(:,:,t)\Y(:,t);
+                                    psi(:,t) = plm.mldiv(M(:,:,t),Y(:,t));
                                     res(:,t) = Y(:,t) - M(:,:,t)*psi(:,t);
                                 end; clear t
                             else
-                                psi = M\Y;
+                                psi = plm.mldiv(M,Y);
                                 res = Y - M*psi;
                             end
                             
@@ -1556,11 +1402,11 @@ for po = P_outer,
                                 if opts.evperdat,
                                     MtM = zeros(1,size(psi,2));
                                     for t = 1:size(psi,2),
-                                        MtM(t) = plm.eC{y}{m}{c}{o}'/(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o};
+                                        MtM(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
                                     end
                                     varcope = MtM .* sigsq;
                                 else
-                                    varcope = plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o} * sigsq;
+                                    varcope = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o} * sigsq;
                                 end
                                 palm_quicksave(cope,0,opts,plm,y,m,c, ...
                                     sprintf('%s',opts.o,plm.Ykindstr{y},'_cope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
@@ -1746,10 +1592,8 @@ for po = P_outer,
                         
                         % This needs to be here, inside the if-condition) because of the
                         % lowrank approximation stuff
-                        if opts.twotail,
-                            if ~ opts.accel.lowrank || p > plm.nJ{m}(c)
-                                G{y}{m}{c} = abs(G{y}{m}{c});
-                            end
+                        if opts.twotail && ~ opts.missingdata && ( ~ opts.accel.lowrank || p > plm.nJ{m}(c)),
+                            G{y}{m}{c} = abs(G{y}{m}{c});
                         end
                         
                         % Negative binomial approximation
@@ -1924,8 +1768,8 @@ for po = P_outer,
                         plm.Tpperm{m}{c} = zeros(size(T{m}{c}));
                     end
                     plm.Tpperm{m}{c} = plm.Tpperm{m}{c} + ...
-                        bsxfun(npcrel,T{m}{c},plm.T{m}{c});
-                    plm.Tmax{m}{c}(p) = npcextr(T{m}{c},[],2);
+                        bsxfun(plm.npcrel,T{m}{c},plm.T{m}{c});
+                    plm.Tmax{m}{c}(p) = plm.npcextr(T{m}{c},[],2);
                     
                     % Tail and gamma approximations
                     if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
@@ -2392,8 +2236,8 @@ for po = P_outer,
                 plm.Tpperm{1}{c} = zeros(size(T{1}{c}));
             end
             plm.Tpperm{1}{c} = plm.Tpperm{1}{c} + ...
-                bsxfun(npcrel,T{1}{c},plm.T{1}{c});
-            plm.Tmax{1}{c}(p) = npcextr(T{1}{c},[],2);
+                bsxfun(plm.npcrel,T{1}{c},plm.T{1}{c});
+            plm.Tmax{1}{c}(p) = plm.npcextr(T{1}{c},[],2);
             
             % Tail and gamma approximations
             if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
@@ -2569,8 +2413,8 @@ for po = P_outer,
                 plm.Tpperm{j} = zeros(size(T{j}));
             end
             plm.Tpperm{j} = plm.Tpperm{j} + ...
-                bsxfun(npcrel,T{j},plm.T{j});
-            plm.Tmax{j}(po) = npcextr(T{j},[],2);
+                bsxfun(plm.npcrel,T{j},plm.T{j});
+            plm.Tmax{j}(po) = plm.npcextr(T{j},[],2);
             
             % Tail and gamma approximations
             if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
@@ -2796,18 +2640,18 @@ for t = 1:size(Y,2),
 end
 
 % ==============================================================
-function [Mr,Y] = smith(P,Y,y,m,c,o,plm)
-% The Smith method, i.e., orthogonalization.
+function [Mr,Y] = dekker(P,Y,y,m,c,o,plm)
+% The Dekker method, i.e., orthogonalization.
 % Y remains unchanged
 Mr = horzcat(P*plm.Rz{y}{m}{c}{o}*plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o});
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-function [Mr,Y] = smith3d(P,Y,y,m,c,o,plm)
+function [Mr,Y] = dekker3d(P,Y,y,m,c,o,plm)
 Mr = zeros(size(plm.Mp{y}{m}{c}{o}));
 for t = 1:size(Y,2),
     Mr(:,:,t) = horzcat(P*plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t),plm.Z{y}{m}{c}{o}(:,:,t));
 end
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-function [Mr,Y] = smithm(P,Y,y,m,c,o,plm,ikeep)
+function [Mr,Y] = dekkerm(P,Y,y,m,c,o,plm,ikeep)
 Mr = horzcat(P*plm.Rz{y}{m}{c}{o}*plm.X{y}{m}{c}{o},plm.Z{y}{m}{c}{o}(ikeep,:));
 
 % ==============================================================
@@ -2853,17 +2697,18 @@ function G = fastrsq(M,psi,Y,y,m,c,o,plm)
 %
 % Outputs:
 % G   : R^2, i.e., the coefficient of determination.
-tmp = plm.eC{y}{m}{c}{o}/...
-    (plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o})*...
-    plm.eC{y}{m}{c}{o}';
+tmp = plm.mrdiv(plm.eC{y}{m}{c}{o},...
+    plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o})...
+    *plm.eC{y}{m}{c}{o}';
 G   = sum((tmp'*psi).*psi,1);
 den = sum(Y.^2,1);
 G   = G./den;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function G = fastrsq3d(M,psi,Y,y,m,c,o,plm)
 for t = 1:size(psi,2),
-    tmp = plm.eC{y}{m}{c}{o}/...
-        (plm.eC{y}{m}{c}{o}'/(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o})*...
+    tmp = plm.mrdiv(plm.eC{y}{m}{c}{o},...
+        plm.mrdiv(plm.eC{y}{m}{c}{o}',...
+        (M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o})*...
         plm.eC{y}{m}{c}{o}';
     G   = sum((tmp'*psi(:,t)).*psi(:,t),1);
 end
@@ -2888,7 +2733,7 @@ function [G,df2] = fastt(M,psi,res,y,m,c,o,plm)
 % df2 : Degrees of freedom. df1 is 1 for the t statistic.
 df2 = size(M,1)-plm.rM{y}{m}{c}{o};
 G   = plm.eC{y}{m}{c}{o}'*psi;
-den = sqrt(plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o}*sum(res.^2)./df2);
+den = sqrt(plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o}*sum(res.^2)./df2);
 G   = G./den;
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2897,7 +2742,7 @@ df2 = size(M,1)-plm.rM{y}{m}{c}{o};
 G   = plm.eC{y}{m}{c}{o}'*psi;
 MtM = zeros(1,size(psi,2));
 for t = 1:size(psi,2),
-    MtM(t) = plm.eC{y}{m}{c}{o}'/(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o};
+    MtM(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
 end
 den = sqrt(MtM.*sum(res.^2,1)./df2);
 G   = G./den;
@@ -2919,8 +2764,8 @@ function [G,df2] = fastf(M,psi,res,y,m,c,o,plm)
 % G   : F-statistic.
 % df2 : Degrees of freedom 2. df1 is rank(C).
 df2 = size(M,1)-plm.rM{y}{m}{c}{o};
-cte = plm.eC{y}{m}{c}{o}/...
-    (plm.eC{y}{m}{c}{o}'/(M'*M)*plm.eC{y}{m}{c}{o})*...
+cte = plm.mrdiv(plm.eC{y}{m}{c}{o},...
+    plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o})* ...
     plm.eC{y}{m}{c}{o}';
 tmp = zeros(size(psi));
 for j = 1:size(cte,2),
@@ -2936,8 +2781,8 @@ df2 = size(M,1)-plm.rM{y}{m}{c}{o};
 nT = size(res,2);
 cte = zeros(size(psi,1),size(psi,1),nT);
 for t = 1:nT,
-    cte(:,:,t) = plm.eC{y}{m}{c}{o}/(plm.eC{y}{m}{c}{o}' ...
-        /(M(:,:,t)'*M(:,:,t))*plm.eC{y}{m}{c}{o})*plm.eC{y}{m}{c}{o}';
+    cte(:,:,t) = plm.mrdiv(plm.eC{y}{m}{c}{o},plm.mrdiv(plm.eC{y}{m}{c}{o}' ...
+        ,(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o})*plm.eC{y}{m}{c}{o}';
 end
 ppsi = permute(psi,[1 3 2]);
 ppsi = sum(bsxfun(@times,ppsi,cte),1);
@@ -2977,7 +2822,7 @@ for b = 1:plm.nVG,
     W(b,:)  = W(b,:)*sum(bidx);
 end
 for t = 1:nT,
-    den(t) = plm.eC{y}{m}{c}{o}'/reshape(cte(:,t),[r r])*plm.eC{y}{m}{c}{o};
+    den(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',reshape(cte(:,t),[r r]))*plm.eC{y}{m}{c}{o};
 end
 G = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
 sW1 = sum(W,1);
@@ -3001,7 +2846,7 @@ for b = 1:plm.nVG,
     W(b,:) = W(b,:)*sum(bidx);
 end
 for t = 1:nT,
-    den(t) = plm.eC{y}{m}{c}{o}'/cte(:,:,t)*plm.eC{y}{m}{c}{o};
+    den(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',cte(:,:,t))*plm.eC{y}{m}{c}{o};
 end
 G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
 sW1  = sum(W,1);
@@ -3040,7 +2885,7 @@ end
 G = zeros(1,nT);
 for t = 1:nT,
     A = psi(:,t)'*plm.eC{y}{m}{c}{o};
-    G(t) = A/(plm.eC{y}{m}{c}{o}'/(reshape(cte(:,t),[r r]))* ...
+    G(t) = plm.mrdiv(A,plm.mrdiv(plm.eC{y}{m}{c}{o}',reshape(cte(:,t),[r r]))* ...
         plm.eC{y}{m}{c}{o})*A'/plm.rC0{m}(c);
 end
 sW1  = sum(W,1);
@@ -3067,7 +2912,7 @@ end
 G = zeros(1,nT);
 for t = 1:nT,
     A = psi(:,t)'*plm.eC{y}{m}{c}{o};
-    G(t) = A/(plm.eC{y}{m}{c}{o}'/cte(:,:,t) * ...
+    G(t) = plm.mrdiv(A,plm.mrdiv(plm.eC{y}{m}{c}{o}',cte(:,:,t)) * ...
         plm.eC{y}{m}{c}{o})*A'/plm.rC0{m}(c);
 end
 sW1  = sum(W,1);
@@ -3077,7 +2922,7 @@ df2  = 1/3./bsum;
 G    = G./(1 + 2*(plm.rC{m}(c)-1).*bsum);
 
 % ==============================================================
-function [Z,df2] = fastmiss(Y,M,y,m,c,plm,fastpiv)
+function [Z,df2] = fastmiss(Y,M,y,m,c,plm,opts,fastpiv)
 % Conputes the test statistic for missing data.
 df2 = NaN;
 persistent Gtmp; % persistent so as to avoid re-allocing
@@ -3089,17 +2934,24 @@ for o = nO:-1:1,
     elseif testzeros(Y{o},M{o},y,m,c,o,plm),
         Gtmp(o,:) = [];
     else
-        psi = M{o}\Y{o};
+        psi = plm.mldiv(M{o},Y{o});
         res = Y{o} - M{o}*psi;
         Gtmp(o,:) = fastpiv(M{o},psi,res,y,m,c,o,plm);
-        if o > 1,
+        if o > 1 || opts.twotail,
             Gtmp(o,:) = abs(Gtmp(o,:));
         end
+        try
         Gtmp(o,:) = palm_gtoz(Gtmp(o,:),plm.rC0{m}(c),size(M{o},1)-size(M{o},2));
+        catch
+            M{o},psi,res
+            Gtmp(o,:)
+            fastpiv(M{o},psi,res,y,m,c,o,plm)
+            error
+        end
     end
 end
-G = plm.fastnpc(Gtmp,0,df2);
-P = plm.pparanpc(G,nO);
+G = plm.fastnpcmiss(Gtmp,0,df2);
+P = plm.pparanpcmiss(G,nO);
 Z = sqrt(2)*erfcinv(2*P);
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function result = testzeros(Y,M,y,m,c,o,plm)
@@ -3529,6 +3381,178 @@ P = palm_gpval(G,df1,df2);
 T = sum((P<=parma).*(1-P.*(nG+1)./prank))/nG;
 
 % ==============================================================
+function [fastnpc,pparanpc,npcrev,npcrel,npcextr] = npchandles(npcmethod,concordant)
+% Create the function handles for the NPC.
+if nargout == 2,
+    concordant = false;
+end
+switch lower(npcmethod),
+    
+    case 'tippett',
+        if concordant,
+            fastnpc = @(G,df1,df2)min( ...
+                tippett( G,df1,df2),   ...
+                tippett(-G,df1,df2));
+        else
+            fastnpc = @(G,df1,df2)tippett(G,df1,df2);
+        end
+        pparanpc    = @(T,nG)tippettp(T,nG);
+        npcrev      = true;
+        
+    case 'fisher',
+        if concordant,
+            fastnpc = @(G,df1,df2)max( ...
+                fisher( G,df1,df2),    ...
+                fisher(-G,df1,df2));
+        else
+            fastnpc = @(G,df1,df2)fisher(G,df1,df2);
+        end
+        pparanpc    = @(T,nG)fisherp(T,nG);
+        npcrev      = false;
+        
+    case 'stouffer',
+        if concordant,
+            fastnpc = @(G,df1,df2)max( ...
+                stouffer( G,df1,df2),  ...
+                stouffer(-G,df1,df2));
+        else
+            fastnpc = @(G,df1,df2)stouffer(G,df1,df2);
+        end
+        pparanpc    = @(T,nG)stoufferp(T,nG);
+        npcrev      = false;
+        
+    case 'wilkinson',
+        if concordant,
+            fastnpc = @(G,df1,df2)max(             ...
+                wilkinson( G,df1,df2,npcparm), ...
+                wilkinson(-G,df1,df2,npcparm));
+        else
+            fastnpc = @(G,df1,df2)wilkinson(G,df1,df2,npcparm);
+        end
+        pparanpc    = @(T,nG)wilkinsonp(T,nG,npcparm);
+        npcrev      = false;
+        
+    case 'winer',
+        if concordant,
+            fastnpc = @(G,df1,df2)max( ...
+                winer( G,df1,df2),     ...
+                winer(-G,df1,df2));
+        else
+            fastnpc = @(G,df1,df2)winer(G,df1,df2);
+        end
+        pparanpc    = @(T,nG)winerp(T,nG);
+        npcrev      = false;
+        
+    case 'edgington',
+        if concordant,
+            fastnpc = @(G,df1,df2)min( ...
+                edgington( G,df1,df2), ...
+                edgington(-G,df1,df2));
+        else
+            fastnpc = @(G,df1,df2)edgington(G,df1,df2);
+        end
+        pparanpc    = @(T,nG)edgingtonp(T,nG);
+        npcrev      = true;
+        
+    case 'mudholkar-george',
+        if concordant,
+            fastnpc = @(G,df1,df2)max(       ...
+                mudholkargeorge( G,df1,df2), ...
+                mudholkargeorge(-G,df1,df2));
+        else
+            fastnpc = @(G,df1,df2)mudholkargeorge(G,df1,df2);
+        end
+        pparanpc    = @(T,nG)mudholkargeorgep(T,nG);
+        npcrev      = false;
+        
+    case 'friston',
+        if concordant,
+            fastnpc = @(G,df1,df2)min( ...
+                friston( G,df1,df2),   ...
+                friston(-G,df1,df2));
+        else
+            fastnpc = @(G,df1,df2)friston(G,df1,df2);
+        end
+        pparanpc    = @(T,nG)fristonp(T,nG,npcparm);
+        npcrev      = true;
+        
+    case 'darlington-hayes',
+        if concordant,
+            fastnpc = @(G,df1,df2)max(                   ...
+                darlingtonhayes( G,df1,df2,npcparm), ...
+                darlingtonhayes(-G,df1,df2,npcparm));
+        else
+            fastnpc = @(G,df1,df2)darlingtonhayes(G,df1,df2,npcparm);
+        end
+        pparanpc    = [];
+        npcrev      = false;
+        
+    case 'zaykin',
+        if concordant,
+            fastnpc = @(G,df1,df2)max(          ...
+                zaykin( G,df1,df2,npcparm), ...
+                zaykin(-G,df1,df2,npcparm));
+        else
+            fastnpc = @(G,df1,df2)zaykin(G,df1,df2,npcparm);
+        end
+        pparanpc    = @(T,nG)zaykinp(T,nG,npcparm);
+        npcrev      = false;
+        
+    case 'dudbridge-koeleman',
+        if concordant,
+            fastnpc = @(G,df1,df2)max(                     ...
+                dudbridgekoeleman( G,df1,df2,npcparm), ...
+                dudbridgekoeleman(-G,df1,df2,npcparm));
+        else
+            fastnpc = @(G,df1,df2)dudbridgekoeleman(G,df1,df2,npcparm);
+        end
+        pparanpc    = @(T,nG)dudbridgekoelemanp(T,nG,npcparm);
+        npcrev      = false;
+        
+    case 'dudbridge-koeleman2',
+        if concordant,
+            fastnpc = @(G,df1,df2)max(                                   ...
+                dudbridgekoeleman2( G,df1,df2,npcparm,npcparm2), ...
+                dudbridgekoeleman2(-G,df1,df2,npcparm,npcparm2));
+        else
+            fastnpc = @(G,df1,df2)dudbridgekoeleman2(G,df1,df2,npcparm,npcparm2);
+        end
+        pparanpc    = @(T,nG)dudbridgekoeleman2p(T,nG,npcparm,npcparm2);
+        npcrev      = false;
+        
+    case 'taylor-tibshirani',
+        if concordant,
+            fastnpc = @(G,df1,df2)max(        ...
+                taylortibshirani( G,df1,df2), ...
+                taylortibshirani(-G,df1,df2));
+        else
+            fastnpc = @(G,df1,df2)taylortibshirani(G,df1,df2);
+        end
+        pparanpc    = @(T,nG)taylortibshiranip(T,nG);
+        npcrev      = false;
+        
+    case 'jiang',
+        if concordant,
+            fastnpc = @(G,df1,df2)max(         ...
+                jiang( G,df1,df2,npcparm), ...
+                jiang(-G,df1,df2,npcparm));
+        else
+            fastnpc = @(G,df1,df2)jiang(G,df1,df2,npcparm);
+        end
+        npcrev      = false;
+end
+
+% For the NPC methods in which the most significant stats are the
+% smallest, rather than the largest, use reverse comparisons.
+if npcrev,
+    npcrel  = @le;
+    npcextr = @min;
+else
+    npcrel  = @ge;
+    npcextr = @max;
+end
+
+% ==============================================================
 % Other useful functions:
 % ==============================================================
 function savedof(df1,df2,fname)
@@ -3659,6 +3683,19 @@ function [B,S] = lowrankfac(eC,psi,res)
 % S   : p-th row of S
 B   = eC'*psi;
 S   = sum(res.^2);
+
+% ==============================================================
+function Q = mldiv(A,B)
+% This is a slower version than mldivide, which that has no
+% issues with rank deficiency. Useful for the regression in the
+% missing data models.
+Q = pinv(A)*B;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function Q = mrdiv(A,B)
+% This is a slower version than mrdivide, that has no
+% issues with rank deficiency. Useful for computing the statistic
+% in missing data models.
+Q = A*pinv(B);
 
 % ==============================================================
 function C = pascaltri(K)

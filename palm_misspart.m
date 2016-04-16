@@ -6,27 +6,28 @@ function [X,Z,eCm,eCx,Y,imov,ifix,isdiscrete] = palm_misspart(M,C,meth,my,mm,mca
 % [X,Z,eCm,eCx,Y,Pidx,isdiscrete] = palm_misspart(M,C,meth,my,mm)
 %
 % Inputs:
-% M    : Design matrix, to be partitioned.
-% C    : Contrast that will define the partitioning.
-% meth : Method for the partitioning. It can be any of those available
-%        in palm_partition.
-% my   : Missing data indicators for the observations (Y).
-% mm   : Missing data indicators for the design (M).
-% mcar : Boolean, indicating whether the missing data process is completely
-%        at random (true) or not (false).
+% M          : Design matrix, to be partitioned.
+% C          : Contrast that will define the partitioning.
+% meth       : Method for the partitioning. It can be any of those available
+%              in palm_partition.
+% my         : Missing data indicators for the observations (Y).
+% mm         : Missing data indicators for the design (M).
+% mcar       : Boolean, indicating whether the missing data process is completely
+%              at random (true) or not (false).
+% rmethod    : Regression & permutation strategy.
 %
 % Outputs:
-% X    : Cell array with sets of EVs of interest.
-% Z    : Cell array with sets of nuisance EVs.
-% eCm  : Cell array of effective contrasts.
-% eCx  : Same as above, but considering only X.
-% Y    : Cell array with indices (logical) or data for regression (double).
-%        If empty, it's equivalent to a vector index full of ones.
-% idx  : Cell array of indices to select the rows of the permutation
-%        matrices.
+% X          : Cell array with sets of EVs of interest.
+% Z          : Cell array with sets of nuisance EVs.
+% eCm        : Cell array of effective contrasts.
+% eCx        : Same as above, but considering only X.
+% Y          : Cell array with indices (logical) or data for regression (double).
+%              If empty, it's equivalent to a vector index full of ones.
+% imov       : Cell array of indices to select the movable observations.
+% ifix       : Cell array of indices to select the fixed position observations.
 % isdiscrete : Vector indicating if the respective cell array contains both
-%        discrete (binary) X and Y, such that the Chi^2 (Yates) test can be
-%        be performed.
+%              discrete (binary) X and Y, such that the Chi^2 (Yates) test
+%              can be be performed.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -172,15 +173,36 @@ else
 end
 nO = numel(idx);
 
-% PCA of Z, via SVD, then add an intercept
-%[Y,X,Z] = meancenter(Y,X,Z);
-if ~ strcmpi(rmethod,'noz'),
-    [Z,eC] = svdz(Z,eC);
+% PCA of Z
+if ~ isempty(mz),
+    [Z,eC] = pcaz(Z,eC);
 end
+
+% Partition again each of these models using the method indicated by the user:
+eCm = cell(size(X));
+eCx = eCm;
+isdiscrete = false(1,numel(Z));
 for o = 1:nO,
-    Z{o}  = horzcat(Z{o},ones(size(Z{o},1),1));
-    eC{o} = vertcat(eC{o},zeros(1,size(eC{o},2)));
+    [X{o},Z{o},eCm{o},eCx{o}] = palm_partition(horzcat(X{o},Z{o}),eC{o},meth);
+    % Check if discrete. If yes, it will done via Yates' Chi^2.
+    % Otherwise, add an intercept
+    if ~ isempty(Y{o}) && size(unique(X{o},'rows'),1) == 2,
+        isdiscrete(o) = true;
+    else
+        Z{o}   = horzcat(Z{o},ones(size(X{o},1),1));
+        eCm{o} = vertcat(eCm{o},zeros(1,size(eCm{o},2)));
+    end
 end
+
+% Remove bits that are all zeroes (this needs to be adapted for voxelwise):
+for o = nO:-1:1,
+    if  (~isempty(Y{o}) && ~islogical(Y{o}) && all(Y{o} == 0,1)) || all(X{o}(:,1,1) == 0,1),
+        idx(o) = []; Y(o) = []; X(o) = []; Z(o) = [];
+        eCm(o) = []; eCx(o) = [];
+        isdiscrete(o) = [];
+    end
+end
+nO = numel(isdiscrete);
 
 % Prepare the indices used to modify the permutation matrix and the
 % remainder of the model. That is:
@@ -188,7 +210,7 @@ end
 % - The permutation matrix will be:  P(P(:,imov) & ifix,:) = [].
 imov = cell(nO,1);
 ifix = imov;
-if isempty(Z{1}),
+if isempty(mz),
     rmethod = 'noz';
 end
 switch lower(rmethod),
@@ -227,7 +249,7 @@ switch lower(rmethod),
             imov{o} = [];
             ifix{o} = all(idx{o}(:,1:2),2);
         end
-    case 'smith',
+    case 'dekker',
         for o = 1:nO,
             imov{o} = [];
             ifix{o} = all(idx{o}(:,1:2),2);
@@ -244,26 +266,6 @@ for o = 1:nO,
     end
 end
 
-% Partition again each of these models using the method indicated by the user:
-eCm = cell(size(X));
-eCx = eCm;
-isdiscrete = false(1,numel(Z));
-for o = 1:numel(Y),
-    [X{o},Z{o},eCm{o},eCx{o}] = palm_partition(horzcat(X{o},Z{o}),eC{o},meth);
-    if ~ isempty(Y{o}) && size(unique(X{o},'rows'),1) == 2,
-        isdiscrete(o) = true;
-    end
-end
-
-% Remove bits that are all zeroes (this needs to be adapted for voxelwise):
-for o = numel(Y):-1:1,
-    if  (~isempty(Y{o}) && ~islogical(Y{o}) && all(Y{o} == 0,1)) || all(X{o}(:,1,1) == 0,1),
-        idx(o) = []; Y(o) = []; X(o) = []; Z(o) = [];
-        eCm(o) = []; eCx(o) = [];
-        isdiscrete(o) = [];
-    end
-end
-
 % ==============================================================
 function eC = mkcon(X,Z)
 % Shortcut to create the effective contrast.
@@ -276,18 +278,7 @@ else
 end
 
 % ==============================================================
-function [Y,X,Z] = meancenter(Y,X,Z)
-% Mean center data and design.
-for o = 1:numel(Y),
-    if ~isempty(Y{o}) && ~islogical(Y{o}),
-        Y{o} = bsxfun(@minus,Y{o},mean(Y{o},1));
-    end
-    X{o} = bsxfun(@minus,X{o},mean(X{o},1));
-    Z{o} = bsxfun(@minus,Z{o},mean(Z{o},1));
-end
-
-% ==============================================================
-function [Z,eC] = svdz(Z,eC)
+function [Z,eC] = pcaz(Z,eC)
 % PCA of Z, via SVD.
 for o = 1:numel(Z),
     sZ1     = size(Z{o},2);
@@ -299,4 +290,15 @@ for o = 1:numel(Z),
     Z{o}    = u(:,abv)*s(abv,abv);
     sZ2     = size(Z{o},2);
     eC{o}   = eC{o}(1:end-(sZ1-sZ2),:);
+end
+
+% ==============================================================
+function [Y,X,Z] = meancenter(Y,X,Z)
+% Mean center data and design (currently unused)
+for o = 1:numel(Y),
+    if ~isempty(Y{o}) && ~islogical(Y{o}),
+        Y{o} = bsxfun(@minus,Y{o},mean(Y{o},1));
+    end
+    X{o} = bsxfun(@minus,X{o},mean(X{o},1));
+    Z{o} = bsxfun(@minus,Z{o},mean(Z{o},1));
 end

@@ -564,7 +564,7 @@ while a <= narginx,
                     'Kennedy',         ... % Kennedy won't be in the help
                     'Manly',           ...
                     'Huh-Jhun',        ...
-                    'Smith'};
+                    'Dekker'};
                 methidx = strcmpi(vararginx{a+1},methlist);
                 if ~any(methidx);
                     error('Regression/Permutation method "%s" unknown.',vararginx{a+1});
@@ -2210,7 +2210,7 @@ for m = 1:plm.nM,
     for c = 1:plm.nC(m),
         if opts.concordant && plm.rC{m}(c) > 1,
             error(['Cannot use the "-concordant" option with F-tests (inadmissible).\n'...
-                'Use "-tonly" to run just the t-tests.%s'],'');
+                'Use "-tonly" to run just the t-tests, or remove "-concordant".%s'],'');
         end
     end
 end
