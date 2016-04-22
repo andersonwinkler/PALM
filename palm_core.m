@@ -25,9 +25,10 @@ function palm_core(varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+% Uncomment the line below for debugging:
+% clear global plm opts; global plm opts; 
+
 % Take the arguments. Save a small log if needed.
-%clear global plm opts; % comment for debugging
-%global plm opts; % uncomment for debugging
 ticI = tic;
 [opts,plm] = palm_takeargs(varargin{:});
 
@@ -407,27 +408,26 @@ for m = 1:plm.nM,
                         plm.Rm{y}{m}{c}{o} = zeros(N,N,nT);
                         for t = 1:nT,
                             plm.Hm{y}{m}{c}{o}(:,:,t) = plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t));
-                            plm.Rm{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hm{y}{m}{c}{o}(:,:,t);
+                            plm.Rm{y}{m}{c}{o}(:,:,t) = I - plm.Hm{y}{m}{c}{o}(:,:,t);
                         end
                         plm.rM{y}{m}{c}{o} = size(plm.Mp{y}{m}{c}{o},1) - round(sum(diag(plm.Rm{y}{m}{c}{o}(:,:,1)))); % this is faster than rank(M)
                     else
                         plm.rM{y}{m}{c}{o} = rank(plm.Mp{y}{m}{c}{o}(:,:,1));
                     end
                 else % that is, if plm.nVG > 1
+                    I = eye(N);
                     if strcmpi(opts.rmethod,'terbraak'),
                         [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
-                        I = eye(N);
                         plm.Hm{y}{m}{c}{o}  = zeros(N,N,nT);
                         plm.Rm{y}{m}{c}{o}  = zeros(N,N,nT);
                         plm.dRm{y}{m}{c}{o} = zeros(N,nT);
                         for t = 1:nT,
                             plm.Hm{y}{m}{c}{o}(:,:,t) = plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t));
-                            plm.Rm{y}{m}{c}{o}(:,:,t) = eye(N) - plm.Hm{y}{m}{c}{o}(:,:,t);
+                            plm.Rm{y}{m}{c}{o}(:,:,t) = I - plm.Hm{y}{m}{c}{o}(:,:,t);
                             plm.dRm{y}{m}{c}{o}(:,t)  = diag(plm.Rm{y}{m}{c}{o}(:,:,t)); % this is used for the pivotal statistic
                         end
                     else
                         [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
-                        I = eye(N);
                         plm.dRm{y}{m}{c}{o} = zeros(N,nT);
                         for t = 1:nT,
                             plm.dRm{y}{m}{c}{o}(:,t) = diag(I - plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t))); % this is used for the pivotal statistic
@@ -899,6 +899,16 @@ for m = 1:plm.nM,
                         elseif plm.rC{m}(c) >  1,
                             fastpiv{m}{c} = @fastrsq;
                         end
+                    elseif opts.SwE,
+                        if     plm.rC{m}(c) == 1 && plm.nVG == 1,
+                            fastpiv{m}{c} = @fasttswe;
+                        elseif plm.rC{m}(c) >  1 && plm.nVG == 1,
+                            fastpiv{m}{c} = @fastfswe;
+                        elseif plm.rC{m}(c) == 1 && plm.nVG >  1,
+                            fastpiv{m}{c} = @fastvswe;
+                        elseif plm.rC{m}(c) >  1 && plm.nVG >  1,
+                            fastpiv{m}{c} = @fastgswe;
+                        end
                     else
                         if     plm.rC{m}(c) == 1 && plm.nVG == 1,
                             fastpiv{m}{c} = @fastt;
@@ -1269,7 +1279,7 @@ for po = P_outer,
                 
                 % Convert the MV statistic to z if that was requested.
                 if opts.zstat,
-                    plm.Q{m}{c} = -erfinv(2*plm.Qppara{m}{c}-1)*sqrt(2);
+                    plm.Q{m}{c} = erfcinv(2*plm.Qppara{m}{c})*sqrt(2);
                     if m == 1 && c == 1,
                         plm.mvstr = horzcat('_z',plm.mvstr(2:end));
                     end
@@ -1717,7 +1727,7 @@ for po = P_outer,
                         df2npc{1}(y,:) = df2{y}{m}{c};
                     end; clear y
                     T{m}{c} = plm.fastnpc(Gnpc{1},0,df2npc{1});
-                    
+
                     % Since computing the parametric p-value for some methods
                     % can be quite slow, it's faster to run all these checks
                     % to ensure that 'plm.pparanpc' runs just once.
@@ -1742,7 +1752,7 @@ for po = P_outer,
                     % Convert T to zstat if that was asked (note that at this point,
                     % G was already converted to z before making T).
                     if opts.zstat,
-                        T{m}{c} = -erfinv(2*Tppara{m}{c}-1)*sqrt(2);
+                        T{m}{c} = erfcinv(2*Tppara{m}{c})*sqrt(2);
                         if p == 1 && m == 1 && c == 1,
                             plm.npcstr = horzcat('_z',plm.npcstr(2:end));
                         end
@@ -1781,13 +1791,8 @@ for po = P_outer,
                     
                     % Be sure to use z-scores for the spatial statistics, converting
                     % it if not already.
-                    if opts.spatial.npc,
-                        if ~ opts.zstat,
-                            
-                            % Avoid infinities
-                            Tppara{m}{c} = Tppara{m}{c}*0.999999999999999 + 1e-15;
-                            T{m}{c}      = -erfinv(2*Tppara{m}{c}-1)*sqrt(2);
-                        end
+                    if opts.spatial.npc && ~ opts.zstat,
+                        T{m}{c} = erfcinv(2*Tppara{m}{c})*sqrt(2);
                     end
                     
                     % Cluster statistic NPC is here
@@ -1885,7 +1890,7 @@ for po = P_outer,
                         
                         % Convert to zstat if that was asked
                         if opts.zstat,
-                            Q{m}{c} = -erfinv(2*Qppara{m}{c}-1)*sqrt(2);
+                            Q{m}{c} = erfcinv(2*Qppara{m}{c})*sqrt(2);
                             if p == 1 && m == 1 && c == 1,
                                 plm.mvstr = horzcat('_z',plm.mvstr(2:end));
                             end
@@ -1956,13 +1961,8 @@ for po = P_outer,
                             
                             % Now compute the spatial statistics, converting to z-score
                             % if not already.
-                            if opts.spatial.mv,
-                                if ~ opts.zstat,
-                                    
-                                    % Avoid infinities (this is ugly but needed).
-                                    Qppara{m}{c}  = Qppara{m}{c}*0.999999999999999 + 1e-15;
-                                    Q{m}{c}       = -erfinv(2*Qppara{m}{c}-1)*sqrt(2);
-                                end
+                            if opts.spatial.mv && ~ opts.zstat,
+                                Q{m}{c} = erfcinv(2*Qppara{m}{c})*sqrt(2);
                             end
                             
                             % Cluster statistic is here
@@ -2210,7 +2210,7 @@ for po = P_outer,
             % Convert T to zstat if that was asked (note that at this point,
             % G was already converted to z before making T).
             if opts.zstat,
-                T{1}{c} = -erfinv(2*Tppara{1}{c}-1)*sqrt(2);
+                T{1}{c} = erfcinv(2*Tppara{1}{c})*sqrt(2);
                 if p == 1 && c == 1,
                     plm.npcstr = horzcat('_z',plm.npcstr(2:end));
                 end
@@ -2249,11 +2249,8 @@ for po = P_outer,
             
             % Be sure to use z-scores for the spatial statistics, converting
             % it if not already.
-            if opts.spatial.npc,
-                if ~ opts.zstat,
-                    Tppara{1}{c} = Tppara{1}{c}*0.999999999999999 + 1e-15; % avoid infinities
-                    T{1}{c}      = -erfinv(2*Tppara{1}{c}-1)*sqrt(2);
-                end
+            if opts.spatial.npc && ~ opts.zstat,
+                T{1}{c} = erfcinv(2*Tppara{1}{c})*sqrt(2);
             end
             
             % Cluster statistic NPC is here
@@ -2387,7 +2384,7 @@ for po = P_outer,
             % Convert T to zstat if that was asked (note that at this point,
             % G was already converted to z before making T).
             if opts.zstat,
-                T{j} = -erfinv(2*Tppara{j}-1)*sqrt(2);
+                T{j} = erfcinv(2*Tppara{j})*sqrt(2);
                 if po == 1 && j == 1,
                     plm.npcstr = horzcat('_z',plm.npcstr(2:end));
                 end
@@ -2426,11 +2423,8 @@ for po = P_outer,
             
             % Be sure to use z-scores for the spatial statistics, converting
             % it if not already.
-            if opts.spatial.npc,
-                if ~ opts.zstat,
-                    Tppara{j} = Tppara{j}*0.999999999999999 + 1e-15; % avoid infinities
-                    T{j}      = -erfinv(2*Tppara{j}-1)*sqrt(2);
-                end
+            if opts.spatial.npc && ~ opts.zstat,
+                T{j} = erfcinv(2*Tppara{j})*sqrt(2);
             end
             
             % Cluster statistic NPC is here
@@ -2735,16 +2729,29 @@ df2 = size(M,1)-plm.rM{y}{m}{c}{o};
 G   = plm.eC{y}{m}{c}{o}'*psi;
 den = sqrt(plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o}*sum(res.^2)./df2);
 G   = G./den;
-
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastt3d(M,psi,res,y,m,c,o,plm)
 df2 = size(M,1)-plm.rM{y}{m}{c}{o};
 G   = plm.eC{y}{m}{c}{o}'*psi;
-MtM = zeros(1,size(psi,2));
+S   = zeros(1,size(psi,2));
 for t = 1:size(psi,2),
-    MtM(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
+    S(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
 end
-den = sqrt(MtM.*sum(res.^2,1)./df2);
+den = sqrt(S.*sum(res.^2,1)./df2);
+G   = G./den;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [G,df2] = fasttswe(M,psi,res,y,m,c,o,plm)
+df2 = size(M,1)-plm.rM{y}{m}{c}{o};
+G   = plm.eC{y}{m}{c}{o}'*psi;
+S   = zeros(1,size(psi,2));
+MtM = (M'*M);
+Rm  = eye(plm.N) - M*pinv(M);
+for t = 1:size(psi,2),
+    V = res(:,t)*res(:,t)' ./ Rm;
+    S(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',...
+        plm.mrdiv(plm.mldiv(MtM,(M'*V*M)),MtM))*plm.eC{y}{m}{c}{o};
+end
+den = sqrt(S.*sum(res.^2,1)./df2);
 G   = G./den;
 
 % ==============================================================
@@ -2781,8 +2788,27 @@ df2 = size(M,1)-plm.rM{y}{m}{c}{o};
 nT = size(res,2);
 cte = zeros(size(psi,1),size(psi,1),nT);
 for t = 1:nT,
-    cte(:,:,t) = plm.mrdiv(plm.eC{y}{m}{c}{o},plm.mrdiv(plm.eC{y}{m}{c}{o}' ...
-        ,(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o})*plm.eC{y}{m}{c}{o}';
+    cte(:,:,t) = plm.mrdiv(plm.eC{y}{m}{c}{o},plm.mrdiv(plm.eC{y}{m}{c}{o}', ...
+        (M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o})*plm.eC{y}{m}{c}{o}';
+end
+ppsi = permute(psi,[1 3 2]);
+ppsi = sum(bsxfun(@times,ppsi,cte),1);
+ppsi = permute(ppsi,[2 3 1]);
+G    = sum(ppsi.*psi,1);
+ete  = sum(res.^2,1);
+G    = G./ete*df2/plm.rC0{m}(c);
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [G,df2] = fastfswe(M,psi,res,y,m,c,o,plm)
+df2 = size(M,1)-plm.rM{y}{m}{c}{o};
+nT = size(res,2);
+cte = zeros(size(psi,1),size(psi,1),nT);
+MtM = (M'*M);
+Rm = eye(plm.N) - M*pinv(M);
+for t = 1:nT,
+    V = res(:,t)*res(:,t)' ./ Rm;
+    cte(:,:,t) = plm.mrdiv(plm.eC{y}{m}{c}{o},plm.mrdiv(plm.eC{y}{m}{c}{o}', ...
+        plm.mrdiv(plm.mldiv(MtM,(M'*V*M)),MtM))* ...
+        plm.eC{y}{m}{c}{o})*plm.eC{y}{m}{c}{o}';
 end
 ppsi = permute(psi,[1 3 2]);
 ppsi = sum(bsxfun(@times,ppsi,cte),1);
@@ -2824,10 +2850,10 @@ end
 for t = 1:nT,
     den(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',reshape(cte(:,t),[r r]))*plm.eC{y}{m}{c}{o};
 end
-G = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
-sW1 = sum(W,1);
+G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
+sW1  = sum(W,1);
 bsum = sum(bsxfun(@rdivide,(1-bsxfun(@rdivide,W,sW1)).^2,dRmb),1);
-df2 = 1/3./bsum;
+df2  = 1/3./bsum;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastv3d(M,psi,res,y,m,c,o,plm)
 nT   = size(res,2);
@@ -2852,6 +2878,26 @@ G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
 sW1  = sum(W,1);
 bsum = sum((1-bsxfun(@rdivide,W,sW1)).^2./dRmb,1);
 df2  = 1/3./bsum;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [G,df2] = fastvswe(M,psi,res,y,m,c,o,plm)
+nT   = size(res,2);
+den  = zeros(1,nT);
+r    = size(M,2);
+cte  = zeros(r,r,nT);
+for b = 1:plm.nVG,
+    bidx = plm.VG == b;
+    MtM  = (M(bidx,:)'*M(bidx,:));
+    Rm   = eye(sum(bidx)) - M(bidx,:)*pinv(M(bidx,:));
+    for t = 1:nT,
+        V = res(bidx,t)*res(bidx,t)' ./ Rm;
+        cte(:,:,t) = cte(:,:,t) + plm.mrdiv(plm.mldiv(MtM,(M(bidx,:)'*V*M(bidx,:))),MtM);
+    end
+end
+for t = 1:nT,
+    den(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',cte(:,:,t))*plm.eC{y}{m}{c}{o};
+end
+G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
+df2  = size(M,1)-plm.rM{y}{m}{c}{o};
 
 % ==============================================================
 function [G,df2] = fastg(M,psi,res,y,m,c,o,plm)
@@ -2925,33 +2971,28 @@ G    = G./(1 + 2*(plm.rC{m}(c)-1).*bsum);
 function [Z,df2] = fastmiss(Y,M,y,m,c,plm,opts,fastpiv)
 % Conputes the test statistic for missing data.
 df2 = NaN;
-persistent Gtmp; % persistent so as to avoid re-allocing
-Gtmp = zeros(numel(Y),size(Y{1},2));
+persistent GPtmp df2tmp; % persistent so as to avoid re-allocing.
+GPtmp  = zeros(numel(Y),size(Y{1},2)); % same var for G and P
+df2tmp = GPtmp;
 nO = numel(Y);
 for o = nO:-1:1,
     if plm.isdiscrete{y}{m}{c}(o),
-        Gtmp(o,:) = yates(Y{o},M{o});
+        GPtmp(o,:) = yates(Y{o},M{o});
+        GPtmp(o,:) = palm_gpval(GPtmp(o,:),0);
     elseif testzeros(Y{o},M{o},y,m,c,o,plm),
-        Gtmp(o,:) = [];
+        GPtmp(o,:) = []; df2tmp(o,:) = [];
     else
         psi = plm.mldiv(M{o},Y{o});
         res = Y{o} - M{o}*psi;
-        Gtmp(o,:) = fastpiv(M{o},psi,res,y,m,c,o,plm);
+        [GPtmp(o,:),df2tmp(o,:)] = fastpiv(M{o},psi,res,y,m,c,o,plm);
         if o > 1 || opts.twotail,
-            Gtmp(o,:) = abs(Gtmp(o,:));
+            GPtmp(o,:) = abs(GPtmp(o,:));
         end
-        try
-        Gtmp(o,:) = palm_gtoz(Gtmp(o,:),plm.rC0{m}(c),size(M{o},1)-size(M{o},2));
-        catch
-            M{o},psi,res
-            Gtmp(o,:)
-            fastpiv(M{o},psi,res,y,m,c,o,plm)
-            error
-        end
+        GPtmp(o,:) = palm_gpval(GPtmp(o,:),plm.rC0{m}(c),df2tmp(o,:));
     end
 end
-G = plm.fastnpcmiss(Gtmp,0,df2);
-P = plm.pparanpcmiss(G,nO);
+G = -2*sum(log(GPtmp),1); % This is Fisher
+P = palm_gpval(G,-1,2*size(GPtmp,1));
 Z = sqrt(2)*erfcinv(2*P);
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function result = testzeros(Y,M,y,m,c,o,plm)
@@ -3253,7 +3294,7 @@ idx     = tmp <= parmr;
 G       = reshape(G(idx),horzcat(parmr,size(G,2)));
 df2     = reshape(df2(idx),horzcat(parmr,size(df2,2)));
 P       = palm_gcdf(G,df1,df2);
-Z       = erfinv(2*P-1)*sqrt(2);
+Z       = -erfcinv(2*P)*sqrt(2);
 T       = mean(Z,1);
 
 % ==============================================================
@@ -3381,7 +3422,8 @@ P = palm_gpval(G,df1,df2);
 T = sum((P<=parma).*(1-P.*(nG+1)./prank))/nG;
 
 % ==============================================================
-function [fastnpc,pparanpc,npcrev,npcrel,npcextr] = npchandles(npcmethod,concordant)
+function [fastnpc,pparanpc,npcrev,npcrel,npcextr] = ...
+    npchandles(npcmethod,concordant)
 % Create the function handles for the NPC.
 if nargout == 2,
     concordant = false;
@@ -3630,6 +3672,36 @@ for t = 1:nT,
 end
 
 % ==============================================================
+function [B,S] = lowrankfac(eC,psi,res)
+% This works only if:
+% - rank(contrast) = 1
+% - number of variance groups = 1
+%
+% Inputs:
+% eC  : effective contrast
+% psi : regression coefficients
+% res : residuals
+%
+% Outputs:
+% B   : p-th row of B
+% S   : p-th row of S
+B   = eC'*psi;
+S   = sum(res.^2);
+
+% ==============================================================
+function Q = mldiv(A,B)
+% This is a slower version than mldivide, which that has no
+% issues with rank deficiency. Useful for the regression in the
+% missing data models.
+Q = pinv(A)*B;
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function Q = mrdiv(A,B)
+% This is a slower version than mrdivide, that has no
+% issues with rank deficiency. Useful for computing the statistic
+% in missing data models.
+Q = A*pinv(B);
+
+% ==============================================================
 function Z = yates(Y,X);
 % Compute a Chi^2 test in a 2x2 contingency table, using the
 % Yates correction, then convert to a z-statistic.
@@ -3666,36 +3738,6 @@ X2 = sum(sum(X2,1),3);
 df = ones(size(X2))*size(X,2);
 P  = gammainc(X2/2,df/2,'upper'); % division of P by 2 omitted.
 Z  = sqrt(2)*erfcinv(P); % multiplication of P by 2 omitted.
-
-% ==============================================================
-function [B,S] = lowrankfac(eC,psi,res)
-% This works only if:
-% - rank(contrast) = 1
-% - number of variance groups = 1
-%
-% Inputs:
-% eC  : effective contrast
-% psi : regression coefficients
-% res : residuals
-%
-% Outputs:
-% B   : p-th row of B
-% S   : p-th row of S
-B   = eC'*psi;
-S   = sum(res.^2);
-
-% ==============================================================
-function Q = mldiv(A,B)
-% This is a slower version than mldivide, which that has no
-% issues with rank deficiency. Useful for the regression in the
-% missing data models.
-Q = pinv(A)*B;
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-function Q = mrdiv(A,B)
-% This is a slower version than mrdivide, that has no
-% issues with rank deficiency. Useful for computing the statistic
-% in missing data models.
-Q = A*pinv(B);
 
 % ==============================================================
 function C = pascaltri(K)

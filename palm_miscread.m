@@ -156,6 +156,7 @@ switch lower(fext{end}),
                 X.readwith = 'wb_command';
                 [X.data,X.extra] = palm_ciftiread(X.filename,tmppath);
                 X.data = X.data';
+                X.extra.cifti_file_extension = fext{end-1};
             else
                 error('Currently cannot read/write CIFTI files without the HCP Workbench.')
             end

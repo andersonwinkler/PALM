@@ -277,6 +277,12 @@ while a <= narginx,
             end
             a = a + 2;
             
+        case '-swe', % advanced
+            
+            % Compute one (of various possible) sandwich estimators
+            opts.SwE = true;
+            a = a + 1;
+            
         case '-o', % basic
             
             % Output prefix for the files to be saved.
@@ -582,6 +588,7 @@ while a <= narginx,
             
             % This is a shortcut to enable NPC with the default settings.
             opts.NPC = true;
+            opts.npcmod = true;
             a = a + 1;
             
         case '-npcmethod', % basic

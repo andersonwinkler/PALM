@@ -61,7 +61,7 @@ if isnan(df2(1)),
         
         % If rank(C) > 1, i.e., df1 > 1, this is R^2, so
         % use a probit transformation.
-        Z = erfinv(2*G-1)*sqrt(2); %Z = norminv(G);
+        Z = -erfcinv(2*G)*sqrt(2); %Z = norminv(G);
         
     end
 

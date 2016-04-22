@@ -46,21 +46,21 @@ function pvals = palm_gpval(G,df1,df2,twotail)
 if df1 > 1,
     
     % G or F, via conversion to Beta
-    df2 = bsxfun(@times,ones(size(G)),df2);
-    B = (df1.*G./df2)./(1+df1.*G./df2);
+    df2   = bsxfun(@times,ones(size(G)),df2);
+    B     = (df1.*G./df2)./(1+df1.*G./df2);
     pvals = betainc(1-B,df2/2,df1/2);
     
 elseif df1 == 1,
     
     % Student's t, Aspin-Welch v
     df2 = bsxfun(@times,ones(size(G)),df2);
-    ic = df2 == 1;
-    in = df2 > 1e7;
-    ig = ~(ic|in);
+    ic  = df2 == 1;
+    in  = df2 > 1e7;
+    ig  = ~(ic|in);
     if any(ig(:)),
         pvals(ig) = betainc(1./(1+G(ig).^2./df2(ig)),df2(ig)/2,.5)/2;
     end
-    ig = G < 0 & ig;
+    ig  = G < 0 & ig;
     pvals(ig) = 1 - pvals(ig);
     if any(ic(:)),
         pvals(ic) = .5 + atan(-G(ic))/pi;
@@ -78,7 +78,7 @@ elseif df1 == 0,
 elseif df1 < 0,
     
     % Chi^2, via upper Gamma incomplete for precision and speed
-    df2 = bsxfun(@times,ones(size(G)),df2);
+    df2   = bsxfun(@times,ones(size(G)),df2);
     pvals = gammainc(G/2,df2/2,'upper');
     
 end

@@ -28,7 +28,6 @@ function opts = palm_defaults
 % Define some defaults and organise all as a struct
 opts.o                   = 'palm';             % Default output string.
 opts.nP0                 = 10000;              % Number of permutations
-opts.SB                  = false;              % Whole block shuffling (for legacy format)?
 opts.lx                  = true;               % Lexicographic permutations?
 opts.cmcp                = false;              % Use Conditional Monte Carlo (ignore repeated perms)?
 opts.cmcx                = false;              % Use Conditional Monte Carlo (ignore repeated elements in X)?
@@ -86,6 +85,7 @@ opts.vgdemean            = false;              % Mean-center within VG?
 opts.ev4vg               = false;              % Add one EV for each VG?
 opts.removevgbysize      = 0;                  % Remove VGs smaller than a given size?
 opts.zstat               = false;              % Convert G-stat to z-stat?
+opts.SwE                 = false;              % Whole block shuffling (for legacy format)?
 opts.pearson             = false;              % Compute the Pearson's correlation coefficient (R^2 if rank(C)>1)?
 opts.noranktest          = false;              % Don't test the rank(Y) before doing MANOVA/MANCOVA.
 opts.evperdat            = false;              % Use one (single!) EV per datum?

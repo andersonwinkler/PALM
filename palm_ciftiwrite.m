@@ -1,11 +1,11 @@
 function palm_ciftiwrite(varargin)
-% Provides limited support for writing dtscalar CIFTI files
+% Provides limited support for writing dtseries CIFTI files
 % (surface only) using the wb_command as the backend.
 %
 % C = palm_ciftiwrite(filename,data,extra,wb_command)
 %
 % Inputs:
-% - filename    : Filename of the CIFTI (surface only, dtscalar).
+% - filename    : Filename of the CIFTI (surface only, dtseries).
 % - data        : Actual data that will be saved.
 % - extra       : Metadata for the CIFTI.
 % - wb_command  : (Optional) Full path to the executable wb_command.
@@ -58,7 +58,9 @@ end
 C = gifti([]);
 F = fieldnames(extra);
 for f = 1:numel(F),
-    C.private.(F{f}) = extra.(F{f});
+    if ~ strcmpi(F{f},'cifti_file_extension')
+        C.private.(F{f}) = extra.(F{f});
+    end
 end
 C.cdata = data;
 
@@ -79,13 +81,21 @@ C.private.data{1}.metadata.value = save(xt);
 % Save the GIFTI. This will create a .gii and a .gii.dat.
 save(C,strcat(filename,'.gii'),'ExternalFileBinary');
 
+% Include the reset flags to the wb_command (thanks Matt Glasser!)
+if strcmpi(extra.cifti_file_extension,'dscalar'),
+    resetstr = '-reset-scalars';
+elseif strcmpi(extra.cifti_file_extension,'dtseries'),
+    resetstr = '-reset-timepoints 1 0';
+end
+
 % Use the Workbench to convert the GIFTI to CIFTI.
-[~] = system(sprintf('%s -cifti-convert -from-gifti-ext %s %s',...
-    wb_command,strcat(filename,'.gii'),strcat(filename,'.dtseries.nii')));
+[~] = system(sprintf('%s -cifti-convert -from-gifti-ext %s %s %s',...
+    wb_command,strcat(filename,'.gii'),...
+    sprintf('%s.%s.nii',filename,extra.cifti_file_extension),resetstr));
 
 % Delete the temporary GIFTI file.
 % Note that here the extension is "dat" because it comes from the GIFTI
 % I/O. In the writing function, it's "data", because it comes from the
-% Workbench. All a mess...
+% Workbench.
 delete(strcat(filename,'.gii'));
 delete(strcat(filename,'.dat'));

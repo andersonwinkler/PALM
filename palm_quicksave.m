@@ -153,6 +153,11 @@ if ~ isempty(X),
         end
     end
     
+    % Transpose back
+    if opts.transposedata && max(size(S.data)) == numel(S.data),
+        S.data = S.data';
+    end
+    
     % Save
     palm_miscwrite(S);
 end
