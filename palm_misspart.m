@@ -1,4 +1,4 @@
-function [X,Z,eCm,eCx,Y,imov,ifix,isdiscrete] = palm_misspart(M,C,meth,my,mm,mcar,rmethod)
+function [X,Z,eCm,eCx,Y,imov,ifix,isdiscrete,istwotail] = palm_misspart(M,C,meth,my,mm,mcar,rmethod)
 % Partition the model for missing data, generating all the sub-models
 % that can later be subjected to NPC.
 %
@@ -28,6 +28,7 @@ function [X,Z,eCm,eCx,Y,imov,ifix,isdiscrete] = palm_misspart(M,C,meth,my,mm,mca
 % isdiscrete : Vector indicating if the respective cell array contains both
 %              discrete (binary) X and Y, such that the Chi^2 (Yates) test
 %              can be be performed.
+% istwotail  : Whether the partial test should be run as two-tailed.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -87,6 +88,7 @@ if isempty(mz),
         else
             idx{1} = [iy ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
             idx{2} = [ia ia];      Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
+            istwotail = [false true];
         end
     elseif   all(iy) & ~ all(ix), % Case 3
         if mcar,
@@ -94,6 +96,7 @@ if isempty(mz),
         else
             idx{1} = [ia ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
             idx{2} = [ia ia];      Y{2} = [];   X{2} = mx;   Z{2} = [];   eC{2} = mkcon(X{2},Z{2});
+            istwotail = [false true];
         end
     elseif ~ all(iy) & ~ all(ix), % Case 5
         if mcar,
@@ -103,6 +106,7 @@ if isempty(mz),
             idx{2} = [ia ix];      Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
             idx{3} = [iy ia];      Y{3} = [];   X{3} = mx;   Z{3} = [];   eC{3} = ecm;
             idx{4} = [ia ia];      Y{4} = my;   X{4} = mx;   Z{4} = [];   eC{4} = ecm; % discrete
+            istwotail = [false true true true];
         end
     end
 else
@@ -114,6 +118,7 @@ else
         else
             idx{1} = [iy ia ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ia ia];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
+            istwotail = [false true];
         end
     elseif   all(iy) & ~ all(ix) &   all(iz), % Case 3
         if mcar,
@@ -121,6 +126,7 @@ else
         else
             idx{1} = [ia ix ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ia ia];   Y{2} = [];   X{2} = mx;   Z{2} = z;    eC{2} = mkcon(X{2},Z{2});
+            istwotail = [false true];
         end
     elseif   all(iy) &   all(ix) & ~ all(iz), % Case 4
         if mcar,
@@ -128,6 +134,7 @@ else
         else
             idx{1} = [ia ia iz];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ia ia];   Y{2} = [];   X{2} = x;    Z{2} = mz;   eC{2} = mkcon(ecx,Z{2});
+            istwotail = [false false];
         end
     elseif ~ all(iy) & ~ all(ix) &   all(iz), % Case 5
         if mcar,
@@ -137,6 +144,7 @@ else
             idx{2} = [ia ix ia];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
             idx{3} = [iy ia ia];   Y{3} = [];   X{3} = mx;   Z{3} = z;    eC{3} = mkcon(X{3},Z{3});
             idx{4} = [ia ia ia];   Y{4} = my;   X{4} = mx;   Z{4} = z;    eC{4} = mkcon(X{4},Z{4}); % discrete
+            istwotail = [false true true true];
         end
     elseif ~ all(iy) &   all(ix) & ~ all(iz), % Case 6
         if mcar,
@@ -146,6 +154,7 @@ else
             idx{2} = [ia ia iz];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
             idx{3} = [iy ia ia];   Y{3} = [];   X{3} = x;    Z{3} = mz;   eC{3} = mkcon(ecx,Z{3});
             idx{4} = [ia ia ia];   Y{4} = my;   X{4} = x;    Z{4} = mz;   eC{4} = mkcon(ecx,Z{4});
+            istwotail = [false true false true];
         end
     elseif   all(iy) & ~ all(ix) & ~ all(iz), % Case 7
         if mcar,
@@ -155,6 +164,7 @@ else
             idx{2} = [ia ia iz];   Y{2} = [];   X{2} = mx;   Z{2} = z;    eC{2} = mkcon(X{2},Z{2});
             idx{3} = [ia ix ia];   Y{3} = [];   X{3} = x;    Z{3} = mz;   eC{3} = mkcon(ecx, Z{3});
             idx{4} = [ia ia ia];   Y{4} = [];   X{4} = mx;   Z{4} = mz;   eC{4} = mkcon(X{4},Z{4});
+            istwotail = [false true false true];
         end
     elseif ~ all(iy) & ~ all(ix) & ~ all(iz), % Case 8
         if mcar,
@@ -168,10 +178,16 @@ else
             idx{6} = [ia ix ia];   Y{6} = my;   X{6} = x;    Z{6} = mz;   eC{6} = mkcon(ecx, Z{6});
             idx{7} = [iy ia ia];   Y{7} = [];   X{7} = mx;   Z{7} = mz;   eC{7} = mkcon(X{7},Z{7});
             idx{8} = [ia ia ia];   Y{8} = my;   X{8} = mx;   Z{8} = mz;   eC{8} = mkcon(X{8},Z{8}); % discrete
+            istwotail = [false true true false true true true true];
         end
     end
 end
 nO = numel(idx);
+
+% For the cases in which there's nothing to be combined, not two-tailed
+if nO == 1,
+    istwotail  = false;
+end
 
 % PCA of Z
 if ~ isempty(mz),

@@ -128,7 +128,6 @@ while a <= narginx,
             
             % Get the filenames for the surfaces, if any.
             opts.s{s}  = vararginx{a+1};
-            s = s + 1;
             if nargin == a+1 || (nargin>a+1 && strcmp(vararginx{a+2}(1),'-')),
                 opts.sa{s} = [];
                 a = a + 2;
@@ -136,6 +135,7 @@ while a <= narginx,
                 opts.sa{s} = vararginx{a+2};
                 a = a + 3;
             end
+            s = s + 1;
             
         case '-d', % basic
             

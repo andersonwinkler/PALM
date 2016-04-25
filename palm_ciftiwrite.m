@@ -1,5 +1,5 @@
 function palm_ciftiwrite(varargin)
-% Provides limited support for writing dtseries CIFTI files
+% Provides limited support for writing dtseries/dscalar CIFTI files
 % (surface only) using the wb_command as the backend.
 %
 % C = palm_ciftiwrite(filename,data,extra,wb_command)
@@ -51,7 +51,7 @@ try  %#ok
 end
 if status ~= 0,
     disp(wb_output);
-    error('Test failed for your architecture. CIFTI will not be read.');
+    error('Test failed for your architecture. CIFTI files will not be written.');
 end
 
 % Convert to a GIFTI object 
@@ -82,6 +82,7 @@ C.private.data{1}.metadata.value = save(xt);
 save(C,strcat(filename,'.gii'),'ExternalFileBinary');
 
 % Include the reset flags to the wb_command (thanks Matt Glasser!)
+resetstr = '';
 if strcmpi(extra.cifti_file_extension,'dscalar'),
     resetstr = '-reset-scalars';
 elseif strcmpi(extra.cifti_file_extension,'dtseries'),

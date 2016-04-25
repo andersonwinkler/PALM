@@ -352,7 +352,7 @@ for m = 1:plm.nM,
                     plm.eCm{y}{m}{c},plm.eCx{y}{m}{c},...
                     plm.Ymissp{y},...
                     plm.imov{y}{m}{c},plm.ifix{y}{m}{c},...
-                    plm.isdiscrete{y}{m}{c}] = ...
+                    plm.isdiscrete{y}{m}{c},plm.istwotail{y}{m}{c}] = ...
                     palm_misspart(plm.Mset{m},plm.Cset{m}{c},...
                     opts.pmethodr,plm.Ymiss{y},plm.Mmiss{m},opts.mcar,opts.rmethod);
                 for o = 1:numel(plm.X{y}{m}{c}),
@@ -1404,7 +1404,7 @@ for po = P_outer,
                             end
                             
                             % Save COPE and VARCOPE if requested (option -saveglm)
-                            if p == 1 && opts.saveglm && plm.rC{m}(c) == 1,
+                            if p == 1 && opts.saveglm && plm.rC0{m}(c) == 1,
                                 o     = 1;
                                 cope  = plm.eC{y}{m}{c}{o}'*psi;
                                 sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
@@ -2985,7 +2985,7 @@ for o = nO:-1:1,
         psi = plm.mldiv(M{o},Y{o});
         res = Y{o} - M{o}*psi;
         [GPtmp(o,:),df2tmp(o,:)] = fastpiv(M{o},psi,res,y,m,c,o,plm);
-        if o > 1 || opts.twotail,
+        if plm.istwotail{y}{m}{c}(o) || opts.twotail,
             GPtmp(o,:) = abs(GPtmp(o,:));
         end
         GPtmp(o,:) = palm_gpval(GPtmp(o,:),plm.rC0{m}(c),df2tmp(o,:));
