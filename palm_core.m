@@ -3735,8 +3735,7 @@ Econf = bsxfun(@times,margH,margV)./size(Y,1);
 % Chi^2 staistic, p-value, and z-score:
 X2 = (abs(Oconf-Econf)-.5).^2./Econf;
 X2 = sum(sum(X2,1),3);
-df = ones(size(X2))*size(X,2);
-P  = gammainc(X2/2,df/2,'upper'); % division of P by 2 omitted.
+P  = palm_gammainc(X2/2,size(X,2)/2,'upper'); % division of P by 2 omitted.
 Z  = sqrt(2)*erfcinv(P); % multiplication of P by 2 omitted.
 
 % ==============================================================

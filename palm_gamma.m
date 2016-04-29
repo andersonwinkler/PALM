@@ -87,7 +87,7 @@ else
             tail = 'lower';
         end
     end
-    pvals = gammainc((G-cpar)./tpar,kpar,tail);
+    pvals = palm_gammainc((G-cpar)./tpar,kpar,tail);
     
     % Deal with imaginary parts.
     if ~ isreal(pvals),

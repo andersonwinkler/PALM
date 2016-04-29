@@ -78,9 +78,7 @@ elseif df1 == 0,
 elseif df1 < 0,
     
     % Chi^2, via upper Gamma incomplete for precision and speed
-    df2   = bsxfun(@times,ones(size(G)),df2);
-    pvals = gammainc(G/2,df2/2,'upper');
+    %df2   = bsxfun(@times,ones(size(G)),df2);
+    pvals = palm_gammainc(G/2,df2/2,'upper');
     
 end
-
-

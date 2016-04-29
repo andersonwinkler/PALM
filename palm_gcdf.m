@@ -79,7 +79,7 @@ elseif df1 == 0,
 elseif df1 < 0,
     
     % Chi^2, via lower Gamma incomplete for precision and speed
-    df2 = bsxfun(@times,ones(size(G)),df2);
-    gcdf = gammainc(G/2,df2/2);
+    %df2 = bsxfun(@times,ones(size(G)),df2);
+    gcdf = palm_gammainc(G/2,df2/2,'lower');
     
 end
