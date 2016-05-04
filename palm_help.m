@@ -199,9 +199,29 @@ function advanced_help
 
 fprintf('\nThe advanced or less commonly used options are:\n\n');
 
-fprintf('-approx/-accel <method> : Run one of various approximation methods\n');
-fprintf('	available. This feature is very experimental.\n');
-fprintf('	See the source code for details.\n\n');
+fprintf('-approx/-accel <method> : Run one of various acceleration methods\n');
+fprintf('	available. Legal options are for <method> are below. Some may:\n');
+fprintf('	accept extra parameters in brackets [ ], that are optional:\n');
+fprintf('	"negbin [n]"        : Negative binomial, with [n] exceedances\n');
+fprintf('	                      (default n = 2).\n');
+fprintf('	"tail [pthr] [out]" : Tail approximation using a GPD for p-values\n');
+fprintf('	                      below pthr (default pthr = 0.10), and excluding\n');
+fprintf('	                      or not the unpermuted case in the null distribution\n');
+fprintf('	                      (default out = false).\n');
+fprintf('	"noperm"            : Compute permutation p-values without permutations.\n');
+fprintf('	"gamma [out]"       : Gamma distribution approximation, excluding\n');
+fprintf('	                      or not the unpermuted case in the null distribution\n');
+fprintf('	                      (default out = false).\n');
+fprintf('	"lowrank [val]"     : Low rank matrix completion: subsample a fraction.\n');
+fprintf('	                      (if val <= 1) or an absolute number of tests (val > 1)\n');
+fprintf('	                      that undergo full testing. The remainder are computed\n');
+fprintf('	                      via low rank matrix filling. Default val = NaN, such\n');
+fprintf('	                      that it''s computed as N*(N+1)/2, where N is the\n');
+fprintf('	                      number of subjects.\n');
+fprintf('	If unsure about which option to use, and if unwilling to read the full paper,\n');
+fprintf('	go with "-approx tail", setting a relatively small number of permutations,\n');
+fprintf('	such as "-n 500". If using "-nouncorrected", or if the images are small (or \n');
+fprintf('	for non-images), this number can be increased without hitting memory limits.\n\n');
 
 fprintf('-imiss <file> : Missing data indicators for the input(s).\n\n');
 
@@ -256,10 +276,10 @@ fprintf('	"Blom", "Tukey" and "Bliss".\n\n');
 
 fprintf('-probit : Apply a probit transformation to the data.\n\n');
 
-fprintf('-inputmv : Treat the (sole) input as multivariate, that is, each column is\n');
-fprintf('	a variable in a multivariate model, as opposed to independent univariate\n');
-fprintf('	tests. Useful with non-imaging data. When used, the option "-nounivariate"\n');
-fprintf('	is automatically set.\n\n');
+fprintf('-inputmv : Treat the (sole) input as multivariate, that is, each column\n');
+fprintf('	is a variable in a multivariate model, as opposed to independent\n');
+fprintf('	univariate tests. Useful with non-imaging data. When used, the\n');
+fprintf('	option "-nounivariate" is automatically set.\n\n');
 
 fprintf('-mcar : Assume that data is missing completely at random.\n\n');
 
@@ -337,6 +357,9 @@ fprintf('-tfce_C <integer> : Set the TFCE C parameter (connectivity).\n\n');
 
 fprintf('-tfce_dh <real> : Set the "delta h" for the calculation of TFCE.\n');
 fprintf('	Default is "auto".\n\n');
+
+fprintf('- tableasvolume : Treat tables (e.g., CSV inputs) as volume, such\n');
+fprintf('	that TFCE can be calculated. This is useful for TFCE over timeseries.\n\n');
 
 fprintf('-transposedata : For input data (-i) that are csv tables (2D), transpose\n');
 fprintf('	rows and columns.\n\n');

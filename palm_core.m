@@ -26,7 +26,7 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Uncomment the line below for debugging:
-% clear global plm opts; global plm opts; 
+%clear global plm opts; global plm opts; 
 
 % Take the arguments. Save a small log if needed.
 ticI = tic;
@@ -415,9 +415,9 @@ for m = 1:plm.nM,
                         plm.rM{y}{m}{c}{o} = rank(plm.Mp{y}{m}{c}{o}(:,:,1));
                     end
                 else % that is, if plm.nVG > 1
-                    I = eye(N);
                     if strcmpi(opts.rmethod,'terbraak'),
                         [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
+                        I = eye(N);
                         plm.Hm{y}{m}{c}{o}  = zeros(N,N,nT);
                         plm.Rm{y}{m}{c}{o}  = zeros(N,N,nT);
                         plm.dRm{y}{m}{c}{o} = zeros(N,nT);
@@ -428,6 +428,7 @@ for m = 1:plm.nM,
                         end
                     else
                         [N,~,nT] = size(plm.Mp{y}{m}{c}{o});
+                        I = eye(N);
                         plm.dRm{y}{m}{c}{o} = zeros(N,nT);
                         for t = 1:nT,
                             plm.dRm{y}{m}{c}{o}(:,t) = diag(I - plm.Mp{y}{m}{c}{o}(:,:,t)*pinv(plm.Mp{y}{m}{c}{o}(:,:,t))); % this is used for the pivotal statistic

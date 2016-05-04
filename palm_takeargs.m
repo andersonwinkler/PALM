@@ -404,7 +404,6 @@ while a <= narginx,
             opts.tfce.H      = 2;
             opts.tfce.E      = 2;
             opts.tfce.conn   = 6;
-            opts.tfce.tfce1d = true;
             a = a + 1;
             
         case '-tfce2D', % basic
@@ -455,6 +454,13 @@ while a <= narginx,
                 end
             end
             a = a + 2;
+            
+        case '-tableasvolume', % basic
+            
+            % Treat tables (e.g., CSV inputs) as volume, such that TFCE can
+            % be calculated? This is useful for TFCE over timeseries.
+            opts.tableasvolume = true;
+            a = a + 1;
             
         case '-within', % basic
             
@@ -1597,11 +1603,11 @@ for i = 1:Ni,
     % statistics has been invoked, check if surfaces are available
     % and with compatible size, then compute the area (dpv or dpf).
     % Also take this opportunity to compute the adjacency matrix.
-    if opts.tfce.tfce1d,
+    if opts.tableasvolume,
         plm.Yisvol(i) = true;
     else
         if opts.spatial.do && ...
-                any(strcmpi(plm.masks{i}.readwith,{'load','fs_load_mgh'})),
+                any(strcmpi(plm.masks{i}.readwith,{'load','fs_load_mgh','gifti'})),
             if Ns == 0,
                 error([ ...
                     'To use spatial statistics with vertexwise or facewise data it is\n'...
