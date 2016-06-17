@@ -83,9 +83,9 @@ fprintf('	one t-contrasts file can be loaded.\n\n');
 fprintf('-f <file> : F-contrasts file, in csv or vest format. The option -f can\n');
 fprintf('	be used more than once, so that more than one F-contrasts file\n');
 fprintf('	can be loaded. Each file supplied with a -f corresponds to the\n');
-fprintf('	file supplied with the option -t in the same order. The option -f\n');
-fprintf('	cannot be used more than the number of times the option -t was\n');
-fprintf('	used.\n\n');
+fprintf('	file supplied with the option -t in the same order. The option\n');
+fprintf('	-f cannot be used more than the number of times the option\n');
+fprintf('	-t was used.\n\n');
 
 fprintf('-fonly : Run only the F-contrasts, not the t-contrasts.\n\n');
 
@@ -185,6 +185,33 @@ fprintf('	one-tailed. If NPC is used, it naturally becomes two-tailed.\n\n');
 fprintf('-concordant : For the NPC, favour alternative hypotheses with\n');
 fprintf('	concordant signs. Cannot be used with "-twotail".\n\n');
 
+fprintf('-approx/-accel <method> : Run one of various acceleration methods\n');
+fprintf('	available. Legal options for <method> are below. Some may:\n');
+fprintf('	accept extra parameters in brackets [ ], that are optional:\n');
+fprintf('	"negbin [n]"        : Negative binomial, with [n] exceedances\n');
+fprintf('	                      (default n = 2).\n');
+fprintf('	"tail [pthr] [out]" : Tail approximation using a GPD for p-values\n');
+fprintf('	                      below pthr (default pthr = 0.10), and excluding\n');
+fprintf('	                      or not the unpermuted case in the null\n');
+fprintf('	                      distribution (default out = false).\n');
+fprintf('	"noperm"            : Compute permutation p-values without\n');
+fprintf('	                      permutations.\n');
+fprintf('	"gamma [out]"       : Gamma distribution approximation, excluding\n');
+fprintf('	                      or not the unpermuted case in the null\n');
+fprintf('	                      distribution (default out = false).\n');
+fprintf('	"lowrank [val]"     : Low rank matrix completion: subsample a\n');
+fprintf('	                      fraction(if val <= 1) or an absolute number\n');
+fprintf('	                      of tests (val > 1) that undergo full testing.\n');
+fprintf('	                      The remainder are computed via low rank matrix\n');
+fprintf('	                      filling. Default val = NaN, such that it''s\n');
+fprintf('	                      computed as N*(N+1)/2, where N is the\n');
+fprintf('	                      number of subjects.\n');
+fprintf('	If unsure about which option to use, and if unwilling to read the\n');
+fprintf('	full paper, go with "-accel tail", setting a relatively small number\n');
+fprintf('	of permutations, such as "-n 500". If using "-nouncorrected", or\n');
+fprintf('	if the images are small (or for non-images), this number can\n');
+fprintf('	be increased without hitting memory limits.\n\n');
+
 fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values\n');
 fprintf('	are then used to select the voxels/vertices/faces.\n\n');
 
@@ -198,30 +225,6 @@ function advanced_help
 % Show advanced options.
 
 fprintf('\nThe advanced or less commonly used options are:\n\n');
-
-fprintf('-approx/-accel <method> : Run one of various acceleration methods\n');
-fprintf('	available. Legal options are for <method> are below. Some may:\n');
-fprintf('	accept extra parameters in brackets [ ], that are optional:\n');
-fprintf('	"negbin [n]"        : Negative binomial, with [n] exceedances\n');
-fprintf('	                      (default n = 2).\n');
-fprintf('	"tail [pthr] [out]" : Tail approximation using a GPD for p-values\n');
-fprintf('	                      below pthr (default pthr = 0.10), and excluding\n');
-fprintf('	                      or not the unpermuted case in the null distribution\n');
-fprintf('	                      (default out = false).\n');
-fprintf('	"noperm"            : Compute permutation p-values without permutations.\n');
-fprintf('	"gamma [out]"       : Gamma distribution approximation, excluding\n');
-fprintf('	                      or not the unpermuted case in the null distribution\n');
-fprintf('	                      (default out = false).\n');
-fprintf('	"lowrank [val]"     : Low rank matrix completion: subsample a fraction.\n');
-fprintf('	                      (if val <= 1) or an absolute number of tests (val > 1)\n');
-fprintf('	                      that undergo full testing. The remainder are computed\n');
-fprintf('	                      via low rank matrix filling. Default val = NaN, such\n');
-fprintf('	                      that it''s computed as N*(N+1)/2, where N is the\n');
-fprintf('	                      number of subjects.\n');
-fprintf('	If unsure about which option to use, and if unwilling to read the full paper,\n');
-fprintf('	go with "-approx tail", setting a relatively small number of permutations,\n');
-fprintf('	such as "-n 500". If using "-nouncorrected", or if the images are small (or \n');
-fprintf('	for non-images), this number can be increased without hitting memory limits.\n\n');
 
 fprintf('-imiss <file> : Missing data indicators for the input(s).\n\n');
 

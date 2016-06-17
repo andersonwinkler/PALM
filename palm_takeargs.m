@@ -123,12 +123,12 @@ while a <= narginx,
             opts.m{m} = vararginx{a+1};
             m = m + 1;
             a = a + 2;
-            
+
         case {'-s','-surf'}, % basic
             
             % Get the filenames for the surfaces, if any.
             opts.s{s}  = vararginx{a+1};
-            if nargin == a+1 || (nargin>a+1 && strcmp(vararginx{a+2}(1),'-')),
+            if nargin == a+1 || (narginx>a+1 && strcmp(vararginx{a+2}(1),'-')),
                 opts.sa{s} = [];
                 a = a + 2;
             else
@@ -1361,7 +1361,7 @@ else
 end
 
 % Some more warnings and sanity checks
-if opts.designperinput && Ni ~= Nd,
+if ~ opts.inputmv && opts.designperinput && Ni ~= Nd,
     error([
         'To use the option "-designperinput", the number of design files must\n' ...
         'match the number of inputs.\n%s'],'');

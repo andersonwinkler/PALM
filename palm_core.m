@@ -2992,7 +2992,7 @@ for o = nO:-1:1,
         GPtmp(o,:) = palm_gpval(GPtmp(o,:),plm.rC0{m}(c),df2tmp(o,:));
     end
 end
-G = -2*sum(log(GPtmp),1); % This is Fisher
+G = -2*sum(log(GPtmp),1);
 P = palm_gpval(G,-1,2*size(GPtmp,1));
 Z = sqrt(2)*erfcinv(2*P);
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

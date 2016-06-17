@@ -285,7 +285,7 @@ switch lower(fext{end}),
         X.extra = gii.private;
         
     otherwise
-        error('File extension %s not known. Data cannot be loaded\n',fext);
+        error('File extension %s not known. Data cannot be loaded\n',fext{end});
 end
 
 % ==============================================================

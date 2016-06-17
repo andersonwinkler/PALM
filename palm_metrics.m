@@ -28,7 +28,7 @@ function varargout = palm_metrics(varargin)
 %           paper, such that it measures the relationships in the tree
 %           itself, rather than the actual values found in X, the input
 %           Ptree must have been constructed with X = ones(N,1) (or any
-%           other constant. However, C doesn't depend on the X that is
+%           other constant). However, C doesn't depend on the X that is
 %           input (i.e., it's not an argument needed to compute C, but
 %           it's implicitly taken into account through the tree).
 % - Hamm  : Average Hamming distance across the given permutation set,

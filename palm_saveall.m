@@ -1018,7 +1018,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         j = 1;
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
-                pmerged(:,j) = plm.Tpperm{m}{c};
+                pmerged(j,:) = plm.Tpperm{m}{c};
                 j = j + 1;
             end
         end
@@ -1026,7 +1026,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         j = 1;
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
-                palm_quicksave(pfdradj(:,j),1,opts,plm,[],m,c, ...
+                palm_quicksave(pfdradj(j,:),1,opts,plm,[],m,c, ...
                     sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfdrp',plm.mstr{m},plm.cstr{m}{c}));
                 j = j + 1;
             end
@@ -1090,7 +1090,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
             j = 1;
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
-                    pmerged(:,j) = plm.Ttfcepperm{m}{c};
+                    pmerged(j,:) = plm.Ttfcepperm{m}{c};
                     j = j + 1;
                 end
             end
@@ -1098,7 +1098,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
             j = 1;
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
-                    palm_quicksave(pfdradj(:,j),1,opts,plm,[],m,c, ...
+                    palm_quicksave(pfdradj(j,:),1,opts,plm,[],m,c, ...
                         sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_cfdrp',plm.mstr{m},plm.cstr{m}{c}));
                     j = j + 1;
                 end

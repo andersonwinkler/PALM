@@ -104,7 +104,7 @@ switch lower(readwith),
         S.extra.hdr.dime.datatype   = 64;
         S.extra.hdr.dime.bitpix     = 64;
         
-    case 'fs_read_curv',
+    case {'fs_read_curv','dpxread'},
         
         % If the original data is an FS curvature.
         S.data  = mask;
