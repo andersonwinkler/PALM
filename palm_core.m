@@ -934,20 +934,20 @@ for m = 1:plm.nM,
                 end
             end
             if opts.CCA || opts.accel.noperm,
-                
+                y = 1; o = 1;
                 % Residual forming matrix (Z only)
                 if isempty(plm.Z{y}{m}{c}{o}),
-                    plm.Rz{m}{c} = eye(plm.N);
+                    plm.Rz{y}{m}{c}{o} = eye(plm.N);
                 elseif ~ any(strcmpi(opts.rmethod,{ ...
                         'still-white','freedman-lane',  ...
                         'kennedy','huh-jhun','dekker'})),
-                    plm.Rz{m}{c} = eye(plm.N) - plm.Z{m}{c}*pinv(plm.Z{m}{c});
+                    plm.Rz{y}{m}{c}{o} = eye(plm.N) - plm.Z{y}{m}{c}{o}*pinv(plm.Z{y}{m}{c}{o});
                 end
                 
                 % Make the 3D dataset & residualise wrt Z
                 plm.Yq{m}{c} = cat(3,plm.Yset{:});
                 for y = 1:plm.nY,
-                    plm.Yq{m}{c}(:,:,y) = plm.Rz{m}{c}*plm.Yq{m}{c}(:,:,y);
+                    plm.Yq{m}{c}(:,:,y) = plm.Rz{y}{m}{c}{o}*plm.Yq{m}{c}(:,:,y);
                 end; clear y
                 plm.Yq{m}{c} = permute(plm.Yq{m}{c},[1 3 2]);
             end
@@ -1179,7 +1179,7 @@ for po = P_outer,
                     if opts.saveunivariate,
                         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                         for t = 1:plm.Ysiz(y),
-                            RzX = plm.Rz{m}{c}(:,:,t)*plm.X{m}{c}(:,:,t);
+                            RzX = plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t);
                             A   = RzX*pinv(RzX);
                             for y = loopY,
                                 W   = u(:,y,t)*u(:,y,t)';
@@ -1215,8 +1215,9 @@ for po = P_outer,
                         clear t y tt
                     end
                     if opts.MV,
+                        y = 1;
                         for t = 1:plm.Ysiz(1),
-                            RzX     = plm.Rz{m}{c}(:,:,t)*plm.X{m}{c}(:,:,t);
+                            RzX     = plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t);
                             A       = RzX*pinv(RzX);
                             [u,~,~] = svd(plm.Yq{m}{c}(:,:,t),'econ');
                             W       = u*u';
@@ -1230,7 +1231,8 @@ for po = P_outer,
                         end
                     end
                 else
-                    RzX   = plm.Rz{m}{c}*plm.X{m}{c};
+                    y = 1;
+                    RzX   = plm.Rz{y}{m}{c}{o}*plm.X{y}{m}{c}{o};
                     A     = RzX*pinv(RzX);
                     if opts.saveunivariate,
                         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end

@@ -361,7 +361,7 @@ fprintf('-tfce_C <integer> : Set the TFCE C parameter (connectivity).\n\n');
 fprintf('-tfce_dh <real> : Set the "delta h" for the calculation of TFCE.\n');
 fprintf('	Default is "auto".\n\n');
 
-fprintf('- tableasvolume : Treat tables (e.g., CSV inputs) as volume, such\n');
+fprintf('-tableasvolume : Treat tables (e.g., CSV inputs) as volumes, such\n');
 fprintf('	that TFCE can be calculated. This is useful for TFCE over timeseries.\n\n');
 
 fprintf('-transposedata : For input data (-i) that are csv tables (2D), transpose\n');
