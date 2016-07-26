@@ -1900,13 +1900,13 @@ if opts.savemask,
             M.filename = sprintf('%s_mask_m%d',opts.o,y);
         end
         M.data = double(M.data);
-        palm_miscwrite(M);
+        palm_miscwrite(M,true);
     end
     if plm.nY > 1 && (opts.npcmod || opts.MV || opts.forcemaskinter),
         M          = plm.maskinter;
         M.filename = sprintf('%s_intersection_mask',opts.o);
         M.data     = double(M.data);
-        palm_miscwrite(M);
+        palm_miscwrite(M,true);
     end
 end
 

@@ -91,7 +91,7 @@ end
 if opts.accel.negbin,
     plm.Gppermp                     = plm.Gpperm; % number of perms done, for the negative binomial mode
 end
-if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
+if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma) || opts.FDR,
     plm.Gperms                      = plm.G;      % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
 end
 if opts.accel.lowrank,

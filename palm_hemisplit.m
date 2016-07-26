@@ -3,7 +3,7 @@ function palm_hemisplit(varargin)
 % been merged with palm_hemimerge.
 % Output file names have prefix "lh" and "rh".
 %
-% palm_miscwrite <files>
+% palm_hemisplit <files>
 %
 % Wildcards are accepted.
 % _____________________________________

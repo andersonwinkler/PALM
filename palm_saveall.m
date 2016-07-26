@@ -63,7 +63,7 @@ end
 % Start with the uncorrected, but don't save them yet.
 % They'll be used later for the FDR.
 fprintf('Computing p-values.\n');
-if opts.saveuncorrected || opts.FDR,
+if opts.saveuncorrected,
     for y = 1:plm.nY,
         if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
         for m = loopM,

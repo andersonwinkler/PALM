@@ -160,5 +160,5 @@ if ~ isempty(X),
     end
     
     % Save
-    palm_miscwrite(S);
+    palm_miscwrite(S,true);
 end

@@ -1,4 +1,4 @@
-function palm_miscwrite(X)
+function palm_miscwrite(varargin)
 % Write various scalar data formats based on the struct X.
 % 
 % palm_miscwrite(X);
@@ -28,6 +28,8 @@ function palm_miscwrite(X)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+X = varargin{1};
 
 switch lower(X.readwith),
     
@@ -65,7 +67,12 @@ switch lower(X.readwith),
     case 'wb_command',
         
         % Write a CIFTI file using the HCP Workbench
-        palm_ciftiwrite(X.filename,X.data,X.extra);
+        if nargin == 2,
+            toscalar = varargin{2};
+        else
+            toscalar = false;
+        end
+        palm_ciftiwrite(X.filename,X.data,X.extra,[],toscalar);
         
     case 'nifticlass',
         

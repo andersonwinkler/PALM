@@ -4,7 +4,7 @@ function palm_hemimerge(varargin)
 % 'lh' and/or 'rh'. The script finds the correct pair, removes
 % repeated files, and merges them into files beginning with 'bh'.
 %
-% palm_miscwrite <files>
+% palm_hemimerge <files>
 %
 % Wildcards are accepted.
 % _____________________________________

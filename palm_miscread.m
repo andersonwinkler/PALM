@@ -149,7 +149,7 @@ switch lower(fext{end}),
 
         % Handle NIFTI and CIFTI files.
         if strcmpi(fext{end},'nii') && ...
-                any(strcmpi(fext{end-1},{'dscalar','dtseries','dconn','dlabel','ptseries','merge'})),
+                any(strcmpi(fext{end-1},{'dscalar','dtseries','dconn','dlabel','ptseries','merge','pscalar'})),
             
             % Read a CIFTI file.
             if extern.wb_command,

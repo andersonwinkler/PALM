@@ -9,7 +9,7 @@ function palm_ciftiwrite(varargin)
 % - data        : Actual data that will be saved.
 % - extra       : Metadata for the CIFTI.
 % - wb_command  : (Optional) Full path to the executable wb_command.
-%
+% - toscalar    : (Optional) 
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
@@ -35,14 +35,19 @@ function palm_ciftiwrite(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Input arguments
-narginchk(1,4);
+narginchk(1,5);
 filename = varargin{1};
 data     = varargin{2};
 extra    = varargin{3};
-if nargin == 4,
+if nargin == 4 && ~ isempty(varargin{4}),
     wb_command = varargin{4};
 else
     wb_command = 'wb_command';
+end
+if nargin == 5,
+    toscalar = varargin{5};
+else
+    toscalar = false;
 end
 
 % Test the wb_command
@@ -83,9 +88,9 @@ save(C,strcat(filename,'.gii'),'ExternalFileBinary');
 
 % Include the reset flags to the wb_command (thanks Matt Glasser!)
 resetstr = '';
-if strcmpi(extra.cifti_file_extension,'dscalar'),
+if any(strcmpi(extra.cifti_file_extension,{'dscalar','pscalar'})),
     resetstr = '-reset-scalars';
-elseif strcmpi(extra.cifti_file_extension,'dtseries'),
+elseif any(strcmpi(extra.cifti_file_extension,{'dtseries','ptseries'})),
     resetstr = '-reset-timepoints 1 0';
 end
 
@@ -93,6 +98,15 @@ end
 [~] = system(sprintf('%s -cifti-convert -from-gifti-ext %s %s %s',...
     wb_command,strcat(filename,'.gii'),...
     sprintf('%s.%s.nii',filename,extra.cifti_file_extension),resetstr));
+
+% If the CIFTI this is to be converted from timeseries to a scalar
+if toscalar && any(strcmpi(extra.cifti_file_extension,{'dtseries','ptseries'})),
+    [~] = system(sprintf('%s -cifti-convert-to-scalar %s ROW %s',...
+        wb_command,...
+        sprintf('%s.%s.nii',filename,extra.cifti_file_extension),...
+        sprintf('%s.%s.nii',filename,strrep(extra.cifti_file_extension,'tseries','scalar'))));
+    delete(sprintf('%s.%s.nii',filename,extra.cifti_file_extension));
+end
 
 % Delete the temporary GIFTI file.
 % Note that here the extension is "dat" because it comes from the GIFTI
