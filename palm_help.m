@@ -261,13 +261,6 @@ fprintf('	supplied cluster-forming threshold (as a z-score).\n\n');
 
 fprintf('-designperinput : Use one design file for each input modality.\n\n');
 
-fprintf('-effectsize <filename> : Load a Matlab .mat file (-v6) containing\n');
-fprintf('	a variable named "effectsize". This variable must be a multi-\n');
-fprintf('	dimensional array where effectsize(i,d,c) = delta, and where\n');
-fprintf('	delta is used to test the alternative hypothesis that\n');
-fprintf('	C''beta > delta for the respective input i, design d and\n');
-fprintf('	contrast c. Unused cells are ignored.\n\n');
-
 fprintf('-ev4vg : Add to the design one EV modelling the mean of each VG.\n\n');
 
 fprintf('-evperdat : Treat the design matrix supplied with -d as having one column\n');

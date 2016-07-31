@@ -1452,9 +1452,6 @@ for po = P_outer,
                                 df2{y}{m}{c} = NaN;
                             elseif ~ opts.accel.lowrank || p == 1,
                                 [G{y}{m}{c},df2{y}{m}{c}] = fastpiv{m}{c}(M,psi,res,y,m,c,1,plm);
-                                if p == 1,
-                                    plm.effectdelta(y,m,c) = 0;
-                                end
                             end
                         end
                         
@@ -2732,13 +2729,13 @@ function [G,df2] = fastt(M,psi,res,y,m,c,o,plm)
 % G   : t statistic.
 % df2 : Degrees of freedom. df1 is 1 for the t statistic.
 df2 = size(M,1)-plm.rM{y}{m}{c}{o};
-G   = plm.eC{y}{m}{c}{o}'*psi - plm.effectdelta(y,m,c);
+G   = plm.eC{y}{m}{c}{o}'*psi;
 den = sqrt(plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o}*sum(res.^2)./df2);
 G   = G./den;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastt3d(M,psi,res,y,m,c,o,plm)
 df2 = size(M,1)-plm.rM{y}{m}{c}{o};
-G   = plm.eC{y}{m}{c}{o}'*psi  - plm.effectdelta(y,m,c);;
+G   = plm.eC{y}{m}{c}{o}'*psi;
 S   = zeros(1,size(psi,2));
 for t = 1:size(psi,2),
     S(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
@@ -2748,7 +2745,7 @@ G   = G./den;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fasttswe(M,psi,res,y,m,c,o,plm)
 df2 = size(M,1)-plm.rM{y}{m}{c}{o};
-G   = plm.eC{y}{m}{c}{o}'*psi  - plm.effectdelta(y,m,c);;
+G   = plm.eC{y}{m}{c}{o}'*psi;
 S   = zeros(1,size(psi,2));
 MtM = (M'*M);
 Rm  = eye(plm.N) - M*pinv(M);
@@ -2856,7 +2853,7 @@ end
 for t = 1:nT,
     den(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',reshape(cte(:,t),[r r]))*plm.eC{y}{m}{c}{o};
 end
-G    = (plm.eC{y}{m}{c}{o}'*psi - plm.effectdelta(y,m,c))./sqrt(den);
+G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
 sW1  = sum(W,1);
 bsum = sum(bsxfun(@rdivide,(1-bsxfun(@rdivide,W,sW1)).^2,dRmb),1);
 df2  = 1/3./bsum;
@@ -2880,7 +2877,7 @@ end
 for t = 1:nT,
     den(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',cte(:,:,t))*plm.eC{y}{m}{c}{o};
 end
-G    = (plm.eC{y}{m}{c}{o}'*psi - plm.effectdelta(y,m,c))./sqrt(den);
+G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
 sW1  = sum(W,1);
 bsum = sum((1-bsxfun(@rdivide,W,sW1)).^2./dRmb,1);
 df2  = 1/3./bsum;
@@ -2902,7 +2899,7 @@ end
 for t = 1:nT,
     den(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',cte(:,:,t))*plm.eC{y}{m}{c}{o};
 end
-G    = (plm.eC{y}{m}{c}{o}'*psi - plm.effectdelta(y,m,c))./sqrt(den);
+G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
 df2  = size(M,1)-plm.rM{y}{m}{c}{o};
 
 % ==============================================================

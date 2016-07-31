@@ -87,7 +87,6 @@ opts.conskipcount = 0;    % When saving the contrasts, skip how many from 1?
 opts.singlevg = true;     % Make sure that sigle VG will be used if nothing is supplied (this is NOT a "default" setting, and it's not a setting at all, but hard coded. Don't edit it!)
 opts.subjidx  = [];       % Filename of the indices of subjects to keep
 plm.subjidx   = [];       % Indices of subjects to keep
-opts.effectdelta = '';    % Filename of deltas for minimum effect size.
 
 % These are to be incremented below
 i = 1; m = 1; d = 1;
@@ -546,13 +545,6 @@ while a <= narginx,
             % permutation.
             opts.saveglm = true;
             a = a + 1;
-            
-        case '-effectdelta', % advanced
-            
-            % If the user has a minimum effect size (in absolute units)
-            % to test the null against.
-            opts.effectdelta = vararginx{a+1};
-            a = a + 2;
             
         case {'-savecdf','-save1-p'}, % basic
             
@@ -1464,10 +1456,6 @@ end
 if opts.concordant && opts.twotail,
     error(['Cannot use "-concordant" together with "-twotail" (inadmissible).\n'...
         'Use either of these, but not both together.%s'],'');
-end
-if ~isempty(opts.effectdelta) && opts.twotail,
-    error(['Cannot use "-effectdelta" together with "-twotail".\n'...
-        'Consider "-corrcon" instead.%s'],'');
 end
 if opts.tonly && opts.fonly,
     error('Cannot use "-tonly" together with "-fonly".');
@@ -2651,12 +2639,3 @@ if opts.accel.lowrank,
     end
 end
 
-% Load the effect size deltas (in absolute units). If not available,
-% use all zeroes.
-if isempty(opts.effectdelta),
-    plm.effectdelta = zeros(plm.nY,plm.nM,max(plm.nC));
-else
-    tmp = load(opts.effectdelta,'effectdelta');
-    plm.effectdelta = tmp.effectdelta;
-    clear tmp;
-end
