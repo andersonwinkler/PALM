@@ -8,6 +8,10 @@ function palm_ptree2dot(Ptree,dotfile)
 % Ptree     : Permutation (dependence) tree.
 % dotfile   : DOT file to be created.
 %
+% Reference:
+% * Winkler AM, Webster MA, Vidaurre D, Nichols TE, Smith SM.
+%   Multi-level block permutation. Neuroimage. 2015;123:253-68.
+%
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford

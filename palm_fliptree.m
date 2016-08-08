@@ -24,6 +24,10 @@ function Pset = palm_fliptree(Ptree,nP,cmc,idxout,maxP)
 % Outputs:
 % - Sset   : A cell array of size nP by 1 containing sparse
 %            sign-flipping matrices.
+% 
+% Reference:
+% * Winkler AM, Webster MA, Vidaurre D, Nichols TE, Smith SM.
+%   Multi-level block permutation. Neuroimage. 2015;123:253-68.
 %
 % _____________________________________
 % Anderson M. Winkler

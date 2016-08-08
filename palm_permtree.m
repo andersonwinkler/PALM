@@ -29,6 +29,10 @@ function [Pset,idx] = palm_permtree(Ptree,nP,cmc,idxout,maxP)
 %            tree back to the original order. Useful to
 %            reorder the sign-flips.
 %
+% Reference:
+% * Winkler AM, Webster MA, Vidaurre D, Nichols TE, Smith SM.
+%   Multi-level block permutation. Neuroimage. 2015;123:253-68.
+%
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford

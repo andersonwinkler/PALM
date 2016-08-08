@@ -23,6 +23,11 @@ function varargout = palm_moments(varargin)
 % - sigsq : Sample variance (unbiased).
 % - gamm1 : Sample skewness (unbiased).
 % - gamm2 : Sample kurtosis (unbiased).
+%
+% For a complete description, see:
+% * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM. Faster
+%   permutation inference in brain imaging. Neuroimage, 2016 (in press)
+%   http://dx.doi.org/10.1016/j.neuroimage.2016.05.068
 % 
 % For the estimators using trace(AW), the references are:
 % * Kazi-Aoual F, Hitier S, Sabatier R, Lebreton J-D. Refined

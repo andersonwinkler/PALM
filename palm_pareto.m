@@ -26,7 +26,12 @@ function [P,apar,kpar,upar] = palm_pareto(G,Gdist,rev,Pthr,G1out)
 % kpar   : Shape parameter of the GPD.
 % upar   : Location parameter of the GPD.
 %
-% This function is based in the following papers:
+% For a complete description, see:
+% * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM. Faster
+%   permutation inference in brain imaging. Neuroimage, 2016 (in press)
+%   http://dx.doi.org/10.1016/j.neuroimage.2016.05.068
+% 
+% This function is based on the following papers:
 % * Knijnenburg TA, Wessels LFA, Reinders MJT, Shmulevich I. Fewer
 %   permutations, more accurate P-values. Bioinformatics.
 %   2009;25(12):i161-8.

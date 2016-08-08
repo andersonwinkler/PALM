@@ -1412,6 +1412,7 @@ for po = P_outer,
                                 cope  = plm.eC{y}{m}{c}{o}'*psi;
                                 sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
                                 cohen = cope./sigsq.^.5;
+                                cfvar = 1./cohen;
                                 if opts.evperdat,
                                     MtM = zeros(1,size(psi,2));
                                     for t = 1:size(psi,2),
@@ -1427,7 +1428,9 @@ for po = P_outer,
                                     sprintf('%s',opts.o,plm.Ykindstr{y},'_varcope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 palm_quicksave(cohen,0,opts,plm,y,m,c, ...
                                     sprintf('%s',opts.o,plm.Ykindstr{y},'_cohen',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
-                                clear('cope','varcope','cohen','o');
+                                palm_quicksave(cfvar,0,opts,plm,y,m,c, ...
+                                    sprintf('%s',opts.o,plm.Ykindstr{y},'_cfvar',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                                clear('cope','varcope','cohen','cfvar','o');
                             end
                             
                             % Unless this is negbin mode, there is no need to fit

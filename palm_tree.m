@@ -24,6 +24,10 @@ function Ptree = palm_tree(B,M)
 %          flips for the tree. 0 is treated as 1, and 1 as -1.
 % N{1,3} : The branches that begin here.
 %
+% Reference:
+% * Winkler AM, Webster MA, Vidaurre D, Nichols TE, Smith SM.
+%   Multi-level block permutation. Neuroimage. 2015;123:253-68.
+% 
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford

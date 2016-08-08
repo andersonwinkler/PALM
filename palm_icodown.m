@@ -185,8 +185,8 @@ switch X.readwith,
         switch X.readwith,
             case 'dpxread',
                 nXdown = numel(dpx);
-                X.extra.crd(nXdown+1,:) = [];
-                X.extra.idx(nXdown+1,1) = [];
+                X.extra.crd(nXdown+1:end,:) = [];
+                X.extra.idx(nXdown+1:end,:) = [];
             case 'fs_read_curv',
                 X.extra.fnum = 4^ntarget*F0; % this will only work for vertexwise
             case 'fs_load_mgh',

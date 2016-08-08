@@ -20,7 +20,12 @@ function pvals = palm_gamma(G,mu,sigsq,gamm1,rev,prepl)
 % Outputs:
 % - pvals : p-values.
 % 
-% References:
+% For a complete description, see:
+% * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM. Faster
+%   permutation inference in brain imaging. Neuroimage, 2016 (in press)
+%   http://dx.doi.org/10.1016/j.neuroimage.2016.05.068
+% 
+% Other references:
 % * Mielke PW, Berry KJ, Brier GW. Application of Multi-Response
 %   Permutation Procedures for Examining Seasonal Changes in
 %   Monthly Mean Sea-Level Pressure Patterns. Mon Weather Rev.
