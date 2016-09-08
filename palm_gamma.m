@@ -21,8 +21,9 @@ function pvals = palm_gamma(G,mu,sigsq,gamm1,rev,prepl)
 % - pvals : p-values.
 % 
 % For a complete description, see:
-% * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM. Faster
-%   permutation inference in brain imaging. Neuroimage, 2016 (in press)
+% * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM.
+%   Faster permutation inference in brain imaging.
+%   Neuroimage. 2016 Jun 7;141:502-516.
 %   http://dx.doi.org/10.1016/j.neuroimage.2016.05.068
 % 
 % Other references:

@@ -2,8 +2,8 @@ function palm_icodown(varargin)
 % Downsample a data-per-vertex (DPV), data-per-face (DPF),
 % surface (SRF), or surfvol (MGH/MGZ) from a higher-order tessellated
 % icosahedron to a lower order one. Note that the file must have been
-% derived from file from either FreeSurfer or Brainder tools. It may
-% not work if the vertices follow a different sequence inside the file.
+% derived from either FreeSurfer or Brainder tools. It may not work
+% if the vertices follow a different sequence inside the file.
 %
 % For facewise, the downsampling method is pycnophylactic and,
 % therefore, should be used for quantities that require mass

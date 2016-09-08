@@ -57,6 +57,14 @@ X.filename = filename;
 [~,fnam,fext] = fileparts(X.filename);
 fext = strdotsplit(strcat(fnam,fext));
 
+% Some formats use external i/o functions that use random numbers. Save
+% current state of the random number generator, then restore at the end.
+if palm_isoctave,
+    state = rand('state'); %#ok
+else
+    state = rng;
+end
+
 switch lower(fext{end}),
     
     case 'txt',
@@ -286,6 +294,13 @@ switch lower(fext{end}),
         
     otherwise
         error('File extension %s not known. Data cannot be loaded\n',fext{end});
+end
+
+% Restore the state of the random number generator.
+if palm_isoctave,
+    rand('state',state); %#ok
+else
+    rng(state);
 end
 
 % ==============================================================

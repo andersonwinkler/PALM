@@ -27,8 +27,9 @@ function [P,apar,kpar,upar] = palm_pareto(G,Gdist,rev,Pthr,G1out)
 % upar   : Location parameter of the GPD.
 %
 % For a complete description, see:
-% * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM. Faster
-%   permutation inference in brain imaging. Neuroimage, 2016 (in press)
+% * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM.
+%   Faster permutation inference in brain imaging.
+%   Neuroimage. 2016 Jun 7;141:502-516.
 %   http://dx.doi.org/10.1016/j.neuroimage.2016.05.068
 % 
 % This function is based on the following papers:
