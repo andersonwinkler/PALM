@@ -56,7 +56,7 @@ else
     fprintf('.......................................................................\n');
 end
 
-% This is probably redundant but fix a bug in an old Matlab version
+% This is probably redundant but fixes a bug in an old Matlab version
 nargin = numel(varargin);
 
 % Print usage if no inputs are given

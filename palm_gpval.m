@@ -53,6 +53,7 @@ if df1 > 1,
 elseif df1 == 1,
     
     % Student's t, Aspin-Welch v
+    pvals = nan(size(G));
     df2 = bsxfun(@times,ones(size(G)),df2);
     ic  = df2 == 1;
     in  = df2 > 1e7;

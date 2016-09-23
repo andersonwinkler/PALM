@@ -1306,11 +1306,19 @@ if Nimiss || Ndmiss,
             '         Adding it automatically.%s'],'');
         opts.cmcx = true;
     end
-    if ~ opts.demean && ~ opts.mcar,
+    if opts.demean && ~ opts.mcar,
         warning([...
-            'With missing data, the option "-demean" is mandatory.\n' ...
-            '         Adding it automatically.%s'],'');
-        opts.demean = true;
+            'With missing data, the option "-demean" must not be used.\n' ...
+            '         Removing it automatically.%s'],'');
+        opts.demean = false;
+    end
+    if ~ strcmpi(opts.pmethodp,'guttman') || ~ strcmpi(opts.pmethodr,'guttman'),
+        warning([...
+            'With missing data, the partitioning must use the "Guttman".\n' ...
+            '         method. Adding automatically the options\n' ...
+            '         "-pmethodp Guttman" and "-pmethodr Guttman".%s'],'');
+        opts.pmethodp = 'guttman';
+        opts.pmethodr = 'guttman'; 
     end
     if opts.ev4vg || opts.removevgbysize > 0,
         error('Missing data cannot be used with "-ev4vg" or "-removevgbysize".')
@@ -1506,7 +1514,7 @@ if opts.spatial.do && Ns > 0,
         elseif exist(opts.sa{s},'file'),
             
             % A file with the average areas from native geometry
-            plm.srfarea{s} = palm_miscread(opts.sa{s});
+            plm.srfarea{s} = palm_miscread(opts.sa{s},opts.useniiclass,opts.o);
             
         elseif ~ isnan(str2double(opts.sa{s})),
             
@@ -2396,19 +2404,12 @@ for i = 1:Nimiss,
         end
     else
         tmp = palm_miscread(opts.imiss{i});
+        tmpfname = tmp.filename;
         tmp = tmp.data;
         if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N,
             tmp = tmp(plm.subjidx,:);
         end
-        u = unique(tmp(:));
-        if numel(tmp) ~= size(tmp,1) || size(tmp,1) ~= plm.N ...
-                || numel(u) > 2 || min(abs(u)),
-            error([ ...
-                'The missing data indicator ("-imiss") must:\n', ...
-                '- Be a column vector;\n', ...
-                '- Have the same lengh as the input data;\n', ...
-                '- Be a binary logical indicator (0/1).%s'],'');
-        end
+        checkmiss(tmp,tmpfname,plm.N);
     end
     plm.Ymiss{i} = tmp;
 end
@@ -2428,18 +2429,12 @@ for d = 1:Ndmiss,
         end
     else
         tmp = palm_miscread(opts.dmiss{d});
+        tmpfname = tmp.filename;
         tmp = tmp.data;
         if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N,
             tmp = tmp(plm.subjidx,:);
         end
-        u = unique(tmp(:));
-        if size(tmp,1) ~= plm.N || numel(u) > 2 || min(abs(u)),
-            error([ ...
-                'The missing data indicator ("-dmiss") must:\n', ...
-                '- Have the same size as the respective design;\n', ...
-                '- Have the same lengh as the input data;\n', ...
-                '- Be a binary logical indicator (0/1).%s'],'');
-        end
+        checkmiss(tmp,tmpfname,plm.N);
     end
     plm.Mmiss{d} = tmp;
 end
@@ -2453,8 +2448,6 @@ for d = 1:Ndmiss,
         if strcmpi(opts.dmiss{d},'none'),
             plm.Mmiss{d} = repmat(plm.Mmiss{d},[1 size(plm.Mset{d},2)]);
         else
-            size(plm.Mmiss{d})
-            size(plm.Mset{d})
             error([ ...
                 'The missing data indicator ("-dmiss") must have\n', ...
                 'the same size as the respective design.%s'],'');
@@ -2639,3 +2632,26 @@ if opts.accel.lowrank,
     end
 end
 
+% ==============================================================
+function checkmiss(A,Afname,N)
+% Check if the missing data indicators are sane.
+for a = 1:size(A,2),
+    U = unique(A(:,a));
+    if size(A,1) ~= N,
+        error([ ...
+            'The missing data indicators ("-imiss" and "-dmiss") must have\n', ...
+            'the same number of observations as the data and design.'],'');
+    elseif ...
+            (numel(U) >  2) || ...
+            (numel(U) == 2 && ~ any(U == 0)) || ...
+            (numel(U) == 2 && ~ any(U(U~=0) == [-1 1 2])) || ...
+            (numel(U) == 1 && U ~= 0),
+        error([ ...
+            'The missing data indicators ("-imiss" and "-dmiss") must have\n', ...
+            'no more than two unique values per column, one being 0, the\n', ...
+            'the other being either -1, 1, or 2.\n', ...
+            'Consult the documentation for details.\n'...
+            '- Filename: %s\n',...
+            '- Column: %d (possibly also others)'],Afname,a);
+    end
+end

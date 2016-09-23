@@ -1348,11 +1348,10 @@ for po = P_outer,
 
                                 % Prepare permutation matrix and indices of data and
                                 % design that will be removed
-                                Ptmp  = plm.Pset{p};
-                                ikeep = true(plm.N,1);
                                 if isempty(plm.imov{y}{m}{c}{o}),
                                     if isempty(plm.ifix{y}{m}{c}{o}),
-                                        % do nothing, it's faster this here
+                                        Ptmp  = plm.Pset{p};
+                                        ikeep = true(plm.N,1);
                                     else
                                         Ptmp  = plm.Pset{p}(plm.ifix{y}{m}{c}{o},:);
                                         ikeep = plm.ifix{y}{m}{c}{o};
@@ -1360,10 +1359,10 @@ for po = P_outer,
                                 else
                                     if isempty(plm.ifix{y}{m}{c}{o}),
                                         Ptmp  = plm.Pset{p}(any(plm.Pset{p}(:,plm.imov{y}{m}{c}{o}),2),:);
-                                        ikeep = ~~(plm.Pset{p}*plm.imov{y}{m}{c}{o});
+                                        ikeep = logical(plm.Pset{p}*plm.imov{y}{m}{c}{o});
                                     else
                                         Ptmp  = plm.Pset{p}(any(plm.Pset{p}(:,plm.imov{y}{m}{c}{o}),2) & plm.ifix{y}{m}{c}{o},:);
-                                        ikeep = ~~(plm.Pset{p}*plm.imov{y}{m}{c}{o}) & plm.ifix{y}{m}{c}{o};
+                                        ikeep = logical(plm.Pset{p}*plm.imov{y}{m}{c}{o}) & plm.ifix{y}{m}{c}{o};
                                     end
                                 end
                                 if isempty(plm.Ymissp{y}{o}),
@@ -1392,7 +1391,6 @@ for po = P_outer,
                         % Do the GLM fit.
                         if opts.missingdata && ~ opts.mcar,
                             [G{y}{m}{c},df2{y}{m}{c}] = fastmiss(Y,M,y,m,c,plm,opts,fastpiv{m}{c});
-                            
                         else
                             if opts.evperdat,
                                 psi = zeros(size(M,2),plm.Ysiz(y));

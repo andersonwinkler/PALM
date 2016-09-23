@@ -58,17 +58,24 @@ function [X,Z,eCm,eCx,Y,imov,ifix,isdiscrete,istwotail] = palm_misspart(M,C,meth
 [x,z,ecm,ecx] = palm_partition(M,C,'guttman');
 
 % Partitioning to obtain the indices:
-mx = zeros(size(mm,1),size(C,2));
-for t = 1:size(C,2),
-    tmp = palm_partition(mm,C(:,t),'guttman');
-    mx(:,t) = any(tmp,2);
+[mx,mz] = palm_partition(mm,C,'guttman');
+if size(C,2) > 1 || any(mx(:) == 2),
+    mx = all(mx,2)*2;
+    mx2tail = true;
+else
+    mx2tail = false;
 end
-mx = all(mx,2);
-[~,mz] = palm_partition(mm,C,'guttman');
 
-% These are (logical) indices for the variables that are available:
+% Two-tailedness for missingness in Y:
+if any(my == 2),
+    my2tail = true;
+else
+    my2tail = false;
+end
+
+% These are (logical) indices for the variables that are available, ie, not missing:
 iy = ~ my;
-ix = ~ any(mx,2);
+ix = ~ any(mx,2); % if mx is empty, ix is also empty
 iz = ~ any(mz,2); % if mz is empty, iz is also empty
 ia = true(size(iy));
 
@@ -81,32 +88,32 @@ mz = double(mz);
 % multiple loops and conditions for the up-to-eight equations.
 if isempty(mz),
     if       all(iy) &&   all(ix), % Case 1
-        idx{1}     = [ia ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+        idx{1}     = [ia ia ia];   Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
     elseif ~ all(iy) &&   all(ix), % Case 2
         if mcar,
-            idx{1} = [iy ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{1} = [iy ia ia];   Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
         else
-            idx{1} = [iy ia];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
-            idx{2} = [ia ia];      Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
-            istwotail = [false true];
+            idx{1} = [iy ia ia];   Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{2} = [ia ia ia];   Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
+            istwotail = [false my2tail];
         end
     elseif   all(iy) && ~ all(ix), % Case 3
         if mcar,
-            idx{1} = [ia ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{1} = [ia ix ia];   Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
         else
-            idx{1} = [ia ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
-            idx{2} = [ia ia];      Y{2} = [];   X{2} = mx;   Z{2} = [];   eC{2} = mkcon(X{2},Z{2});
-            istwotail = [false true];
+            idx{1} = [ia ix ia];   Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{2} = [ia ia ia];   Y{2} = [];   X{2} = mx;   Z{2} = [];   eC{2} = mkcon(X{2},Z{2});
+            istwotail = [false mx2tail];
         end
     elseif ~ all(iy) && ~ all(ix), % Case 5
         if mcar,
-            idx{1} = [iy ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{1} = [iy ix ia];   Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
         else
-            idx{1} = [iy ix];      Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
-            idx{2} = [ia ix];      Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
-            idx{3} = [iy ia];      Y{3} = [];   X{3} = mx;   Z{3} = [];   eC{3} = ecm;
-            idx{4} = [ia ia];      Y{4} = my;   X{4} = mx;   Z{4} = [];   eC{4} = ecm; % discrete
-            istwotail = [false true true true];
+            idx{1} = [iy ix ia];   Y{1} = [];   X{1} = x;    Z{1} = [];   eC{1} = ecm;
+            idx{2} = [ia ix ia];   Y{2} = my;   X{2} = x;    Z{2} = [];   eC{2} = ecm;
+            idx{3} = [iy ia ia];   Y{3} = [];   X{3} = mx;   Z{3} = [];   eC{3} = ecm;
+            idx{4} = [ia ia ia];   Y{4} = my;   X{4} = mx;   Z{4} = [];   eC{4} = ecm; % discrete
+            istwotail = [false my2tail mx2tail (my2tail|mx2tail)];
         end
     end
 else
@@ -118,7 +125,7 @@ else
         else
             idx{1} = [iy ia ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ia ia];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
-            istwotail = [false true];
+            istwotail = [false my2tail];
         end
     elseif   all(iy) && ~ all(ix) &&   all(iz), % Case 3
         if mcar,
@@ -126,7 +133,7 @@ else
         else
             idx{1} = [ia ix ia];   Y{1} = [];   X{1} = x;    Z{1} = z;    eC{1} = ecm;
             idx{2} = [ia ia ia];   Y{2} = [];   X{2} = mx;   Z{2} = z;    eC{2} = mkcon(X{2},Z{2});
-            istwotail = [false true];
+            istwotail = [false mx2tail];
         end
     elseif   all(iy) &&   all(ix) && ~ all(iz), % Case 4
         if mcar,
@@ -144,7 +151,7 @@ else
             idx{2} = [ia ix ia];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
             idx{3} = [iy ia ia];   Y{3} = [];   X{3} = mx;   Z{3} = z;    eC{3} = mkcon(X{3},Z{3});
             idx{4} = [ia ia ia];   Y{4} = my;   X{4} = mx;   Z{4} = z;    eC{4} = mkcon(X{4},Z{4}); % discrete
-            istwotail = [false true true true];
+            istwotail = [false my2tail mx2tail (my2tail|mx2tail)];
         end
     elseif ~ all(iy) &&   all(ix) && ~ all(iz), % Case 6
         if mcar,
@@ -154,7 +161,7 @@ else
             idx{2} = [ia ia iz];   Y{2} = my;   X{2} = x;    Z{2} = z;    eC{2} = ecm;
             idx{3} = [iy ia ia];   Y{3} = [];   X{3} = x;    Z{3} = mz;   eC{3} = mkcon(ecx,Z{3});
             idx{4} = [ia ia ia];   Y{4} = my;   X{4} = x;    Z{4} = mz;   eC{4} = mkcon(ecx,Z{4});
-            istwotail = [false true false true];
+            istwotail = [false my2tail false my2tail];
         end
     elseif   all(iy) && ~ all(ix) && ~ all(iz), % Case 7
         if mcar,
@@ -164,7 +171,7 @@ else
             idx{2} = [ia ia iz];   Y{2} = [];   X{2} = mx;   Z{2} = z;    eC{2} = mkcon(X{2},Z{2});
             idx{3} = [ia ix ia];   Y{3} = [];   X{3} = x;    Z{3} = mz;   eC{3} = mkcon(ecx, Z{3});
             idx{4} = [ia ia ia];   Y{4} = [];   X{4} = mx;   Z{4} = mz;   eC{4} = mkcon(X{4},Z{4});
-            istwotail = [false true false true];
+            istwotail = [false mx2tail false mx2tail];
         end
     elseif ~ all(iy) && ~ all(ix) && ~ all(iz), % Case 8
         if mcar,
@@ -178,20 +185,20 @@ else
             idx{6} = [ia ix ia];   Y{6} = my;   X{6} = x;    Z{6} = mz;   eC{6} = mkcon(ecx, Z{6});
             idx{7} = [iy ia ia];   Y{7} = [];   X{7} = mx;   Z{7} = mz;   eC{7} = mkcon(X{7},Z{7});
             idx{8} = [ia ia ia];   Y{8} = my;   X{8} = mx;   Z{8} = mz;   eC{8} = mkcon(X{8},Z{8}); % discrete
-            istwotail = [false true true false true true true true];
+            istwotail = [false my2tail mx2tail false (my2tail|mx2tail) my2tail mx2tail (my2tail|mx2tail)];
         end
     end
 end
 nO = numel(idx);
 
-% For the cases in which there's nothing to be combined, not two-tailed
-if nO == 1,
-    istwotail  = false;
+% Overwrite those effective contrast stuff
+for c = 1:numel(eC),
+    eC{c} = ecm;
 end
 
-% PCA of Z
-if ~ isempty(mz),
-    [Z,eC] = pcaz(Z,eC);
+% For the cases in which there's nothing to be combined, not two-tailed
+if nO == 1,
+    istwotail = false;
 end
 
 % Partition again each of these models using the method indicated by the user:
@@ -202,7 +209,7 @@ for o = 1:nO,
     [X{o},Z{o},eCm{o},eCx{o}] = palm_partition(horzcat(X{o},Z{o}),eC{o},meth);
     % Check if discrete. If yes, it will done via Yates' Chi^2.
     % Otherwise, add an intercept
-    if ~ isempty(Y{o}) && size(unique(X{o},'rows'),1) == 2,
+    if ~ isempty(Y{o}) && isempty(Z{o}) && size(unique(X{o},'rows'),1) == 2,
         isdiscrete(o) = true;
     else
         Z{o}   = horzcat(Z{o},ones(size(X{o},1),1));
@@ -220,21 +227,11 @@ for o = nO:-1:1,
 end
 nO = numel(isdiscrete);
 
-% Prepare the indices used to modify the permutation matrix and the
-% remainder of the model. That is:
-% - The non-permutable parts of the design will be: (P*imov & ifix).
-% - The permutation matrix will be:  P(P(:,imov) & ifix,:) = [].
+% Prepare the indices used to modify the permutation matrix
+% and model. That is:
 imov = cell(nO,1);
 ifix = imov;
-if isempty(mz),
-    rmethod = 'noz';
-end
 switch lower(rmethod),
-    case 'noz',
-        for o = 1:nO,
-            imov{o} = idx{o}(:,2);
-            ifix{o} = idx{o}(:,1);
-        end
     case 'draper-stoneman',
         for o = 1:nO,
             imov{o} = idx{o}(:,2);
@@ -295,7 +292,7 @@ end
 
 % ==============================================================
 function [Z,eC] = pcaz(Z,eC)
-% PCA of Z, via SVD.
+% PCA of Z, via SVD (currently unused).
 for o = 1:numel(Z),
     sZ1     = size(Z{o},2);
     Z0      = bsxfun(@minus,Z{o},mean(Z{o},1));
@@ -310,7 +307,7 @@ end
 
 % ==============================================================
 function [Y,X,Z] = meancenter(Y,X,Z)
-% Mean center data and design (currently unused)
+% Mean center data and design (currently unused).
 for o = 1:numel(Y),
     if ~isempty(Y{o}) && ~islogical(Y{o}),
         Y{o} = bsxfun(@minus,Y{o},mean(Y{o},1));

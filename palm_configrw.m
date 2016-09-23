@@ -59,9 +59,9 @@ elseif nargin == 2,
     plmfile = varargin{2};
     fid = fopen(plmfile,'w');
     fprintf(fid,'# Configuration file for PALM.\n');
-    fprintf(fid,'# Version %s, running in %s.\n',ver,envrun);
+    fprintf(fid,'# Version %s, running in %s %s.\n',ver,envrun,version);
     fprintf(fid,'# %s\n',datestr(now));
-    fprintf('Running PALM %s using %s with the following options:',ver,envrun);
+    fprintf('Running PALM %s using %s %s with the following options:',ver,envrun,version);
     for c = 1:numel(cfg),
         s2d = str2double(cfg{c});
         if strcmp(cfg{c}(1),'-') && (isnan(s2d) || ~isreal(s2d)),
