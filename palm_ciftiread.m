@@ -1,5 +1,5 @@
 function [data,extra] = palm_ciftiread(varargin)
-% Provides limited support for reading dtseries CIFTI files
+% Provides limited support for reading CIFTI files
 % (surface only) using the wb_command as the backend.
 %
 % [data,extra] = palm_ciftiread(filename,temp_prefix,wb_command)

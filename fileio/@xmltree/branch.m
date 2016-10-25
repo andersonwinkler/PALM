@@ -12,7 +12,7 @@ function subtree = branch(tree,uid)
 % Copyright (C) 2002-2011  http://www.artefact.tk/
 
 % Guillaume Flandin
-% $Id: branch.m 8776 2013-11-14 09:04:48Z roboos $
+% $Id: branch.m 4460 2011-09-05 14:52:16Z guillaume $
 
 
 %error(nargchk(2,2,nargin));

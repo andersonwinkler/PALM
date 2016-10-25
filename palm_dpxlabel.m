@@ -2,7 +2,7 @@ function dpvl = palm_dpxlabel(dpx,adj)
 % Label a DPV file (vertexwise data).
 % 
 % Usage:
-% dpxl = palm_vtxlabel(dpx,adj)
+% dpxl = palm_dpxlabel(dpx,adj)
 % 
 % - dpx  : Data per vertex or per face to be labelled. It should be
 %          a logical vector, and the values marked as "true" are

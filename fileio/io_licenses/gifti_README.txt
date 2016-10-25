@@ -1,7 +1,7 @@
- GIfTI - a MATLAB GIfTI Library (v1.4)
+ GIfTI - a MATLAB GIfTI Library (v1.6)
  =====================================
 
- Copyright (C) 2008-2014 Guillaume Flandin <Guillaume@artefact.tk>
+ Copyright (C) 2008-2015 Guillaume Flandin <Guillaume@artefact.tk>
  http://www.artefact.tk/software/matlab/gifti/
 
  This MATLAB class allows to handle GIfTI Geometry file format from the 
@@ -10,13 +10,17 @@
    GIfTI: http://www.nitrc.org/projects/gifti/
    NIfTI: http://nifti.nimh.nih.gov/
 
- It relies on external MATLAB code:
-   o Base64, by Peter J. Acklam: 
+ It relies on external libraries:
+   o Base64, by Peter J. Acklam:
      http://home.online.no/~pjacklam/
-   o dzip, by Michael Kleder: 
-     http://www.mathworks.com/matlabcentral/fileexchange/loadFile.do?objectId=8899
-   o XMLTree, by Guillaume Flandin: 
+   o miniz, by Rich Geldreich:
+     http://code.google.com/p/miniz/
+   o dzip, by Michael Kleder:
+     http://www.mathworks.com/matlabcentral/fileexchange/8899
+   o XMLTree, by Guillaume Flandin:
      http://www.artefact.tk/software/matlab/xml/
+   o mVTK, by Guillaume Flandin:
+     http://www.artefact.tk/software/matlab/mvtk/
 
  Note that these tools are already included in the GIfTI library provided
  here, so you don't need to install them separately.
@@ -41,6 +45,8 @@
  return an error:
  
   >> error(javachk('jvm'));
+  
+ Alternatively, a C-MEX file can be compiled, see @gifti/private/zstream.c
   
  TUTORIAL
  ========
@@ -77,4 +83,4 @@
  -------------------------------------------------------------------------------
  MATLAB is a Registered Trademark of The Mathworks, Inc.
  
- Copyright (C) 2008-2014 Guillaume Flandin <Guillaume@artefact.tk>
+ Copyright (C) 2008-2015 Guillaume Flandin <Guillaume@artefact.tk>

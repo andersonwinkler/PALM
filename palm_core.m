@@ -332,12 +332,16 @@ tocI = toc(ticI);
 fprintf('Elapsed time parsing inputs: ~ %g seconds.\n',tocI);
 
 % For each design matrix and contrast:
+prepglm = cell(plm.nM,1);
+fastpiv = cell(plm.nM,1);
 for m = 1:plm.nM,
+    prepglm{m} = cell(plm.nC(m),1);
+    fastpiv{m} = cell(plm.nC(m),1);
     for c = 1:plm.nC(m),
         
         % If there are voxelwise EVs:
         if opts.evperdat,
-            fprintf(['Doing maths for -evperdat before model fitting: [Design %d/%d, Contrast %d/%d] (may take several minutes)\n'],m,plm.nM,c,plm.nC(m));
+            fprintf('Doing maths for -evperdat before model fitting: [Design %d/%d, Contrast %d/%d] (may take several minutes)\n',m,plm.nM,c,plm.nC(m));
         end
         
         % Partition the model, now using the method chosen by the user
@@ -1175,7 +1179,7 @@ for po = P_outer,
                 % Because this all runs very quickly, the unpermuted
                 % statistics can be saved later.
                 if opts.evperdat,
-                    fprintf(['Computing statistics: [Design %d/%d, Contrast %d/%d] (may take some minutes)\n'],m,plm.nM,c,plm.nC(m));
+                    fprintf('Computing statistics: [Design %d/%d, Contrast %d/%d] (may take some minutes)\n',m,plm.nM,c,plm.nC(m));
                     if opts.saveunivariate,
                         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                         for t = 1:plm.Ysiz(y),
@@ -2517,7 +2521,7 @@ for t = 1:size(Y,2),
     Mr(:,:,t) = P*plm.X{y}{m}{c}{o}(:,:,t);
 end
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-function [Mr,Yr] = exacmt(P,Y,y,m,c,o,plm,ikeep)
+function [Mr,Yr] = exactm(P,Y,y,m,c,o,plm,ikeep)
 % The "exact" method, in which the coefficients for
 % the nuisance are known.
 Yr = Y(ikeep,:) - plm.Z{y}{m}{c}{o}(ikeep,:)*plm.g;
@@ -2784,7 +2788,6 @@ for j = 1:size(cte,2),
 end
 G   = sum(tmp.*psi,1);
 ete = sum(res.^2,1);
-rC0 = plm.rC0{m}(c);
 G   = G./ete*df2/plm.rC0{m}(c);
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastf3d(M,psi,res,y,m,c,o,plm)
@@ -3706,7 +3709,7 @@ function Q = mrdiv(A,B)
 Q = A*pinv(B);
 
 % ==============================================================
-function Z = yates(Y,X);
+function Z = yates(Y,X)
 % Compute a Chi^2 test in a 2x2 contingency table, using the
 % Yates correction, then convert to a z-statistic.
 % Reference:

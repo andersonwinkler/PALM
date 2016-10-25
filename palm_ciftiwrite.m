@@ -1,5 +1,5 @@
 function palm_ciftiwrite(varargin)
-% Provides limited support for writing dtseries/dscalar CIFTI files
+% Provides limited support for writing CIFTI files
 % (surface only) using the wb_command as the backend.
 %
 % C = palm_ciftiwrite(filename,data,extra,wb_command)

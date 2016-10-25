@@ -3,9 +3,15 @@ function palm_hemisplit(varargin)
 % been merged with palm_hemimerge.
 % Output file names have prefix "lh" and "rh".
 %
-% palm_hemisplit <files>
+% palm_hemisplit [-v #vtx] [-f #fac] <files>
 %
 % Wildcards are accepted.
+%
+% -v <nV> : Specify the number of vertices for the left hemisphere.
+% -f <nF> : Specify the number of faces for the left hemisphere.
+% 
+% For surfaces (meshes) and curvature files, both -v and -f are necessary.
+% For dpv or dpx, use -v for the same purpose. For dpf, use -f. 
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
@@ -13,16 +19,34 @@ function palm_hemisplit(varargin)
 % http://brainder.org
 
 % List of files (with wildcards)
-j = 1;
-for a = 1:nargin,
-    F = dir(varargin{a});
-    for f = numel(F):-1:1,
-        if F(f).name(1) == '.',
-            F(f) = [];
-        else
-            Flist{j} = F(f).name;
-            j = j + 1;
+a   = 1;
+j   = 1;
+nVL = [];
+nFL = [];
+while a <= nargin,
+    if a < nargin && strcmpi(varargin{a},'-v'),
+        nVL = varargin{a+1};
+        if ischar(nVL),
+            nVL = str2double(nVL);
         end
+        a = a + 2;
+    elseif a < nargin && strcmpi(varargin{a},'-f'),
+        nFL = varargin{a+1};
+        if ischar(nFL),
+            nFL = str2double(nFL);
+        end
+        a = a + 2;
+    else
+        F = dir(varargin{a});
+        for f = numel(F):-1:1,
+            if F(f).name(1) == '.',
+                F(f) = [];
+            else
+                Flist{j} = F(f).name;
+                j = j + 1;
+            end
+        end
+        a = a + 1;
     end
 end
 Flist = flipud(Flist');
@@ -35,37 +59,74 @@ for f = 1:numel(Flist),
     L = B; R = B;
     switch B.readwith,
         case {'load','csvread','fs_load_mgh'},
-            nV = size(B.data,1);
-            nV2 = nV/2;
-            L.data = B.data(1:nV2,:,:,:);
-            R.data = B.data(nV2+1:end,:,:,:);
+            
+            nVB = size(B.data,1);
+            if isempty(nVL),
+                nVL = nVB/2;
+            end
+            L.data = B.data(1:nVL,:,:,:);
+            R.data = B.data(nVL+1:end,:,:,:);
             
         case 'dpxread',
-            nV  = size(B.data,1);
-            nV2 = nV/2;
-            L.data      = B.data(1:nV2,:,:,:);
-            R.data      = B.data(nV2+1:end,:,:,:);
-            L.extra.crd = B.extra.crd(1:nV2,:,:,:);
-            R.extra.crd = B.extra.crd(nV2+1:end,:,:,:);
+            
+            nXB = size(B.data,1);
+            if strcmpi(Flist{f}(end-2:end),'dpf'),
+                if isempty(nFL),
+                    nXL = nXB/2;
+                else
+                    nXL = nFL;
+                end
+            else
+                if isempty(nVL),
+                    nXL = nXB/2;
+                else
+                    nXL = nVL;
+                end
+            end
+            L.data      = B.data(1:nXL,:,:,:);
+            R.data      = B.data(nXL+1:end,:,:,:);
+            L.extra.crd = B.extra.crd(1:nXL,:,:,:);
+            R.extra.crd = B.extra.crd(nXL+1:end,:,:,:);
             L.extra.idx = (1:size(L.data,1))';
-            R.extra.idx = L.extra.idx;
+            R.extra.idx = (1:size(R.data,1))';
             
         case {'srfread','fs_read_surf'},
             
-            nV = size(B.data.vtx,1);
-            nF = size(B.data.fac,1);
-            nV2 = nV/2;
-            nF2 = nF/2;
-            L.data.vtx = B.data.vtx(1:nV2,:);
-            R.data.vtx = B.data.vtx(nV2+1:end,:);
-            L.data.fac = B.data.fac(1:nF2,:);
-            R.data.fac = B.data.fac(nF2+1:end,:)-nV2;
+            nVB = size(B.data.vtx,1);
+            nFB = size(B.data.fac,1);
+            if xor(isempty(nVL),isempty(nFL)),
+                warning(...
+                    ['With surfaces (meshes), either both "-v" and "-f" must be supplied, or neither.\n'...
+                    'Skipping: %s.'],Flist{f});
+            else
+                if isempty(nVL) && isempty(nFL),
+                    nVL = nVB/2;
+                    nFL = nFB/2;
+                end
+                L.data.vtx = B.data.vtx(1:nVL,:);
+                R.data.vtx = B.data.vtx(nVL+1:end,:);
+                L.data.fac = B.data.fac(1:nFL,:);
+                R.data.fac = B.data.fac(nFL+1:end,:)-nVL;
+            end
             
         case 'fs_read_curv',
-            L.data      = B.data(1:nV2,:,:,:);
-            R.data      = B.data(nV2+1:end,:,:,:);
-            L.extra.fnum = B.extra.fnum/2;
-            R.extra.fnum = L.extra.fnum;
+            
+            nVB = size(B.data,1);
+            nFB = B.extra.fnum;
+            if xor(isempty(nVL),isempty(nFL)),
+                warning(...
+                    ['With curvatures, either both "-v" and "-f" must be supplied, or neither.\n'...
+                    'Skipping: %s.'],Flist{f});
+            else
+                if isempty(nVL) && isempty(nFL),
+                    nVL = nVB/2;
+                    nFL = nFB/2;
+                end
+                L.data      = B.data(1:nVL,:,:,:);
+                R.data      = B.data(nVL+1:end,:,:,:);
+                L.extra.fnum = nFL;
+                R.extra.fnum = nFB-nFL;
+            end
             
         otherwise
             warning('Cannot deal with files read with %s. Skipping: %s\n',B.readwith,Flist{f});

@@ -1286,6 +1286,12 @@ if opts.accel.lowrank,
     if opts.evperdat,
         error('The option "-accel lowrank" cannot be used with "-evperdat".');
     end
+    if opts.missingdata,
+        error('The option "-accel lowrank" cannot be used with missing data.');
+    end
+        if opts.saveglm,
+        error('The option "-accel lowrank" cannot be used with "-saveglm".');
+    end
 end
 
 % Some options can't be used with missing data
