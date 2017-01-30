@@ -397,7 +397,7 @@ while a <= narginx,
             opts.tfce.mv.do = true;
             a = a + 1;
             
-        case '-tfce1D', % basic
+        case {'-tfce1D','-tfce1d'}, % basic
             
             % Shortcut for -tfce_H 2 -tfce_E 2 -tfce_C 6,
             % i.e., parameters for TFCE in 2D mode
@@ -406,7 +406,7 @@ while a <= narginx,
             opts.tfce.conn   = 6;
             a = a + 1;
             
-        case '-tfce2D', % basic
+        case {'-tfce2D','-tfce2d'}, % basic
             
             % Shortcut for -tfce_H 2 -tfce_E 1 -tfce_C 26,
             % i.e., parameters for TFCE in 2D mode
@@ -415,7 +415,7 @@ while a <= narginx,
             opts.tfce.conn   = 26;
             a = a + 1;
             
-        case '-tfce_H', % advanced
+        case {'-tfce_H','-tfce_h'}, % advanced
             
             % TFCE H parameter
             opts.tfce.H = vararginx{a+1};
@@ -424,7 +424,7 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-tfce_E', % advanced
+        case {'-tfce_E','-tfce_e'}, % advanced
             
             % TFCE E parameter
             opts.tfce.E = vararginx{a+1};
@@ -433,7 +433,7 @@ while a <= narginx,
             end
             a = a + 2;
             
-        case '-tfce_C', % advanced
+        case {'-tfce_C','-tfce_c'}, % advanced
             
             % TFCE connectivity
             opts.tfce.conn = vararginx{a+1};
@@ -1513,19 +1513,17 @@ if opts.spatial.do && Ns > 0,
         
         % Load areas
         if isempty(opts.sa{s}),
-            
             % No area means area of the actual surface file
             plm.srfarea{s}.data = [];
-            
         elseif exist(opts.sa{s},'file'),
-            
             % A file with the average areas from native geometry
             plm.srfarea{s} = palm_miscread(opts.sa{s},opts.useniiclass,opts.o);
-            
         elseif ~ isnan(str2double(opts.sa{s})),
-            
             % A weight (such as 1)
             plm.srfarea{s}.data = str2double(opts.sa{s});
+        else
+            % Otherwise gives a helpful error message:
+            error('Unknown option given to "-s" or file doesn''t exist:\n%s',opts.sa{s});
         end
     end
 end

@@ -127,7 +127,7 @@ switch lower(X.readwith),
         try
             [~] = evalc('save_avw(X.data,X.filename,X.extra.vtype,X.extra.voxsize)');
         catch
-            save_avw(X.data,X.filename,X.extra.vtype,X.extra.voxsize)
+            save_avw(X.data,X.filename,X.extra.vtype,X.extra.voxsize);
         end
         
     case 'nii_load_nii',

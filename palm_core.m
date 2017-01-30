@@ -2943,9 +2943,9 @@ for t = 1:nT,
 end
 sW1  = sum(W,1);
 bsum = sum(bsxfun(@rdivide,(1-bsxfun(@rdivide,W,sW1)).^2,dRmb),1);
-bsum = bsum/plm.rC{m}(c)/(plm.rC{m}(c)+2);
+bsum = bsum/plm.rC0{m}(c)/(plm.rC0{m}(c)+2);
 df2  = 1/3./bsum;
-G    = G./(1 + 2*(plm.rC{m}(c)-1).*bsum);
+G    = G./(1 + 2*(plm.rC0{m}(c)-1).*bsum);
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastg3d(M,psi,res,y,m,c,o,plm)
 r    = size(M,2);
@@ -2970,9 +2970,9 @@ for t = 1:nT,
 end
 sW1  = sum(W,1);
 bsum = sum((1-bsxfun(@rdivide,W,sW1)).^2./dRmb,1);
-bsum = bsum/plm.rC{m}(c)/(plm.rC{m}(c)+2);
+bsum = bsum/plm.rC0{m}(c)/(plm.rC0{m}(c)+2);
 df2  = 1/3./bsum;
-G    = G./(1 + 2*(plm.rC{m}(c)-1).*bsum);
+G    = G./(1 + 2*(plm.rC0{m}(c)-1).*bsum);
 
 % ==============================================================
 function [Z,df2] = fastmiss(Y,M,y,m,c,plm,opts,fastpiv)
