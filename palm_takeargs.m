@@ -354,7 +354,7 @@ while a <= narginx,
             
             % Type of cluster statistic
             opts.cluster.stat = vararginx{a+1};
-            if ~ any(strcmp(opts.cluster.stat,{'extent','mass','density','tippett'})),
+            if ~ any(strcmp(opts.cluster.stat,{'extent','mass','density','tippett','pivotal'})),
                 error('Cluster statistic "%s" unknown.',opts.cluster.stat);
             end
             a = a + 2;
@@ -817,14 +817,14 @@ while a <= narginx,
                         if ischar(vararginx{a+2}),
                             if     any(strcmpi(vararginx{a+2},{'out','G1out','T1out','true', '1'})),
                                 opts.accel.G1out = true;
-                                opts.saveuncorrected = false;
+                                opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
                             elseif any(strcmpi(vararginx{a+2},{'in', 'G1in', 'T1in', 'false','0'})),
                                 opts.accel.G1out = false;
                             end
                         else
                             if vararginx{a+2},
                                 opts.accel.G1out = true;
-                                opts.saveuncorrected = false;
+                                opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
                             else
                                 opts.accel.G1out = false;
                             end
@@ -843,12 +843,12 @@ while a <= narginx,
                                 opts.accel.G1out = true;
                                 opts.saveuncorrected = false;
                             elseif any(strcmpi(vararginx{a+2},{'in', 'G1in', 'T1in', 'false','0'})),
-                                opts.accel.G1out = false;
+                                opts.accel.G1out = false; % defensive, as the uncorrected will be invalid here.
                             end
                         else
                             if vararginx{a+2},
                                 opts.accel.G1out = true;
-                                opts.saveuncorrected = false;
+                                opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
                             else
                                 opts.accel.G1out = false;
                             end
@@ -882,7 +882,7 @@ while a <= narginx,
                     'be specified. Consult the documentation.%s'],'');
             end
             
-        case '-noniiclass', % advanced
+        case {'-noniiclass','-nonifticlass'} % advanced
             
             % Disable using the NIFTI class
             opts.useniiclass = false;
@@ -1477,6 +1477,12 @@ end
 if opts.probit && opts.inormal,
     error('Cannot use "-probit" together with "-inormal".');
 end
+if opts.FDR && ~ opts.saveuncorrected,
+    error(['Option "-fdr" cannot be used together with "-nouncorrected".\n'...
+        'Use either of these, but not both together. If you are using tail or\n'...
+        'gamma approximations, consider keeping "-nouncorrected", and leave\n'...
+        '"-fdr" for a separate call in which tail or gamma are not used.%s'],'');
+end
 
 % Initialize the random number generator (if nP = 0, no need for that)
 if opts.nP0,
@@ -1589,7 +1595,7 @@ for i = 1:Ni,
         maskstruct = plm.masks{i};
     end
     [plm.Yset{i},plm.masks{i},plm.Yisvol(i),plm.Yissrf(i),plm.Ykindstr{i}] = ...
-        palm_ready(opts.i{i},maskstruct,opts);
+        palm_ready(opts.i{i},maskstruct,opts,true);
     
     % Select subjects
     if ~ isempty(plm.subjidx),
@@ -1618,27 +1624,21 @@ for i = 1:Ni,
     if opts.tableasvolume,
         plm.Yisvol(i) = true;
     else
-        if opts.spatial.do && ...
-                any(strcmpi(plm.masks{i}.readwith,{'load','fs_load_mgh','gifti'})),
-            if Ns == 0,
-                error([ ...
-                    'To use spatial statistics with vertexwise or facewise data it is\n'...
-                    'necessary to provide the surface files (with the option "-s").%s'],'');
-            elseif Ns == 1,
-                s = 1;
-            else
-                s = i;
-            end
+        if opts.spatial.do && Ns > 0,
+            
             
             % String defining the types, for the filenames and other tasks.
+            if Ns == 1, s = 1; else s = i; end
             if any(size(plm.srf{s}.data.vtx,1) == ...
                     size(plm.masks{i}.data));
+                plm.Yisvol(i)   = false;
                 plm.Yissrf(i)   = true;
                 plm.Yisvtx(i)   = true;
                 plm.Yisfac(i)   = false;
                 plm.Ykindstr{i} = '_dpv';
             elseif any(size(plm.srf{s}.data.fac,1) == ...
                     size(plm.masks{i}.data));
+                plm.Yisvol(i)   = false;
                 plm.Yissrf(i)   = true;
                 plm.Yisvtx(i)   = false;
                 plm.Yisfac(i)   = true;
@@ -1678,6 +1678,11 @@ for i = 1:Ni,
             
             % Compute the adjacency matrix
             plm.Yadjacency{i} = palm_adjacency(plm.srf{s}.data.fac,plm.Yisvtx(i));
+            
+        elseif opts.spatial.do && Ns == 0 && any(strcmpi(plm.masks{i}.readwith,{'load','fs_load_mgh','gifti'})),
+            error([ ...
+                'To use spatial statistics with vertexwise or facewise data it is\n'...
+                'necessary to provide the surface files (with the option "-s").%s'],'');
         end
     end
 end
@@ -1719,7 +1724,7 @@ if opts.evperdat,
     % Read input file & select subjects
     for ev = 1:plm.nEVdat,
         fprintf('Reading EV per datum %d/%d: %s\n',ev,plm.nEVdat,opts.evdatfile{ev});
-        [plm.EVset{ev},plm.masksEV{ev}] = palm_ready(opts.evdatfile{ev},plm.masksEV{ev},opts);
+        [plm.EVset{ev},plm.masksEV{ev}] = palm_ready(opts.evdatfile{ev},plm.masksEV{ev},opts,false);
         if ~ isempty(plm.subjidx),
             plm.EVset{ev} = plm.EVset{ev}(plm.subjidx,:);
         end

@@ -1,4 +1,4 @@
-function [maxsize,clstat,sizes] = palm_clusterd(X,y,thr,opts,plm)
+function [maxsize,clstat,sizes] = palm_clusterd(X,y,thr,opts,plm,varargin)
 % Compute cluster density statistics, for volume or surface
 % data (vertexwise or facewise).
 % 
@@ -71,7 +71,7 @@ if plm.Yisvol(y),
         sizesm(c) = sum(D(CC.PixelIdxList{c}));
     end
     sizese = cellfun(@numel,CC.PixelIdxList)';
-    sizes  = sizesm./sizese.^.5;
+    sizes  = sizesm./sizese;
     
     % Compute the statistic image (this should be for the 1st perm only)
     if nargout > 1,

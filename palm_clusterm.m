@@ -1,4 +1,4 @@
-function [maxsize,clstat,sizes] = palm_clusterm(X,y,thr,opts,plm)
+function [maxsize,clstat,sizes] = palm_clusterm(X,y,thr,opts,plm,varargin)
 % Compute cluster mass statistics, for volume or surface
 % data (vertexwise or facewise).
 % 

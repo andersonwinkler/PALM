@@ -1,9 +1,9 @@
-function [maxsize,clstat,sizes] = palm_clustere(X,y,thr,opts,plm,varargin)
-% Compute cluster extent statistics, for volume or surface
+function [maxsize,clstat,sizes] = palm_clusterp(X,y,thr,opts,plm,fastpiv,M,psi,res,m,c,o)
+% Compute cluster pivotal statistics, for volume or surface
 % data (vertexwise or facewise).
 % 
 % Usage:
-% [maxsize,clstat,sizes] = palm_clustere(X,y,thr,opts,plm)
+% [maxsize,clstat,sizes] = palm_clusterp(X,y,thr,opts,plm)
 % 
 % Inputs:
 % - X    : Statistical map.
@@ -13,14 +13,14 @@ function [maxsize,clstat,sizes] = palm_clustere(X,y,thr,opts,plm,varargin)
 % - plm  : Struct with PALM data.
 % 
 % Outputs:
-% - maxsize : Largest cluster extent.
+% - maxstat : Largest cluster statistic.
 % - clstat  : Thresholded map with the cluster sizes (cluster statistic).
 % - sizes   : Vector with all cluster sizes.
 % 
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
-% Sep/2013
+% Jan/2017
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -41,6 +41,7 @@ function [maxsize,clstat,sizes] = palm_clustere(X,y,thr,opts,plm,varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
 % Choose an appropriate mask struct.
 if opts.npcmod || opts.MV || opts.forcemaskinter,
     S = plm.maskinter;
@@ -57,6 +58,8 @@ mask    = S.data;
 D       = double(S.data);
 D(mask) = X;
 Dt      = D >= thr;
+I       = double(mask);
+I(mask) = 1:size(X,2);
 
 % Compute the sizes and the statistic
 sizes = [];
@@ -66,14 +69,19 @@ if plm.Yisvol(y),
     % less memory intensive than bwlabel
     CC = bwconncomp(Dt);
     
-    % Here cellfun is ~30% faster than doing as a loop
-    sizes = cellfun(@numel,CC.PixelIdxList);
+    % A loop here is 4x faster than cellfun
+    sizes = zeros(CC.NumObjects,1);
+    for u = 1:CC.NumObjects,
+        resc = sum(res(:,I(CC.PixelIdxList{u})),2);
+        psic = sum(psi(:,I(CC.PixelIdxList{u})),2);
+        sizes(u) = fastpiv(M,psic,resc,y,m,c,o,plm);
+    end
     
     % Compute the statistic image (this should be for the 1st perm only)
     if nargout > 1,
-        clstat = zeros(size(Dt));
-        for c = 1:CC.NumObjects,
-            clstat(CC.PixelIdxList{c}) = sizes(c);
+        clstat = zeros(size(D));
+        for u = 1:CC.NumObjects,
+            clstat(CC.PixelIdxList{u}) = sizes(u);
         end
         clstat = clstat(mask)';
     end
@@ -87,12 +95,14 @@ elseif plm.Yisvtx(y) || plm.Yisfac(y),
     U     = unique(dpxl(dpxl>0))';
     sizes = zeros(size(U));
     for u = 1:numel(U),
-        sizes(u) = sum(plm.Yarea{y}(dpxl == U(u)));
+        resc = sum(res(:,I(dpxl == U(u))),2);
+        psic = sum(psi(:,I(dpxl == U(u))),2);
+        sizes(u) = fastpiv(M,psic,resc,y,m,c,o,plm);
     end
     
     % Compute the statistic image (this is normally for the 1st perm only)
     if nargout > 1,
-        clstat = zeros(size(Dt));
+        clstat = zeros(size(D));
         for u = 1:numel(U),
             clstat(dpxl == U(u)) = sizes(u);
         end

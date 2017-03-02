@@ -285,6 +285,9 @@ switch opts.cluster.stat,
     case 'tippett',
         clusterfunc = @palm_clustert;
         opts.cluster.str = '_clustert';
+    case 'pivotal',
+        clusterfunc = @palm_clusterp;
+        opts.cluster.str = '_clusterp';
 end
 switch opts.tfce.stat,
     case 'tfce',
@@ -1673,10 +1676,10 @@ for po = P_outer,
                                 if p == 1,
                                     plm.Gclumax{y}{m}{c} = zeros(plm.nP{m}(c),1);
                                     [plm.Gclumax{y}{m}{c}(p),plm.Gclu{y}{m}{c}] = clusterfunc( ...
-                                        G{y}{m}{c},y,opts.cluster.uni.thr,opts,plm);
+                                        G{y}{m}{c},y,opts.cluster.uni.thr,opts,plm,fastpiv{m}{c},M,psi,res,m,c,1);
                                 else
                                     plm.Gclumax{y}{m}{c}(p) = clusterfunc( ...
-                                        G{y}{m}{c},y,opts.cluster.uni.thr,opts,plm);
+                                        G{y}{m}{c},y,opts.cluster.uni.thr,opts,plm,fastpiv{m}{c},M,psi,res,m,c,1);
                                 end
                             end
                             

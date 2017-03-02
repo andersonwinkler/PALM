@@ -1,4 +1,4 @@
-function [Y,maskstruct,Yisvol,Yissrf,Ykindstr,Ytmp] = palm_ready(Yfile,maskstruct,opts)
+function [Y,maskstruct,Yisvol,Yissrf,Ykindstr,Ytmp] = palm_ready(Yfile,maskstruct,opts,removecte)
 % An intermediate function to read input data (-i) and
 % voxelwise EVs (-evperdat).
 %
@@ -8,7 +8,8 @@ function [Y,maskstruct,Yisvol,Yissrf,Ykindstr,Ytmp] = palm_ready(Yfile,maskstruc
 % Inputs:
 % - Yfile      : Filename to be read.
 % - maskstruct : Mask struct.
-% - opts       : variable opts.
+% - opts       : Variable opts.
+% - removecte  : Remove constant values?
 %
 % Outputs:
 % - Yfile      : Data, ready to go to Yset or EVset.
@@ -55,7 +56,11 @@ if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,
                 I = squeeze(Ytmp.extra.dat(:,a,b,:));
                 inan = any(isnan(I),2);
                 iinf = any(isinf(I),2);
-                icte = sum(diff(I,1,2).^2,2) == 0;
+                if removecte,
+                    icte = sum(diff(I,1,2).^2,2) == 0;
+                else
+                    icte = false(size(iinf));
+                end
                 tmpmsk(:,a,b) = ~ (inan | iinf | icte);
             end
         end
@@ -135,7 +140,11 @@ if isempty(maskstruct) ...
 else
     ynan = any(isnan(Y),1);
     yinf = any(isinf(Y),1);
-    ycte = sum(diff(Y,1,1).^2) == 0;
+    if removecte,
+        ycte = sum(diff(Y,1,1).^2) == 0;
+    else
+        ycte = false(size(yinf));
+    end
     maskydat = ~ (ynan | yinf | ycte);
 end
 
