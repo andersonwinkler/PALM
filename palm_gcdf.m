@@ -68,7 +68,7 @@ elseif df1 == 1,
         gcdf(ic) = .5 + atan(G(ic))/pi;
     end
     if any(in(:)),
-        gcdf(ic) = palm_gcdf(G(in),0);
+        gcdf(ic) = erfc(-G(in)/sqrt(2))/2;
     end
 
 elseif df1 == 0,

@@ -713,8 +713,9 @@ while a <= narginx,
             
             % NPC over contrasts -- that is, all contrasts, even contrasts
             % in different designs (if more than one -d is supplied).
-            opts.NPC    = true;
-            opts.npccon = true;
+            opts.NPC       = true;
+            opts.npccon    = true;
+            opts.syncperms = true;
             a = a + 1;
             
         case '-mv', % basic
@@ -1912,16 +1913,16 @@ if opts.savemask,
     for y = 1:plm.nmasks,
         M = plm.masks{y};
         if plm.nY == 1 || plm.nmasks == 1,
-            M.filename = sprintf('%s_mask',opts.o);
+            M.filename = sprintf('%smask',opts.o);
         else
-            M.filename = sprintf('%s_mask_m%d',opts.o,y);
+            M.filename = sprintf('%smask_m%d',opts.o,y);
         end
         M.data = double(M.data);
         palm_miscwrite(M,true);
     end
     if plm.nY > 1 && (opts.npcmod || opts.MV || opts.forcemaskinter),
         M          = plm.maskinter;
-        M.filename = sprintf('%s_intersection_mask',opts.o);
+        M.filename = sprintf('%sintersection_mask',opts.o);
         M.data     = double(M.data);
         palm_miscwrite(M,true);
     end
@@ -1939,7 +1940,7 @@ if opts.MV && ~ opts.noranktest,
         end
     end
     if any(failed),
-        fname = sprintf('%s_mv_illconditioned',opts.o);
+        fname = sprintf('%smv_illconditioned',opts.o);
         palm_quicksave(double(failed),0,opts,plm,[],[],[],fname);
         error([
             'One or more datapoints have ill-conditioned data. It is\n' ...
@@ -1947,7 +1948,7 @@ if opts.MV && ~ opts.noranktest,
             'Please, see these datapoints marked as 1 in the file:\n' ...
             '%s.*\n'],fname); %#ok
     end
-end
+end; clear Y;
 
 % Applies an inverse-normal transformation to the modalities if the user requested
 if opts.inormal,

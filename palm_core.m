@@ -26,7 +26,7 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Uncomment the line below for debugging:
-%clear global plm opts; global plm opts; 
+clear global plm opts; global plm opts;
 
 % Take the arguments. Save a small log if needed.
 ticI = tic;
@@ -1352,7 +1352,7 @@ for po = P_outer,
                             YY = cell(1,nO);
                             loopO = 1:nO;
                             for o = loopO,
-
+                                
                                 % Prepare permutation matrix and indices of data and
                                 % design that will be removed
                                 if isempty(plm.imov{y}{m}{c}{o}),
@@ -1738,7 +1738,7 @@ for po = P_outer,
                         df2npc{1}(y,:) = df2{y}{m}{c};
                     end; clear y
                     T{m}{c} = plm.fastnpc(Gnpc{1},0,df2npc{1});
-
+                    
                     % Since computing the parametric p-value for some methods
                     % can be quite slow, it's faster to run all these checks
                     % to ensure that 'plm.pparanpc' runs just once.
@@ -2168,7 +2168,7 @@ for po = P_outer,
         end
     end
     
-    % NPC for modalities with design per input is here
+    % NPC for modalities with design per input is here    
     if opts.npcmod && opts.designperinput && ~ opts.npccon,
         
         % For each contrast (here we collapse designs and modalities, pairwise)
@@ -2180,7 +2180,7 @@ for po = P_outer,
             % Just a feedback message for some situations.
             if opts.showprogress && ...
                     ~ opts.zstat && ...
-                    p == 1 && ...
+                    po == 1 && ...
                     opts.savepara && ...
                     ~ plm.nonpcppara && ...
                     ~ opts.spatial.npc && ...
@@ -2202,7 +2202,7 @@ for po = P_outer,
             % to ensure that 'plm.pparanpc' runs just once.
             if opts.zstat || ...
                     opts.spatial.npc || ...
-                    (p == 1 && opts.savepara && ~ plm.nonpcppara),
+                    (po == 1 && opts.savepara && ~ plm.nonpcppara),
                 Tppara{1}{c} = plm.pparanpc(T{1}{c},plm.nY);
                 
                 % Adjust the concordant signs for the concordant
@@ -2213,7 +2213,7 @@ for po = P_outer,
                 end
                 
                 % Reserve the p-parametric to save later.
-                if p == 1,
+                if po == 1,
                     plm.Tppara{1}{c} = Tppara{1}{c};
                 end
             end
@@ -2222,14 +2222,14 @@ for po = P_outer,
             % G was already converted to z before making T).
             if opts.zstat,
                 T{1}{c} = erfcinv(2*Tppara{1}{c})*sqrt(2);
-                if p == 1 && c == 1,
+                if po == 1 && c == 1,
                     plm.npcstr = horzcat('_z',plm.npcstr(2:end));
                 end
             end
             
             % Save the NPC Statistic (this is inside the loop because
             % of the two-tailed option)
-            if p == 1,
+            if po == 1,
                 palm_quicksave(T{1}{c},0,opts,plm,[],1,c, ...
                     sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{1},plm.cstr{m}{c}));
             end
@@ -2238,24 +2238,24 @@ for po = P_outer,
             % permutation, save it now.
             if opts.saveperms,
                 palm_quicksave(T{1}{c},0,opts,plm,[],1,c, ...
-                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{1},plm.cstr{m}{c}),sprintf('_perm%06d',p)));
+                    horzcat(sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,plm.mstr{1},plm.cstr{m}{c}),sprintf('_perm%06d',po)));
             end
             
             % Increment counters
-            if p == 1,
+            if po == 1,
                 plm.T{1}{c} = T{1}{c};
                 plm.Tpperm{1}{c} = zeros(size(T{1}{c}));
             end
             plm.Tpperm{1}{c} = plm.Tpperm{1}{c} + ...
                 bsxfun(plm.npcrel,T{1}{c},plm.T{1}{c});
-            plm.Tmax{1}{c}(p) = plm.npcextr(T{1}{c},[],2);
+            plm.Tmax{1}{c}(po) = plm.npcextr(T{1}{c},[],2);
             
             % Tail and gamma approximations
             if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
-                if p == 1,
+                if po == 1,
                     plm.Tperms{1}{c} = zeros(plm.nP{1}(c),plm.Ysiz(1));
                 end
-                plm.Tperms{1}{c}(p,:) = T{1}{c};
+                plm.Tperms{1}{c}(po,:) = T{1}{c};
             end
             
             % Be sure to use z-scores for the spatial statistics, converting
@@ -2266,11 +2266,11 @@ for po = P_outer,
             
             % Cluster statistic NPC is here
             if opts.cluster.npc.do,
-                if p == 1,
-                    [plm.Tclumax{1}{c}(p),plm.Tclu{1}{c}] = ...
+                if po == 1,
+                    [plm.Tclumax{1}{c}(po),plm.Tclu{1}{c}] = ...
                         clusterfunc(T{1}{c},1,opts.cluster.npc.thr,opts,plm);
                 else
-                    plm.Tclumax{1}{c}(p) = ...
+                    plm.Tclumax{1}{c}(po) = ...
                         clusterfunc(T{1}{c},1,opts.cluster.npc.thr,opts,plm);
                 end
             end
@@ -2278,21 +2278,21 @@ for po = P_outer,
             % TFCE NPC is here
             if opts.tfce.npc.do,
                 Ttfce{1}{c} = tfcefunc(T{1}{c},1,opts,plm);
-                if p == 1,
+                if po == 1,
                     plm.Ttfcemax  {1}{c} = zeros(plm.nP{1}(c),1);
                     plm.Ttfce     {1}{c} = Ttfce{1}{c};
                     plm.Ttfcepperm{1}{c} = zeros(size(T{1}{c}));
                 end
                 plm.Ttfcepperm{1}{c} = plm.Ttfcepperm{1}{c} + ...
                     (Ttfce{1}{c} >= plm.Ttfce{1}{c});
-                plm.Ttfcemax{1}{c}(p) = max(Ttfce{1}{c},[],2);
+                plm.Ttfcemax{1}{c}(po) = max(Ttfce{1}{c},[],2);
                 
                 % Tail and gamma approximations
                 if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
-                    if p == 1,
+                    if po == 1,
                         plm.Ttfceperms{1}{c} = zeros(plm.nP{1}(c),plm.Ysiz(1));
                     end
-                    plm.Ttfceperms{1}{c}(p,:) = Ttfce{1}{c};
+                    plm.Ttfceperms{1}{c}(po,:) = Ttfce{1}{c};
                 end
             end
         end
@@ -2426,7 +2426,7 @@ for po = P_outer,
             
             % Tail and gamma approximations
             if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
-                if p == 1,
+                if po == 1,
                     plm.Tperms{j} = zeros(plm.nP{1}(1),size(T{j},2));
                 end
                 plm.Tperms{j}(po,:) = T{j};
@@ -2440,7 +2440,7 @@ for po = P_outer,
             
             % Cluster statistic NPC is here
             if opts.cluster.npc.do,
-                if p == 1,
+                if po == 1,
                     [plm.Tclumax{j}(po),plm.Tclu{j}] = ...
                         clusterfunc(T{j},1,opts.cluster.npc.thr,opts,plm);
                 else
@@ -2452,7 +2452,7 @@ for po = P_outer,
             % TFCE NPC is here
             if opts.tfce.npc.do,
                 Ttfce{j} = tfcefunc(T{j},1,opts,plm);
-                if p == 1,
+                if po == 1,
                     plm.Ttfcemax  {j} = zeros(plm.nP{1}(1),1);
                     plm.Ttfce     {j} = Ttfce{j};
                     plm.Ttfcepperm{j} = zeros(size(T{j}));
@@ -2463,7 +2463,7 @@ for po = P_outer,
                 
                 % Tail and gamma approximations
                 if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma),
-                    if p == 1,
+                    if po == 1,
                         plm.Ttfceperms{j} = zeros(plm.nP{1}(1),size(T{j},2));
                     end
                     plm.Ttfceperms{j}(po,:) = Ttfce{j};
@@ -3303,8 +3303,7 @@ df2     = bsxfun(@times,ones(size(G)),df2);
 idx     = tmp <= parmr;
 G       = reshape(G(idx),horzcat(parmr,size(G,2)));
 df2     = reshape(df2(idx),horzcat(parmr,size(df2,2)));
-P       = palm_gcdf(G,df1,df2);
-Z       = -erfcinv(2*P)*sqrt(2);
+Z       = palm_gtoz(G,df1,df2);
 T       = mean(Z,1);
 
 % ==============================================================
