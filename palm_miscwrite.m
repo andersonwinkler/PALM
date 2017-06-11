@@ -72,6 +72,10 @@ switch lower(X.readwith),
         else
             toscalar = false;
         end
+        siz = size(X.data);
+        if siz(1) == 1 && siz(2) > 1,
+            X.data = X.data';
+        end
         palm_ciftiwrite(X.filename,X.data,X.extra,[],toscalar);
         
     case 'nifticlass',

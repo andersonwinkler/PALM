@@ -54,12 +54,25 @@ elseif df1 == 1,
     
     % Student's t, Aspin-Welch v
     pvals = nan(size(G));
+    Gsq = G.^2;
     df2 = bsxfun(@times,ones(size(G)),df2);
-    ic  = df2 == 1;
-    in  = df2 > 1e7;
-    ig  = ~(ic|in);
-    if any(ig(:)),
-        pvals(ig) = betainc(1./(1+G(ig).^2./df2(ig)),df2(ig)/2,.5)/2;
+    ic  = df2 == 1;  % cauchy case
+    in  = df2 > 1e7; % normal case
+    ig  = ~(ic|in);  % general case
+    if palm_isoctave,
+        if any(ig),
+            pvals(ig) = betainc(1./(1+Gsq(ig)./df2(ig)),df2(ig)/2,.5)/2;
+        end
+    else
+        is  = df2 < Gsq;
+        idx = ig(:) & is(:);
+        if any(idx),
+            pvals(idx) = betainc(1./(1+Gsq(idx)./df2(idx)),df2(idx)/2,.5)/2;
+        end
+        idx = ig(:) & ~is(:);
+        if any(idx),
+            pvals(idx) = betainc(1./(1+df2(idx)./Gsq(idx)),.5,df2(idx)/2,'upper')/2;
+        end
     end
     ig  = G < 0 & ig;
     pvals(ig) = 1 - pvals(ig);
@@ -67,7 +80,7 @@ elseif df1 == 1,
         pvals(ic) = .5 + atan(-G(ic))/pi;
     end
     if any(in(:)),
-        pvals(ic) = palm_gpval(G(in),0);
+        pvals(in) = palm_gpval(G(in),0);
     end
     pvals = reshape(pvals,size(G));
     

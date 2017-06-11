@@ -458,7 +458,7 @@ while a <= narginx,
         case '-tableasvolume', % basic
             
             % Treat tables (e.g., CSV inputs) as volume, such that TFCE can
-            % be calculated? This is useful for TFCE over timeseries.
+            % be calculated. This is useful for TFCE over timeseries.
             opts.tableasvolume = true;
             a = a + 1;
             
@@ -1376,6 +1376,9 @@ else
 end
 
 % Some more warnings and sanity checks
+if opts.savecdf && opts.savelogp,
+    error('Should not use "-save1-p" together with "-logp"');
+end
 if ~ opts.inputmv && opts.designperinput && Ni ~= Nd,
     error([
         'To use the option "-designperinput", the number of design files must\n' ...
