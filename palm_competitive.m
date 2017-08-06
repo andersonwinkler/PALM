@@ -92,9 +92,13 @@ for c = 1:nC, % loop over columns
     % the max or min, respectively.
     infpos = isinf(S(:,c)) & S(:,c) > 0;
     infneg = isinf(S(:,c)) & S(:,c) < 0;
-    S(infpos,c) = max(S(~infpos,c)) + 1;
-    S(infneg,c) = min(S(~infneg,c)) - 1;
-
+    if any(infpos),
+        S(infpos,c) = max(S(~infpos,c)) + 1;
+    end
+    if any(infneg),
+        S(infneg,c) = min(S(~infneg,c)) - 1;
+    end
+    
     % Do the actual sorting, checking for obnoxious NaNs
     dd = diff(S(:,c));
     if any(isnan(dd)),
@@ -107,6 +111,14 @@ for c = 1:nC, % loop over columns
         srtR(f(pos),c) = srtR(f(pos)-1,c);
     end
     unsrtR(:,c) = single(srtR(rev(:,c),c)); % original order as the data
+    
+    % Put the infinities back
+    if any(infpos),
+        S(infpos,c) = +Inf;
+    end
+    if any(infneg),
+        S(infneg,c) = -Inf;
+    end
 end
 
 % Prepare the outputs for the modified rankings, i.e.,

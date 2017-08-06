@@ -289,6 +289,8 @@ fprintf('-mcar : Assume that data is missing completely at random.\n\n');
 fprintf('-noniiclass : Do not use the NIFTI class (use this option only if you\n');
 fprintf('	have problems and even so, only for small datasets).\n\n');
 
+fprintf('-precision <string> : Precision ("single" or "double") for input files.\n\n');
+
 fprintf('-noranktest : For MV, don''t check the rank of the data before trying to\n');
 fprintf('	compute the multivariate statistics.\n\n');
 

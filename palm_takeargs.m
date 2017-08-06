@@ -889,6 +889,24 @@ while a <= narginx,
             opts.useniiclass = false;
             a = a + 1;
             
+        case '-precision', % advanced
+            
+            % Precision to use?
+            if narginx > a && ~strcmpi(vararginx{a+1}(1),'-'),
+                methlist = {'single','double'};
+                methidx = strcmpi(vararginx{a+1},methlist);
+                if ~any(methidx);
+                    error('Precision "%s" unknown. Use "single" or "double".',vararginx{a+1});
+                else
+                    a = a + 2;
+                end
+                opts.precision = methlist{methidx};
+            else
+                error([...
+                    'The option "-precision" requires a method to be specified.\n'...
+                    'Use "-precision double" or "-precision single".']);
+            end
+            
         case '-saveperms', % advanced
             
             % Save the permutations
@@ -1527,7 +1545,7 @@ if opts.spatial.do && Ns > 0,
             plm.srfarea{s}.data = [];
         elseif exist(opts.sa{s},'file'),
             % A file with the average areas from native geometry
-            plm.srfarea{s} = palm_miscread(opts.sa{s},opts.useniiclass,opts.o);
+            plm.srfarea{s} = palm_miscread(opts.sa{s},opts.useniiclass,opts.o,opts.precision);
         elseif ~ isnan(str2double(opts.sa{s})),
             % A weight (such as 1)
             plm.srfarea{s}.data = str2double(opts.sa{s});
@@ -1555,7 +1573,7 @@ end
 % each modality will be created after each modality is loaded.
 plm.masks = cell(Ni,1);
 for m = 1:Nm,
-    plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass,opts.o);
+    plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass,opts.o,opts.precision);
     if strcmp(plm.masks{m}.readwith,'nifticlass'),
         plm.masks{m}.data = double(plm.masks{m}.data);
     end
@@ -2001,7 +2019,7 @@ if Nd == 0 && ~ opts.evperdat,
     opts.ISE    = true;
 elseif Nd > 0,
     for m = 1:Nd,
-        Mtmp = palm_miscread(opts.d{m});
+        Mtmp = palm_miscread(opts.d{m},[],[],opts.precision);
         plm.Mset{m} = Mtmp.data;
         if ~ isempty(plm.subjidx) && size(plm.Mset{m},1) ~= plm.N,
             plm.Mset{m} = plm.Mset{m}(plm.subjidx,:);
@@ -2060,7 +2078,7 @@ if Nt || Nf,
     % Load FSL style t contrasts
     tcon = cell(Nt,1);
     for t = 1:Nt,
-        tmp = palm_miscread(opts.t{t});
+        tmp = palm_miscread(opts.t{t},[],[],opts.precision);
         if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
             tcon{t} = tmp.data;
         else
@@ -2072,7 +2090,7 @@ if Nt || Nf,
     fcon = cell(Nt,1);
     for t = 1:Nt,
         if ~ isempty(opts.f{t}),
-            tmp = palm_miscread(opts.f{t});
+            tmp = palm_miscread(opts.f{t},[],[],opts.precision);
             if any(strcmp(tmp.readwith,{'vestread','csvread','load'})),
                 fcon{t} = tmp.data;
             else
@@ -2112,7 +2130,7 @@ elseif Ncon,
     Ccon = cell(Ncon,1);
     Dcon = cell(Ncon,1);
     for con = 1:Ncon,
-        tmp = palm_miscread(opts.Ccon{con});
+        tmp = palm_miscread(opts.Ccon{con},[],[],opts.precision);
         if strcmpi(tmp.readwith,'mset'),
             Ccon{con} = tmp.data;
         else
@@ -2124,7 +2142,7 @@ elseif Ncon,
                 Dcon{con}{c} = eye(plm.nY);
             end
         else
-            tmp = palm_miscread(opts.Dcon{con});
+            tmp = palm_miscread(opts.Dcon{con},[],[],opts.precision);
             if strcmpi(tmp.readwith,'mset'),
                 Dcon{con} = tmp.data;
             else

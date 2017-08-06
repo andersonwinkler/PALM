@@ -97,7 +97,7 @@ opts.designperinput      = false;              % use one design for each input?
 opts.showprogress        = true;               % print progress as the permutations are performed? (use -quiet to disable)
 opts.inputmv             = false;              % treat each column of the sole input as a separate input for MV/NPC/CCA?
 opts.reversemasks        = false;              % Reverse the masks?
-
+opts.precision           = [];                 % Precision? Can be 'single', 'double', or [] for what the file defines.
 % Approximation options:
 opts.accel.negbin        = 0;                  % Run a negbin scheme
 opts.accel.negbin_nexced = 2;                  % Number of exceedances for the negbin mode

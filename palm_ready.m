@@ -44,7 +44,7 @@ Yissrf   = false;
 Ykindstr = '_dat';
 
 % Read a temporary version
-Ytmp     = palm_miscread(Yfile,opts.useniiclass,opts.o);
+Ytmp     = palm_miscread(Yfile,opts.useniiclass,opts.o,opts.precision);
 
 % If this is 4D read with the NIFTI class, it needs a mask now
 if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,

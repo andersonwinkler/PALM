@@ -26,7 +26,7 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Uncomment the line below for debugging:
-clear global plm opts; global plm opts;
+%clear global plm opts; global plm opts;
 
 % Take the arguments. Save a small log if needed.
 ticI = tic;
@@ -954,7 +954,7 @@ for m = 1:plm.nM,
                 % Make the 3D dataset & residualise wrt Z
                 plm.Yq{m}{c} = cat(3,plm.Yset{:});
                 for y = 1:plm.nY,
-                    plm.Yq{m}{c}(:,:,y) = plm.Rz{y}{m}{c}{o}*plm.Yq{m}{c}(:,:,y);
+                    plm.Yq{m}{c}(:,:,y) = plm.Rz{1}{m}{c}{o}*plm.Yq{m}{c}(:,:,y);
                 end; clear y
                 plm.Yq{m}{c} = permute(plm.Yq{m}{c},[1 3 2]);
             end
@@ -1186,6 +1186,7 @@ for po = P_outer,
                     if opts.saveunivariate,
                         if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
                         for t = 1:plm.Ysiz(y),
+                            y = 1;
                             RzX = plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t);
                             A   = RzX*pinv(RzX);
                             for y = loopY,
@@ -2035,18 +2036,19 @@ for po = P_outer,
                         end
                         
                         % Compute the CC coefficient
+                        y = 1;
                         if opts.evperdat,
                             for t = find(yselq),
-                                M(:,:,t)   = plm.Pset{p}*plm.Rz{m}{c}(:,:,t)*plm.X{m}{c}(:,:,t);
+                                M(:,:,t)   = plm.Pset{p}*plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t);
                                 Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M(:,:,t),opts.ccaparm);
                             end; clear t
                         else
-                            M = plm.Pset{p}*plm.Rz{m}{c}*plm.X{m}{c};
+                            M = plm.Pset{p}*plm.Rz{y}{m}{c}{o}*plm.X{y}{m}{c}{o};
                             for t = find(yselq),
                                 Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M,opts.ccaparm);
                             end; clear t
                         end
-                        
+
                         % Convert to zstat if that was asked
                         if opts.zstat,
                             Q{m}{c}(yselq) = atanh(Q{m}{c}(yselq));

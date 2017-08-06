@@ -129,6 +129,7 @@ if ~ isempty(X),
         S.data     = X;
     else
         % Choose an appropriate mask struct.
+        if isempty(y), y = 1;  end
         if opts.npcmod || opts.MV || opts.forcemaskinter,
             S = plm.maskinter;
         else
@@ -143,7 +144,6 @@ if ~ isempty(X),
         mask         = S.data;
         S.data       = double(S.data);
         S.data(mask) = X;
-        if isempty(y), y = 1;  end
         if  strcmpi(lower(S.readwith),'dpxread') && (...
                 strcmpi(plm.Ykindstr{y},'_dpv') || ...
                 strcmpi(plm.Ykindstr{y},'_dpf') || ...

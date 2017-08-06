@@ -1,13 +1,15 @@
-function X = palm_miscread(filename,useniiclass,tmppath)
+function X = palm_miscread(filename,useniiclass,tmppath,precision)
 % Read various scalar data formats based on the file extension.
 %
-% X = palm_miscread(filename,useniiclass,tmppath);
+% X = palm_miscread(filename,useniiclass,tmppath,precision);
 %
 % filename    : File to be read.
 % useniiclass : True/False. Use the NIFTI class when reading
 %               NIFTI files. It requires less memory.
 % tmppath     : For some file types, indicate whether to store
 %               temporary data.
+% precision   : Ensure the output data is 'single' or 'double'
+%               precision.
 %
 % X is a struct that contains the fields:
 % X.filename  : Contains the name of the file.
@@ -301,6 +303,15 @@ if palm_isoctave,
     rand('state',state); %#ok
 else
     rng(state);
+end
+
+% Enforce a certain precision defined by the user:
+if nargin > 3,
+    if strcmpi(precision,'double'),
+        X.data = double(X.data);
+    elseif strcmpi(precision,'single'),
+        X.data = single(X.data);
+    end
 end
 
 % ==============================================================

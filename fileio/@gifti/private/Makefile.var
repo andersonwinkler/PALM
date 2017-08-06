@@ -30,6 +30,7 @@
 SHELL          = /bin/sh
 MAKE           = make
 MEXBIN         = mex
+#MEXBIN         = mkoctfile --mex
 MEXOPTS        = -O -largeArrayDims
 MEXEND         = 
 MOSUF          = o # mex output object suffix
