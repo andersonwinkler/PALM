@@ -1827,7 +1827,7 @@ clear('newmask');
 
 % Create an intersection mask if NPC or MV is to be done, and further apply
 % to the data that was previously masked above, as needed.
-if opts.npcmod || opts.MV || opts.forcemaskinter,
+if opts.npcmod || opts.MV || opts.CCA || opts.forcemaskinter,
     if plm.nmasks > 1,
         
         % If there is one mask per modality, make an instersection mask.

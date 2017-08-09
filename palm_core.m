@@ -2038,13 +2038,13 @@ for po = P_outer,
                         % Compute the CC coefficient
                         y = 1;
                         if opts.evperdat,
-                            for t = find(yselq),
+                            for t = find(yselq)',
                                 M(:,:,t)   = plm.Pset{p}*plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t);
                                 Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M(:,:,t),opts.ccaparm);
                             end; clear t
                         else
                             M = plm.Pset{p}*plm.Rz{y}{m}{c}{o}*plm.X{y}{m}{c}{o};
-                            for t = find(yselq),
+                            for t = find(yselq)',
                                 Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M,opts.ccaparm);
                             end; clear t
                         end
