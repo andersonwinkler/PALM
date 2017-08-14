@@ -42,6 +42,7 @@ opts.rfallback           = 'terBraak';         % Regression/permutation method i
 opts.NPC                 = false;              % Do non-parametric combination?
 opts.MV                  = false;              % Do classical multivariate inference? (MANOVA/MANCOVA)
 opts.CCA                 = false;              % Do canonical correlation analysis? (CCA)
+opts.PLS                 = false;              % Do partial least squares regression? (PLS)
 opts.mvstat              = 'auto';             % Default method for MANOVA/MANCOVA. The "auto" will use either Hotelling's T^2 or Wilks lambda depending on rank(C). For approx.noperm, this will use Pillai.
 opts.npcmethod           = 'Fisher';           % Combination method.
 opts.cfallback           = 'Tippett';          % (not currently used)

@@ -742,7 +742,8 @@ while a <= narginx,
                     'Roy',              ...
                     'Roy-ii',           ...
                     'Roy-iii',          ...
-                    'CCA'};
+                    'CCA',              ...
+                    'PLS'};
                 methidx = strcmpi(vararginx{a+1},methlist);
                 
                 % Check if method exists, and load extra parameters if needed
@@ -751,21 +752,39 @@ while a <= narginx,
                 elseif strcmpi(vararginx{a+1},'CCA'),
                     opts.MV  = false;
                     opts.CCA = true;
+                    opts.PLS = false;
                     if nargin == a + 1 || ...
                             ischar(vararginx{a+2}) && ...
                             strcmpi(vararginx{a+2}(1),'-'),
-                        opts.ccaparm = 1;
+                        opts.ccaorplsparm = 1;
                         a = a + 2;
                     elseif ischar(vararginx{a+2}),
-                        opts.ccaparm = eval(vararginx{a+2});
+                        opts.ccaorplsparm = eval(vararginx{a+2});
                         a = a + 3;
                     else
-                        opts.ccaparm = vararginx{a+2};
+                        opts.ccaorplsparm = vararginx{a+2};
+                        a = a + 3;
+                    end
+                elseif strcmpi(vararginx{a+1},'PLS'),
+                    opts.MV  = false;
+                    opts.CCA = false;
+                    opts.PLS = true;
+                    if nargin == a + 1 || ...
+                            ischar(vararginx{a+2}) && ...
+                            strcmpi(vararginx{a+2}(1),'-'),
+                        opts.ccaorplsparm = 1;
+                        a = a + 2;
+                    elseif ischar(vararginx{a+2}),
+                        opts.ccaorplsparm = eval(vararginx{a+2});
+                        a = a + 3;
+                    else
+                        opts.ccaorplsparm = vararginx{a+2};
                         a = a + 3;
                     end
                 else
                     opts.MV  = true;
                     opts.CCA = false;
+                    opts.PLS = false;
                     a = a + 2;
                 end
                 opts.mvstat = methlist{methidx};
@@ -1384,10 +1403,10 @@ if opts.MV && strcmpi(opts.mvstat,'Roy_iii'),
         opts.tfce.mv.do    = false;
         opts.spatial.mv    = false;
     end
-elseif opts.CCA && opts.savepara,
+elseif (opts.CCA || opts.PLS) && opts.savepara,
     plm.nomvppara = true;
     warning([...
-        'No parametric p-value will be saved for CCA.\n', ...
+        'No parametric p-value will be saved for CCA or PLS.\n', ...
         '         Use Wilks'' lambda instead.%s'],'');
 else
     plm.nomvppara = false;
@@ -1449,20 +1468,20 @@ if opts.pearson && ~ any(strcmpi(opts.pmethodr,{'beckmann','ridgway'})),
         '         Adding the option "-pmethodr Beckmann".%s'],'');
     opts.pmethodr = 'beckmann';
 end
-if opts.CCA && ~ opts.demean,
+if (opts.CCA || opts.PLS) && ~ opts.demean,
     warning([ ...
-        'To perform CCA, the data and the design\n' ...
+        'To perform CCA or PLS, the data and the design\n' ...
         '         must be mean centered. Adding option "-demean".%s'],'');
     opts.demean = true;
 end
-if opts.CCA && ~ any(strcmpi(opts.pmethodr,{'beckmann','ridgway'})),
+if (opts.CCA || opts.PLS) && ~ any(strcmpi(opts.pmethodr,{'beckmann','ridgway'})),
     warning([ ...
-        'To perform CCA, the design must be\n' ...
+        'To perform CCA or PLS, the design must be\n' ...
         '         partitioned using the Beckmann or Ridgway schemes.'...
         '         Adding the option "-pmethodr Beckmann".%s'],'');
     opts.pmethodr = 'beckmann';
 end
-if opts.demean && opts.vgdemean && ~opts.pearson && ~opts.CCA,
+if opts.demean && opts.vgdemean && ~opts.pearson && ~opts.CCA && ~opts.PLS,
     warning([...
         'Cannot use the option "-demean" together with "-vgdemean"\n'...
         '         Ignoring the option "-vgdemean".%s'],'');
@@ -1477,11 +1496,11 @@ end
 if opts.designperinput && opts.MV,
     error('It''s not possible to use the option "-designperinput" together with the option "-mv".');
 end
-if ~opts.saveunivariate && ~opts.MV && ~opts.NPC && ~opts.CCA,
-    error('The option "-nounivariate" can only be used with "-mv", "-npc" or "-cca".');
+if ~opts.saveunivariate && ~opts.MV && ~opts.NPC && ~opts.CCA && ~opts.PLS,
+    error('The option "-nounivariate" can only be used with "-mv" or "-npc".');
 end
-if opts.MV && opts.CCA,
-    error('Cannot do classical MANOVA at the same time as CCA.');
+if opts.MV && (opts.CCA || opts.PLS),
+    error('Cannot do classical MANOVA at the same time as CCA or PLS.');
 end
 if Ni > 1 && opts.inputmv,
     error('Option "-inputmv" cannot be used with more than one "-i".')
@@ -1827,7 +1846,7 @@ clear('newmask');
 
 % Create an intersection mask if NPC or MV is to be done, and further apply
 % to the data that was previously masked above, as needed.
-if opts.npcmod || opts.MV || opts.CCA || opts.forcemaskinter,
+if opts.npcmod || opts.MV || opts.CCA || opts.PLS || opts.forcemaskinter,
     if plm.nmasks > 1,
         
         % If there is one mask per modality, make an instersection mask.
@@ -2333,6 +2352,24 @@ if opts.cmcx,
     end
     if opts.corrcon || opts.npccon,
         opts.syncperms = true;
+    end
+end
+
+% Make sure not too many components are asked if CCA or PLS are used
+if opts.CCA || opts.PLS,
+    if opts.ccaorplsparm > plm.nY,
+        error(['Cannot ask more canonical correlations (CCA) or \n', ...
+            'score vectors (PLS) (k=%d) than the number of modalities (#(-i)=%d).\n'],...
+            opts.ccaorplsparm,plm.nY);
+    end
+    for m = 1:plm.nM,
+        for c = 1:plm.nC(m),
+            if opts.ccaorplsparm > plm.rC{m}(c),
+                error(['Cannot ask more canonical correlations (for CCA) or score \n', ...
+                    'vectors (for PLS) than the rank of the contrast (k=%d > rank=%d).\n', ...
+                    'Please check design %d, contrast %d.'],opts.ccaorplsparm,plm.rC{m}(c),m,c);
+            end
+        end
     end
 end
 

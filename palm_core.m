@@ -267,7 +267,7 @@ if opts.MV,
 end
 
 % Variables for CCA
-if opts.CCA,
+if opts.CCA || opts.PLS,
     plm.mvstr = ''; % default string for the filenames.
 end
 
@@ -529,12 +529,18 @@ for m = 1:plm.nM,
             
         elseif opts.CCA,
             
-            % Output string
-            plm.Qname{m}{c} = sprintf('_cca%d',opts.ccaparm);
-            
-            % For CCA, this obviously false, but need to have when
-            % saving, do make the distributions correct
+            % Output string, statistic function, and side to test
+            plm.Qname{m}{c} = sprintf('_cca%d',opts.ccaorplsparm);
+            plm.qfun = @cca;
             plm.mvrev{m}{c} = false;
+            
+        elseif opts.PLS,
+            
+            % Output string, statistic function, and side to test
+            plm.Qname{m}{c} = sprintf('_pls%d',opts.ccaorplsparm);
+            plm.qfun = @simpls;
+            plm.mvrev{m}{c} = false;
+            
         end
         
         % Effective rank of the matrix nP by Ysiz(y) used for the
@@ -714,7 +720,7 @@ for m = 1:plm.nM,
             end
             clear y o;
             
-            % MV/CCA/Noperm
+            % MV/CCA/PLS/Noperm
             if opts.MV && ~ opts.accel.noperm,
                 if plm.rC{m}(c) == 1 && any(strcmpi(opts.mvstat,{'auto','hotellingtsq'})),
                     fastmv{m}{c} = @(M,psi,res)fasttsq3d(M,psi,res,m,c,plm);
@@ -722,7 +728,7 @@ for m = 1:plm.nM,
                     fastmv{m}{c} = @(M,psi,res)fastq3d(M,psi,res,m,c,plm);
                 end
             end
-            if opts.CCA || opts.accel.noperm,
+            if opts.CCA || opts.PLS || opts.accel.noperm,
                 y = 1; o = 1;
                 % Residual forming matrix (Z only)
                 plm.Rz{y}{m}{c}{o} = zeros(plm.N,plm.N,plm.Ysiz(1));
@@ -940,7 +946,7 @@ for m = 1:plm.nM,
                     fastmv{m}{c} = @(M,psi,res)fastq(M,psi,res,m,c,plm);
                 end
             end
-            if opts.CCA || opts.accel.noperm,
+            if opts.CCA || opts.PLS || opts.accel.noperm,
                 y = 1; o = 1;
                 % Residual forming matrix (Z only)
                 if isempty(plm.Z{y}{m}{c}{o}),
@@ -1014,7 +1020,7 @@ if opts.syncperms,
     else
         dothisY = true(plm.nY,1);
     end
-    dotheMVorCCA = true;
+    dotheMVorCCAorPLS = true;
     if opts.accel.noperm,
         P_outer = 1;
     else
@@ -1064,7 +1070,7 @@ for po = P_outer,
                 else
                     dothisY = true(plm.nY,1);
                 end
-                dotheMVorCCA = true;
+                dotheMVorCCAorPLS = true;
             end
             
             % Create the permutation set, while taking care of the synchronized
@@ -1141,7 +1147,7 @@ for po = P_outer,
                 if opts.npcmod && ~ opts.npccon,
                     plm.Tmax{m}{c} = zeros(plm.nP{m}(c),1);
                 end
-                if opts.MV
+                if opts.MV || opts.CCA || opts.PLS,
                     if ~ opts.accel.noperm,
                         plm.Qmax{m}{c} = zeros(plm.nP{m}(c),1);
                     end
@@ -1845,7 +1851,7 @@ for po = P_outer,
                 if opts.MV && ~ opts.accel.noperm,
                     
                     % This "if" is for the negative binomial mode.
-                    if dotheMVorCCA,
+                    if dotheMVorCCAorPLS,
                         if opts.showprogress,
                             if opts.syncperms,
                                 fprintf('\t [Shuffling %d/%d, Design %d/%d, Contrast %d/%d, Multivariate]\n', ...
@@ -2011,21 +2017,21 @@ for po = P_outer,
                             end
                         end
                         if opts.accel.negbin && ~ any(yselq),
-                            dotheMVorCCA = false;
+                            dotheMVorCCAorPLS = false;
                         end
                     end
                     
-                elseif opts.CCA,
+                elseif opts.CCA || opts.PLS,
                     
                     % This if is for the negative binomial mode.
-                    if dotheMVorCCA,
+                    if dotheMVorCCAorPLS,
                         if opts.showprogress,
                             if opts.syncperms,
-                                fprintf('\t [Shuffling %d/%d, Design %d/%d, Contrast %d/%d, CCA]\n', ...
-                                    p,plm.nP{m}(c),m,plm.nM,c,plm.nC(m));
+                                fprintf('\t [Shuffling %d/%d, Design %d/%d, Contrast %d/%d, %s]\n', ...
+                                    p,plm.nP{m}(c),m,plm.nM,c,plm.nC(m),upper(plm.Qname{m}{c}(2:4)));
                             else
-                                fprintf('\t [Design %d/%d, Contrast %d/%d, Shuffling %d/%d, CCA]\n', ...
-                                    m,plm.nM,c,plm.nC(m),p,plm.nP{m}(c));
+                                fprintf('\t [Design %d/%d, Contrast %d/%d, Shuffling %d/%d, %s]\n', ...
+                                    m,plm.nM,c,plm.nC(m),p,plm.nP{m}(c),upper(plm.Qname{m}{c}(2:4)));
                             end
                         end
                         
@@ -2040,12 +2046,12 @@ for po = P_outer,
                         if opts.evperdat,
                             for t = find(yselq)',
                                 M(:,:,t)   = plm.Pset{p}*plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t);
-                                Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M(:,:,t),opts.ccaparm);
+                                Q{m}{c}(t) = plm.qfun(plm.Yq{m}{c}(:,:,t),M(:,:,t),opts.ccaorplsparm);
                             end; clear t
                         else
                             M = plm.Pset{p}*plm.Rz{y}{m}{c}{o}*plm.X{y}{m}{c}{o};
                             for t = find(yselq)',
-                                Q{m}{c}(t) = cca(plm.Yq{m}{c}(:,:,t),M,opts.ccaparm);
+                                Q{m}{c}(t) = plm.qfun(plm.Yq{m}{c}(:,:,t),M,opts.ccaorplsparm);
                             end; clear t
                         end
 
@@ -2159,7 +2165,7 @@ for po = P_outer,
                             end
                         end
                         if opts.accel.negbin && ~ any(yselq),
-                            dotheMVorCCA = false;
+                            dotheMVorCCAorPLS = false;
                         end
                     end
                 end
@@ -3198,6 +3204,48 @@ function cc = cca(Y,X,k)
 [Qx,~]  = qr(X,0);
 [~,D,~] = svd(Qy'*Qx,0);
 cc      = max(min(D(k,k),1),0);
+
+% ==============================================================
+function rpls = simpls(X,Y,k);
+% Compute the correlation among the k-th pair of
+% Uses the SIMPLS algorithm for partial least squares to
+% compute score vectors (T and U), then provide the
+% correlation between the k-th pair.
+% Based on the algorithm by:
+% * de Jong S. SIMPLS: An alternative approach to
+%   partial least squares regression.
+%   Chemom Intell Lab Syst. 1993 Mar;18(3):251-63. 
+[N,nCx] = size(X);
+nCy = size(Y,2);
+T   = zeros(N,k); U = T;
+V   = zeros(nCx,k);
+z   = zeros(nCy,1);
+S   = X'*Y;
+StS = S'*S;
+N1  = N - 1;
+for j = 1:k,
+    StS = StS - z*z';
+    [evc,~] = eig(StS); 
+    q = evc(:,end);
+    r = S*q;
+    t = X*r;
+    p = X'*t;
+    if N > nCx, d = r'*p; else d = t'*t; end
+    d = sqrt(d/N1);
+    v = p - V(:,1:max(1,j-1))*(p'*V(:,1:max(1,j-1)))';
+    v = v/sqrt(v'*v);
+    z = S'*v;
+    S = S - v*z';
+    V(:,j) = v;
+    T(:,j) = t/d;
+    U(:,j) = Y*q;
+end
+while j > 1,
+    U(:,j) = U(:,j) - T(:,1:j-1)*(U(:,j)'*T(:,1:j-1)/N1)';
+    j = j - 1;
+end
+t = T(:,k); u = U(:,k);
+rpls = t'*u/sqrt((t'*t)*(u'*u));
 
 % ==============================================================
 % Below are the functions to combine statistics:

@@ -129,11 +129,13 @@ fprintf('-npccon : Enable NPC over contrasts.\n\n');
 
 fprintf('-npc : Shortcut to "-npcmethod <default method> -npcmod".\n\n');
 
-fprintf('-mv <statistic> : Do classical multivariate analysis (MV), such as\n');
+fprintf('-mv <statistic> <k>: Do classical multivariate analysis (MV), such as\n');
 fprintf('	MANOVA and MANCOVA, using the the specified statistic, which can\n');
 fprintf('	be one of: Wilks, HotellingTsq, Lawley, Pillai, Roy_ii, Roy_iii,\n');
-fprintf('	or CCA. All but Roy_iii can also be used to calculate parametric\n');
-fprintf('	p-values and spatial statistics.\n\n');
+fprintf('	CCA, or PLS. All but Roy_iii can be used with spatial statistics.\n');
+fprintf('	Alternatively, use CCA to do a Canonical Correlation Analysis, or\n');
+fprintf('	PLS to do Partial Least Squares regression, with a permutation test\n');
+fprintf('	on the indicated k-th canonical correlation (default is 1).\n\n');
 
 fprintf('-pearson : Instead of t, F, v or G, compute either the Pearson"s\n');
 fprintf('	correlation coefficient, r (if the constrast has rank = 1), or the\n');

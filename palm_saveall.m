@@ -172,7 +172,7 @@ if opts.saveuncorrected,
             end
         end
     end
-    if opts.MV || opts.CCA,
+    if opts.MV || opts.CCA || opts.PLS,
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),
                 if opts.accel.negbin,
@@ -1318,7 +1318,7 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
 end
 
 % Save the MV results for each contrast
-if opts.MV || opts.CCA,
+if opts.MV || opts.CCA || opts.PLS,
     fprintf('Saving p-values for classical multivariate (uncorrected and corrected within contrast).\n')
     for m = 1:plm.nM,
         for c = 1:plm.nC(m),
@@ -1415,7 +1415,7 @@ if opts.MV || opts.CCA,
 end
 
 % Save FWER corrected across contrasts for MV.
-if ( opts.MV || opts.CCA ) && opts.corrcon,
+if ( opts.MV || opts.CCA || opts.PLS) && opts.corrcon,
     fprintf('Saving p-values for classical multivariate tests (corrected across contrasts).\n')
 
     % FDR correction (non-spatial stats)
