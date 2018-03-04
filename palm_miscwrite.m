@@ -151,6 +151,15 @@ switch lower(X.readwith),
         % Write a SRF file
         srfwrite(X.data.vtx,X.data.fac,X.filename);
         
+    case 'mz3',
+        
+        % Write a MZ3 file
+        if numel(fieldnames(X.data)) == 2,
+            writeMz3(X.filename,X.data.fac,X.data.vtx,[]);
+        else
+            writeMz3(X.filename,X.extra.fac,X.extra.vtx,X.data);
+        end
+        
     case 'fs_read_curv',
         
         % Write a FreeSurfer curvature file

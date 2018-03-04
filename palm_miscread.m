@@ -219,6 +219,20 @@ switch lower(fext{end}),
         X.readwith = 'srfread';
         [X.data.vtx,X.data.fac] = palm_srfread(X.filename);
         
+    case 'mz3',
+        
+        % Read a MZ3 file
+        X.readwith = 'mz3';
+        [vtx,fac,colour] = readMz3(X.filename);
+        if isempty(colour),
+            X.data.vtx = vtx;
+            X.data.fac = fac;
+        else
+            X.data = colour;
+            X.extra.vtx = vtx;
+            X.extra.fac = fac;
+        end
+        
     case {'area','avg_curv','crv','curv', ...
             'h','k','jacobian_white','mid', ...
             'sulc','thickness','volume'},
