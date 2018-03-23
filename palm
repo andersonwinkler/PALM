@@ -27,20 +27,20 @@
 # =========================================================================
 # Do you prefer Matlab or Octave? Octave is free (it doesn't need licences),
 # is faster to load, but somewhat slower to run. Matlab uses licenses (this
-# may bother other users in a network), is slower to load, but runs faster
+# can be expensive, or may bother other users in a network if the number of
+# licenses available is limited), is slower to load, but runs faster
 # once loaded. In the variable below, use 1 for Octave, 2 for Matlab:
 WHICH_TO_RUN=1
 
 # If Octave isn't in the path, or to use a specific version, add here the
-# path to the directory that contains the Octave executable binary:
+# path to the directory that contains the Octave executable binary.
+# This only has effect if WHICH_TO_RUN above os set as 1.
 OCTAVEPATH=/usr/bin
 
 # If Matlab isn't in the path, or to use a specific version, add here the
-# path to the directory that contains Matlab executable binary:
-#MATLABPATH=/Applications/MATLAB_R2013b.app/bin/
-#MATLABPATH=/opt/11b/MATLAB_R2011b.app/bin/
+# path to the directory that contains Matlab executable binary.
+# This only has effect if WHICH_TO_RUN above os set as 2.
 MATLABPATH=/opt/r16b/bin/
-#MATLABPATH=/usr/local/bin/
 
 # If you are intending to run PALM in a cluster, for some environments
 # it may be necessary to change the variable below to 1.
@@ -68,17 +68,16 @@ while [[ ${rlink} != "" ]] && [[ ${cnt} -lt 100 ]]; do
   cnt=$(expr ${cnt} + 1)
 done
 if [[ ${cnt} -eq 100 ]] ; then
-  echo "Error: Too many levels."
+  echo "Error: Too many levels of symbolic links."
   exit 1
 fi
 
 # Command to run inside either Octave or Matlab. It varies slightly
 # depending whether it's a cluster environment or not.
-if [[ ${IS_CLUSTER} -eq 0 ]] ; then
-   RUNCMD="addpath('$PALMDIR'); palm $@ ; exit" 
-else
+RUNCMD="addpath('$PALMDIR'); try palm ${1+"$@"} ; catch ME, palm_error(ME), exit(1), end; exit(0)"
+if [[ ${IS_CLUSTER} -ne 0 ]] ; then
    TEMP_NAME=$(tr -cd '[:alnum:]' < /dev/urandom | fold -w10 | head -n 1)
-   echo "addpath('$PALMDIR'); palm $@ ; exit" > ${TEMP_DIR}/palm_temp_${TEMP_NAME}.m
+   echo ${RUNCMD} > ${TEMP_DIR}/palm_temp_${TEMP_NAME}.m
    RUNCMD=${TEMP_DIR}/palm_temp_${TEMP_NAME}.m
 fi
 
@@ -96,8 +95,15 @@ elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    else
       MATLABCMD=${MATLABPATH}/matlab
    fi
+   if   [[ "$(uname)" == "Darwin" ]] ; then
+      SEDOPT="-l"
+   elif [[ "$(uname)" == "Linux"  ]] ; then
+      SEDOPT="-u"
+   else
+      SEDOPT=""
+   fi
    ${MATLABCMD} -nodesktop -nosplash -singleCompThread -r "${RUNCMD}" \
-     | sed -e '1,/^.......................................................................$/ d'
+     | sed ${SEDOPT} -e '1,/^.......................................................................$/ d'
 fi
 
 # If a temp file was created earlier, delete it now:
