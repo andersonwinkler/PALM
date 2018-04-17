@@ -81,14 +81,23 @@ if [[ ${IS_CLUSTER} -ne 0 ]] ; then
    RUNCMD=${TEMP_DIR}/palm_temp_${TEMP_NAME}.m
 fi
 
-# Call either Octave or Matlab depending on the user's choice
+# Call either Octave or Matlab depending on the user's choice.
+set -o pipefail
 if [[ ${WHICH_TO_RUN} -eq 1 ]] ; then
    if [[ ${OCTAVEPATH} == "" ]] || [[ ! -e ${OCTAVEPATH}/octave ]] ; then
       OCTAVECMD=octave
    else
       OCTAVECMD=${OCTAVEPATH}/octave
    fi
+   minver=$(${OCTAVECMD} --version | awk 'NR==1 {print "4.0.0\n" $NF}' | sort -V | head -n 1)
+   if [[ "${minver}" != "4.0.0" ]] ; then
+      # Simpler version with no error catching, for Octave < 4.0.0. This will always end
+      # with a success status, even if there was a crash within the code. The user can still
+      # for success should they need by verifying that the *_elapsed.csv was created.
+      RUNCMD="addpath('$PALMDIR'); palm ${1+"$@"} ; exit"
+   fi
    ${OCTAVECMD} -q --eval "${RUNCMD}"
+   status=$?
 elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    if [[ ${MATLABPATH} == "" ]] || [[ ! -e ${MATLABPATH}/matlab ]]; then
       MATLABCMD=matlab
@@ -104,9 +113,11 @@ elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    fi
    ${MATLABCMD} -nodesktop -nosplash -singleCompThread -r "${RUNCMD}" \
      | sed ${SEDOPT} -e '1,/^.......................................................................$/ d'
+   status=$?
 fi
 
-# If a temp file was created earlier, delete it now:
+# If a temp file was created earlier, delete it now and exit.
 rm -rf ${TEMP_DIR}/palm_temp_${TEMP_NAME}.m
+exit ${status}
 
 # That's it!

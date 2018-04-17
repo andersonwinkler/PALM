@@ -35,8 +35,8 @@ function palm_error(ME)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 fprintf('Error using %s (%s:%d)\n', ...
-    ME.stack(1).name, ME.stack(1).file,  ME.stack(1).line);
-fprintf('%s\n\n',ME.message);
+    ME.stack(1).name, ME.stack(1).file, ME.stack(1).line);
+fprintf('%s\n\n', ME.message);
 for s = 2:numel(ME.stack)
     fprintf('Error in %s (%s:%d->%s)\n', ...
         ME.stack(s).name, ME.stack(s).file, ME.stack(s).line, ME.stack(s-1).name);
