@@ -28,7 +28,6 @@ COPY . .
 WORKDIR fileio
 RUN cd \@gifti/private \
     && mkoctfile --mex zstream.c \ 
-    && mkoctfile --mex miniz.c \
     && cd ../../\@xmltree/private \
     && mkoctfile --mex xml_findstr.c \
     && cd ../../\@file_array/private \
