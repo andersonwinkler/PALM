@@ -1,18 +1,22 @@
 #!/usr/bin/env make -f
-# GIfTI Makefile
+# GIfTI Makefile called by {SPM}/src/Makefile
 #
 # Copyright (C) 2015 Wellcome Trust Centre for Neuroimaging
 #
-# $Id: Makefile 6402 2015-04-09 18:11:06Z guillaume $
+# $Id: Makefile 6704 2016-01-29 17:23:13Z guillaume $
 
 include Makefile.var
 
-SPMMEX = zstream.$(SUF)
+SPMMEX = zstream.$(SUF) miniz.$(SUF)
 
 ifeq (mex,$(SUF))
-	export CFLAGS = $(shell $(MEX) -p CFLAGS) -std=c99
+  export CFLAGS = $(shell $(MEX) -p CFLAGS) -std=c99
 else
-	MEXOPTS += CFLAGS='$$CFLAGS -std=c99'
+  ifeq (windows,$(PLATFORM))
+    MEXOPTS += CFLAGS=\"$$CFLAGS -std=c99\"
+  else
+    MEXOPTS += CFLAGS='$$CFLAGS -std=c99'
+  endif
 endif
 
 all: $(SPMMEX)

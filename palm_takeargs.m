@@ -932,6 +932,12 @@ while a <= narginx,
             opts.saveperms = true;
             a = a + 1;
             
+        case '-savemax', % advanced
+            
+            % Save the permutations
+            opts.savemax = true;
+            a = a + 1;
+            
         case '-savemetrics', % advanced
             
             % Save a file with the number of permutations, average

@@ -339,6 +339,8 @@ fprintf('	index per column; sign-flips are represented by the negative\n');
 fprintf('	indices). Use cautiously, as this may consume large amounts of\n');
 fprintf('	disk space.\n\n');
 
+fprintf('-savemax : Save distribution of maximum statistic.\n\n');
+
 fprintf('-seed <positive> : Seed used for the random number generator. Use a\n');
 fprintf('	positive integer up to 2^32. Default is 0. To start with a random\n');
 fprintf('	number, use the word "twist" instead of the integer. Note that a\n');

@@ -58,6 +58,7 @@ opts.savedof             = false;              % save a file with the degrees of
 opts.savemask            = false;              % Save the masks?
 opts.forcemaskinter      = false;              % Force an intersection mask across modalities and evperdat?
 opts.saveperms           = false;              % Save permutation images?
+opts.savemax             = false;              % Save maximum permutation distribution?
 opts.savemetrics         = false;              % Save permutation metrics?
 opts.saveuncorrected     = true;               % Save uncorrected p-values?
 opts.corrmod             = false;              % FWER correction over modalities?

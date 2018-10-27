@@ -18,10 +18,10 @@ function s = spm_existfile(filename)
 
 %-This is merely the help file for the compiled routine
 %error('spm_existfile.c not compiled - see Makefile')
-% persistent runOnce
-% if isempty(runOnce)
-%     warning('spm_existfile is not compiled for your platform.');
-%     runOnce = true;
-% end
+persistent runOnce
+if isempty(runOnce)
+    warning('spm_existfile is not compiled for your platform.');
+    runOnce = true;
+end
 
 s = exist(filename,'file') > 0;

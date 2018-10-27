@@ -8,7 +8,7 @@ function this = gifti(varargin)
 % Copyright (C) 2008 Wellcome Trust Centre for Neuroimaging
 
 % Guillaume Flandin
-% $Id: gifti.m 6347 2015-02-24 17:59:16Z guillaume $
+% $Id: gifti.m 7037 2017-03-15 11:45:13Z guillaume $
 
 switch nargin
     
@@ -52,6 +52,18 @@ switch nargin
                 struct('type','.','subs','cdata'),...
                 varargin{1});
             
+        elseif iscell(varargin{1}) && numel(varargin{1}) == 1 && ...
+            isnumeric(varargin{1}{1})
+            this = gifti;
+            for i=1:size(varargin{1}{1},2)
+                this.data{i}.metadata = struct([]);
+                this.data{i}.space    = [];
+                this.data{i}.attributes.Intent = 'NIFTI_INTENT_NONE';
+                this.data{i}.attributes.DataType = 'NIFTI_TYPE_FLOAT32';
+                this.data{i}.attributes.Dim = size(varargin{1}{1},1);
+                this.data{i}.data     = single(varargin{1}{1}(:,i));
+            end
+            
         elseif ischar(varargin{1})
             if size(varargin{1},1)>1
                 this = gifti(cellstr(varargin{1}));
@@ -67,8 +79,14 @@ switch nargin
             elseif strcmpi(e,'.asc') || strcmpi(e,'.srf')
                 this = read_freesurfer_file(varargin{1});
                 this = gifti(this);
+            elseif strcmpi(e,'.vtk')
+                this = mvtk_read(varargin{1});
+                this = gifti(this);
+            elseif strcmpi(e,'.obj')
+                this = obj_read(varargin{1});
+                this = gifti(this);
             else
-                this = read_gifti_file_standalone(varargin{1},giftistruct);
+                this = read_gifti_file(varargin{1},giftistruct);
                 this = class(this,'gifti');
             end
             

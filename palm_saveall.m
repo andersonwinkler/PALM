@@ -255,6 +255,11 @@ if opts.saveunivariate,
                         Ptosave,1,opts,plm,y,m,c,...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     
+                    % Save the distribution of the maximum statistic
+                    if opts.savemax,
+                        dlmwrite(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_max',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c},'.csv'),plm.Gmax{y}{m}{c})
+                    end
+                    
                     % Permutation p-value, FDR adjusted
                     if opts.FDR,
                         palm_quicksave(fastfdr(plm.Gpperm{y}{m}{c}),1,opts,plm,y,m,c, ...
@@ -279,6 +284,11 @@ if opts.saveunivariate,
                         palm_quicksave( ...
                             Ptosave,1,opts,plm,y,m,c,...
                             sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                        
+                        % Save the distribution of the maximum statistic
+                        if opts.savemax,
+                            dlmwrite(sprintf('%s',opts.o,opts.cluster.str,plm.Gname{m}{c},'_max',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c},'.csv'),plm.Gclumax{y}{m}{c})
+                        end
                     end
                     
                     % TFCE results
@@ -305,6 +315,11 @@ if opts.saveunivariate,
                         palm_quicksave( ...
                             Ptosave,1,opts,plm,y,m,c,...
                             sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_fwep',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                        
+                        % Save the distribution of the maximum statistic
+                        if opts.savemax,
+                            dlmwrite(sprintf('%s',opts.o,opts.tfce.str,plm.Gname{m}{c},'_max',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c},'.csv'),plm.Gtfcemax{y}{m}{c})
+                        end
                         
                         % TFCE p-value, FDR adjusted.
                         if opts.FDR,
@@ -915,6 +930,11 @@ if opts.npcmod && ~ opts.npccon,
                 Ptosave,1,opts,plm,[],m,c, ...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',mstr,plm.cstr{m}{c}));
             
+            % Save the distribution of the maximum statistic
+            if opts.savemax,
+                dlmwrite(sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_max',mstr,plm.cstr{m}{c},'.csv'),plm.Tmax{m}{c})
+            end
+            
             % NPC FDR
             if opts.FDR,
                 palm_quicksave(fastfdr(plm.Tpperm{m}{c}),1,opts,plm,[],m,c, ...
@@ -945,6 +965,11 @@ if opts.npcmod && ~ opts.npccon,
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,y,m,c,...
                     sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_fwep',mstr,plm.cstr{m}{c}));
+                
+                % Save the distribution of the maximum statistic
+                if opts.savemax,
+                    dlmwrite(sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_max',mstr,plm.cstr{m}{c},'.csv'),plm.Tclumax{m}{c})
+                end
             end
             
             % TFCE NPC results.
@@ -971,6 +996,11 @@ if opts.npcmod && ~ opts.npccon,
                 palm_quicksave( ...
                     Ptosave,1,opts,plm,[],m,c,...
                     sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fwep',mstr,plm.cstr{m}{c}));
+                
+                % Save the distribution of the maximum statistic
+                if opts.savemax,
+                    dlmwrite(sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_max',mstr,plm.cstr{m}{c},'.csv'),plm.Ttfcemax{m}{c})
+                end
                 
                 % TFCE FDR p-value
                 if opts.FDR,
@@ -1017,7 +1047,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     if opts.FDR,
         pmerged = zeros(sum(plm.nC),plm.Ysiz(1));
         j = 1;
-        for m = 1:plm.nM,
+        for m = loopM,
             for c = 1:plm.nC(m),
                 pmerged(j,:) = plm.Tpperm{m}{c};
                 j = j + 1;
@@ -1025,7 +1055,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         end
         pfdradj = reshape(fastfdr(pmerged(:)),sum(plm.nC),plm.Ysiz(1));
         j = 1;
-        for m = 1:plm.nM,
+        for m = loopM,
             for c = 1:plm.nC(m),
                 palm_quicksave(pfdradj(j,:),1,opts,plm,[],m,c, ...
                     sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_cfdrp',plm.mstr{m},plm.cstr{m}{c}));
@@ -1038,14 +1068,14 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     if opts.cluster.npc.do,
         distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
-        for m = 1:plm.nM,
+        for m = loopM,
             for c = 1:plm.nC(m),
                 distmax(:,j) = plm.Tclumax{m}{c};
                 j = j + 1;
             end
         end
         distmax = max(distmax,[],2);
-        for m = 1:plm.nM,
+        for m = loopM,
             for c = 1:plm.nC(m),
                 if opts.accel.tail,
                     Ptosave = palm_pareto(plm.Tclu{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
@@ -1060,19 +1090,19 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
             end
         end
     end
-
+    
     % TFCE NPC
     if opts.tfce.npc.do,
         distmax = zeros(plm.nP{1}(1),sum(plm.nC));
         j = 1;
-        for m = 1:plm.nM,
+        for m = loopM,
             for c = 1:plm.nC(m),
                 distmax(:,j) = plm.Ttfcemax{m}{c};
                 j = j + 1;
             end
         end
         distmax = max(distmax,[],2);
-        for m = 1:plm.nM,
+        for m = loopM,
             for c = 1:plm.nC(m),
                 if opts.accel.tail,
                     Ptosave = palm_pareto(plm.Ttfce{m}{c},distmax,false,opts.accel.tail_thr,opts.accel.G1out);
@@ -1089,7 +1119,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
         if opts.FDR,
             pmerged = zeros(sum(plm.nC),plm.Ysiz(1));
             j = 1;
-            for m = 1:plm.nM,
+            for m = loopM,
                 for c = 1:plm.nC(m),
                     pmerged(j,:) = plm.Ttfcepperm{m}{c};
                     j = j + 1;
@@ -1097,7 +1127,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
             end
             pfdradj = reshape(fastfdr(pmerged(:)),sum(plm.nC),plm.Ysiz(1));
             j = 1;
-            for m = 1:plm.nM,
+            for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave(pfdradj(j,:),1,opts,plm,[],m,c, ...
                         sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_cfdrp',plm.mstr{m},plm.cstr{m}{c}));
@@ -1119,7 +1149,7 @@ if opts.npccon,
             palm_quicksave(plm.Tpperm{j},1,opts,plm,j,[],[], ...
                 sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_uncp',plm.jstr{j}));
         end
-
+        
         % NPC FWER-corrected
         if opts.accel.tail,
             Ptosave = palm_pareto(plm.T{j},plm.Tmax{j},plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
@@ -1131,7 +1161,12 @@ if opts.npccon,
         palm_quicksave( ...
             Ptosave,1,opts,plm,j,[],[], ...
             sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_fwep',plm.jstr{j}));
-
+        
+        % Save the distribution of the maximum statistic
+        if opts.savemax,
+            dlmwrite(sprintf('%s',opts.o,plm.Ykindstr{1},plm.npcstr,plm.Tname,'_max',plm.jstr{j},'.csv'),plm.Tmax{j})
+        end
+        
         % NPC FDR
         if opts.FDR,
             palm_quicksave(fastfdr(plm.Tpperm{j}),1,opts,plm,j,[],[], ...
@@ -1162,6 +1197,11 @@ if opts.npccon,
             palm_quicksave( ...
                 Ptosave,1,opts,plm,j,[],[],...
                 sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_fwep',plm.jstr{j}));
+            
+            % Save the distribution of the maximum statistic
+            if opts.savemax,
+                dlmwrite(sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_max',plm.jstr{j},'.csv'),plm.Tclumax{j})
+            end
         end
         
         % TFCE NPC results.
@@ -1188,6 +1228,11 @@ if opts.npccon,
             palm_quicksave( ...
                 Ptosave,1,opts,plm,j,[],[],...
                 sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_fwep',plm.jstr{j}));
+            
+            % Save the distribution of the maximum statistic
+            if opts.savemax,
+                dlmwrite(sprintf('%s',opts.o,opts.tfce.str,plm.npcstr,plm.Tname,'_max',plm.jstr{j},'.csv'),plm.Ttfcemax{j})
+            end
             
             % TFCE FDR p-value
             if opts.FDR,
@@ -1279,7 +1324,7 @@ if ~ opts.npcmod && opts.npccon && opts.corrmod,
                 sprintf('%s',opts.o,opts.cluster.str,plm.npcstr,plm.Tname,'_mfwep',plm.ystr{y}));
         end
     end
-        
+    
     % TFCE NPC results.
     if opts.tfce.npc.do,
         distmax = npcextr(cat(2,plm.Ttfce{:}),2);
@@ -1358,6 +1403,11 @@ if opts.MV || opts.CCA || opts.PLS,
                     Ptosave,1,opts,plm,[],[],[], ...
                     sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{m}{c}));
                 
+                % Save the distribution of the maximum statistic
+                if opts.savemax,
+                    dlmwrite(sprintf('%s',opts.o,plm.Ykindstr{1},plm.mvstr,plm.Qname{m}{c},'_max',plm.mstr{m},plm.cstr{m}{c},'.csv'),plm.Qmax{m}{c})
+                end
+                
                 % Cluster statistic MV results.
                 if opts.cluster.mv.do,
                     
@@ -1376,6 +1426,13 @@ if opts.MV || opts.CCA || opts.PLS,
                     palm_quicksave( ...
                         Ptosave,1,opts,plm,[],[],[],...
                         sprintf('%s',opts.o,opts.cluster.str,plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{m}{c}));
+                    
+                    % Save the distribution of the maximum statistic
+                    if opts.savemax,
+                        dlmwrite(sprintf('%s',opts.o,opts.cluster.str,plm.mvstr,plm.Qname{m}{c},'_max',plm.mstr{m},plm.cstr{m}{c},'.csv'),plm.Qclumax{m}{c})
+                    end
+                    
+                    
                 end
                 
                 % TFCE MV results.
@@ -1403,6 +1460,11 @@ if opts.MV || opts.CCA || opts.PLS,
                         Ptosave,1,opts,plm,[],[],[], ...
                         sprintf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_fwep',plm.mstr{m},plm.cstr{m}{c}));
                     
+                    % Save the distribution of the maximum statistic
+                    if opts.savemax,
+                        dlmwrite(printf('%s',opts.o,opts.tfce.str,plm.mvstr,plm.Qname{m}{c},'_max',plm.mstr{m},plm.cstr{m}{c},'.csv'),plm.Qtfcemax{m}{c})
+                    end
+                    
                     % TFCE MV FDR
                     if opts.FDR,
                         palm_quicksave(fastfdr(plm.Qtfcepperm{m}{c}),1,opts,plm,[],[],[], ...
@@ -1417,7 +1479,7 @@ end
 % Save FWER corrected across contrasts for MV.
 if ( opts.MV || opts.CCA || opts.PLS) && opts.corrcon,
     fprintf('Saving p-values for classical multivariate tests (corrected across contrasts).\n')
-
+    
     % FDR correction (non-spatial stats)
     if opts.FDR,
         pmerged = zeros(sum(plm.nC),plm.Ysiz(1));
