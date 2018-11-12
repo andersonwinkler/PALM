@@ -3206,7 +3206,7 @@ function cc = cca(Y,X,k)
 cc      = max(min(D(k,k),1),0);
 
 % ==============================================================
-function rpls = simpls(X,Y,k);
+function rpls = simpls(X,Y,k)
 % Compute the correlation among the k-th pair of
 % Uses the SIMPLS algorithm for partial least squares to
 % compute score vectors (T and U), then provide the

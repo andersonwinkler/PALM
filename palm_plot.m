@@ -1,17 +1,23 @@
-function palm_plot(data,design,contrasts,res)
+function palm_plot(Y,I,X,Z,resol,F)
 % Take a vector of data, a design, a constrast, then
 % plots. If the code detects that what the contrasts
 % is testing is an interaction, it constructs
 % interaction plots.
-% 
+%
 % Usage:
-% 
+%
 % palm_plot(data,design,contrast,res)
-% 
-% - data     : CSV file containing data.
-% - design   : Design matrix file.
-% - contrast : Contrast file.
-% - res      : Resolution of meshes (for 2-way 
+%
+% - Y        : Data.
+% - X        : Main effects (up to 3 colums, of which
+%              no more than 2 can be continuous.
+% - I        : The interaction term, 1 column. Leave
+%              empty or NaN if not an interaction.
+% - Z        : Nuisance. It should not include the
+%              interaction that is to be plotted,
+%              otherwise the effect of the interaction
+%              is washed out.
+% - resol    : Resolution of meshes (for 2-way
 %              interactions between continuous
 %              variables).
 %
@@ -39,21 +45,25 @@ function palm_plot(data,design,contrasts,res)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-% Load inputs
-Y = palm_miscread(data);
-Y = Y.data;
-M = palm_miscread(design);
-M = M.data;
-C = palm_miscread(contrasts);
-C = C.data';
+% Check sanity of inputs
 if size(Y,2) > 1
     error('Input data must have just 1 column.');
 end
-if size(M,1) ~= size(Y,1)
-    error('Input data and designs have different number of rows.');
+if size(I,2) ~= 1
+    error('The interaction term must have just 1 column.');
 end
-if size(C,1) ~= size(M,2)
-    error('Size of contrasts don''t match the size of the design.');
+if size(X,2) < 1 || size(X,2) > 3
+    error('Input data must have between 1 and 3 columns (inclusive).');
+end
+if      size(Y,1) ~= size(X,1) || ...
+        size(Y,1) ~= size(Z,1) || ...
+        size(Y,1) ~= size(I,1)
+    error('Input variables must all have the same number of rows.');
+else
+    N = size(Y,1);
+end
+if ~isstruct(F) && ~isempty(F) && ~isnan(F),
+    error('F must be a struct.')
 end
 
 % res = 20;
@@ -75,73 +85,98 @@ end
 % M = [A B C D A.*B I];
 % C = [0 0 0 0 1 0 ]';
 
-% Current contrast, model partitioning
-[X,Z] = palm_partition(M,C,'guttman');
-b = [X Z]\Y;
-
-% Find out what are the A and B main effects for 2-way interactions
-EVset = nchoosek(1:size(Z,2),2);
-A = NaN; B = NaN;
-for r = 1:size(EVset,1)
-    if corr(X,prod(Z(:,EVset(r,:)),2)) > 1-10*eps
-        A = Z(:,EVset(r,1));
-        B = Z(:,EVset(r,2));
-        Z(:,EVset(r,:)) = [];
-        break
-    end
-end
+% Model fitting
+b = [I X Z]\Y;
 
 % Residual forming matrix without interaction and without main effects
 Rz = eye(N) - Z*pinv(Z);
 
-if isnan(A(1)) || isnan(B(1))
-    % This is not an interaction
-    scatter(Rz*X,Rz*Y)
+switch size(X,2)
     
-else
-    % This is an interaction
-    uA = unique(A);
-    uB = unique(B);
-    if     numel(uA) == 2 && numel(uB)  > 2
-        % If A has 2 categories and B is continuous
-        rB = Rz*B;
-        rY = Rz*Y;
-        for u = 1:numel(uA)
-            idx = A == uA(u);
-            scatter(rB(idx),rY(idx),'.');
-            hold('on')
-        end
-        hold('off');
+    case 1
+        % This is not an interaction
+        figure
+        scatter(Rz*X,Rz*Y)
         
-    elseif numel(uA)  > 2 && numel(uB) == 2
-        % If A is continuous and B has 2 categories
-        rA = Rz*A;
+    case 2
+        % This is an interaction of 2 variables
         rY = Rz*Y;
-        for u = 1:numel(uB)
-            idx = B == uB(u);
-            scatter(rA(idx),rY(idx),'.');
+        A = X(:,1);
+        B = X(:,2);
+        uA = unique(A);
+        uB = unique(B);
+        if     numel(uA) == 2 && numel(uB)  > 2
+            % If A has 2 categories and B is continuous
+            rB = Rz*B;
+            figure
+            for u = 1:numel(uA)
+                idx = A == uA(u);
+                scatter(rB(idx),rY(idx),'.');
+                hold('on')
+            end
+            hold('off');
+            
+        elseif numel(uA)  > 2 && numel(uB) == 2
+            % If A is continuous and B has 2 categories
+            rA = Rz*A;
+            figure
+            for u = 1:numel(uB)
+                idx = B == uB(u);
+                scatter(rA(idx),rY(idx),'.');
+                hold('on')
+            end
+            hold('off');
+            
+        elseif numel(uA) == 2 && numel(uB) == 2
+            % If both A and B have 2 categories
+            X = zeros(2,2);
+            for ua = 1:numel(uA)
+                for ub = 1:numel(uB)
+                    idx = A == uA(ua) & B == uB(ub);
+                    X(ua,ub) = mean(rY(idx));
+                end
+            end
+            figure
+            bar(X);
+            
+        else
+            % if A and B are continuous
+            rA = Rz*A;
+            rB = Rz*B;
+            [xg,yg] = meshgrid(linspace(min(A),max(A),resol),linspace(min(B),max(B),resol));
+            figure
+            mesh(xg,yg,xg.*yg*b(1));
             hold('on')
-        end
-        hold('off');
-        
-    elseif numel(uA) == 2 && numel(uB) == 2
-        % If both A and B have 2 categories
-        Y = Rz*Y;
-        X = zeros(2,2);
-        for ua = 1:numel(uA)
-            for ub = 1:numel(uB)
-                idx = A == uA(ua) & B == uB(ub);
-                X(ua,ub) = mean(Y(idx));
+            scatter3(rA,rB,rY,'.');
+            hold('off')
+            if isstruct(F)
+                title(F.title);
+                xlabel(F.xlabel);
+                ylabel(F.ylabel);
+                zlabel(F.zlabel);
             end
         end
-        bar(X);
         
-    else
-        % if A and B are continuous
-        [xg, yg] = meshgrid(linspace(min(A),max(A),res),linspace(min(B),max(B),res));
-        mesh(xg,yg,xg.*yg*b(1));
-        hold('on')
-        scatter3(Rz*A,Rz*B,Rz*Y,'.');
-        hold('off')
-    end
+    case 3
+        % This is an interaction of 3 variables
+        U  = cell(3,1);
+        nU = zeros(3,1);
+        for j = 1:size(X,2)
+            U{j}  = unique(X(:,j));
+            nU(j) = numel(U{j});
+        end
+        idxU = find(nU == 2,1,'last');
+        C = X(:,idxU);
+        X(:,idxU) = [];
+        U = U{idxU};
+        for u = 1:2
+            Yu = Y(C == U(u),:);
+            Iu = I(C == U(u),:);
+            Xu = X(C == U(u),:);
+            Xu(:,any(abs(corr(Iu,Xu)) > 1-10*eps,1)) = [];
+            Zu = Z(C == U(u),:);
+            Zu(:,any(abs(corr([Iu Xu],Zu)) > 1-10*eps,1)) = [];
+            Zu(:,any(triu(abs(corr(Zu)))-eye(size(Zu,2)) > 1-10*eps,2)) = [];
+            palm_plot(Yu,Iu,Xu,Zu,resol,F)
+        end
 end
