@@ -1,15 +1,18 @@
-function X = palm_miscread(filename,useniiclass,tmppath,precision)
+function X = palm_miscread(filename,varargin)
 % Read various scalar data formats based on the file extension.
 %
-% X = palm_miscread(filename,useniiclass,tmppath,precision);
+% X = palm_miscread(filename,useniiclass,tmppath,precision,mz3surf);
 %
 % filename    : File to be read.
-% useniiclass : True/False. Use the NIFTI class when reading
-%               NIFTI files. It requires less memory.
+% useniiclass : True/False. For NIFTI files, use the NIFTI class
+%               when reading them. It requires less memory.
 % tmppath     : For some file types, indicate whether to store
 %               temporary data.
 % precision   : Ensure the output data is 'single' or 'double'
 %               precision.
+% mz3surf     : True/False. For MZ3 files, keep as data the surface
+%               geometry (if present in the file) as opposed to the
+%               scalars).
 %
 % X is a struct that contains the fields:
 % X.filename  : Contains the name of the file.
@@ -26,7 +29,7 @@ function X = palm_miscread(filename,useniiclass,tmppath,precision)
 % Anderson M. Winkler
 % FMRIB / University of Oxford
 % Aug/2013 (first version)
-% Dec/2015 (this version)
+% Feb/2018 (this version)
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -46,6 +49,16 @@ function X = palm_miscread(filename,useniiclass,tmppath,precision)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+useniiclass = true;
+tmppath     = '/tmp';
+precision   = 'double';
+mz3surf     = false;
+narginchk(1,5)
+if nargin >= 2, useniiclass = varargin{2}; end
+if nargin >= 3, tmppath     = varargin{3}; end
+if nargin >= 4, precision   = varargin{4}; end
+if nargin >= 5, mz3surf     = varargin{5}; end
 
 % Check if the file actually exists before doing anything else
 if ~ exist(filename,'file')
@@ -224,9 +237,10 @@ switch lower(fext{end})
         % Read a MZ3 file
         X.readwith = 'mz3';
         [vtx,fac,colour] = readMz3(X.filename);
-        if isempty(colour)
+        if mz3surf
             X.data.vtx = vtx;
             X.data.fac = fac;
+            X.extra.colour = colour;
         else
             X.data = colour;
             X.extra.vtx = vtx;
@@ -308,28 +322,6 @@ switch lower(fext{end})
         end
         X.extra = gii.private;
         
-    case 'annot'
-        
-        % Read a FreeSurfer .annot file
-        extern = palm_checkprogs;
-        if extern.fs
-            X.readwith = 'fs_read_annotation';
-            [X.extra.vtx,X.extra.lab,X.extra.ctab] = read_annotation(X.filename);
-            
-            % For each structure, replace its coded colour by its index
-            X.data = zeros(size(X.extra.lab));
-            for s = 1:X.extra.ctab.numEntries
-                X.data(X.extra.lab == X.extra.ctab.table(s,5)) = s;
-            end
-        else
-            error([
-                'FreeSurfer was not found. To use this data, make sure\n' ...
-                'that FreeSurfer is correctly installed and configured, and\n' ...
-                'that your ''FREESURFER_HOME'' environmental variable is\n' ...
-                'properly set.\n' ...
-                'File: %s\n'],X.filename);
-        end
-
     otherwise
         error('File extension %s not known. Data cannot be loaded\n',fext{end});
 end
@@ -342,12 +334,10 @@ else
 end
 
 % Enforce a certain precision defined by the user:
-if nargin > 3
-    if strcmpi(precision,'double')
-        X.data = double(X.data);
-    elseif strcmpi(precision,'single')
-        X.data = single(X.data);
-    end
+if strcmpi(precision,'double')
+    X.data = double(X.data);
+elseif strcmpi(precision,'single')
+    X.data = single(X.data);
 end
 
 % ==============================================================

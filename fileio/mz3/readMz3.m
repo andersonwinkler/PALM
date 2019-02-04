@@ -1,7 +1,8 @@
-function [faces, vertices, vertexColors, data] = readMz3(filename)
+function [faces, vertices, vertexColors, data] = readMz3(filename, isForceRGBA2RGB)
 %function [faces, vertices, vertexColors, data] = readMz3(fileName)
 %inputs:
 %	filename: the nv file to open
+%   isForceRGBA2RGB: (optional). If true (default) then 4-component RGBA and 5-component RGBA+scalar are read as RGB only 
 %outputs:
 %  faces: face matrix where cols are xyz and each row is face
 %  vertices: vertices matrix where cols are xyz and each row a vertex
@@ -12,7 +13,8 @@ function [faces, vertices, vertexColors, data] = readMz3(filename)
 faces = [];
 vertices = [];
 vertexColors = [];
-if ~exist(filename,'file'), error('File %s does not exist',filename); end;
+if ~exist('isForceRGBA2RGB','var'), isForceRGBA2RGB = true; end;
+if ~exist(filename,'file'), error('Unable to find MZ3 file named "%s"', filename); return; end;
 try
     % Check if this is Octave:
     persistent isoct;
@@ -37,7 +39,6 @@ try
         data = baos.toByteArray;
     end
 catch
-    
     fid = fopen(filename,'r','ieee-le');
     data = fread(fid);
     fclose(fid);
@@ -47,11 +48,12 @@ magic = typecast(data(1:2),'uint16');
 if magic ~= 23117, error('Signature is not MZ3\n'); return; end;
 %attr reports attributes and version
 attr = typecast(data(3:4),'uint16');
-if (attr == 0) || (attr > 15), fprintf('This file uses (future) unsupported features\n'); end;
+if (attr == 0) || (attr > 31), error('This mz3 file uses (future) unsupported features\n'); end;
 isFace = bitand(attr,1);
 isVert = bitand(attr,2);
 isRGBA = bitand(attr,4);
 isSCALAR = bitand(attr,8);
+isDOUBLE = bitand(attr,16);
 %read attributes
 nFace = typecast(data(5:8),'uint32');
 nVert = typecast(data(9:12),'uint32');
@@ -81,15 +83,35 @@ if isRGBA
     vertexColors = typecast(data(hdrSz+1:hdrSz+RGBAbytes),'uint8');
     vertexColors = double(vertexColors)/255; %matlab wants values 0..1
     vertexColors = reshape(vertexColors,4,nVert)';
-    %vertexColors = reshape(vertexColors,nVert,4);
-    vertexColors = vertexColors(:,1:3);
+    if isForceRGBA2RGB
+        vertexColors = vertexColors(:,1:3);
+    end
     hdrSz = hdrSz + RGBAbytes;
+end
+%
+if isForceRGBA2RGB && isSCALAR && isRGBA
+    %templates can include both RGB and SCALAR values - here we ignore this
+    fprintf('Template mesh with both color (RGB) and intensity (region index) values. Ignoring region indices.\n');
+    fprintf(' Use readMz3(''%s'', false) to load index values.\n', filename);
+    return;
 end
 %read scalar vertex properties, e.g. intensity
 if isSCALAR
-    vertbytes = nVert * 4; %each vertex has 1 byte float
-    vertexColors = typecast(data(hdrSz+1:hdrSz+vertbytes),'single');
-    vertexColors = double(vertexColors); %matlab wants doubles
-    hdrSz = hdrSz + vertbytes;
+    scalars = typecast(data(hdrSz+1:end),'single');
+    if isForceRGBA2RGB || ~isRGBA
+        vertexColors = double(scalars); %matlab wants doubles 
+        if (nVert < 1), nVert = numel(vertexColors); end 
+        nSCALAR = numel(vertexColors) / nVert; 
+        vertexColors = reshape(vertexColors,nVert,nSCALAR);
+    else %both RGBA and Scalars present - set vertexColors to 5 components
+        vertexColors = [vertexColors, scalars]; 
+    end
+end
+%read double-precision scalar vertex properties, e.g. intensity
+if isDOUBLE
+    vertexColors = typecast(data(hdrSz+1:end),'double');
+    if (nVert < 1), nVert = numel(vertexColors); end 
+    nSCALAR = numel(vertexColors) / nVert; 
+    vertexColors = reshape(vertexColors,nVert,nSCALAR);
 end
 %end readMz3()

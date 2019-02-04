@@ -44,19 +44,19 @@ Yissrf   = false;
 Ykindstr = '_dat';
 
 % Read a temporary version
-Ytmp     = palm_miscread(Yfile,opts.useniiclass,opts.o,opts.precision);
+Ytmp     = palm_miscread(Yfile,opts.useniiclass,opts.o,opts.precision,false);
 
 % If this is 4D read with the NIFTI class, it needs a mask now
-if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,
-    if isempty(maskstruct),
+if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4
+    if isempty(maskstruct)
         % If a mask hasn't been supplied, make one
         tmpmsk = false(Ytmp.extra.dat.dim(1:3));
-        for a = 1:Ytmp.extra.dat.dim(2), % y coords
-            for b = 1:Ytmp.extra.dat.dim(3), % z coords
+        for a = 1:Ytmp.extra.dat.dim(2) % y coords
+            for b = 1:Ytmp.extra.dat.dim(3) % z coords
                 I = squeeze(Ytmp.extra.dat(:,a,b,:));
                 inan = any(isnan(I),2);
                 iinf = any(isinf(I),2);
-                if removecte,
+                if removecte
                     icte = sum(diff(I,1,2).^2,2) == 0;
                 else
                     icte = false(size(iinf));
@@ -67,7 +67,7 @@ if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4,
         maskstruct = palm_maskstruct(tmpmsk(:)',Ytmp.readwith,Ytmp.extra);
     else
         % If a mask was supplied, check its size
-        if any(Ytmp.extra.dat.dim(1:ndims(maskstruct.data)) ~= size(maskstruct.data)),
+        if any(Ytmp.extra.dat.dim(1:ndims(maskstruct.data)) ~= size(maskstruct.data))
             error([...
                 'The size of the data does not match the size of the mask:\n' ...
                 '- Data file %s\n' ...
@@ -80,13 +80,13 @@ end
 if ndims(Ytmp.data) == 2, %#ok
     
     % Transpose if that was chosen.
-    if opts.transposedata,
+    if opts.transposedata
         Ytmp.data = Ytmp.data';
     end
     
     % Not all later functions are defined for file_array class,
     % so convert to double
-    if strcmp(Ytmp.readwith,'nifticlass'),
+    if strcmp(Ytmp.readwith,'nifticlass')
         Ytmp.data = double(Ytmp.data);
     end
     
@@ -94,15 +94,15 @@ if ndims(Ytmp.data) == 2, %#ok
     % were converted to CSV with 'dpx2csv' and then transposed.
     Y = Ytmp.data;
     
-elseif ndims(Ytmp.data) == 4,
+elseif ndims(Ytmp.data) == 4
     
     % Sort out loading for the NIFTI class
-    if strcmp(Ytmp.readwith,'nifticlass'),
+    if strcmp(Ytmp.readwith,'nifticlass')
         tmpmsk = maskstruct.data(:)';
         
         % Read each volume, reshape and apply the mask
         Y = zeros(size(Ytmp.data,4),sum(tmpmsk));
-        for n = 1:size(Ytmp.data,4),
+        for n = 1:size(Ytmp.data,4)
             tmp = Ytmp.extra.dat(:,:,:,n);
             tmp = tmp(:)';
             Y(n,:) = tmp(tmpmsk);
@@ -116,12 +116,12 @@ end
 % Check if the size of data is compatible with size of mask.
 % If read with the NIFTI class, this was already taken care of
 % and can be skipped.
-if ~ strcmp(Ytmp.readwith,'nifticlass'),
-    if ~ isempty(maskstruct),
-        if size(Y,2) == 1,
+if ~ strcmp(Ytmp.readwith,'nifticlass')
+    if ~ isempty(maskstruct)
+        if size(Y,2) == 1
             fprintf('Expanding file %s to match the size of the mask.\n',Yfile);
             Y = repmat(Y,[1 numel(maskstruct.data)]);
-        elseif size(Y,2) ~= numel(maskstruct.data),
+        elseif size(Y,2) ~= numel(maskstruct.data)
             error([...
                 'The size of the data does not match the size of the mask:\n' ...
                 '- Data file %s\n' ...
@@ -135,12 +135,12 @@ end
 % available to select the datapoints of interest.
 if isempty(maskstruct) ...
         && ndims(Ytmp.data) == 4 ...
-        && strcmp(Ytmp.readwith,'nifticlass'),
+        && strcmp(Ytmp.readwith,'nifticlass')
     maskydat = true(1,size(Y,2));
 else
     ynan = any(isnan(Y),1);
     yinf = any(isinf(Y),1);
-    if removecte,
+    if removecte
         ycte = sum(diff(Y,1,1).^2) == 0;
     else
         ycte = false(size(yinf));
@@ -151,10 +151,10 @@ end
 % Now apply the mask created above and the one supplied by the user
 % for this modality. If no masks were supplied, create them, except
 % for the NIFTI class, which should have been created above
-if strcmp(Ytmp.readwith,'nifticlass'),
+if strcmp(Ytmp.readwith,'nifticlass')
     maskstruct.data(maskstruct.data) = maskydat(:);
 else
-    if isempty(maskstruct),
+    if isempty(maskstruct)
         maskstruct = palm_maskstruct(maskydat,Ytmp.readwith,Ytmp.extra);
     else
         maskydat = maskstruct.data(:) & maskydat(:);
@@ -165,22 +165,22 @@ Y = Y(:,maskydat);
 
 % Prepare a string with a representative name for the kind of data,
 % i.e., voxel for volumetric data,
-if nargout > 2,
-    switch Ytmp.readwith,
+if nargout > 2
+    switch Ytmp.readwith
         case {'nifticlass','fs_load_nifti','fsl_read_avw',...
-                'spm_spm_vol','nii_load_nii'},
+                'spm_spm_vol','nii_load_nii'}
             Yisvol   = true;
             Ykindstr = '_vox';
-        case {'fs_read_curv','gifti'},
+        case {'fs_read_curv','gifti'}
             Yissrf   = true;
             Ykindstr = '_dpv';
-        case 'dpxread',
+        case 'dpxread'
             Yissrf   = true;
             Ykindstr = '_dpx'; % this may be overriden later if a surface file is supplied
-        case 'fs_load_mgh',
+        case 'fs_load_mgh'
             if ndims(Ytmp.data) == 4 && ...
                     size(Ytmp.data,2) == 1 && ...
-                    size(Ytmp.data,3) == 1,
+                    size(Ytmp.data,3) == 1
                 Yissrf   = true;
                 Ykindstr = '_dpx'; % this may be overriden later if a surface file is supplied
             else
@@ -195,7 +195,7 @@ end
 % If the Ytmp will also be returned (used in the palm_mediation). Unless
 % this is a single vector, there is no need to keep the actual data; it's
 % the mask that matters.
-if nargout == 6 && numel(maskstruct.data) > 1,
+if nargout == 6 && numel(maskstruct.data) > 1
     Ytmp.data = [];
     Yset = [];
 end
