@@ -61,15 +61,15 @@ fext = strdotsplit(strcat(fnam,fext));
 
 % Some formats use external i/o functions that use random numbers. Save
 % current state of the random number generator, then restore at the end.
-if palm_isoctave,
+if palm_isoctave
     state = rand('state'); %#ok
 else
     state = rng;
 end
 
-switch lower(fext{end}),
+switch lower(fext{end})
     
-    case 'txt',
+    case 'txt'
         
         % Read a generic text file
         X.readwith = 'textscan';
@@ -79,7 +79,7 @@ switch lower(fext{end}),
         fclose(fid);
         X.extra = [];
         
-    case 'csv',
+    case 'csv'
         
         % Read a CSV file. It has to contain numeric values only.
         % The command 'csvwrite' is a frontend to 'dlmwrite', which calls
@@ -89,24 +89,24 @@ switch lower(fext{end}),
         X.data = load(X.filename);
         X.extra = [];
         
-    case {'mat','con','fts','grp'},
+    case {'mat','con','fts','grp'}
         
         % Read an FSL "VEST" file.
         X.readwith = 'vestread';
         [X.data,X.extra.PPH] = palm_vestread(X.filename);
         
-    case 'mset',
+    case 'mset'
         
         % Set of matrices
         X.readwith = 'mset';
         X.data = palm_msetread(X.filename);
         
-    case 'gz',
+    case 'gz'
         
         % Handle (or not) a gzipped NIFTI or CIFTI file.
-        if strcmpi(fext{end-1},'nii'),
+        if strcmpi(fext{end-1},'nii')
             
-            if any(strcmpi(fext{end-2},{'dscalar','dtseries','dconn','dlabel','ptseries','merge'})),
+            if any(strcmpi(fext{end-2},{'dscalar','dtseries','dconn','dlabel','ptseries','merge'}))
                 
                 % Until CIFTI migrates to HDF5, users will have to uncompress manually.
                 error('CIFTI files must be uncompressed before they can be read. Use gunzip and try again.');
@@ -114,7 +114,7 @@ switch lower(fext{end}),
             else
                 % Read as NIFTI proper (not CIFTI)
                 extern = palm_checkprogs;
-                if useniiclass,
+                if useniiclass
                     error([
                         'Reading of gzipped NIFTI files (.nii.gz) is currently disabled\n' ...
                         'If you are sure that your gzipped files, once uncompressed, are not\n' ...
@@ -123,12 +123,12 @@ switch lower(fext{end}),
                         'as input the .nii files instead.\n' ...
                         'File: %s'],X.filename);
                 else
-                    if extern.fs,       % Read with FreeSurfer
+                    if extern.fs       % Read with FreeSurfer
                         X.readwith = 'fs_load_nifti';
                         X.extra.hdr = load_nifti(X.filename);
                         X.data = X.extra.hdr.vol;
                         X.extra.hdr.vol = [];
-                    elseif extern.fsl,  % Read with FSL
+                    elseif extern.fsl  % Read with FSL
                         X.readwith = 'fsl_read_avw';
                         [X.data,X.extra.dims,X.extra.voxsize, ...
                             X.extra.bpp,X.extra.endian] = read_avw(X.filename);
@@ -152,17 +152,17 @@ switch lower(fext{end}),
             error('Unrecognised format with extension %s%s',fext0,fext);
         end
         
-    case {'nii','hdr','img'},
+    case {'nii','hdr','img'}
         
         % Check for external loaders
         extern = palm_checkprogs;
 
         % Handle NIFTI and CIFTI files.
         if strcmpi(fext{end},'nii') && ...
-                any(strcmpi(fext{end-1},{'dscalar','dtseries','dconn','dlabel','ptseries','merge','pscalar'})),
+                any(strcmpi(fext{end-1},{'dscalar','dtseries','dconn','dlabel','ptseries','merge','pscalar'}))
             
             % Read a CIFTI file.
-            if extern.wb_command,
+            if extern.wb_command
                 X.readwith = 'wb_command';
                 [X.data,X.extra] = palm_ciftiread(X.filename,tmppath);
                 X.data = X.data';
@@ -174,25 +174,25 @@ switch lower(fext{end}),
         else
             % Read a NIFTI file. Note that this will should not
             % be used for ANALYZE.
-            if useniiclass,
+            if useniiclass
                 X.readwith = 'nifticlass';
                 X.extra = nifti(X.filename);
                 X.data = X.extra.dat;
             else
-                if extern.fs,       % Read with FreeSurfer
+                if extern.fs       % Read with FreeSurfer
                     X.readwith = 'fs_load_nifti';
                     X.extra.hdr = load_nifti(X.filename);
                     X.data = X.extra.hdr.vol;
                     X.extra.hdr.vol = [];
-                elseif extern.spm,  % Read with SPM
+                elseif extern.spm  % Read with SPM
                     X.readwith = 'spm_spm_vol';
                     X.extra = spm_vol(X.filename);
                     X.data = spm_read_vols(X.extra);
-                elseif extern.fsl,  % Read with FSL
+                elseif extern.fsl  % Read with FSL
                     X.readwith = 'fsl_read_avw';
                     [X.data,X.extra.dims,X.extra.voxsize, ...
                         X.extra.bpp,X.extra.endian] = read_avw(X.filename);
-                elseif extern.nii,  % Read with the NIFTI toolbox
+                elseif extern.nii  % Read with the NIFTI toolbox
                     X.readwith = 'nii_load_nii';
                     X.extra = load_nii(X.filename);
                     X.data = X.extra.img;
@@ -207,24 +207,24 @@ switch lower(fext{end}),
             end
         end
         
-    case {'dpv','dpf','dpx'},
+    case {'dpv','dpf','dpx'}
         
         % Read a DPV/DPF file, in ASCII
         X.readwith = 'dpxread';
         [X.data,X.extra.crd,X.extra.idx] = palm_dpxread(X.filename);
         
-    case 'srf',
+    case 'srf'
         
         % Read a SRF file, in ASCII
         X.readwith = 'srfread';
         [X.data.vtx,X.data.fac] = palm_srfread(X.filename);
         
-    case 'mz3',
+    case 'mz3'
         
         % Read a MZ3 file
         X.readwith = 'mz3';
         [vtx,fac,colour] = readMz3(X.filename);
-        if isempty(colour),
+        if isempty(colour)
             X.data.vtx = vtx;
             X.data.fac = fac;
         else
@@ -235,11 +235,11 @@ switch lower(fext{end}),
         
     case {'area','avg_curv','crv','curv', ...
             'h','k','jacobian_white','mid', ...
-            'sulc','thickness','volume'},
+            'sulc','thickness','volume'}
         
         % Read a FreeSurfer curvature file
         extern = palm_checkprogs;
-        if extern.fs,
+        if extern.fs
             X.readwith = 'fs_read_curv';
             [X.data,X.extra.fnum] = read_curv(X.filename);
         else
@@ -252,11 +252,11 @@ switch lower(fext{end}),
         end
         
     case {'inflated','nofix','orig','pial', ...
-            'smoothwm','sphere','reg','white','white_reg'},
+            'smoothwm','sphere','reg','white','white_reg'}
         
         % Read a FreeSurfer surface file
         extern = palm_checkprogs;
-        if extern.fs,
+        if extern.fs
             X.readwith = 'fs_read_surf';
             [X.data.vtx,X.data.fac] = read_surf(X.filename);
             X.data.fac = X.data.fac + 1;
@@ -269,11 +269,11 @@ switch lower(fext{end}),
                 'File: %s\n'],X.filename);
         end
         
-    case {'mgh','mgz'},
+    case {'mgh','mgz'}
         
         % Read a FreeSurfer MGH/MGZ file
         extern = palm_checkprogs;
-        if extern.fs,
+        if extern.fs
             X.readwith = 'fs_load_mgh';
             [X.data,X.extra.M,X.extra.mr_parms,X.extra.volsz] = load_mgh(X.filename);
         else
@@ -285,45 +285,67 @@ switch lower(fext{end}),
                 'File: %s\n'],X.filename);
         end
         
-    case 'gii',
+    case 'gii'
         
         % Read a GIFTI file (no mapped file arrays)
         palm_checkprogs; % ensure GIFTI toolbox in the path
         X.readwith = 'gifti';
         gii = gifti(X.filename);
-        if isfield(gii,'cdata'),
+        if isfield(gii,'cdata')
             X.data = gii.cdata';
         end
-        if isfield(gii,'vertices') && isfield(gii,'faces'),
+        if isfield(gii,'vertices') && isfield(gii,'faces')
             X.data.vtx  = gii.vertices;
             X.data.fac  = gii.faces;
-            if isfield(gii,'mat'),
+            if isfield(gii,'mat')
                 vtx = [X.data.vtx ones(size(X.data.vtx,1),1)];
                 vtx = vtx * gii.mat;
                 X.data.vtx = vtx(:,1:3);
             end
         end
-        for d = numel(gii.private.data):-1:1,
+        for d = numel(gii.private.data):-1:1
             gii.private.data{d}.data = [];
         end
         X.extra = gii.private;
         
+    case 'annot'
+        
+        % Read a FreeSurfer .annot file
+        extern = palm_checkprogs;
+        if extern.fs
+            X.readwith = 'fs_read_annotation';
+            [X.extra.vtx,X.extra.lab,X.extra.ctab] = read_annotation(X.filename);
+            
+            % For each structure, replace its coded colour by its index
+            X.data = zeros(size(X.extra.lab));
+            for s = 1:X.extra.ctab.numEntries
+                X.data(X.extra.lab == X.extra.ctab.table(s,5)) = s;
+            end
+        else
+            error([
+                'FreeSurfer was not found. To use this data, make sure\n' ...
+                'that FreeSurfer is correctly installed and configured, and\n' ...
+                'that your ''FREESURFER_HOME'' environmental variable is\n' ...
+                'properly set.\n' ...
+                'File: %s\n'],X.filename);
+        end
+
     otherwise
         error('File extension %s not known. Data cannot be loaded\n',fext{end});
 end
 
 % Restore the state of the random number generator.
-if palm_isoctave,
+if palm_isoctave
     rand('state',state); %#ok
 else
     rng(state);
 end
 
 % Enforce a certain precision defined by the user:
-if nargin > 3,
-    if strcmpi(precision,'double'),
+if nargin > 3
+    if strcmpi(precision,'double')
         X.data = double(X.data);
-    elseif strcmpi(precision,'single'),
+    elseif strcmpi(precision,'single')
         X.data = single(X.data);
     end
 end
@@ -335,6 +357,6 @@ idx  = find(str == '.');
 idxb = [1 idx+1];
 idxe = [idx-1 numel(str)];
 spl  = cell(numel(idxb),1);
-for s = 1:numel(idxb),
+for s = 1:numel(idxb)
     spl{s} = str(idxb(s):idxe(s));
 end

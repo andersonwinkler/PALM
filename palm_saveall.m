@@ -482,7 +482,7 @@ if opts.saveunivariate,
             
             % TFCE
             if opts.tfce.uni.do && ...
-                    (all(plm.Yisvol) || all(plm.Yissrf)),
+                    (all(plm.Yisvol) || all(plm.Yissrf)), %#ok<*NOCOL>
                 if opts.designperinput,
                     for c = 1:plm.nC(1),
                         distmax = zeros(plm.nP{1}(c),plm.nY);
@@ -741,12 +741,12 @@ if opts.saveunivariate,
             else
                 pmerged = zeros(sum(plm.nC),sum(plm.Ysiz));
             end
-            j = 1;
             for y = 1:plm.nY,
+                j = 1;
                 if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
-                        pmerged(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
+                        pmerged(j,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
                         j = j + 1;
                     end
                 end
@@ -878,12 +878,12 @@ if opts.saveunivariate,
                     else
                         pmerged = zeros(sum(plm.nC),sum(plm.Ysiz));
                     end
-                    j = 1;
                     for y = 1:plm.nY,
                         if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                        j = 1;
                         for m = loopM,
                             for c = 1:plm.nC(m),
-                                pmerged(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
+                                pmerged(j,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gtfcepperm{y}{m}{c};
                                 j = j + 1;
                             end
                         end

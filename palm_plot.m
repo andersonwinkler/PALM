@@ -1,4 +1,4 @@
-function palm_plot(Y,I,X,Z,resol,F)
+function palm_plot(Y,X,I,Z,res,F,opt)
 % Take a vector of data, a design, a constrast, then
 % plots. If the code detects that what the contrasts
 % is testing is an interaction, it constructs
@@ -6,7 +6,7 @@ function palm_plot(Y,I,X,Z,resol,F)
 %
 % Usage:
 %
-% palm_plot(data,design,contrast,res)
+% palm_plot(data,design,contrast,res,F,opt)
 %
 % - Y        : Data.
 % - X        : Main effects (up to 3 colums, of which
@@ -17,9 +17,14 @@ function palm_plot(Y,I,X,Z,resol,F)
 %              interaction that is to be plotted,
 %              otherwise the effect of the interaction
 %              is washed out.
-% - resol    : Resolution of meshes (for 2-way
+% - res      : Resolution of meshes (for 2-way
 %              interactions between continuous
 %              variables).
+% - F        : (Optional) A struct with fields 'title',
+%              'xlabel', 'ylabel' and 'zlabel', to be
+%              applied to the plot.
+% - opt      : (Optional) Use 'poly22' for a curvy plot
+%              (it won't match the GLM, so don't use).
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -62,41 +67,27 @@ if      size(Y,1) ~= size(X,1) || ...
 else
     N = size(Y,1);
 end
-if ~isstruct(F) && ~isempty(F) && ~isnan(F),
+if exist('F','var') && ~isstruct(F) && ~isempty(F) && ~isnan(F)
     error('F must be a struct.')
 end
-
-% res = 20;
-% N = 100;
-% %A = randn(N,1);
-% %B = randn(N,1);
-% A = vertcat(...
-%     +ones(N/4,1),...
-%     -ones(N/4,1),...
-%     +ones(N/4,1),...
-%     -ones(N/4,1));
-% B = vertcat(...
-%     +ones(N/2,1),...
-%     -ones(N/2,1));
-% C = randn(N,1);
-% D = randn(N,1);
-% I = ones(N,1);
-% Y = 10*(A.*B) + C + D + 3*I + randn(100,1)/10;
-% M = [A B C D A.*B I];
-% C = [0 0 0 0 1 0 ]';
 
 % Model fitting
 b = [I X Z]\Y;
 
 % Residual forming matrix without interaction and without main effects
 Rz = eye(N) - Z*pinv(Z);
-
-switch size(X,2)
+J = size(X,2);
+switch J
     
     case 1
         % This is not an interaction
         figure
-        scatter(Rz*X,Rz*Y)
+        scatter(Rz*X,Rz*Y);
+        if exist('F','var') && isstruct(F)
+            title(F.title);
+            xlabel(F.xlabel);
+            ylabel(F.ylabel);
+        end
         
     case 2
         % This is an interaction of 2 variables
@@ -115,6 +106,11 @@ switch size(X,2)
                 hold('on')
             end
             hold('off');
+            if exist('F','var') && isstruct(F)
+                title(F.title);
+                xlabel(F.xlabel);
+                ylabel(F.ylabel);
+            end
             
         elseif numel(uA)  > 2 && numel(uB) == 2
             % If A is continuous and B has 2 categories
@@ -126,6 +122,11 @@ switch size(X,2)
                 hold('on')
             end
             hold('off');
+            if exist('F','var') && isstruct(F)
+                title(F.title);
+                xlabel(F.xlabel);
+                ylabel(F.ylabel);
+            end
             
         elseif numel(uA) == 2 && numel(uB) == 2
             % If both A and B have 2 categories
@@ -138,30 +139,39 @@ switch size(X,2)
             end
             figure
             bar(X);
+            if exist('F','var') && isstruct(F)
+                title(F.title);
+                xlabel(F.xlabel);
+                ylabel(F.ylabel);
+            end
             
         else
             % if A and B are continuous
             rA = Rz*A;
             rB = Rz*B;
-            [xg,yg] = meshgrid(linspace(min(A),max(A),resol),linspace(min(B),max(B),resol));
             figure
-            mesh(xg,yg,xg.*yg*b(1));
-            hold('on')
-            scatter3(rA,rB,rY,'.');
-            hold('off')
-            if isstruct(F)
+            if isnumeric(opt)
+                [xg,yg] = meshgrid(linspace(min(rA),max(rA),res),linspace(min(rB),max(rB),res));
+                mesh(xg,yg,xg.*yg*b(1)*opt);
+                hold('on')
+                scatter3(rA,rB,rY,'.');
+            elseif ischar(opt) && strcmpi(opt,'poly22')
+                surfit = fit([rA rB],rY,'poly22');
+                plot(surfit,[rA,rB],rY);
+            end
+            if exist('F','var') && isstruct(F)
                 title(F.title);
                 xlabel(F.xlabel);
                 ylabel(F.ylabel);
                 zlabel(F.zlabel);
             end
+            hold('off')
         end
-        
     case 3
         % This is an interaction of 3 variables
-        U  = cell(3,1);
-        nU = zeros(3,1);
-        for j = 1:size(X,2)
+        U  = cell(J,1);
+        nU = zeros(J,1);
+        for j = 1:J
             U{j}  = unique(X(:,j));
             nU(j) = numel(U{j});
         end
@@ -169,7 +179,12 @@ switch size(X,2)
         C = X(:,idxU);
         X(:,idxU) = [];
         U = U{idxU};
-        for u = 1:2
+        for u = 1:numel(U)
+            if isnumeric(opt)
+                optu = sign(U(u));
+            else
+                optu = opt;
+            end
             Yu = Y(C == U(u),:);
             Iu = I(C == U(u),:);
             Xu = X(C == U(u),:);
@@ -177,6 +192,6 @@ switch size(X,2)
             Zu = Z(C == U(u),:);
             Zu(:,any(abs(corr([Iu Xu],Zu)) > 1-10*eps,1)) = [];
             Zu(:,any(triu(abs(corr(Zu)))-eye(size(Zu,2)) > 1-10*eps,2)) = [];
-            palm_plot(Yu,Iu,Xu,Zu,resol,F)
+            palm_plot(Yu,Iu,Xu,Zu,res,F,optu);
         end
 end
