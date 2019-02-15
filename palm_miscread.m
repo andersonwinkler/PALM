@@ -54,11 +54,12 @@ useniiclass = true;
 tmppath     = '/tmp';
 precision   = 'double';
 mz3surf     = false;
-narginchk(1,5)
-if nargin >= 2, useniiclass = varargin{2}; end
-if nargin >= 3, tmppath     = varargin{3}; end
-if nargin >= 4, precision   = varargin{4}; end
-if nargin >= 5, mz3surf     = varargin{5}; end
+narginchk(1,5);
+nA = numel(varargin);
+if nA >= 1, useniiclass = varargin{1}; end
+if nA >= 2, tmppath     = varargin{2}; end
+if nA >= 3, precision   = varargin{3}; end
+if nA >= 4, mz3surf     = varargin{4}; end
 
 % Check if the file actually exists before doing anything else
 if ~ exist(filename,'file')
