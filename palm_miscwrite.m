@@ -176,6 +176,12 @@ switch lower(X.readwith)
         X.filename = horzcat(X.filename,'.mgz');
         save_mgh(X.data,X.filename,X.extra.M,X.extra.mr_parms);
         
+    case 'fs_load_annot'
+        
+        % Write a FreeSurfer annotation file
+        X.filename = horzcat(X.filename,'.annot');
+        write_annotation(X.filename,X.extra.vertices,X.data,X.extra.colortab);
+        
     case 'gifti'
         
         % Write a GIFTI file

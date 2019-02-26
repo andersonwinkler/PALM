@@ -253,52 +253,28 @@ switch lower(fext{end})
             'sulc','thickness','volume'}
         
         % Read a FreeSurfer curvature file
-        extern = palm_checkprogs;
-        if extern.fs
-            X.readwith = 'fs_read_curv';
-            [X.data,X.extra.fnum] = read_curv(X.filename);
-        else
-            error([
-                'FreeSurfer was not found. To use this data, make sure\n' ...
-                'that FreeSurfer is correctly installed and configured, and\n' ...
-                'that your ''FREESURFER_HOME'' environmental variable is\n' ...
-                'properly set.\n' ...
-                'File: %s\n'],X.filename);
-        end
+        X.readwith = 'fs_read_curv';
+        [X.data,X.extra.fnum] = read_curv(X.filename);
         
     case {'inflated','nofix','orig','pial', ...
             'smoothwm','sphere','reg','white','white_reg'}
         
         % Read a FreeSurfer surface file
-        extern = palm_checkprogs;
-        if extern.fs
-            X.readwith = 'fs_read_surf';
-            [X.data.vtx,X.data.fac] = read_surf(X.filename);
-            X.data.fac = X.data.fac + 1;
-        else
-            error([
-                'FreeSurfer was not found. To use this data, make sure\n' ...
-                'that FreeSurfer is correctly installed and configured, and\n' ...
-                'that your ''FREESURFER_HOME'' environmental variable is\n' ...
-                'properly set.\n' ...
-                'File: %s\n'],X.filename);
-        end
+        X.readwith = 'fs_read_surf';
+        [X.data.vtx,X.data.fac] = read_surf(X.filename);
+        X.data.fac = X.data.fac + 1;
         
     case {'mgh','mgz'}
         
         % Read a FreeSurfer MGH/MGZ file
-        extern = palm_checkprogs;
-        if extern.fs
-            X.readwith = 'fs_load_mgh';
-            [X.data,X.extra.M,X.extra.mr_parms,X.extra.volsz] = load_mgh(X.filename);
-        else
-            error([
-                'FreeSurfer was not found. To use this data, make sure\n' ...
-                'that FreeSurfer is correctly installed and configured, and\n' ...
-                'that your ''FREESURFER_HOME'' environmental variable is\n' ...
-                'properly set.\n' ...
-                'File: %s\n'],X.filename);
-        end
+        X.readwith = 'fs_load_mgh';
+        [X.data,X.extra.M,X.extra.mr_parms,X.extra.volsz] = load_mgh(X.filename);
+        
+    case 'annot'
+        
+        % Read a FreeSurfer annotation file
+        X.readwith = 'fs_load_annot';
+        [X.extra.vertices,X.data,X.extra.colortab] = read_annotation(X.filename);
         
     case 'gii'
         
