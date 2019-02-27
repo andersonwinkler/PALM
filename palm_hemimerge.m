@@ -15,10 +15,10 @@ function palm_hemimerge(varargin)
 
 % List of files (with wildcards)
 j = 1;
-for a = 1:nargin,
+for a = 1:nargin
     F = dir(varargin{a});
-    for f = numel(F):-1:1,
-        if F(f).name(1) == '.',
+    for f = numel(F):-1:1
+        if F(f).name(1) == '.'
             F(f) = [];
         else
             Flist{j} = F(f).name;
@@ -31,16 +31,16 @@ Flist = flipud(Flist');
 % Prepare pairs to merge and output names
 F = cell(0,3);
 f = 1;
-for a = numel(Flist):-1:1,
-    if strcmpi(Flist{a}(1:2),'lh'),
-        if ~ any(strcmpi(Flist{a},F(:,1))),
+for a = numel(Flist):-1:1
+    if strcmpi(Flist{a}(1:2),'lh')
+        if ~ any(strcmpi(Flist{a},F(:,1)))
             F{f,1} = Flist{a};
             F{f,2} = strcat('rh',Flist{a}(3:end));
             F{f,3} = strcat('bh',Flist{a}(3:end));
             f = f + 1;
         end
-    elseif strcmpi(Flist{a}(1:2),'rh'),
-        if ~ any(strcmpi(Flist{a},F(:,2))),
+    elseif strcmpi(Flist{a}(1:2),'rh')
+        if ~ any(strcmpi(Flist{a},F(:,2)))
             F{f,1} = strcat('lh',Flist{a}(3:end));
             F{f,2} = Flist{a};
             F{f,3} = strcat('bh',Flist{a}(3:end));
@@ -52,33 +52,33 @@ for a = numel(Flist):-1:1,
 end
 
 % For each valid pair
-for f = 1:size(F,1),
+for f = 1:size(F,1)
     
     fprintf('Working on: %s and %s\n',F{f,1},F{f,2});
     
     % Load L and R
     L = palm_miscread(F{f,1});
     R = palm_miscread(F{f,2});
-    if ~ strcmpi(L.readwith,R.readwith),
+    if ~ strcmpi(L.readwith,R.readwith)
         error('lh and rh must be of the same type and format');
     end
     
     % Prepare data to save
     B = L;
-    switch R.readwith,
-        case {'load','csvread','fs_load_mgh'},
+    switch R.readwith
+        case {'load','csvread','fs_load_mgh'}
             B.data = cat(1,L.data,R.data);
             
-        case 'dpxread',
+        case 'dpxread'
             B.data = cat(1,L.data,R.data);
             B.extra.crd = cat(1,L.extra.crd,R.extra.crd);
-            B.extra.idx = (1:size(B.data,1))';
+            B.extra.idx = (0:size(B.data,1)-1)';
             
-        case {'srfread','fs_read_surf'},
+        case {'srfread','fs_read_surf'}
             B.data.vtx = cat(1,L.data.vtx,R.data.vtx);
             B.data.fac = cat(1,L.data.fac,R.data.fac+size(L.data.vtx,1));
             
-        case 'fs_read_curv',
+        case 'fs_read_curv'
             B.data = cat(1,L.data,R.data);
             B.extra.fnum = L.extra.fnum + R.extra.fnum;
             
@@ -88,7 +88,7 @@ for f = 1:size(F,1),
     
     % Save
     B.filename = F{f,3};
-    if any(strcmpi(B.filename(end-3:end),{'.mgh','.mgz'})),
+    if any(strcmpi(B.filename(end-3:end),{'.mgh','.mgz'}))
         B.filename = B.filename(1:end-4);
     end
     palm_miscwrite(B);

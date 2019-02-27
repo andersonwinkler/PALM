@@ -41,22 +41,22 @@ dpx = varargin{2}(:);
 nX  = numel(dpx);
 
 % Check if all are integers and use appropriate formating
-if all(mod(dpx,1)==0),
+if all(mod(dpx,1)==0)
     fstr = '%d';
 else
     fstr = '%0.10f';
 end
 
-if nargin == 2,
+if nargin == 2
 
     % Organise the data, fill the coords with zeros amd prep to save
     dpx = [(0:nX-1) ; zeros(3,nX) ; dpx'];
 
-elseif nargin == 4,
+elseif nargin == 4
 
     % Organise the coords
     crd = varargin{3};
-    if size(crd,1) > size(crd,2),
+    if size(crd,1) > size(crd,2)
         crd = crd';
     end
 
