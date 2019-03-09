@@ -184,5 +184,3 @@ end
 
 err = 0;
 return;
-
-
