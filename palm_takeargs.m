@@ -1771,7 +1771,7 @@ if opts.evperdat
     % Read input file & select subjects
     for ev = 1:plm.nEVdat
         fprintf('Reading EV per datum %d/%d: %s\n',ev,plm.nEVdat,opts.evdatfile{ev});
-        [plm.EVset{ev},plm.masksEV{ev}] = palm_ready(opts.evdatfile{ev},plm.masksEV{ev},opts,false);
+        [plm.EVset{ev},plm.masksEV{ev}] = palm_ready(opts.evdatfile{ev},plm.masksEV{ev},opts,opts.demean);
         if ~ isempty(plm.subjidx)
             plm.EVset{ev} = plm.EVset{ev}(plm.subjidx,:);
         end
@@ -2032,7 +2032,7 @@ fprintf('Reading design matrix and contrasts.\n');
 if opts.evperdat
     plm.Mset = cell(max(Nd,max(opts.evpos(:,2))),1);
     for m = 1:numel(plm.Mset)
-        plm.Mset{m} = ones(plm.N,1);
+        plm.Mset{m} = zeros(plm.N,1);
     end
 else
     plm.Mset = cell(max(Nd,1),1);
@@ -2621,8 +2621,7 @@ end
 % Remove intercept from the design for the options -demean and -vgdemean
 if opts.demean || opts.vgdemean
     for m = 1:plm.nM
-        tmp = plm.Mset{m};
-        siz = size(tmp);
+        siz = size(plm.Mset{m});
         intercp = all(bsxfun(@eq,reshape(plm.Mset{m}(1,:),[1 siz(2:end)]),plm.Mset{m}),1);
         if any(intercp)
             for c = 1:plm.nC(m)
