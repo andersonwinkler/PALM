@@ -25,7 +25,6 @@ function [opts,plm] = palm_takeargs(varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-global opts plm
 % Load the defaults
 opts = palm_defaults;
 
