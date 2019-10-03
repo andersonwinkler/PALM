@@ -25,6 +25,7 @@ function [opts,plm] = palm_takeargs(varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+global opts plm
 % Load the defaults
 opts = palm_defaults;
 
@@ -1737,8 +1738,13 @@ plm.nmasks = numel(plm.masks);
 plm.nY     = numel(plm.Yset); % this is redefined below if opts.inputmv is set.
 
 % Some extra packages for Octave
-if opts.spatial.do && palm_isoctave && any(plm.Yisvol)
-    pkg load image
+if palm_isoctave
+    if opts.spatial.do && any(plm.Yisvol)
+        pkg load image
+    end
+    if opts.accel.lowrank || opts.zstat || opts.corrcon
+        pkg load statistics
+    end
 end
 
 % Read the EV per datum:
@@ -2623,9 +2629,11 @@ if opts.demean || opts.vgdemean
     for m = 1:plm.nM
         siz = size(plm.Mset{m});
         intercp = all(bsxfun(@eq,reshape(plm.Mset{m}(1,:),[1 siz(2:end)]),plm.Mset{m}),1);
+        intercp = any(intercp,numel(siz));
+        intercp(opts.evpos(:,1)) = false;
         if any(intercp)
             for c = 1:plm.nC(m)
-                if any(intercp*plm.Cset{m}{c}~=0,2)
+                if any(intercp.*plm.Cset{m}{c}~=0,2)
                     error([ ...
                         'Contrast %d (and perhaps others) tests the intercept. This means\n' ...
                         'that the options "-demean" and "-vgdemean" cannot be used.\n' ...
@@ -2635,7 +2643,7 @@ if opts.demean || opts.vgdemean
                     plm.Cset{m}{c}(intercp,:) = [];
                 end
             end
-            plm.Mset{m}(:,intercp) = [];
+            plm.Mset{m}(:,intercp,:) = [];
         end
     end
 end

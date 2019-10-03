@@ -26,7 +26,7 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Uncomment the line below for debugging:
-%clear global plm opts; global plm opts;
+clear global plm opts; global plm opts;
 
 % Take the arguments. Save a small log if needed.
 ticI = tic;
@@ -2045,11 +2045,11 @@ for po = P_outer,
                         y = 1;
                         if opts.evperdat,
                             for t = find(yselq)',
-                                M(:,:,t)   = plm.Pset{p}*plm.Rz{y}{m}{c}{o}(:,:,t)*plm.X{y}{m}{c}{o}(:,:,t);
+                                M(:,:,t)   = plm.Pset{p}*plm.Rz{y}{m}{c}{1}(:,:,t)*plm.X{y}{m}{c}{1}(:,:,t);
                                 Q{m}{c}(t) = plm.qfun(plm.Yq{m}{c}(:,:,t),M(:,:,t),opts.ccaorplsparm);
                             end; clear t
                         else
-                            M = plm.Pset{p}*plm.Rz{y}{m}{c}{o}*plm.X{y}{m}{c}{o};
+                            M = plm.Pset{p}*plm.Rz{y}{m}{c}{1}*plm.X{y}{m}{c}{1};
                             for t = find(yselq)',
                                 Q{m}{c}(t) = plm.qfun(plm.Yq{m}{c}(:,:,t),M,opts.ccaorplsparm);
                             end; clear t

@@ -270,10 +270,12 @@ else
 end
 
 % Enforce a certain precision defined by the user:
-if strcmpi(precision,'double')
-    X.data = double(X.data);
-elseif strcmpi(precision,'single')
-    X.data = single(X.data);
+if ~ isstruct(X.data)
+    if strcmpi(precision,'double')
+        X.data = double(X.data);
+    elseif strcmpi(precision,'single')
+        X.data = single(X.data);
+    end
 end
 
 % ==============================================================
