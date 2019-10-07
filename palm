@@ -33,14 +33,15 @@
 WHICH_TO_RUN=1
 
 # If Octave isn't in the path, or to use a specific version, add here the
-# path to the directory that contains the Octave executable binary.
+# path or command that invokes the Octave executable binary.
 # This only has effect if WHICH_TO_RUN above os set as 1.
-OCTAVEPATH=/usr/bin
+OCTAVEBIN=/usr/bin/octave
+#OCTAVEBIN="/usr/bin/flatpak run org.octave.Octave"
 
 # If Matlab isn't in the path, or to use a specific version, add here the
-# path to the directory that contains Matlab executable binary.
+# path or command that invokes the Matlab executable binary.
 # This only has effect if WHICH_TO_RUN above os set as 2.
-MATLABPATH=/opt/r16b/bin/
+MATLABBIN=/opt/r16b/bin/matlab
 
 # If you are intending to run PALM in a cluster, for some environments
 # it may be necessary to change the variable below to 1.
@@ -84,10 +85,10 @@ fi
 # Call either Octave or Matlab depending on the user's choice.
 set -o pipefail
 if [[ ${WHICH_TO_RUN} -eq 1 ]] ; then
-   if [[ ${OCTAVEPATH} == "" ]] || [[ ! -e ${OCTAVEPATH}/octave ]] ; then
+   if [[ ${OCTAVEBIN} == "" ]] ; then #|| [[ $(which $(echo ${OCTAVEBIN} |awk '{print $1}')) ]] ; then
       OCTAVECMD=octave
    else
-      OCTAVECMD=${OCTAVEPATH}/octave
+      OCTAVECMD=${OCTAVEBIN}
    fi
    minver=$(${OCTAVECMD} --version | awk 'NR==1 {print "4.0.0\n" $NF}' | sort -V | head -n 1)
    if [[ "${minver}" != "4.0.0" ]] ; then
@@ -99,10 +100,10 @@ if [[ ${WHICH_TO_RUN} -eq 1 ]] ; then
    ${OCTAVECMD} -q --eval "${RUNCMD}"
    status=$?
 elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
-   if [[ ${MATLABPATH} == "" ]] || [[ ! -e ${MATLABPATH}/matlab ]]; then
+   if [[ ${MATLABBIN} == "" ]] || [[ ! -e ${MATLABBIN} ]]; then
       MATLABCMD=matlab
    else
-      MATLABCMD=${MATLABPATH}/matlab
+      MATLABCMD=${MATLABBIN}
    fi
    if   [[ "$(uname)" == "Darwin" ]] ; then
       SEDOPT="-l"
