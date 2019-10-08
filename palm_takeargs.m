@@ -2244,7 +2244,7 @@ if opts.tonly
                 plm.Cset{m}(c) = [];
                 plm.Dset{m}(c) = [];
                 plm.rC{m}(c)   = [];
-                plm.rC0{m}(c)   = [];
+                plm.rC0{m}(c)  = [];
             end
         end
         plm.nC(m) = numel(plm.Cset{m});
@@ -2257,7 +2257,7 @@ elseif opts.fonly
                 plm.Cset{m}(c) = [];
                 plm.Dset{m}(c) = [];
                 plm.rC{m}(c)   = [];
-                plm.rC0{m}(c)   = [];
+                plm.rC0{m}(c)  = [];
             end
         end
         plm.nC(m) = numel(plm.Cset{m});
@@ -2300,6 +2300,40 @@ for m = 1:plm.nM
                 'Use "-tonly" to run just the t-tests, or remove "-concordant".%s'],'');
         end
     end
+end
+
+% Test the complicated case in which design is rank deficient, with
+% redundant dimensions being equally represented in EVs of interest and in
+% nuisance.
+badcon = cell(plm.nM,1);
+for m = 1:plm.nM
+    badcon{m} = zeros(plm.nC,1);
+    for c = 1:plm.nC(m)
+        [Xgutt,Zgutt] = palm_partition(plm.Mset{m}(:,:,1),plm.Cset{m}{c},'Guttman');
+        cc = palm_cca(Xgutt,Zgutt,0);
+        if cc(1) == 1
+            badcon{m}(c) = sum(cc == 1);
+        end
+    end
+end
+idxbad = vertcat(badcon{:});
+if any(idxbad)
+    badlist = zeros(2,sum(idxbad > 0));
+    j = 1;
+    for m = 1:plm.nM
+        for c = 1:plm.nC(m)
+            if badcon{m}(c)
+                badlist(1,j) = m;
+                badlist(2,j) = c;
+                badlist(3,j) = badcon{m}(c);
+                j = j + 1;
+            end
+        end
+    end
+    badmsg = sprintf('- Design: %d, Contrast: %d, at least %d regressors\n',badlist);
+    error([...
+        'The following contrasts try to test a regressor that is also fully represented\n'...
+        'by the nuisance, but such tests are not possible (rank deficient):\n%s'],badmsg);
 end
 
 % Check if the contrasts have all the same rank for correction over
@@ -2353,7 +2387,7 @@ if ~ opts.cmcx
         opts.cmcx = true;
     end
 end
-if opts.cmcx
+if opts.cmcx % note can't use 'else' here
     plm.seq = cell(plm.nM,1);
     for m = 1:plm.nM
         plm.seq{m} = cell(plm.nC(m),1);
@@ -2397,6 +2431,9 @@ if isempty(opts.eb)
 else
     plm.EB = palm_miscread(opts.eb);
     plm.EB = plm.EB.data;
+    if ~ isempty(plm.subjidx)
+        plm.EB = plm.EB(plm.subjidx,:);
+    end
     if isvector(plm.EB)
         if opts.within && opts.whole % within + whole block shuffling
             plm.EB = [+ones(plm.N,1) +plm.EB(:) (1:plm.N)'];
