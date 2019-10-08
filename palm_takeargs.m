@@ -2302,38 +2302,11 @@ for m = 1:plm.nM
     end
 end
 
-% Test the complicated case in which design is rank deficient, with
-% redundant dimensions being equally represented in EVs of interest and in
-% nuisance.
-badcon = cell(plm.nM,1);
-for m = 1:plm.nM
-    badcon{m} = zeros(plm.nC,1);
-    for c = 1:plm.nC(m)
-        [Xgutt,Zgutt] = palm_partition(plm.Mset{m}(:,:,1),plm.Cset{m}{c},'Guttman');
-        cc = palm_cca(Xgutt,Zgutt,0);
-        if cc(1) == 1
-            badcon{m}(c) = sum(cc == 1);
-        end
-    end
-end
-idxbad = vertcat(badcon{:});
-if any(idxbad)
-    badlist = zeros(2,sum(idxbad > 0));
-    j = 1;
-    for m = 1:plm.nM
-        for c = 1:plm.nC(m)
-            if badcon{m}(c)
-                badlist(1,j) = m;
-                badlist(2,j) = c;
-                badlist(3,j) = badcon{m}(c);
-                j = j + 1;
-            end
-        end
-    end
-    badmsg = sprintf('- Design: %d, Contrast: %d, at least %d regressors\n',badlist);
-    error([...
-        'The following contrasts try to test a regressor that is also fully represented\n'...
-        'by the nuisance, but such tests are not possible (rank deficient):\n%s'],badmsg);
+% Make sure EVs of interest aren't represented also in the nuisance
+% Note that some lines below the same is done for the cases in which 
+% data and design are mean-centered
+if ~ opts.demean && ~ opts.vgdemean && ~ opts.noranktest
+    testrank(plm)
 end
 
 % Check if the contrasts have all the same rank for correction over
@@ -2660,26 +2633,24 @@ if opts.ev4vg
     end
 end
 
-% Remove intercept from the design for the options -demean and -vgdemean
+% Make sure that mean-centering won't damage a contrast that tests the intercept.
 if opts.demean || opts.vgdemean
     for m = 1:plm.nM
-        siz = size(plm.Mset{m});
-        intercp = all(bsxfun(@eq,reshape(plm.Mset{m}(1,:),[1 siz(2:end)]),plm.Mset{m}),1);
-        intercp = any(intercp,numel(siz));
-        intercp(opts.evpos(:,1)) = false;
-        if any(intercp)
-            for c = 1:plm.nC(m)
-                if any(intercp.*plm.Cset{m}{c}~=0,2)
+        for c = 1:plm.nC(m)
+            % The design may be 3D here if -evperdat was used, hence can't
+            % do matrix multiplication of design by contrast
+            for t = 1:size(plm.Cset{m}{c},2)
+                Xtmp = sum(bsxfun(@times,plm.Mset{m},plm.Cset{m}{c}(:,t)'),2);
+                siz  = size(Xtmp);
+                isintercp = all(bsxfun(@eq,reshape(Xtmp(1,:),[1 siz(2:end)]),Xtmp),1);
+                if isintercp
                     error([ ...
-                        'Contrast %d (and perhaps others) tests the intercept. This means\n' ...
-                        'that the options "-demean" and "-vgdemean" cannot be used.\n' ...
+                        'Contrast %d for design %d (and perhaps others) tests the intercept.\n' ...
+                        'This means that the options "-demean" and "-vgdemean" cannot be used.\n' ...
                         'If "-demean" was added to calculate Pearson''s "r" or the "R^2"\n' ...
-                        'note that these statistics cannot be computed for constant variables.%s'],c,'');
-                else
-                    plm.Cset{m}{c}(intercp,:) = [];
+                        'note that these statistics cannot be computed for constant variables.%s'],c,m,'');
                 end
             end
-            plm.Mset{m}(:,intercp,:) = [];
         end
     end
 end
@@ -2716,6 +2687,13 @@ if opts.vgdemean
     end
 end
 
+% Make sure EVs of interest aren't represented also in the nuisance
+% Note that some lines above the same is done for the cases in which there
+% is no mean-centering
+if (opts.demean || opts.vgdemean) && ~ opts.noranktest
+    testrank(plm)
+end
+
 % Number of tests to be selected for the low rank approximation
 if opts.accel.lowrank
     if plm.nVG > 1
@@ -2750,6 +2728,42 @@ if opts.accel.lowrank
 end
 
 % ==============================================================
+function testrank(plm)
+% Test the complicated case in which design is rank deficient, with
+% redundant dimensions being equally represented in EVs of interest and in
+% nuisance.
+badcon = cell(plm.nM,1);
+for m = 1:plm.nM
+    badcon{m} = zeros(plm.nC,1);
+    for c = 1:plm.nC(m)
+        [Xgutt,Zgutt] = palm_partition(plm.Mset{m}(:,:,1),plm.Cset{m}{c},'Guttman');
+        cc = palm_cca(Xgutt,Zgutt,plm.N);
+        if cc(1) == 1
+            badcon{m}(c) = sum(cc == 1);
+        end
+    end
+end
+idxbad = vertcat(badcon{:});
+if any(idxbad)
+    badlist = zeros(2,sum(idxbad > 0));
+    j = 1;
+    for m = 1:plm.nM
+        for c = 1:plm.nC(m)
+            if badcon{m}(c)
+                badlist(1,j) = m;
+                badlist(2,j) = c;
+                badlist(3,j) = badcon{m}(c);
+                j = j + 1;
+            end
+        end
+    end
+    badmsg = sprintf('- Design %d, Contrast %d, at least %d regressors\n',badlist);
+    error([...
+        'The following contrasts try to test regressor(s) also fully represented by\n'...
+        'by nuisance variable(s), but such tests are not possible (rank deficiency):\n%s'],badmsg); %#ok<SPERR>
+end
+
+% ==============================================================
 function checkmiss(A,Afname,N)
 % Check if the missing data indicators are sane.
 for a = 1:size(A,2)
@@ -2772,3 +2786,4 @@ for a = 1:size(A,2)
             '- Column: %d (possibly also others)'],Afname,a);
     end
 end
+
