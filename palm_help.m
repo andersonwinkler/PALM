@@ -293,10 +293,12 @@ fprintf('	have problems and even so, only for small datasets).\n\n');
 
 fprintf('-precision <string> : Precision ("single" or "double") for input files.\n\n');
 
-fprintf('-noranktest : For MV, don''t check the rank of the data before trying to\n');
-fprintf('	compute the multivariate statistics.\n\n');
+fprintf('-noranktest : Don''t test whether the space spanned by effects of interest\n');
+fprintf('	overlaps  with the space spanned by nuisance.\n');
+fprintf('	For multivariate tests (-mv), don''t check the rank of the data before\n');
+fprintf('	trying to compute the statistics.\n\n');
 
-fprintf('-nounivariate : Don''t save univariate resuts.\n\n');
+fprintf('-nounivariate : Don''t save univariate results.\n\n');
 
 fprintf('-nouncorrected : Don''t save uncorrected p-values.\n\n');
 

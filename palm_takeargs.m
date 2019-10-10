@@ -2737,9 +2737,11 @@ for m = 1:plm.nM
     badcon{m} = zeros(plm.nC,1);
     for c = 1:plm.nC(m)
         [Xgutt,Zgutt] = palm_partition(plm.Mset{m}(:,:,1),plm.Cset{m}{c},'Guttman');
-        cc = palm_cca(Xgutt,Zgutt,plm.N);
-        if cc(1) == 1
-            badcon{m}(c) = sum(cc == 1);
+        if size(Zgutt,2) > 0
+            cc = palm_cca(Xgutt,Zgutt,plm.N);
+            if cc(1) == 1
+                badcon{m}(c) = sum(cc == 1);
+            end
         end
     end
 end
