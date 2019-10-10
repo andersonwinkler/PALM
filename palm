@@ -85,7 +85,7 @@ fi
 # Call either Octave or Matlab depending on the user's choice.
 set -o pipefail
 if [[ ${WHICH_TO_RUN} -eq 1 ]] ; then
-   if [[ ${OCTAVEBIN} == "" ]] ; then #|| [[ $(which $(echo ${OCTAVEBIN} |awk '{print $1}')) ]] ; then
+   if [[ ${OCTAVEBIN} == "" ]] || [[ ! -e $(echo ${OCTAVEBIN} |awk '{print $1}') ]] ; then
       OCTAVECMD=octave
    else
       OCTAVECMD=${OCTAVEBIN}
