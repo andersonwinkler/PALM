@@ -2229,10 +2229,22 @@ plm.rD = plm.rC;
 for m = 1:plm.nM
     plm.rC{m} = zeros(plm.nC(m),1);
     plm.rD{m} = plm.rC{m};
-    for c = 1:plm.nC(m)
-        plm.rC{m}(c) = rank(plm.Cset{m}{c});
-        plm.rD{m}(c) = rank(plm.Dset{m}{c});
+    for c = plm.nC(m):-1:1
+        rC = rank(plm.Cset{m}{c});
+        rD = rank(plm.Dset{m}{c});
+        if rC == 0 || rD == 0
+            plm.Cset{m}(c) = [];
+            plm.Dset{m}(c) = [];
+            plm.rC{m}(c)   = [];
+            plm.rD{m}(c)   = [];
+            warning('For design %d, contrast %d has rank 0 and will be removed.',m,c);
+        else
+            plm.rC{m}(c) = rC;
+            plm.rD{m}(c) = rD;
+        end
     end
+    plm.nC(m) = numel(plm.Cset{m});
+    plm.nD(m) = numel(plm.Dset{m});
 end
 plm.rC0 = plm.rC; % the rC can be changed for z-scores, but not rC0.
 
@@ -2734,7 +2746,7 @@ function testrank(plm)
 % nuisance.
 badcon = cell(plm.nM,1);
 for m = 1:plm.nM
-    badcon{m} = zeros(plm.nC,1);
+    badcon{m} = zeros(plm.nC(m),1);
     for c = 1:plm.nC(m)
         [Xgutt,Zgutt] = palm_partition(plm.Mset{m}(:,:,1),plm.Cset{m}{c},'Guttman');
         if size(Zgutt,2) > 0

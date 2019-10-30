@@ -1,4 +1,4 @@
-function [cc,A,B,U,V,W] = palm_cca(varargin)
+function [cc,A,B,U,V,lW] = palm_cca(varargin)
 % Do CCA via QR & SVD.
 %
 % Usage:
@@ -23,7 +23,7 @@ function [cc,A,B,U,V,W] = palm_cca(varargin)
 % cc       : Canonical correlations.
 % A and B  : Canonical coefficients.
 % U and V  : Canonical variables.
-% W        : Wilks' lambda.
+% W        : Log of Wilks' lambda.
 %
 % U=X*A and V=Y*B. such that each pair of columns in U and V
 % are maximally correlated, under the orthonality constraint.
@@ -56,16 +56,18 @@ end
 
 % Mean center if needed:
 if df == 0
-    X = X - mean(X);
-    Y = Y - mean(Y);
+    X  = X - mean(X);
+    Y  = Y - mean(Y);
     df = size(X,1) - 1;
 end
 
 % Do the CCA proper:
 [Qx,Rx,iX] = qr(X,0);
 [Qy,Ry,iY] = qr(Y,0);
-k  = min(size(X,2),size(Y,2));
-[L,D,M] = svd(Qx'*Qy,0);
+%Px = palm_idx2perm(iX');
+%Py = palm_idx2perm(iY');
+k  = min(rank(X),rank(Y));
+[L,D,M] = svds(Qx'*Qy,k);
 
 % Canonical correlations:
 cc = min(max(diag(D(:,1:k))',0),1);
@@ -76,6 +78,8 @@ if nargout > 1
     B  = Ry\M(:,1:k)*sqrt(df);
     A(iX,:) = A;
     B(iY,:) = B;
+%    A  = Rx*Px\L(:,1:k)*sqrt(df);
+%    B  = Ry*Py\M(:,1:k)*sqrt(df);
 end
 
 % Canonical variables:
@@ -87,5 +91,5 @@ end
 % Wilks' lambda:
 if nargout > 5
     lW = -fliplr(cumsum(fliplr(log(1-cc.^2))));
-    W  = 10.^-lW;
+    %W  = 10.^-lW;
 end
