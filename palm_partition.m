@@ -90,19 +90,30 @@ switch lower(meth)
         rM    = rank(M(:,:,ceil(size(M,3)/2)));
         rZ    = rM - rC;
         pinvC = pinv(C');
-        C0    = eye(size(M,2)) - C*pinv(C);
-        for t = 1:size(M,3)
-            if t == 1
-                X = zeros(size(M,1),size(pinvC,2),size(M,3));
-                Z = zeros(size(M,1),rZ,size(M,3));
+        if rZ > 0
+            C0    = eye(size(M,2)) - C*pinv(C);
+            for t = 1:size(M,3)
+                if t == 1
+                    X = zeros(size(M,1),size(pinvC,2),size(M,3));
+                    Z = zeros(size(M,1),rZ,size(M,3));
+                end
+                tmpX = M(:,:,t)*pinvC;
+                [tmpZ,~,~]  = svd(M(:,:,t)*C0);
+                Z(:,:,t) = tmpZ(:,1:rZ);
+                X(:,:,t) = tmpX-Z(:,:,t)*pinv(Z(:,:,t))*tmpX;
             end
-            tmpX = M(:,:,t)*pinvC;
-            [tmpZ,~,~]  = svd(M(:,:,t)*C0);
-            Z(:,:,t) = tmpZ(:,1:rZ);
-            X(:,:,t) = tmpX-Z(:,:,t)*pinv(Z(:,:,t))*tmpX;
+            eCm = vertcat(eye(size(X,2)),...
+                zeros(size(Z,2),size(X,2)));
+        else
+            for t = 1:size(M,3)
+                if t == 1
+                    X = zeros(size(M,1),size(pinvC,2),size(M,3));
+                    Z = zeros(size(M,1),rZ,size(M,3));
+                end
+                X = M(:,:,t)*pinvC;
+            end
+            eCm = eye(size(X,2));
         end
-        eCm = vertcat(eye(size(X,2)),...
-            zeros(size(Z,2),size(X,2)));
         
     case 'none' % works for evperdat (3D)
         X     = M;

@@ -6,7 +6,7 @@ function palm_plot(Y,X,I,Z,res,F,opt)
 %
 % Usage:
 %
-% palm_plot(data,design,contrast,res,F,opt)
+% palm_plot(Y,X,I,Z,res,F,opt)
 %
 % - Y        : Data.
 % - X        : Main effects (up to 3 colums, of which
@@ -155,15 +155,26 @@ switch J
             
         elseif numel(uA) == 2 && numel(uB) == 2
             % If both A and B have 2 categories
-            X = zeros(2,2);
+            X   = zeros(2,2);
+            seX = X;
             for ua = 1:numel(uA)
                 for ub = 1:numel(uB)
                     idx = A == uA(ua) & B == uB(ub);
-                    X(ua,ub) = mean(rY(idx));
+                    X(ua,ub) = mean(rY(idx)); % Mean for each category
+                    seX(ua,ub) = std(rY(idx))/sqrt(sum(idx)); % Std Error for each category
                 end
             end
             figure
-            bar(X);
+            bar(X); hold on
+            ngroups = size(X,1);
+            nbars = size(X,2);
+            % Calculating the width for each bar group
+            groupwidth = min(0.8, nbars/(nbars + 1.5));
+            for b = 1:nbars
+                xpos = (1:ngroups) - groupwidth/2 + (2*b-1) * groupwidth / (2*nbars);
+                errorbar(xpos,X(:,b),seX(:,b),'.','Color',[0 0 0]);
+            end
+            hold off
             if exist('F','var') && isstruct(F)
                 title(F.title);
                 xlabel(F.xlabel);
