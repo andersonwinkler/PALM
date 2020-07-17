@@ -1419,29 +1419,54 @@ for po = P_outer,
                             end
                             
                             % Save COPE and VARCOPE if requested (option -saveglm)
-                            if p == 1 && opts.saveglm && plm.rC0{m}(c) == 1,
+                            if p == 1 && opts.saveglm,
                                 o     = 1;
-                                cope  = plm.eC{y}{m}{c}{o}'*psi;
-                                sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
-                                cohen = cope./sigsq.^.5;
-                                cfvar = 1./cohen;
-                                if opts.evperdat,
-                                    MtM = zeros(1,size(psi,2));
-                                    for t = 1:size(psi,2),
-                                        MtM(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
+                                if plm.rC0{m}(c) == 1,
+                                    cope  = plm.eC{y}{m}{c}{o}'*psi;
+                                    sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
+                                    cohen = cope./sigsq.^.5;
+                                    cfvar = 1./cohen;
+                                    if opts.evperdat,
+                                        MtM = zeros(1,size(psi,2));
+                                        for t = 1:size(psi,2),
+                                            MtM(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
+                                        end
+                                        varcope = MtM .* sigsq;
+                                    else
+                                        varcope = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o} * sigsq;
                                     end
-                                    varcope = MtM .* sigsq;
+                                    palm_quicksave(cope,0,opts,plm,y,m,c, ...
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},'_cope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                                    palm_quicksave(varcope,0,opts,plm,y,m,c, ...
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},'_varcope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                                    palm_quicksave(cohen,0,opts,plm,y,m,c, ...
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},'_cohen',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                                    palm_quicksave(cfvar,0,opts,plm,y,m,c, ...
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},'_cfvar',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 else
-                                    varcope = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o} * sigsq;
+                                    cope  = plm.eC{y}{m}{c}{o}'*psi;
+                                    cope  = cope'*cope;
+                                    sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
+                                    cohen = cope./sigsq;
+                                    cfvar = 1./cohen.^.5;
+                                    if opts.evperdat,
+                                        MtM = zeros(1,size(psi,2));
+                                        for t = 1:size(psi,2),
+                                            MtM(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
+                                        end
+                                        varcope = MtM .* sigsq;
+                                    else
+                                        varcope = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o} * sigsq;
+                                    end
+                                    palm_quicksave(cope,0,opts,plm,y,m,c, ...
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},'_cope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                                    palm_quicksave(varcope,0,opts,plm,y,m,c, ...
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},'_varcope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                                    palm_quicksave(cohen,0,opts,plm,y,m,c, ...
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},'_cohenf2',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
+                                    palm_quicksave(cfvar,0,opts,plm,y,m,c, ...
+                                        sprintf('%s',opts.o,plm.Ykindstr{y},'_cfvar',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 end
-                                palm_quicksave(cope,0,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,plm.Ykindstr{y},'_cope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
-                                palm_quicksave(varcope,0,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,plm.Ykindstr{y},'_varcope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
-                                palm_quicksave(cohen,0,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,plm.Ykindstr{y},'_cohen',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
-                                palm_quicksave(cfvar,0,opts,plm,y,m,c, ...
-                                    sprintf('%s',opts.o,plm.Ykindstr{y},'_cfvar',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 clear('cope','varcope','cohen','cfvar','o');
                             end
                             
