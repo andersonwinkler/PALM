@@ -55,12 +55,12 @@ function [unsrtR,S,srtR] = palm_competitive(X,ord,mod)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Check inputs
-if nargin < 1 || nargin > 3,
+if nargin < 1 || nargin > 3
     error('Incorrect number of arguments.');
-elseif nargin == 1,
+elseif nargin == 1
     ord = 'ascend';
     mod = false;
-elseif nargin == 2,
+elseif nargin == 2
     mod = false;
 end
 
@@ -71,10 +71,10 @@ end
 % unmodified descending, whereas the modified
 % descending uses the modified ascending, hence
 % the need to "reverse" the inputs below.
-if mod,
-    if strcmpi(ord,'ascend'),
+if mod
+    if strcmpi(ord,'ascend')
         ord = 'descend';
-    elseif strcmpi(ord,'descend'),
+    elseif strcmpi(ord,'descend')
         ord = 'ascend';
     end
 end
@@ -85,54 +85,59 @@ unsrtR  = single(zeros(size(X)));
 [S,tmp] = sort(X,ord);
 [~,rev] = sort(tmp);
 srtR = repmat((1:nR)',[1 nC]);
-for c = 1:nC, % loop over columns
+for c = 1:nC % loop over columns
 
     % Check for +Inf and -Inf and replace them
     % for a value just higher or smaller than
     % the max or min, respectively.
     infpos = isinf(S(:,c)) & S(:,c) > 0;
     infneg = isinf(S(:,c)) & S(:,c) < 0;
-    if any(infpos),
+    if all(infpos | infneg)
+        error(['Data cannot be sorted. Maximum statistic is +Inf or -Inf\n', ...
+            'for all permutations. Make sure that the input data, design\n', ...
+            'and contrasts are meaningful.%s'],'');
+    end
+    if any(infpos)
         S(infpos,c) = max(S(~infpos,c)) + 1;
     end
-    if any(infneg),
+    if any(infneg)
         S(infneg,c) = min(S(~infneg,c)) - 1;
     end
     
     % Do the actual sorting, checking for obnoxious NaNs
     dd = diff(S(:,c));
-    if any(isnan(dd)),
+    if any(isnan(dd))
         error(['Data cannot be sorted. Check for NaNs that might be present,\n', ...
             'or precision issues that may cause over/underflow.\n', ...
             'If you are using "-approx tail", consider adding "-nouncorrected".%s'],'');
     end
     f = find([false; ~logical(dd)]);
-    for pos = 1:numel(f),
+    for pos = 1:numel(f)
         srtR(f(pos),c) = srtR(f(pos)-1,c);
     end
     unsrtR(:,c) = single(srtR(rev(:,c),c)); % original order as the data
     
     % Put the infinities back
-    if any(infpos),
+    if any(infpos)
         S(infpos,c) = +Inf;
     end
-    if any(infneg),
+    if any(infneg)
         S(infneg,c) = -Inf;
     end
 end
 
 % Prepare the outputs for the modified rankings, i.e.,
 % flip the sorted values and ranks
-if mod,
+if mod
     
     % Do the actual modification
     unsrtR = nR - unsrtR + 1;
     
     % Flip outputs
-    if nargout >= 2,
+    if nargout >= 2
         S = flipud(S);
     end
-    if nargout == 3,
+    if nargout == 3
         srtR = flipud(nR - srtR + 1);
     end
 end

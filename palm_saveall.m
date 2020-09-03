@@ -40,7 +40,7 @@ end
 if opts.accel.noperm,
     if opts.saveunivariate,
         for y = 1:plm.nY,
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     palm_quicksave(plm.G{y}{m}{c},0,opts,plm,y,m,c, ...
@@ -65,7 +65,7 @@ end
 fprintf('Computing p-values.\n');
 if opts.saveuncorrected,
     for y = 1:plm.nY,
-        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+        if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
         for m = loopM,
             for c = 1:plm.nC(m),
                 if opts.accel.negbin,
@@ -88,7 +88,7 @@ if opts.saveuncorrected,
     end
     if opts.tfce.uni.do,
         for y = 1:plm.nY,
-            if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     if opts.accel.tail,
@@ -108,7 +108,7 @@ if opts.saveuncorrected,
     end
     if opts.NPC,
         if opts.npcmod && ~ opts.npccon,
-            if opts.designperinput, loopM = 1; else loopM = 1:plm.nM; end
+            if opts.designperinput, loopM = 1; else, loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
                     if opts.accel.tail,
@@ -216,7 +216,7 @@ end
 if opts.saveunivariate,
     fprintf('Saving p-values (uncorrected, and corrected within modality and within contrast).\n');
     for y = 1:plm.nY,
-        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+        if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
         for m = loopM,
             for c = 1:plm.nC(m),
                 
@@ -743,7 +743,7 @@ if opts.saveunivariate,
             end
             for y = 1:plm.nY,
                 j = 1;
-                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         pmerged(j,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)) = plm.Gpperm{y}{m}{c};
@@ -753,7 +753,7 @@ if opts.saveunivariate,
             end
             pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
             for y = 1:plm.nY,
-                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
@@ -773,7 +773,7 @@ if opts.saveunivariate,
             end
             j = 1;
             for y = 1:plm.nY,
-                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         distmax(:,j) = plm.Gmax{y}{m}{c};
@@ -783,7 +783,7 @@ if opts.saveunivariate,
             end
             distmax = max(distmax,[],2);
             for y = 1:plm.nY,
-                if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                 for m = loopM,
                     for c = 1:plm.nC(m),
                         if opts.accel.tail,
@@ -809,7 +809,7 @@ if opts.saveunivariate,
                 end
                 j = 1;
                 for y = 1:plm.nY,
-                    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                    if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                     for m = loopM,
                         for c = 1:plm.nC(m),
                             distmax(:,j) = plm.Gclumax{y}{m}{c};
@@ -819,7 +819,7 @@ if opts.saveunivariate,
                 end
                 distmax = max(distmax,[],2);
                 for y = 1:plm.nY,
-                    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                    if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                     for m = loopM,
                         for c = 1:plm.nC(m),
                             if opts.accel.tail,
@@ -846,7 +846,7 @@ if opts.saveunivariate,
                 end
                 j = 1;
                 for y = 1:plm.nY,
-                    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                    if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                     for m = loopM,
                         for c = 1:plm.nC(m),
                             distmax(:,j) = plm.Gtfcemax{y}{m}{c};
@@ -856,7 +856,7 @@ if opts.saveunivariate,
                 end
                 distmax = max(distmax,[],2);
                 for y = 1:plm.nY,
-                    if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                    if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                     for m = loopM,
                         for c = 1:plm.nC(m),
                             if opts.accel.tail,
@@ -879,7 +879,7 @@ if opts.saveunivariate,
                         pmerged = zeros(sum(plm.nC),sum(plm.Ysiz));
                     end
                     for y = 1:plm.nY,
-                        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                        if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                         j = 1;
                         for m = loopM,
                             for c = 1:plm.nC(m),
@@ -890,7 +890,7 @@ if opts.saveunivariate,
                     end
                     pfdradj = reshape(fastfdr(pmerged(:)),size(pmerged));
                     for y = 1:plm.nY,
-                        if opts.designperinput, loopM = y; else loopM = 1:plm.nM; end
+                        if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
                         for m = loopM,
                             for c = 1:plm.nC(m),
                                 palm_quicksave(pfdradj(c,plm.Ycumsiz(y)+1:plm.Ycumsiz(y+1)),1,opts,plm,y,m,c, ...
@@ -907,9 +907,9 @@ end
 % Save NPC between modalities, corrected within contrasts
 if opts.npcmod && ~ opts.npccon,
     fprintf('Saving p-values for NPC between modalities (uncorrected and corrected within contrasts).\n');
-    if opts.designperinput, loopM = 1; else loopM = 1:plm.nM; end
+    if opts.designperinput, loopM = 1; else, loopM = 1:plm.nM; end
     for m = loopM,
-        if opts.designperinput, mstr = ''; else mstr = plm.mstr{m}; end
+        if opts.designperinput, mstr = ''; else, mstr = plm.mstr{m}; end
         for c = 1:plm.nC(m),
             
             % NPC p-value
@@ -1017,7 +1017,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     fprintf('Saving p-values for NPC between modalities (corrected across contrasts).\n');
     
     % FWER correction (non-spatial stats)
-    if opts.designperinput, loopM = 1; else loopM = 1:plm.nM; end
+    if opts.designperinput, loopM = 1; else, loopM = 1:plm.nM; end
     distmax = zeros(plm.nP{1}(1),sum(plm.nC));
     j = 1;
     for m = loopM,
@@ -1028,7 +1028,7 @@ if opts.npcmod && ~ opts.npccon && opts.corrcon,
     end
     distmax = max(distmax,[],2);
     for m = loopM,
-        if opts.designperinput, mstr = ''; else mstr  = plm.mstr{m}; end
+        if opts.designperinput, mstr = ''; else, mstr  = plm.mstr{m}; end
         for c = 1:plm.nC(m),
             if opts.accel.tail,
                 Ptosave = palm_pareto(plm.T{m}{c},distmax,plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
@@ -1513,7 +1513,7 @@ if ( opts.MV || opts.CCA || opts.PLS) && opts.corrcon,
                 j = j + 1;
             end
         end
-        if plm.mvrev{m}{c}, mvextr = @min; else mvextr = @max; end
+        if plm.mvrev{m}{c}, mvextr = @min; else, mvextr = @max; end
         distmax = mvextr(distmax,[],2);
         for m = 1:plm.nM,
             for c = 1:plm.nC(m),

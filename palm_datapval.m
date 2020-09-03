@@ -47,7 +47,7 @@ function pvals = palm_datapval(G,Gvals,rev)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-if rev, % if small G are significant
+if rev % if small G are significant
     
     % Sort the data and compute the empirical distribution
     [~,cdfG,distp] = palm_competitive(Gvals(:),'ascend',true);
@@ -56,7 +56,7 @@ if rev, % if small G are significant
     
     % Convert the data to p-values
     pvals = zeros(size(G));
-    for g = 1:numel(cdfG),
+    for g = 1:numel(cdfG)
         pvals(G >= cdfG(g)) = distp(g);
     end
     pvals(G > cdfG(end)) = 1;
@@ -70,7 +70,7 @@ else % if large G are significant (typical case)
     
     % Convert the data to p-values
     pvals = zeros(size(G));
-    for g = numel(cdfG):-1:1,
+    for g = numel(cdfG):-1:1
         pvals(G <= cdfG(g)) = distp(g);
     end
     pvals(G > cdfG(end)) = 0;
