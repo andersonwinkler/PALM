@@ -8,7 +8,7 @@ function this = gifti(varargin)
 % Copyright (C) 2008 Wellcome Trust Centre for Neuroimaging
 
 % Guillaume Flandin
-% $Id: gifti.m 7037 2017-03-15 11:45:13Z guillaume $
+% $Id: gifti.m 7621 2019-06-20 16:58:59Z guillaume $
 
 switch nargin
     
@@ -31,6 +31,11 @@ switch nargin
                         struct('type','.','subs',ff{ia(i)}),...
                         varargin{1}.(c{i}));
                 end
+                if isfield(varargin{1},'mat')
+                    this = subsasgn(this,...
+                        struct('type','.','subs','mat'),...
+                        varargin{1}.mat);
+                end
             elseif isempty(setxor(fieldnames(varargin{1}),...
                     {'metadata','label','data'}))
                 this = class(varargin{1},'gifti');
@@ -41,7 +46,7 @@ switch nargin
         elseif ishandle(varargin{1})
             this = struct('vertices',get(varargin{1},'Vertices'), ...
                           'faces',   get(varargin{1},'Faces'));
-            if ~isempty(get(varargin{1},'FaceVertexCData'));
+            if ~isempty(get(varargin{1},'FaceVertexCData'))
                   this.cdata = get(varargin{1},'FaceVertexCData');
             end
             this = gifti(this);
@@ -76,8 +81,10 @@ switch nargin
                 catch
                     error('[GIFTI] Loading of file %s failed.', varargin{1});
                 end
-            elseif strcmpi(e,'.asc') || strcmpi(e,'.srf')
-                this = read_freesurfer_file(varargin{1});
+            elseif ismember(lower(e),{'.asc','.srf','.mgh','.mgz','.pial',...
+                    '.white','.inflated','.nofix','.orig','.smoothwm',...
+                    '.sphere','.reg','.surf','.curv','.area','.sulc'})
+                this = freesurfer_read(varargin{1});
                 this = gifti(this);
             elseif strcmpi(e,'.vtk')
                 this = mvtk_read(varargin{1});
@@ -85,8 +92,17 @@ switch nargin
             elseif strcmpi(e,'.obj')
                 this = obj_read(varargin{1});
                 this = gifti(this);
+            elseif strcmpi(e,'.ply')
+                this = ply_read(varargin{1});
+                this = gifti(this);
+            elseif strcmpi(e,'.stl')
+                this = stl_read(varargin{1});
+                this = gifti(this);
+            elseif strcmpi(e,'.mz3')
+                this = mz3_read(varargin{1});
+                this = gifti(this);
             else
-                this = read_gifti_file(varargin{1},giftistruct);
+                this = gifti_read(varargin{1},giftistruct);
                 this = class(this,'gifti');
             end
             
