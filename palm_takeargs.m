@@ -2608,6 +2608,11 @@ if opts.removevgbysize > 0
     for m = 1:plm.nM
         plm.Mset{m} = plm.Mset{m}(idx,:);
     end
+    for m = 1:plm.nM
+        for c = 1:plm.nC(m)
+            plm.seq{m}{c} = plm.seq{m}{c}(idx,:);
+        end
+    end
     plm.N = sum(idx);
     [tmp,~,plm.VG] = unique(plm.VG(idx));
     plm.nVG = numel(tmp);
