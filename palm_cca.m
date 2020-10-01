@@ -72,7 +72,7 @@ k  = min(rank(X),rank(Y));
 % Canonical correlations:
 cc = min(max(diag(D(:,1:k))',0),1);
 
-% Canonical coefficients (loadings):
+% Canonical coefficients (canonical weights):
 if nargout > 1
     A  = Rx\L(:,1:k)*sqrt(df);
     B  = Ry\M(:,1:k)*sqrt(df);
