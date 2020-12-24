@@ -1423,7 +1423,7 @@ for po = P_outer,
                                 o     = 1;
                                 if plm.rC0{m}(c) == 1,
                                     cope  = plm.eC{y}{m}{c}{o}'*psi;
-                                    Xr    = range(M*C);
+                                    Xr    = range(vertcat(M*plm.eC{y}{m}{c}{o},0));
                                     sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
                                     cohen = cope*Xr./sigsq.^.5;
                                     cfvar = 1./cohen;
