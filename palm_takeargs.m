@@ -1622,6 +1622,10 @@ end
 if ~ isempty(opts.subjidx)
     plm.subjidx = palm_miscread(opts.subjidx);
     plm.subjidx = round(plm.subjidx.data);
+    u = unique(plm.subjidx);
+    if numel(u) == 1
+        error('Subject indices are all identical in the -subjidx file.');
+    end
 end
 
 % Read and organise the data.
