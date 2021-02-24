@@ -192,6 +192,12 @@ switch lower(fext{end})
         X.readwith = 'srfread';
         [X.data.vtx,X.data.fac] = palm_srfread(X.filename);
         
+    case 'obj'
+        
+        % Read a Wavefront file
+        X.readwith = 'wavefront';
+        [X.data.vtx,X.data.fac,X.extra] = palm_objread(X.filename);
+        
     case 'mz3'
         
         % Read a MZ3 file
