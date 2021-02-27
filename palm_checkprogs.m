@@ -83,5 +83,8 @@ if isempty(palm_extern),
     addpath(fullfile(palm_extern.palmpath,'fileio'));
     addpath(fullfile(palm_extern.palmpath,'fileio','extras'));
     addpath(fullfile(palm_extern.palmpath,'fileio','freesurfer'));
+    
+    % Add the path to some additional colour maps
+    addpath(fullfile(palm_extern.palmpath,'colourmaps'));
 end
 ext = palm_extern;
