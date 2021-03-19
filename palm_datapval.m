@@ -8,7 +8,7 @@ function pvals = palm_datapval(G,Gvals,rev)
 % pvals = palm_datapval(G,Gvals,rev)
 %
 % Inputs:
-% G     : Vector of Nx1 statistics to be converted to p-values
+% G     : Array of statistics to be converted to p-values
 % Gvals : A Mx1 vector of observed values for the same statistic
 %         from which the empirical cdf is build and p-values
 %         obtained. It doesn't have to be sorted.
