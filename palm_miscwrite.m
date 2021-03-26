@@ -115,10 +115,14 @@ switch lower(X.readwith)
     case 'fs_load_nifti'
         
         % Write NIFTI with FreeSurfer
-        X.filename = horzcat(X.filename,'.nii.gz');
-        X.extra.hdr.vol = X.data;
-        X.extra.hdr.datatype = 64; % for now, save everything as double
-        X.extra.hdr.bitpix = 64; % for now, save everything as double
+        X.filename            = horzcat(X.filename,'.nii.gz');
+        X.extra.hdr.vol       = X.data;
+        X.extra.hdr.datatype  = 64; % for now, save everything as double
+        X.extra.hdr.bitpix    = 64; % for now, save everything as double
+        X.extra.hdr.scl_inter = 0; % ideally we'd rescale X.data based on the current scl_slope and scl_intercept. However, this introduces unneccessary rounding errors
+        X.extra.hdr.scl_slope = 1;
+        X.extra.hdr.cal_max   = max(X.data(:));
+        X.extra.hdr.cal_min   = min(X.data(:));
         save_nifti(X.extra.hdr,X.filename);
         
     case 'fsl_read_avw'

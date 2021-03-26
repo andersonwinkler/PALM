@@ -127,7 +127,14 @@ switch subs(1).type
                             this.data{n}.attributes.Dim = size(A);
                         end
                     else
-                        error('Syntax not implemented.');
+                        if numel(n) == size(A,2)
+                            for i=n(:)'
+                                this.data{i}.data = single(A(:,i));
+                                this.data{i}.attributes.Dim = size(this.data{i}.data);
+                            end
+                        else
+                            error('Syntax not implemented.');
+                        end
                     end
                 end
         end
