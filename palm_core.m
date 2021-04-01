@@ -1446,7 +1446,7 @@ for po = P_outer,
                                         sprintf('%s',opts.o,plm.Ykindstr{y},'_cfvar',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                                 else
                                     cope  = plm.eC{y}{m}{c}{o}'*psi;
-                                    cope  = cope'*cope;
+                                    cope  = sqrt(mean(cope.^2,1));
                                     sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
                                     cohen = cope./sigsq;
                                     cfvar = 1./cohen.^.5;
@@ -1457,7 +1457,8 @@ for po = P_outer,
                                         end
                                         varcope = MtM .* sigsq;
                                     else
-                                        varcope = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o} * sigsq;
+%                                        varcope = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o} * sigsq;
+                                        varcope = zeros(size(cope));
                                     end
                                     palm_quicksave(cope,0,opts,plm,y,m,c, ...
                                         sprintf('%s',opts.o,plm.Ykindstr{y},'_cope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));

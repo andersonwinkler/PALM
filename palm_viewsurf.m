@@ -132,9 +132,6 @@ end
 if ~ ischar(opts.title)
     error('The supplied Title must be a string.');
 end
-if ~ any(strcmpi(opts.layout,{'simple','cardinal','left','right','strip','publication','worsley'}))
-    error('Unknown Layout style: %s',opts.layout);
-end
 if ~ islogical(opts.camlight)
     error('The CamLight option must be a logical type (i.e., true/false).');
 end
@@ -360,6 +357,64 @@ switch opts.layout
             srf{2}.data.fac,...
             srf{2}.data.vtx(:,1),srf{2}.data.vtx(:,2),srf{2}.data.vtx(:,3),...
             dat{2}.data,...
+            'EdgeColor','None');
+        view(90,0);
+        useopts(opts,fighandle);
+        
+        % Second panel (right medial view)
+        ax(2) = axes('Position',[0.525 0.025 w h]);
+        trisurf(...
+            srf{2}.data.fac,...
+            srf{2}.data.vtx(:,1),srf{2}.data.vtx(:,2),srf{2}.data.vtx(:,3),...
+            dat{2}.data,...
+            'EdgeColor','None');
+        view(-90,0);
+        useopts(opts,fighandle);
+
+        % This mode has no colourbar
+        opts.colourbar = false;
+        
+    case 'lateral'
+
+        % Auxiliary variables for the sizes of each panel
+        h = 0.95;
+        w = 0.45;
+        
+        % First panel (left lateral view)
+        ax(1) = axes('Position',[0.025 0.025 w h]);
+        trisurf(...
+            srf{1}.data.fac,...
+            srf{1}.data.vtx(:,1),srf{1}.data.vtx(:,2),srf{1}.data.vtx(:,3),...
+            dat{1}.data,...
+            'EdgeColor','None');
+        view(-90,0);
+        useopts(opts,fighandle);
+        
+        % Second panel (right lateral view)
+        ax(2) = axes('Position',[0.525 0.025 w h]);
+        trisurf(...
+            srf{2}.data.fac,...
+            srf{2}.data.vtx(:,1),srf{2}.data.vtx(:,2),srf{2}.data.vtx(:,3),...
+            dat{2}.data,...
+            'EdgeColor','None');
+        view(90,0);
+        useopts(opts,fighandle);
+
+        % This mode has no colourbar
+        opts.colourbar = false;
+        
+    case 'medial'
+        
+        % Auxiliary variables for the sizes of each panel
+        h = 0.95;
+        w = 0.45;
+        
+        % First panel (left medial view)
+        ax(1) = axes('Position',[0.025 0.025 w h]);
+        trisurf(...
+            srf{1}.data.fac,...
+            srf{1}.data.vtx(:,1),srf{1}.data.vtx(:,2),srf{1}.data.vtx(:,3),...
+            dat{1}.data,...
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
@@ -612,6 +667,9 @@ switch opts.layout
         % This layout always includes a colourbar
         cb = colorbar('Location','South');
         set(cb,'Position',[0.35 0.085 0.3 0.03]);
+        
+    otherwise
+        error('Unknown Layout style: %s',opts.layout);
 end
 
 % Deal with the colour limits
