@@ -1,8 +1,6 @@
 function palm_plot(Y,X,I,Z,res,F,opt)
-% Take a vector of data, a design, a constrast, then
-% plots. If the code detects that what the contrasts
-% is testing is an interaction, it constructs
-% interaction plots.
+% Take a vector of data, regressors from a design, then
+% make an interaction plot.
 %
 % Usage:
 %
