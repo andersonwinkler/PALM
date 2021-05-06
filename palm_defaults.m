@@ -27,7 +27,7 @@ function opts = palm_defaults
 
 % Define some defaults and organise all as a struct
 opts.o                   = 'palm';             % Default output string.
-opts.nP0                 = 10000;              % Number of permutations
+opts.nP0                 = 12000;              % Number of permutations
 opts.lx                  = true;               % Lexicographic permutations?
 opts.cmcp                = false;              % Use Conditional Monte Carlo (ignore repeated perms)?
 opts.cmcx                = false;              % Use Conditional Monte Carlo (ignore repeated elements in X)?
