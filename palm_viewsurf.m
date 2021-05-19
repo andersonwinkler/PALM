@@ -87,7 +87,7 @@ function fighandle = palm_viewsurf(varargin)
 %     fullfile(freesurfer_dir,'subjects','fsaverage','surf','lh.pial'), ...
 %     fullfile(freesurfer_dir,'subjects','fsaverage','surf','rh.pial') };
 % palm_viewsurf(data,surfs,'layout','cardinal','background',[.5 .5 .5],'colormap','inferno');
-% An
+% 
 % _____________________________________
 % Anderson M. Winkler
 % National Institutes of Health
@@ -373,14 +373,14 @@ switch opts.layout
 
         % This mode has no colourbar
         opts.colourbar = false;
-        
-    case 'lateral'
 
+    case 'leftlateral'
+        
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
-        w = 0.45;
+        w = 0.95;
         
-        % First panel (left lateral view)
+        % First panel (right lateral view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
             srf{1}.data.fac,...
@@ -390,26 +390,16 @@ switch opts.layout
         view(-90,0);
         useopts(opts,fighandle);
         
-        % Second panel (right lateral view)
-        ax(2) = axes('Position',[0.525 0.025 w h]);
-        trisurf(...
-            srf{2}.data.fac,...
-            srf{2}.data.vtx(:,1),srf{2}.data.vtx(:,2),srf{2}.data.vtx(:,3),...
-            dat{2}.data,...
-            'EdgeColor','None');
-        view(90,0);
-        useopts(opts,fighandle);
-
         % This mode has no colourbar
         opts.colourbar = false;
         
-    case 'medial'
+    case 'leftmedial'
         
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
-        w = 0.45;
+        w = 0.95;
         
-        % First panel (left medial view)
+        % First panel (right lateral view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
             srf{1}.data.fac,...
@@ -419,8 +409,36 @@ switch opts.layout
         view(90,0);
         useopts(opts,fighandle);
         
-        % Second panel (right medial view)
-        ax(2) = axes('Position',[0.525 0.025 w h]);
+        % This mode has no colourbar
+        opts.colourbar = false;
+        
+    case 'rightlateral'
+        
+        % Auxiliary variables for the sizes of each panel
+        h = 0.95;
+        w = 0.95;
+        
+        % First panel (right lateral view)
+        ax(1) = axes('Position',[0.025 0.025 w h]);
+        trisurf(...
+            srf{2}.data.fac,...
+            srf{2}.data.vtx(:,1),srf{2}.data.vtx(:,2),srf{2}.data.vtx(:,3),...
+            dat{2}.data,...
+            'EdgeColor','None');
+        view(90,0);
+        useopts(opts,fighandle);
+        
+        % This mode has no colourbar
+        opts.colourbar = false;
+        
+    case 'rightmedial'
+        
+        % Auxiliary variables for the sizes of each panel
+        h = 0.95;
+        w = 0.95;
+        
+        % First panel (right lateral view)
+        ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
             srf{2}.data.fac,...
             srf{2}.data.vtx(:,1),srf{2}.data.vtx(:,2),srf{2}.data.vtx(:,3),...
@@ -428,10 +446,10 @@ switch opts.layout
             'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-
+        
         % This mode has no colourbar
         opts.colourbar = false;
-        
+
     case 'strip'
         
         % Auxiliary variables for the sizes of each panel
@@ -669,7 +687,7 @@ switch opts.layout
         set(cb,'Position',[0.35 0.085 0.3 0.03]);
         
     otherwise
-        error('Unknown Layout style: %s',opts.layout);
+        error('Unknown layout style %s.\n',opts.layout)
 end
 
 % Deal with the colour limits
