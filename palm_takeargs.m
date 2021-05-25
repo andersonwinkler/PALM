@@ -1826,11 +1826,11 @@ if opts.evperdat
     else
         sizy = zeros(plm.nmasks,1);
         for y = 1:plm.nmasks
-            sizy(y) = size(plm.masks{y},1);
+            sizy(y) = numel(plm.masks{y}.data);
         end
         sizev = zeros(plm.nmasksEV,1);
         for ev = 1:plm.nmasksEV
-            sizev(ev) = size(plm.masksEV{ev},1);
+            sizev(ev) = numel(plm.masksEV{ev}.data);
         end
         if  numel(unique(sizy)) > 1 || ...
                 numel(unique(sizev)) > 1 || ...
