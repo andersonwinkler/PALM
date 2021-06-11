@@ -38,7 +38,7 @@ opts.fonly               = false;              % Run only the F-contrasts?
 opts.pmethodp            = 'Guttman';          % Method to partition the model to define the permutation set
 opts.pmethodr            = 'Ridgway';          % Method to partition the model for the actual regression
 opts.rmethod             = 'Freedman-Lane';    % Regression/permutation method.
-opts.rfallback           = 'terBraak';         % Regression/permutation method if correcting over contrasts
+opts.rfallback           = 'terBraak';         % Regression/permutation method if correcting over contrasts (not currently used)
 opts.NPC                 = false;              % Do non-parametric combination?
 opts.MV                  = false;              % Do classical multivariate inference? (MANOVA/MANCOVA)
 opts.CCA                 = false;              % Do canonical correlation analysis? (CCA)
@@ -100,6 +100,7 @@ opts.showprogress        = true;               % print progress as the permutati
 opts.inputmv             = false;              % treat each column of the sole input as a separate input for MV/NPC/CCA?
 opts.reversemasks        = false;              % Reverse the masks?
 opts.precision           = [];                 % Precision? Can be 'single', 'double', or [] for what the file defines.
+
 % Approximation options:
 opts.accel.negbin        = 0;                  % Run a negbin scheme
 opts.accel.negbin_nexced = 2;                  % Number of exceedances for the negbin mode

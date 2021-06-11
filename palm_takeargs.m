@@ -1679,7 +1679,7 @@ for i = 1:Ni
             
             
             % String defining the types, for the filenames and other tasks.
-            if Ns == 1, s = 1; else s = i; end
+            if Ns == 1, s = 1; else, s = i; end
             if any(size(plm.srf{s}.data.vtx,1) == ...
                     size(plm.masks{i}.data))
                 plm.Yisvol(i)   = false;
@@ -2091,7 +2091,7 @@ end
 % Some related sanity checks
 if opts.evperdat
     for m = 1:plm.nM
-        if opts.designperinput, loopY = m; else loopY = 1:plm.nY; end
+        if opts.designperinput, loopY = m; else, loopY = 1:plm.nY; end
         for y = loopY
             if size(plm.Yset{y},2) ~= size(plm.Mset{m},3)
                 error([
@@ -2351,6 +2351,9 @@ end
 % Partition the model according to the contrasts and design matrix.
 % The partitioning needs to be done now, because of the need for
 % synchronised permutations/sign-flips
+if opts.corrcon || opts.npccon
+    opts.syncperms = true;
+end
 if ~ opts.cmcx
     seqtmp = zeros(plm.N,sum(plm.nC));
     j = 1;
@@ -2376,16 +2379,13 @@ if ~ opts.cmcx
         opts.cmcx = true;
     end
 end
-if opts.cmcx % note can't use 'else' here
+if opts.cmcx % note can't use 'else' here because opts.cmcx is modified in the 'if' above
     plm.seq = cell(plm.nM,1);
     for m = 1:plm.nM
         plm.seq{m} = cell(plm.nC(m),1);
         for c = 1:plm.nC(m)
             plm.seq{m}{c} = (1:plm.N)';
         end
-    end
-    if opts.corrcon || opts.npccon
-        opts.syncperms = true;
     end
 end
 
