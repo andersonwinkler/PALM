@@ -215,7 +215,7 @@ switch lower(fext{end})
         
     case {'area','avg_curv','crv','curv', ...
             'h','k','jacobian_white','mid', ...
-            'sulc','thickness','volume'}
+            'sulc','thickness','volume','gwc'}
         
         % Read a FreeSurfer curvature file
         X.readwith = 'fs_read_curv';
