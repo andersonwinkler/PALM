@@ -79,7 +79,7 @@ RUNCMD="addpath('$PALMDIR'); try palm ${1+"$@"} ; catch ME, palm_error(ME), exit
 if [[ ${IS_CLUSTER} -ne 0 ]] ; then
    TEMP_NAME=$(tr -cd '[:alnum:]' < /dev/urandom | fold -w10 | head -n 1)
    echo ${RUNCMD} > ${TEMP_DIR}/palm_temp_${TEMP_NAME}.m
-   RUNCMD=${TEMP_DIR}/palm_temp_${TEMP_NAME}.m
+   RUNCMD="${TEMP_DIR}/palm_temp_${TEMP_NAME}.m"
 fi
 
 # Call either Octave or Matlab depending on the user's choice.
@@ -112,8 +112,13 @@ elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    else
       SEDOPT=""
    fi
-   ${MATLABCMD} -nodesktop -nosplash -singleCompThread -r "${RUNCMD}" \
-     | sed ${SEDOPT} -e '1,/^.......................................................................$/ d'
+   ML_OPTS="-nodesktop -nosplash -singleCompThread"
+   SED_STR='1,/^.......................................................................$/ d'
+   if [[ ${IS_CLUSTER} -eq 0 ]] ; then
+     ${MATLABCMD} ${ML_OPTS} -r "${RUNCMD}" | sed ${SEDOPT} -e "$SED_STR"
+   else
+     ${MATLABCMD} ${ML_OPTS} < "${RUNCMD}" | sed ${SEDOPT} -e "$SED_STR"
+   fi
    status=$?
 fi
 
