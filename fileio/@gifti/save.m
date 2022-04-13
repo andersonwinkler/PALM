@@ -188,6 +188,9 @@ for i=1:length(this.data)
         fprintf(fid,'%s<MD>\n',o(3));
         fprintf(fid,'%s<Name><![CDATA[%s]]></Name>\n',o(4),...
             this.data{i}.metadata(j).name);
+        if isempty(this.data{i}.metadata(j).value)
+            this.data{i}.metadata(j).value = 0;
+        end
         fprintf(fid,'%s<Value><![CDATA[%s]]></Value>\n',o(4),...
             this.data{i}.metadata(j).value);
         fprintf(fid,'%s</MD>\n',o(3));
