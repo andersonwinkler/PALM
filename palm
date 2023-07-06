@@ -35,13 +35,17 @@ WHICH_TO_RUN=1
 # If Octave isn't in the path, or to use a specific version, add here the
 # path or command that invokes the Octave executable binary.
 # This only has effect if WHICH_TO_RUN above os set as 1.
-OCTAVEBIN=/usr/bin/octave
+if [[ ${OCTAVEBIN} == "" ]]
+      OCTAVEBIN=/usr/bin/octave
+fi
 #OCTAVEBIN="/usr/bin/flatpak run org.octave.Octave"
 
 # If Matlab isn't in the path, or to use a specific version, add here the
 # path or command that invokes the Matlab executable binary.
 # This only has effect if WHICH_TO_RUN above os set as 2.
-MATLABBIN=/opt/r16b/bin/matlab
+if [[ ${MATLABBIN} == "" ]]
+      MATLABBIN=/opt/r16b/bin/matlab
+fi
 
 # If you are intending to run PALM in a cluster, for some environments
 # it may be necessary to change the variable below to 1.
