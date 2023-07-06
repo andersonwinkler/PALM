@@ -35,7 +35,7 @@ WHICH_TO_RUN=1
 # If Octave isn't in the path, or to use a specific version, add here the
 # path or command that invokes the Octave executable binary.
 # This only has effect if WHICH_TO_RUN above os set as 1.
-if [[ ${OCTAVEBIN} == "" ]]
+if [[ ${OCTAVEBIN} == "" ]] ; then
       OCTAVEBIN=/usr/bin/octave
 fi
 #OCTAVEBIN="/usr/bin/flatpak run org.octave.Octave"
@@ -43,7 +43,7 @@ fi
 # If Matlab isn't in the path, or to use a specific version, add here the
 # path or command that invokes the Matlab executable binary.
 # This only has effect if WHICH_TO_RUN above os set as 2.
-if [[ ${MATLABBIN} == "" ]]
+if [[ ${MATLABBIN} == "" ]] ; then
       MATLABBIN=/opt/r16b/bin/matlab
 fi
 
