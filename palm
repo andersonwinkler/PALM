@@ -42,6 +42,7 @@ OCTAVEBIN=/usr/bin/octave-cli
 # path or command that invokes the Matlab executable binary.
 # This only has effect if WHICH_TO_RUN above os set as 2.
 MATLABBIN=/opt/r16b/bin/matlab
+#MATLABBIN=/Applications/MATLAB_R2023a.app/bin/matlab
 
 # If you are intending to run PALM in a cluster, for some environments
 # it may be necessary to change the variable below to 1.
@@ -85,8 +86,8 @@ fi
 # Call either Octave or Matlab depending on the user's choice.
 set -o pipefail
 if [[ ${WHICH_TO_RUN} -eq 1 ]] ; then
-   if [[ ${OCTAVEBIN} == "" ]] || [[ ! -e $(echo ${OCTAVEBIN} |awk '{print $1}') ]] ; then
-      OCTAVECMD=octave
+   if [[ ${OCTAVEBIN} == "" ]] || [[ ! -e $(echo ${OCTAVEBIN} | awk '{print $1}') ]] ; then
+      OCTAVECMD=octave-cli
    else
       OCTAVECMD=${OCTAVEBIN}
    fi
