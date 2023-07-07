@@ -35,7 +35,7 @@ WHICH_TO_RUN=1
 # If Octave isn't in the path, or to use a specific version, add here the
 # path or command that invokes the Octave executable binary.
 # This only has effect if WHICH_TO_RUN above os set as 1.
-OCTAVEBIN=/usr/bin/octave
+OCTAVEBIN=/usr/bin/octave-cli
 #OCTAVEBIN="/usr/bin/flatpak run org.octave.Octave"
 
 # If Matlab isn't in the path, or to use a specific version, add here the
@@ -97,7 +97,8 @@ if [[ ${WHICH_TO_RUN} -eq 1 ]] ; then
       # for success should they need by verifying that the *_elapsed.csv was created.
       RUNCMD="addpath('$PALMDIR'); palm ${1+"$@"} ; exit"
    fi
-   ${OCTAVECMD} -q --eval "${RUNCMD}"
+   OT_OPTS="-q --no-window-system"
+   ${OCTAVECMD} ${OT_OPTS} --eval "${RUNCMD}"
    status=$?
 elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    if [[ ${MATLABBIN} == "" ]] || [[ ! -e ${MATLABBIN} ]]; then
