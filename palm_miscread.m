@@ -29,7 +29,7 @@ function X = palm_miscread(filename,varargin)
 % Anderson M. Winkler
 % FMRIB / University of Oxford
 % Aug/2013 (first version)
-% Feb/2018 (this version)
+% Mar/2024 (this version)
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -50,6 +50,7 @@ function X = palm_miscread(filename,varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+% Defaults (note this doesn't depend on palm_defaults.m)
 useniiclass = true;
 tmppath     = '/tmp';
 precision   = 'double';
@@ -60,6 +61,18 @@ if nA >= 1, useniiclass = varargin{1}; end
 if nA >= 2, tmppath     = varargin{2}; end
 if nA >= 3, precision   = varargin{3}; end
 if nA >= 4, mz3surf     = varargin{4}; end
+
+% If the filename has wildcards, verify that it resolves to a unique name
+if contains(filename,'*') || contains(filename,'?')
+    filelist = dir(filename);
+    if numel == 1
+        filename = filelist(1).name;
+    elseif numel == 0
+        error('File not found: %s',filename);
+    else
+        error('More than one file match: %s',filename);
+    end
+end
 
 % Check if the file actually exists before doing anything else
 if ~ exist(filename,'file')

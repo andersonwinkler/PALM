@@ -120,3 +120,4 @@ opts.npcmethodmiss       = 'Fisher';           % Combination method for missing 
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded and not meant to be ever changed (EE is default, within-block is also default).
+% Additional default options are in palm_miscread.m and palm_miscwrite.m.
