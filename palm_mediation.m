@@ -279,7 +279,7 @@ opts_step1 = { ...
     '-d',fullfile(sprintf('%s_glm1+2.mat',medi.o)), ...
     '-t',fullfile(sprintf('%s_glm1+2.con',medi.o)) };
 if masksiz(1) == 1,
-    X = palm_miscread(medi.i{1},medi.useniiclass,medi.o);
+    X = palm_miscread(medi.i{1},medi.useniiclass);
     X = X.data;
 elseif masksiz(1) > 1,
     X = zeros(N,1);
@@ -306,7 +306,7 @@ opts_step3a = { ...
     '-d',fullfile(sprintf('%s_glm3.mat',medi.o)), ...
     '-t',fullfile(sprintf('%s_glm3.con',medi.o)) };
 if masksiz(1) == 1,
-    X = palm_miscread(medi.i{1},medi.useniiclass,medi.o);
+    X = palm_miscread(medi.i{1},medi.useniiclass);
     X = X.data;
 elseif masksiz(1) > 1,
     X = zeros(N,1);
@@ -314,7 +314,7 @@ elseif masksiz(1) > 1,
         '-evperdat',medi.i{1},size(Z,2)+1,3};
 end
 if masksiz(2) == 1 && ~ Mexpanded,
-    M = palm_miscread(medi.i{2},medi.useniiclass,medi.o);
+    M = palm_miscread(medi.i{2},medi.useniiclass);
     M = M.data;
 else
     M = zeros(N,1);
@@ -385,10 +385,10 @@ end
 % below to essentially mask the results:
 S1 = palm_miscread( ...
     sprintf('%s_1+2+3a_%s_cope_m1_d1%s',medi.o,Ykindstr{1},fext),...
-    medi.useniiclass,medi.o);
+    medi.useniiclass);
 S3b = palm_miscread( ...
     sprintf('%s_3b_%s_cope%s',medi.o,Ykindstr{1},fext),...
-    medi.useniiclass,medi.o);
+    medi.useniiclass);
 S3b_mask = double(S1.data) > double(S3b.data);
 
 % Check places where steps 1, 2 and 3a are significant. Do it as a
@@ -398,7 +398,7 @@ for f = 1:numel(Ykindstr),
     for r = 1:3,
         R = palm_miscread(...
             sprintf('%s_1+2+3a_%s_%s_fwep_m%d_d%d%s',medi.o,Ykindstr{f},statname,r,r,fext),...
-            medi.useniiclass,medi.o);
+            medi.useniiclass);
         if isempty(S),
             S = double(R.data);
         else
@@ -418,7 +418,7 @@ if medi.fdr,
         for r = 1:3,
             R = palm_miscread(...
                 sprintf('%s_1+2+3a_%s_%s_fdrp_m%d_d%d%s',medi.o,Ykindstr{f},statname,r,r,fext),...
-                medi.useniiclass,medi.o);
+                medi.useniiclass);
             if isempty(S),
                 S = double(R.data);
             else

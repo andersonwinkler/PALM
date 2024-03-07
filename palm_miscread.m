@@ -1,13 +1,11 @@
 function X = palm_miscread(filename,varargin)
 % Read various scalar data formats based on the file extension.
 %
-% X = palm_miscread(filename,useniiclass,tmppath,precision,mz3surf);
+% X = palm_miscread(filename,useniiclass,precision,mz3surf);
 %
 % filename    : File to be read.
 % useniiclass : True/False. For NIFTI files, use the NIFTI class
 %               when reading them. It requires less memory.
-% tmppath     : For some file types, indicate whether to store
-%               temporary data.
 % precision   : Ensure the output data is 'single' or 'double'
 %               precision.
 % mz3surf     : True/False. For MZ3 files, keep as data the surface
@@ -52,15 +50,13 @@ function X = palm_miscread(filename,varargin)
 
 % Defaults (note this doesn't depend on palm_defaults.m)
 useniiclass = true;
-tmppath     = '/tmp';
-precision   = 'double';
+precision   = '';
 mz3surf     = false;
-narginchk(1,5);
+narginchk(1,4);
 nA = numel(varargin);
 if nA >= 1, useniiclass = varargin{1}; end
-if nA >= 2, tmppath     = varargin{2}; end
-if nA >= 3, precision   = varargin{3}; end
-if nA >= 4, mz3surf     = varargin{4}; end
+if nA >= 2, precision   = varargin{2}; end
+if nA >= 3, mz3surf     = varargin{3}; end
 
 % If the filename has wildcards, verify that it resolves to a unique name
 if contains(filename,'*') || contains(filename,'?')
@@ -133,7 +129,7 @@ switch lower(fext{end})
         % Handle (or not) a gzipped NIFTI or CIFTI file.
         if strcmpi(fext{end-1},'nii')
             
-            if any(strcmpi(fext{end-2},{'dscalar','dtseries','dconn','dlabel','ptseries','merge'}))
+            if any(strcmpi(fext{end-2},{'dscalar','dtseries','dconn','dlabel','ptseries','merge','pscalar','pconnscalar'}))
                 
                 % Until CIFTI migrates to HDF5, users will have to uncompress manually.
                 error('CIFTI files must be uncompressed before they can be read. Use gunzip and try again.');
@@ -161,23 +157,18 @@ switch lower(fext{end})
         
     case {'nii','hdr','img'}
         
-        % Check for external loaders
-        extern = palm_checkprogs;
-
         % Handle NIFTI and CIFTI files.
         if strcmpi(fext{end},'nii') && ...
-                any(strcmpi(fext{end-1},{'dscalar','dtseries','dconn','dlabel','ptseries','merge','pscalar'}))
-            
+                any(strcmpi(fext{end-1},{'dscalar','dtseries','dconn','dlabel','ptseries','merge','pscalar','pconnscalar'}))
+
             % Read a CIFTI file.
-            if extern.wb_command
-                X.readwith = 'wb_command';
-                [X.data,X.extra] = palm_ciftiread(X.filename,tmppath);
-                X.data = X.data';
-                X.extra.cifti_file_extension = fext{end-1};
-            else
-                error('Currently cannot read/write CIFTI files without the HCP Workbench.')
-            end
-            
+            X.readwith = 'cifti-matlab';
+            tmp = cifti_read(X.filename);
+            X.data = tmp.cdata;
+            X.extra.diminfo  = tmp.diminfo;
+            X.extra.metadata = tmp.metadata;
+            X.extra.cifti_file_extension = fext{end-1};
+
         else
             % Read a NIFTI file. Note that this will should not
             % be used for ANALYZE.
@@ -289,7 +280,7 @@ else
 end
 
 % Enforce a certain precision defined by the user:
-if ~ (isstruct(X.data) || iscell(X.data)) 
+if ~ (isstruct(X.data) || iscell(X.data))
     if strcmpi(precision,'double')
         X.data = double(X.data);
     elseif strcmpi(precision,'single')

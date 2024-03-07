@@ -44,7 +44,7 @@ Yissrf   = false;
 Ykindstr = '_dat';
 
 % Read a temporary version
-Ytmp     = palm_miscread(Yfile,opts.useniiclass,opts.o,opts.precision,false);
+Ytmp     = palm_miscread(Yfile,opts.useniiclass,opts.precision,false);
 
 % If this is 4D read with the NIFTI class, it needs a mask now
 if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4
@@ -76,6 +76,14 @@ if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4
     end
 end
 
+% Only CIFTI of the types *series are allowed as inputs 
+if strcmp(Ytmp.readwith,'cifti-matlab') && ~ any(strcmpi(Ytmp.extra.cifti_file_extension,{'ptseries','dtseries','pconnscalar'}))
+    error([...
+        'CIFTI format "%s" is not valid with "-i". Must be "dtseries", "ptseries", or "pconnseries".\n',...
+        '- Data file: %s'], ...
+        Ytmp.extra.cifti_file_extension,Ytmp.filename);
+end
+
 % Now deal with the actual data
 if ndims(Ytmp.data) == 2, %#ok
     
@@ -94,6 +102,10 @@ if ndims(Ytmp.data) == 2, %#ok
     % were converted to CSV with 'dpx2csv' and then transposed.
     Y = Ytmp.data;
     
+elseif ndims(Ytmp.data) == 3 && strcmpi(Ytmp.extra.cifti_file_extension,'pconnscalar')
+    Y = permute(Ytmp.data,[1 2 4 3]);
+    Y = palm_conv4to2(Y);
+
 elseif ndims(Ytmp.data) == 4
     
     % Sort out loading for the NIFTI class

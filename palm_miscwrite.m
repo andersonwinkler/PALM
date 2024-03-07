@@ -77,7 +77,15 @@ switch lower(X.readwith)
             X.data = X.data';
         end
         palm_ciftiwrite(X.filename,X.data,X.extra,[],toscalar);
-        
+      
+    case 'cifti-matlab'
+
+        % Write a CIFTI file using the CIFTI-Matlab toolbox
+        tmp.cdata = X.data;
+        tmp.diminfo = X.extra.diminfo;
+        tmp.metadata = X.extra.metadata;
+        cifti_write(tmp,X.filename);
+
     case 'nifticlass'
         
         % Write using the NIFTI class.

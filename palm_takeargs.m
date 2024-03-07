@@ -1562,7 +1562,7 @@ if opts.spatial.do && Ns > 0
         
         % Load surface
         fprintf('Loading surface %d/%d: %s\n',s,Ns,opts.s{s});
-        plm.srf{s} = palm_miscread(opts.s{s},[],[],[],true);
+        plm.srf{s} = palm_miscread(opts.s{s},[],true);
         
         % Load areas
         if isempty(opts.sa{s})
@@ -1570,7 +1570,7 @@ if opts.spatial.do && Ns > 0
             plm.srfarea{s}.data = [];
         elseif exist(opts.sa{s},'file')
             % A file with the average areas from native geometry
-            plm.srfarea{s} = palm_miscread(opts.sa{s},opts.useniiclass,opts.o,opts.precision,false);
+            plm.srfarea{s} = palm_miscread(opts.sa{s},opts.useniiclass,opts.precision,false);
         elseif ~ isnan(str2double(opts.sa{s}))
             % A weight (such as 1)
             plm.srfarea{s}.data = str2double(opts.sa{s});
@@ -1598,9 +1598,19 @@ end
 % each modality will be created after each modality is loaded.
 plm.masks = cell(Ni,1);
 for m = 1:Nm
-    plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass,opts.o,opts.precision,false);
+    plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass,opts.precision,false);
     if strcmp(plm.masks{m}.readwith,'nifticlass')
+        % This forces the data to be read from the disk. It doesn't matter
+        % that we choose double here (even if the user wants single
+        % precision) because the file is typically small and will be
+        % converted to logical below regardless.
         plm.masks{m}.data = double(plm.masks{m}.data);
+    elseif strcmpi(plm.masks{m}.readwith,'cifti-matlab') && ~ any(strcmpi(plm.masks{m}.extra.cifti_file_extension,{'ptseries','dtseries','pconnscalar'}))
+        % Only CIFTI of the types *series are allowed as masks
+        error([...
+            'CIFTI format "%s" is not valid with "-m". Must be "dtseries", "ptseries", or "pconnseries".\n',...
+            '- Mask file: %s'], ...
+            plm.masks{m}.extra.cifti_file_extension,plm.masks{m}.filename);
     end
     if opts.reversemasks
         plm.masks{m}.data(isnan(plm.masks{m}.data)) = 1;
@@ -2053,7 +2063,7 @@ if Nd == 0 && ~ opts.evperdat
     opts.ISE    = true;
 elseif Nd > 0
     for m = 1:Nd
-        Mtmp = palm_miscread(opts.d{m},[],[],opts.precision);
+        Mtmp = palm_miscread(opts.d{m},[],opts.precision);
         plm.Mset{m} = Mtmp.data;
         if ~ isempty(plm.subjidx) && size(plm.Mset{m},1) ~= plm.N
             plm.Mset{m} = plm.Mset{m}(plm.subjidx,:);
@@ -2112,7 +2122,7 @@ if Nt || Nf
     % Load FSL style t contrasts
     tcon = cell(Nt,1);
     for t = 1:Nt
-        tmp = palm_miscread(opts.t{t},[],[],opts.precision);
+        tmp = palm_miscread(opts.t{t},[],opts.precision);
         if any(strcmp(tmp.readwith,{'vestread','csvread','load'}))
             tcon{t} = tmp.data;
         else
@@ -2124,7 +2134,7 @@ if Nt || Nf
     fcon = cell(Nt,1);
     for t = 1:Nt
         if ~ isempty(opts.f{t})
-            tmp = palm_miscread(opts.f{t},[],[],opts.precision);
+            tmp = palm_miscread(opts.f{t},[],opts.precision);
             if any(strcmp(tmp.readwith,{'vestread','csvread','load'}))
                 fcon{t} = tmp.data;
             else
@@ -2164,7 +2174,7 @@ elseif Ncon
     Ccon = cell(Ncon,1);
     Dcon = cell(Ncon,1);
     for con = 1:Ncon
-        tmp = palm_miscread(opts.Ccon{con},[],[],opts.precision);
+        tmp = palm_miscread(opts.Ccon{con},[],opts.precision);
         if strcmpi(tmp.readwith,'mset')
             Ccon{con} = tmp.data;
         else
@@ -2176,7 +2186,7 @@ elseif Ncon
                 Dcon{con}{c} = eye(plm.nY);
             end
         else
-            tmp = palm_miscread(opts.Dcon{con},[],[],opts.precision);
+            tmp = palm_miscread(opts.Dcon{con},[],opts.precision);
             if strcmpi(tmp.readwith,'mset')
                 Dcon{con} = tmp.data;
             else
