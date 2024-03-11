@@ -33,5 +33,7 @@ function Y2d = palm_convNto2(YNd)
 % siz = size(tmp);
 % Y2d = reshape(tmp,[size(tmp,1) prod(siz(2:end))]);
 
-Y2d = reshape(YNd,numel(YNd)/size(YNd,ndims(YNd),size(Y4d,ndims(YNd)))';
+Y2d = reshape(YNd,...
+    numel(YNd)/size(YNd,ndims(YNd)),...
+    size(YNd,ndims(YNd)))';
 

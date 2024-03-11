@@ -67,7 +67,7 @@ switch X.readwith
             end
 
             % Reorder the data such that it's the last
-            neworder = [setdiff(1:nD,2) pdim];
+            neworder = [setdiff(1:nD,pdim) pdim];
             [~,oldorder] = sort(neworder);
             Y.data = permute(X.data,neworder);
             Y.extra.diminfo = Y.extra.diminfo(neworder);
