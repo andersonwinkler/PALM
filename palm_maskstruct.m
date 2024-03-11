@@ -67,20 +67,28 @@ switch lower(readwith)
 
         % If the original data is CIFTI and was read with
         % the cifti-matlab toolbox
-        S.data  = mask;
+        nD = numel(extra.diminfo);
+        Dlength = ones(1,nD);
+        for d = 1:nD
+            Dlength(d) = extra.diminfo{d}.length;
+        end
+        S.data  = palm_conv2toN(mask,Dlength(1:end-1));
         S.extra = extra;
+        S.extra.diminfo{end}.length = 1;
+        S.extra.diminfo{end}.maps = extra.diminfo{end}.maps(1);
+        S = palm_dimreorder(S);
 
     case 'nifticlass'
         
         % If the original data is NIFTI and was read witht the NIFTI class
-        S.data          = palm_conv2to4(mask,extra.dat.dim(1:3));
+        S.data          = palm_conv2toN(mask,extra.dat.dim(1:3));
         S.extra.mat     = extra.mat;
         S.extra.dat.dim = extra.dat.dim;
         
     case 'spm_spm_vol'
         
         % If the original data is NIFTI and was read with SPM.
-        S.data           = palm_conv2to4(mask,extra(1).dim(1:3));
+        S.data           = palm_conv2toN(mask,extra(1).dim(1:3));
         S.extra          = extra(1);
         S.extra.dt(1)    = spm_type('float64');
         S.extra.pinfo(1) = 1;
@@ -88,7 +96,7 @@ switch lower(readwith)
     case 'fs_load_nifti'
         
         % If the original data is NIFTI and was read with FreeSurfer.
-        S.data                 = palm_conv2to4(mask,extra.hdr.dim(2:4));
+        S.data                 = palm_conv2toN(mask,extra.hdr.dim(2:4));
         S.extra                = extra;
         S.extra.hdr.scl_slope  = 1;
         S.extra.hdr.dim([1 5]) = [3 1];
@@ -99,7 +107,7 @@ switch lower(readwith)
     case 'fsl_read_avw'
         
         % If the original data is NIFTI and was read with FSL.
-        S.data  = palm_conv2to4(mask,extra.dims(1:3));
+        S.data  = palm_conv2toN(mask,extra.dims(1:3));
         S.extra = extra;
         if ~ isfield(S.extra,'vtype')
             S.extra.vtype = 'd';
@@ -108,7 +116,7 @@ switch lower(readwith)
     case 'nii_load_nii'
         
         % If the original data is NIFTI and was read with the NIFTI toolbox.
-        S.data                      = palm_conv2to4(mask,extra.hdr.dime.dim(2:4));
+        S.data                      = palm_conv2toN(mask,extra.hdr.dime.dim(2:4));
         S.extra                     = extra;
         S.extra.hdr.dime.dim([1 5]) = [3 1];
         S.extra.hdr.dime.pixdim(5)  = 0;
@@ -124,7 +132,7 @@ switch lower(readwith)
     case 'fs_load_mgh'
         
         % If the original data is an FS MGH/MGZ file.
-        S.data  = palm_conv2to4(mask,extra.volsz(1:3));
+        S.data  = palm_conv2toN(mask,extra.volsz(1:3));
         S.extra = extra;
         
     case 'gifti'

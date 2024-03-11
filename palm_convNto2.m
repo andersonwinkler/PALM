@@ -1,8 +1,9 @@
-function Y4d = palm_conv2to4(Y2d,siz)
-% Convert a 2D array (t,x*y*z) into a 4D dataset (x,y,z,t)
+function Y2d = palm_convNto2(YNd)
+% Convert a N-D dataset into a 2D array. For example, if the input
+% is 4D (x,y,z,t), the output is 2D with size (t,x*y*z).
 % 
 % Usage:
-% Y4d = conv2to4(Y2d,size3d);
+% Y2d = convNto2(YNd);
 % 
 % _____________________________________
 % Anderson M. Winkler
@@ -28,7 +29,9 @@ function Y4d = palm_conv2to4(Y2d,siz)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-% tmp = reshape(Y2d,[size(Y2d,1) siz]);
-% Y4d = permute(tmp,[2 3 4 1]);
+% tmp = permute(Y4d,[4 1 2 3]);
+% siz = size(tmp);
+% Y2d = reshape(tmp,[size(tmp,1) prod(siz(2:end))]);
 
-Y4d = reshape(Y2d',[siz(:)' size(Y2d,1)]);
+Y2d = reshape(YNd,numel(YNd)/size(YNd,ndims(YNd),size(Y4d,ndims(YNd)))';
+

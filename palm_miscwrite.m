@@ -81,6 +81,13 @@ switch lower(X.readwith)
     case 'cifti-matlab'
 
         % Write a CIFTI file using the CIFTI-Matlab toolbox
+        % First deal with the file extension
+        [fpth,fnam,fext] = fileparts(X.filename);
+        if strcmpi(fext,['.',X.extra.cifti_file_extension])
+            X.filename = fullfile(fpth,[fnam,fext,'.nii']);
+        elseif ~ strcmpi(fext,'.nii')
+            X.filename = fullfile(fpth,[fnam,fext,'.',X.extra.cifti_file_extension,'.nii']);
+        end
         tmp.cdata = X.data;
         tmp.diminfo = X.extra.diminfo;
         tmp.metadata = X.extra.metadata;

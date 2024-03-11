@@ -49,6 +49,7 @@ Ytmp     = palm_miscread(Yfile,opts.useniiclass,opts.precision,false);
 % If this is 4D read with the NIFTI class, it needs a mask now
 if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4
     if isempty(maskstruct)
+
         % If a mask hasn't been supplied, make one
         tmpmsk = false(Ytmp.extra.dat.dim(1:3));
         for a = 1:Ytmp.extra.dat.dim(2) % y coords
@@ -76,13 +77,20 @@ if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4
     end
 end
 
-% Only CIFTI of the types *series are allowed as inputs 
-if strcmp(Ytmp.readwith,'cifti-matlab') && ...
-        ~ any(strcmpi(Ytmp.extra.cifti_file_extension,{'dscalar','pscalar','pconnscalar','dtseries','ptseries','pconnseries'}))
-    error([...
-        'CIFTI format "%s" is not valid with "-i". Must be one of: { dscalar, pscalar, pconnscalar, dtseries, ptseries, pconnseries }\n',...
-        '- Data file: %s'], ...
-        Ytmp.extra.cifti_file_extension,Ytmp.filename);
+% Only CIFTI of the types series and scalar are allowed as inputs.
+if strcmpi(Ytmp.readwith,'cifti-matlab')
+    if any(strcmpi(Ytmp.extra.cifti_file_extension,{'dscalar','pscalar','pconnscalar','dtseries','ptseries','pconnseries'}))
+
+        % Reorder dimensions so that the last is the one permutable
+        Ytmp = palm_dimreorder(Ytmp);
+    else
+
+        % Or give an error
+        error([...
+            'CIFTI format "%s" is not valid with "-i". Must be one of: { dscalar, pscalar, pconnscalar, dtseries, ptseries, pconnseries }\n',...
+            '- Data file: %s'], ...
+            Ytmp.extra.cifti_file_extension,Ytmp.filename);
+    end
 end
 
 % Now deal with the actual data
@@ -99,38 +107,30 @@ if ndims(Ytmp.data) == 2, %#ok
             Ytmp.data = double(Ytmp.data);
         end
     end
-    
-    % If these are 2D CIFTI, we need to transpose, such that each
-    % voxel/vertex/parcel is a column.
-    % Do not merge this with the general transposition below, otherwise the
-    % user will not have the option to transpose back.
-    if strcmp(Ytmp.readwith,'cifti-matlab') && ...
-            ~ any(strcmpi(Ytmp.extra.cifti_file_extension,{'dscalar','dtseries','pscalar','ptseries'}))
-        Ytmp.data = Ytmp.data';
-    end
 
     % Transpose if that was chosen.
-    if opts.transposedata
+    % We always transpose 2D CIFTI files at this stage since the permutation
+    % dimension was shifted earlier to be the last
+    if opts.transposedata || strcmpi(Ytmp.readwith,'cifti-matlab')
         Ytmp.data = Ytmp.data';
     end
 
     % This should cover the CSV files and DPX 4D files that
     % were converted to CSV with 'dpx2csv' and then transposed.
     Y = Ytmp.data;
-    
-elseif ndims(Ytmp.data) == 3 && strcmpi(Ytmp.extra.cifti_file_extension,{'pconnscalar','pconnseries'})
+
+elseif ndims(Ytmp.data) == 3
 
     % For 3D files in which the 3rd dim is what needs to be permuted (e.g.,
-    % with some CIFTI variants), we move the 3rd dim to the 4th.
-    Y = permute(Ytmp.data,[1 2 4 3]);
-    Y = palm_conv4to2(Y);
+    % with some CIFTI variants), that has now become the first
+    Y = palm_convNto2(Ytmp.data);
 
 elseif ndims(Ytmp.data) == 4
-    
+
     % Sort out loading for the NIFTI class
     if strcmp(Ytmp.readwith,'nifticlass')
         tmpmsk = maskstruct.data(:)';
-        
+
         % Read each volume, reshape and apply the mask
         Y = zeros(size(Ytmp.data,4),sum(tmpmsk));
         for n = 1:size(Ytmp.data,4)
@@ -140,7 +140,7 @@ elseif ndims(Ytmp.data) == 4
         end
     else
         % If not read with the NIFTI class, get all immediately
-        Y = palm_conv4to2(Ytmp.data);
+        Y = palm_convNto2(Ytmp.data);
     end
 end
 

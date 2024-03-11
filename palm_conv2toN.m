@@ -1,9 +1,11 @@
-function Y2d = palm_conv4to2(Y4d)
-% Convert a 4D dataset (x,y,z,t) into a 2D array (t,x*y*z)
-% that can be used in a multivariate GLM
+function YNd = palm_conv2toN(Y2d,siz)
+% Convert a 2D array (t,x*y*z) into a N-D dataset (x,y,z,t,...)
 % 
 % Usage:
-% Y2d = conv4to2(Y4d);
+% YNd = conv2toN(Y2d,siz);
+%
+% Y2d : 2D data
+% siz : Sizes up to dimension N-1
 % 
 % _____________________________________
 % Anderson M. Winkler
@@ -29,9 +31,7 @@ function Y2d = palm_conv4to2(Y4d)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-% tmp = permute(Y4d,[4 1 2 3]);
-% siz = size(tmp);
-% Y2d = reshape(tmp,[size(tmp,1) prod(siz(2:end))]);
+% tmp = reshape(Y2d,[size(Y2d,1) siz]);
+% Y4d = permute(tmp,[2 3 4 1]);
 
-Y2d = reshape(Y4d,numel(Y4d)/size(Y4d,4),size(Y4d,4))';
-
+YNd = reshape(Y2d',[siz(:)' size(Y2d,1)]);

@@ -35,12 +35,12 @@ function ext = palm_checkprogs
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 persistent palm_extern;
-if isempty(palm_extern),
+if isempty(palm_extern)
         
     % Check for FSL
     palm_extern.fsl = false;
     fsldir = getenv('FSLDIR');
-    if ~isempty(fsldir),
+    if ~isempty(fsldir)
         palm_extern.fsl = true;
         addpath(fullfile(fsldir,'etc','matlab'));
         fprintf('Found FSL in %s\n',fsldir);
@@ -49,7 +49,7 @@ if isempty(palm_extern),
     % Check for FreeSurfer
     palm_extern.fs  = false;
     fshome = getenv('FREESURFER_HOME');
-    if ~isempty(fshome),
+    if ~isempty(fshome)
         palm_extern.fs = true;
         addpath(fullfile(fshome,'matlab'));
         fprintf('Found FreeSurfer in %s\n',fshome);
@@ -73,7 +73,7 @@ if isempty(palm_extern),
     % Check for the HCP Workbench
     palm_extern.wb_command = false;
     [status,wb_command] = system('which wb_command');
-    if status == 0,
+    if status == 0
         palm_extern.wb_command = true;
         fprintf('Found HCP Workbench executable in %s',wb_command);
     end
@@ -83,6 +83,7 @@ if isempty(palm_extern),
     addpath(fullfile(palm_extern.palmpath,'fileio'));
     addpath(fullfile(palm_extern.palmpath,'fileio','extras'));
     addpath(fullfile(palm_extern.palmpath,'fileio','freesurfer'));
+    addpath(fullfile(palm_extern.palmpath,'fileio','cifti-matlab'));
     
     % Add the path to some additional colour maps
     addpath(fullfile(palm_extern.palmpath,'colourmaps'));
