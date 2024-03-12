@@ -1594,32 +1594,28 @@ elseif Nm > 1 && Nm ~= Ni
         'the option "-i" (%d modalities).'],Nm,Ni);
 end
 
-% Read and organise the masks. If there are no masks specified, one for
-% each modality will be created after each modality is loaded.
+% Read and organise the masks. If there are no masks specified, or those
+% specified with 'auto', will be created after each modality is loaded.
 plm.masks = cell(Ni,1);
 for m = 1:Nm
-    plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass,opts.precision,false);
-    if strcmp(plm.masks{m}.readwith,'nifticlass')
-        % This forces the data to be read from the disk. It doesn't matter
-        % that we choose double here (even if the user wants single
-        % precision) because the file is typically small and will be
-        % converted to logical below regardless.
-        plm.masks{m}.data = double(plm.masks{m}.data);
-    elseif strcmpi(plm.masks{m}.readwith,'cifti-matlab') && ~ any(strcmpi(plm.masks{m}.extra.cifti_file_extension,{'ptseries','dtseries','pconnscalar'}))
-        % Only CIFTI of the types *series are allowed as masks
-        error([...
-            'CIFTI format "%s" is not valid with "-m". Must be "dtseries", "ptseries", or "pconnseries".\n',...
-            '- Mask file: %s'], ...
-            plm.masks{m}.extra.cifti_file_extension,plm.masks{m}.filename);
-    end
-    if opts.reversemasks
-        plm.masks{m}.data(isnan(plm.masks{m}.data)) = 1;
-        plm.masks{m}.data(isinf(plm.masks{m}.data)) = 1;
-        plm.masks{m}.data = ~ logical(plm.masks{m}.data);
-    else
-        plm.masks{m}.data(isnan(plm.masks{m}.data)) = 0;
-        plm.masks{m}.data(isinf(plm.masks{m}.data)) = 0;
-        plm.masks{m}.data = logical(plm.masks{m}.data);
+    if ~ strcmpi(opts.m{m},'auto')
+        plm.masks{m} = palm_miscread(opts.m{m},opts.useniiclass,opts.precision,false);
+        if strcmpi(plm.masks{m}.readwith,'nifticlass')
+            % This forces the data to be read from the disk. It doesn't matter
+            % that we choose double here (even if the user wants single
+            % precision) because the file is typically small and will be
+            % converted to logical below regardless.
+            plm.masks{m}.data = double(plm.masks{m}.data);
+        end
+        if opts.reversemasks
+            plm.masks{m}.data(isnan(plm.masks{m}.data)) = 1;
+            plm.masks{m}.data(isinf(plm.masks{m}.data)) = 1;
+            plm.masks{m}.data = ~ logical(plm.masks{m}.data);
+        else
+            plm.masks{m}.data(isnan(plm.masks{m}.data)) = 0;
+            plm.masks{m}.data(isinf(plm.masks{m}.data)) = 0;
+            plm.masks{m}.data = logical(plm.masks{m}.data);
+        end
     end
 end
 if Nm == 1
