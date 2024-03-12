@@ -80,14 +80,7 @@ end
 % Only CIFTI of the types series and scalar are allowed as inputs.
 % Reorder dimensions so that the last is the one permutable
 if strcmpi(Ytmp.readwith,'cifti-matlab')
-    if any(strcmpi(Ytmp.extra.cifti_file_extension,{'dscalar','pscalar','pconnscalar','dtseries','ptseries','pconnseries'}))
-        Ytmp = palm_dimreorder(Ytmp);
-    else
-        error([...
-            'CIFTI format "%s" is not valid with "-i". Must be one of: { dscalar, pscalar, pconnscalar, dtseries, ptseries, pconnseries }\n',...
-            '- Data file: %s'], ...
-            Ytmp.extra.cifti_file_extension,Ytmp.filename);
-    end
+    Ytmp = palm_dimreorder(Ytmp);
 end
 
 % Now deal with the actual data

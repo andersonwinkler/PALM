@@ -66,12 +66,11 @@ switch X.readwith
                 error('Cannot determine the permutation dimension in CIFTI file: %s', X.filename);
             end
 
-            % Reorder the data such that it's the last
+            % Reorder the data such that the permutable dimension is the last
             neworder = [setdiff(1:nD,pdim) pdim];
-            [~,oldorder] = sort(neworder);
             Y.data = permute(X.data,neworder);
             Y.extra.diminfo = Y.extra.diminfo(neworder);
-            Y.extra.oldorder = oldorder;
+            Y.extra.oldorder = sort(neworder);
         end
 
     otherwise
