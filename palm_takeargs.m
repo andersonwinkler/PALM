@@ -1682,7 +1682,6 @@ for i = 1:Ni
     else
         if opts.spatial.do && Ns > 0
             
-            
             % String defining the types, for the filenames and other tasks.
             if Ns == 1, s = 1; else, s = i; end
             if any(size(plm.srf{s}.data.vtx,1) == ...

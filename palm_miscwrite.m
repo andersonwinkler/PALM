@@ -88,8 +88,8 @@ switch lower(X.readwith)
         elseif ~ strcmpi(fext,'.nii')
             X.filename = fullfile(fpth,[fnam,fext,'.',X.extra.cifti_file_extension,'.nii']);
         end
-        tmp.cdata = X.data;
-        tmp.diminfo = X.extra.diminfo;
+        tmp.cdata    = X.data;
+        tmp.diminfo  = X.extra.diminfo;
         tmp.metadata = X.extra.metadata;
         cifti_write(tmp,X.filename);
 

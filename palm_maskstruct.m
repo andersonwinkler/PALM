@@ -143,5 +143,5 @@ switch lower(readwith)
         S.extra.data = S.extra.data(1);
 
     otherwise
-        error('Unknown format.')
+        error('Unknown format: %s',readwith);
 end

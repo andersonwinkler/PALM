@@ -1,6 +1,6 @@
 function opts = palm_defaults
 % Set up PALM defaults.
-% 
+%
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
@@ -10,17 +10,17 @@ function opts = palm_defaults
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % PALM -- Permutation Analysis of Linear Models
 % Copyright (C) 2015 Anderson M. Winkler
-% 
+%
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation, either version 3 of the License, or
 % any later version.
-% 
+%
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-% 
+%
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -77,7 +77,6 @@ opts.tfce.E              = 0.5;                % TFCE E parameter
 opts.tfce.conn           = 6;                  % TFCE connectivity neighbourhood
 opts.tfce.deltah         = 'auto';             % Delta-h of the TFCE equation
 opts.tableasvolume       = false;              % Has the option -tfce1d been given?
-opts.useniiclass         = true;               % Use the NIFTI class (saves memory)
 opts.inormal             = false;              % Do an inverse-normal transformation?
 opts.inormal_meth        = 'Waerden';          % Method for the inverse-normal transformation.
 opts.inormal_quanti      = true;               % Treat inputs as quantitative for the inormal?
@@ -99,7 +98,6 @@ opts.designperinput      = false;              % use one design for each input?
 opts.showprogress        = true;               % print progress as the permutations are performed? (use -quiet to disable)
 opts.inputmv             = false;              % treat each column of the sole input as a separate input for MV/NPC/CCA?
 opts.reversemasks        = false;              % Reverse the masks?
-opts.precision           = [];                 % Precision? Can be 'single', 'double', or [] for what the file defines.
 
 % Approximation options:
 opts.accel.negbin        = 0;                  % Run a negbin scheme
@@ -118,6 +116,24 @@ opts.missingdata         = false;              % Are there missing data?
 opts.mcar                = false;              % Data missing completely at random?
 opts.npcmethodmiss       = 'Fisher';           % Combination method for missing data.
 
+% File parsing options:
+opts.useniiclass         = true;               % Use the NIFTI class (saves memory)
+opts.precision           = [];                 % Precision? Can be 'single', 'double', or [] for what the file defines.
+opts.mz3surf             = false;              % Treat mz3 files as surfaces (true) or curvatures (false)?
+opts.fscurv              = { ...               % Recognized extensions for FreeSurfer curvature types
+    'area','avg_curv','crv','curv',      ...
+    'h','k','jacobian_white','mid',      ...
+    'sulc','thickness','volume','gwc'};
+opts.fssurf              = { ...               % Recognized extensions for FreeSurfer surface types
+    'inflated','nofix','orig','pial',    ...
+    'smoothwm','sphere','reg',           ...
+    'white','white_reg'};
+opts.ciftitypes          = { ...               % Recognized CIFTI types
+    'dscalar','pscalar','pconnscalar',   ...
+    'dtseries','ptseries','pconnseries', ...
+    'dconn','pconn','pdconn','dpconn',   ...
+    'dfan','dfibersamp','dfansamp',      ...
+    'dlabel','merge'};
+
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
 % These are hard coded and not meant to be ever changed (EE is default, within-block is also default).
-% Additional default options are in palm_miscread.m and palm_miscwrite.m.

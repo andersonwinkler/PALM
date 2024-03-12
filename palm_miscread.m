@@ -48,10 +48,11 @@ function X = palm_miscread(filename,varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-% Defaults (note this doesn't depend on palm_defaults.m)
-useniiclass = true;
-precision   = '';
-mz3surf     = false;
+% Defaults (from palm_defaults.m, but can be overridden)
+optsx       = palm_defaults;
+useniiclass = optsx.useniiclass;
+precision   = optsx.precision;
+mz3surf     = optsx.mz3surf;
 narginchk(1,4);
 nA = numel(varargin);
 if nA >= 1, useniiclass = varargin{1}; end
@@ -129,12 +130,7 @@ switch lower(fext{end})
         % Handle (or not) a gzipped NIFTI or CIFTI file.
         if strcmpi(fext{end-1},'nii')
             
-            if any(strcmpi(fext{end-2},{ ...
-                    'dscalar','pscalar','pconnscalar',...
-                    'dtseries','ptseries','pconnseries',...
-                    'dconn','pconn','pdconn','dpconn',...
-                    'dfan','dfibersamp','dfansamp',...
-                    'dlabel','merge'}))
+            if any(strcmpi(fext{end-2},optsx.ciftitypes))
                 
                 % Until CIFTI migrates to HDF5, users will have to uncompress manually.
                 error('CIFTI files must be uncompressed before they can be read. Use gunzip and try again.');
@@ -163,13 +159,7 @@ switch lower(fext{end})
     case {'nii','hdr','img'}
         
         % Handle NIFTI and CIFTI files.
-        if strcmpi(fext{end},'nii') && ...
-                any(strcmpi(fext{end-1},{ ...
-                    'dscalar','pscalar','pconnscalar',...
-                    'dtseries','ptseries','pconnseries',...
-                    'dconn','pconn','pdconn','dpconn',...
-                    'dfan','dfibersamp','dfansamp',...
-                    'dlabel','merge'}))
+        if strcmpi(fext{end},'nii') && any(strcmpi(fext{end-1},optsx.ciftitypes))
 
             % Read a CIFTI file.
             X.readwith = 'cifti-matlab';
@@ -227,16 +217,13 @@ switch lower(fext{end})
             X.extra.fac = fac;
         end
         
-    case {'area','avg_curv','crv','curv', ...
-            'h','k','jacobian_white','mid', ...
-            'sulc','thickness','volume','gwc'}
+    case optsx.fscurv
         
         % Read a FreeSurfer curvature file
         X.readwith = 'fs_read_curv';
         [X.data,X.extra.fnum] = read_curv(X.filename);
         
-    case {'inflated','nofix','orig','pial', ...
-            'smoothwm','sphere','reg','white','white_reg'}
+    case optsx.fscurv
         
         % Read a FreeSurfer surface file
         X.readwith = 'fs_read_surf';
