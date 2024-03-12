@@ -76,7 +76,7 @@ switch lower(readwith)
         S.extra = extra;
         S.extra.diminfo{end}.length = 1;
         S.extra.diminfo{end}.maps = extra.diminfo{end}.maps(1);
-        S = palm_dimreorder(S);
+        S = palm_dimreorder(S,true);
 
     case 'nifticlass'
         

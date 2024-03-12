@@ -29,14 +29,14 @@ function palm(varargin)
 addpath(fileparts(mfilename('fullpath')));
 
 % If Octave
-if palm_isoctave,
+if palm_isoctave
     
     % Disable memory dump on SIGTERM
     sigterm_dumps_octave_core(0);
     
     % If running as a script, take the input arguments
     [~,cmdname,~] = fileparts(program_invocation_name());
-    if ~ strcmpi(cmdname(1:6),'octave'),
+    if ~ strcmpi(cmdname(1:6),'octave')
         varargin = argv();
     end
     
@@ -60,17 +60,17 @@ end
 nargin = numel(varargin);
 
 % Print usage if no inputs are given
-if nargin == 0 || strcmp(varargin{1},'-q'),
+if nargin == 0 || strcmp(varargin{1},'-q')
     palm_help('basic');
     return;
-elseif nargin == 1,
-    if any(strcmpi(varargin{1},{'-help','-?','-basic'})),
+elseif nargin == 1
+    if any(strcmpi(varargin{1},{'-help','-?','-basic'}))
         palm_help('basic');
         return;
-    elseif strcmpi(varargin{1},'-advanced'),
+    elseif strcmpi(varargin{1},'-advanced')
         palm_help('advanced');
         return;
-    elseif strcmpi(varargin{1},'-checkprogs'),
+    elseif strcmpi(varargin{1},'-checkprogs')
         palm_checkprogs;
         return;
     end

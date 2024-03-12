@@ -24,20 +24,20 @@ function varargout = palm_help(varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-if nargin == 0 || strcmpi(varargin{1},'basic'),
+if nargin == 0 || strcmpi(varargin{1},'basic')
     showlogo;
     basic_help;
     showdate;
-elseif strcmpi(varargin{1},'advanced'),
+elseif strcmpi(varargin{1},'advanced')
     showlogo;
     advanced_help;
     showdate;
-elseif strcmpi(varargin{1},'logo'),
+elseif strcmpi(varargin{1},'logo')
     showlogo;
-elseif strcmpi(varargin{1},'date'),
+elseif strcmpi(varargin{1},'date')
     showdate;
-elseif strcmpi(varargin{1},'version'),
-    if nargout == 0,
+elseif strcmpi(varargin{1},'version')
+    if nargout == 0
         fprintf(showversion);
     else
         varargout{1} = showversion;
@@ -58,7 +58,9 @@ fprintf('	non-imaging data can be all loaded at once, and later will be all\n');
 fprintf('	corrected across) if the option "-corrmod" is used.\n\n');
 
 fprintf('-m <file> : Mask(s). Either one for all inputs, or one per input,\n');
-fprintf('	supplied in the same order as the respective -i appear.\n\n');
+fprintf('	supplied in the same order as the respective -i appear.\n');
+fprintf('	For masks for only some of the inputs, use "-m auto" for the\n');
+fprintf('	those that do not need an explicit mask.\n\n');
 
 fprintf('-s <filesurf> [filearea] : The first argument is the surface file\n');
 fprintf('	itself. The second is an optional area-per-vertex or area-per-\n');

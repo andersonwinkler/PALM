@@ -33,17 +33,17 @@ function X = palm_miscread(filename,varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % PALM -- Permutation Analysis of Linear Models
 % Copyright (C) 2015 Anderson M. Winkler
-% 
+%
 % This program is free software: you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation, either version 3 of the License, or
 % any later version.
-% 
+%
 % This program is distributed in the hope that it will be useful,
 % but WITHOUT ANY WARRANTY; without even the implied warranty of
 % MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 % GNU General Public License for more details.
-% 
+%
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -81,7 +81,7 @@ X.filename = filename;
 
 % Take the file extension and try to load accordingly
 [~,fnam,fext] = fileparts(X.filename);
-fext = strdotsplit(strcat(fnam,fext));
+fext = tokenize(strcat(fnam,fext));
 
 % Some formats use external i/o functions that use random numbers. Save
 % current state of the random number generator, then restore at the end.
@@ -92,9 +92,9 @@ else
 end
 
 switch lower(fext{end})
-    
+
     case 'txt'
-        
+
         % Read a generic text file
         X.readwith = 'textscan';
         fid = fopen(X.filename);
@@ -102,9 +102,9 @@ switch lower(fext{end})
         X.data = X.data{1};
         fclose(fid);
         X.extra = [];
-        
+
     case 'csv'
-        
+
         % Read a CSV file. It has to contain numeric values only.
         % The command 'csvwrite' is a frontend to 'dlmwrite', which calls
         % 'textscan', which on its turn has a limitation of 100k columns.
@@ -112,29 +112,29 @@ switch lower(fext{end})
         X.readwith = 'load';
         X.data = load(X.filename);
         X.extra = [];
-        
+
     case {'mat','con','fts','grp'}
-        
+
         % Read an FSL "VEST" file.
         X.readwith = 'vestread';
         [X.data,X.extra.PPH] = palm_vestread(X.filename);
-        
+
     case 'mset'
-        
+
         % Set of matrices
         X.readwith = 'mset';
         X.data = palm_msetread(X.filename);
-        
+
     case 'gz'
-        
+
         % Handle (or not) a gzipped NIFTI or CIFTI file.
         if strcmpi(fext{end-1},'nii')
-            
+
             if any(strcmpi(fext{end-2},optsx.ciftitypes))
-                
+
                 % Until CIFTI migrates to HDF5, users will have to uncompress manually.
                 error('CIFTI files must be uncompressed before they can be read. Use gunzip and try again.');
-                
+
             else
                 % Read as NIFTI proper (not CIFTI)
                 if useniiclass
@@ -146,6 +146,7 @@ switch lower(fext{end})
                         'as input the .nii files instead.\n' ...
                         'File: %s'],X.filename);
                 else
+                    palm_checkprogs;
                     X.readwith = 'fs_load_nifti';
                     X.extra.hdr = load_nifti(X.filename);
                     X.data = X.extra.hdr.vol;
@@ -155,13 +156,14 @@ switch lower(fext{end})
         else
             error('Unrecognised format with extension %s%s',fext0,fext);
         end
-        
+
     case {'nii','hdr','img'}
-        
+
         % Handle NIFTI and CIFTI files.
         if strcmpi(fext{end},'nii') && any(strcmpi(fext{end-1},optsx.ciftitypes))
 
-            % Read a CIFTI file.
+            % Read a CIFTI file
+            palm_checkprogs;
             X.readwith = 'cifti-matlab';
             tmp = cifti_read(X.filename);
             X.data = tmp.cdata;
@@ -177,34 +179,36 @@ switch lower(fext{end})
                 X.extra = nifti(X.filename);
                 X.data = X.extra.dat;
             else
+                palm_checkprogs;
                 X.readwith = 'fs_load_nifti';
                 X.extra.hdr = load_nifti(X.filename);
                 X.data = X.extra.hdr.vol;
                 X.extra.hdr.vol = [];
             end
         end
-        
+
     case {'dpv','dpf','dpx'}
-        
+
         % Read a DPV/DPF file, in ASCII
         X.readwith = 'dpxread';
         [X.data,X.extra.crd,X.extra.idx] = palm_dpxread(X.filename);
-        
+
     case 'srf'
-        
+
         % Read a SRF file, in ASCII
         X.readwith = 'srfread';
         [X.data.vtx,X.data.fac] = palm_srfread(X.filename);
-        
+
     case 'obj'
-        
+
         % Read a Wavefront file
         X.readwith = 'wavefront';
         [X.data.vtx,X.data.fac,X.extra] = palm_objread(X.filename);
-        
+
     case 'mz3'
-        
+
         % Read a MZ3 file
+        palm_checkprogs;
         X.readwith = 'mz3';
         [vtx,fac,colour] = readMz3(X.filename);
         if mz3surf
@@ -216,36 +220,40 @@ switch lower(fext{end})
             X.extra.vtx = vtx;
             X.extra.fac = fac;
         end
-        
+
     case optsx.fscurv
-        
+
         % Read a FreeSurfer curvature file
+        palm_checkprogs;
         X.readwith = 'fs_read_curv';
         [X.data,X.extra.fnum] = read_curv(X.filename);
-        
+
     case optsx.fscurv
-        
+
         % Read a FreeSurfer surface file
+        palm_checkprogs;
         X.readwith = 'fs_read_surf';
         [X.data.vtx,X.data.fac] = read_surf(X.filename);
         X.data.fac = X.data.fac + 1;
-        
+
     case {'mgh','mgz'}
-        
+
         % Read a FreeSurfer MGH/MGZ file
+        palm_checkprogs;
         X.readwith = 'fs_load_mgh';
         [X.data,X.extra.M,X.extra.mr_parms,X.extra.volsz] = load_mgh(X.filename);
-        
+
     case 'annot'
-        
+
         % Read a FreeSurfer annotation file
+        palm_checkprogs;
         X.readwith = 'fs_load_annot';
         [X.extra.vertices,X.data,X.extra.colortab] = read_annotation(X.filename);
-        
+
     case 'gii'
-        
+
         % Read a GIFTI file (no mapped file arrays)
-        palm_checkprogs; % ensure GIFTI toolbox in the path
+        palm_checkprogs;
         X.readwith = 'gifti';
         gii = gifti(X.filename);
         if isfield(gii,'cdata')
@@ -264,7 +272,7 @@ switch lower(fext{end})
             gii.private.data{d}.data = [];
         end
         X.extra = gii.private;
-        
+
     otherwise
         error('File extension %s not known. Data cannot be loaded\n',fext{end});
 end
@@ -286,8 +294,8 @@ if ~ (isstruct(X.data) || iscell(X.data))
 end
 
 % ==============================================================
-function spl = strdotsplit(str)
-% Split a string at the dots (.).
+function spl = tokenize(str)
+% Split a string at the dots (.)
 idx  = find(str == '.');
 idxb = [1 idx+1];
 idxe = [idx-1 numel(str)];

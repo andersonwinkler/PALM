@@ -1,16 +1,17 @@
-function Y = palm_dimreorder(X)
+function Y = palm_dimreorder(X,sqz)
 % Permute the dimensions of data read with palm_miscread such that
 % the permutable dimension is the last. If the data had been permuted
 % already, then reorder back to the original.
-% 
-% Usage:
-% Y = palm_dimreorder(X)
 %
-% X : Data structure from palm_miscread.
-% Y : Like X, but with the dimensions permuted.
+% Usage:
+% Y = palm_dimreorder(X,sqz)
+%
+% X   : Data structure from palm_miscread.
+% szq : Squeeze the permutable dimension? (true/false)
+% Y   : Like X, but with the dimensions permuted.
 %
 % For reordering an array only, see palm_convNto2 and palm_conv2toN.
-% 
+%
 % _____________________________________
 % Anderson M. Winkler
 % UTRGV
@@ -44,11 +45,32 @@ switch X.readwith
 
         if isfield(X.extra,'oldorder')
 
-            % If a field specifying an old order is present, reorder back
-            Y.data = permute(X.data,X.extra.oldorder);
-            Y.extra.diminfo = Y.extra.diminfo(X.extra.oldorder);
-            Y.extra = rmfield(Y.extra,'oldorder');
+            % If a field specifying an old order is present, either squeeze
+            % the last dimension, or reorder back to original
+            if sqz
 
+                % Cannot drop to less than two dimensions
+                if numel(Y.extra.diminfo) > 2
+                    Y.extra.diminfo(end) = [];
+                end
+                idxdimdrop = Y.extra.oldorder == numel(Y.extra.oldorder);
+                Y.extra.oldorder(idxdimdrop) = [];
+
+                % Adjust the file extension
+                switch lower(Y.extra.cifti_file_extension)
+                    case {'pconnscalar','pconnseries'}
+                        Y.extra.cifti_file_extension = 'pconn';
+                    case {'ptseries'}
+                        Y.extra.cifti_file_extension = 'pscalar';
+                    case {'dtseries'}
+                        Y.extra.cifti_file_extension = 'dscalar';
+                end
+            else
+                % Reorder the dims back, keeping the file type
+                Y.data = permute(X.data,X.extra.oldorder);
+                Y.extra.diminfo = Y.extra.diminfo(X.extra.oldorder);
+                Y.extra = rmfield(Y.extra,'oldorder');
+            end
         else
 
             % Otherwise, we want to reorder such that the permutable
@@ -70,10 +92,9 @@ switch X.readwith
             neworder = [setdiff(1:nD,pdim) pdim];
             Y.data = permute(X.data,neworder);
             Y.extra.diminfo = Y.extra.diminfo(neworder);
-            Y.extra.oldorder = sort(neworder);
+            [~,Y.extra.oldorder] = sort(neworder);
         end
 
     otherwise
-
         error('This function currently does not work with files read with %s.', X.readwith);
 end
