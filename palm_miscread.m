@@ -303,3 +303,8 @@ spl  = cell(numel(idxb),1);
 for s = 1:numel(idxb)
     spl{s} = str(idxb(s):idxe(s));
 end
+
+% ==============================================================
+function result = contains(str,ch)
+% Test is a character exists in a string
+result = any(str == ch);
