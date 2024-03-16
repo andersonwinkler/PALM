@@ -32,23 +32,22 @@ function varargout = palm_configrw(varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-if nargin == 1,
+if nargin == 1
     
     % Read files
     plmfile = varargin{1};
     fid = fopen(plmfile,'r');
     cfg = textscan(fid,'%s','CommentStyle','#');
     fclose(fid);
-    if nargout == 1,
+    if nargout == 1
         varargout = cfg;
     end
     
-elseif nargin == 2,
+elseif nargin == 2
     
     % Version & environment
     ver = fliplr(strtok(fliplr(palm_help('version')),' '));
-    ver = strtok(ver,')');
-    if palm_isoctave,
+    if palm_isoctave
         envrun = 'Octave';
     else
         envrun = 'MATLAB';
@@ -62,13 +61,13 @@ elseif nargin == 2,
     fprintf(fid,'# Version %s, running in %s %s.\n',ver,envrun,version);
     fprintf(fid,'# %s\n',datestr(now));
     fprintf('Running PALM %s using %s %s with the following options:',ver,envrun,version);
-    for c = 1:numel(cfg),
+    for c = 1:numel(cfg)
         s2d = str2double(cfg{c});
-        if strcmp(cfg{c}(1),'-') && (isnan(s2d) || ~isreal(s2d)),
+        if strcmp(cfg{c}(1),'-') && (isnan(s2d) || ~isreal(s2d))
             fprintf(    '\n%s',cfg{c});
             fprintf(fid,'\n%s',cfg{c});
         else
-            if ischar(cfg{c}),
+            if ischar(cfg{c})
                 fprintf(    ' %s',cfg{c});
                 fprintf(fid,' %s',cfg{c});
             else
