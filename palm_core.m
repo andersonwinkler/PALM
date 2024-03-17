@@ -26,7 +26,7 @@ function palm_core(varargin)
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 % Uncomment the line below for debugging:
-%clear global plm opts; global plm opts;
+clear global plm opts; global plm opts;
 
 % Take the arguments. Save a small log if needed.
 ticI = tic;

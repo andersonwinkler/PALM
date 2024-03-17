@@ -2328,7 +2328,7 @@ end
 % Note that some lines below the same is done for the cases in which 
 % data and design are mean-centered
 if ~ opts.demean && ~ opts.vgdemean && ~ opts.noranktest
-    testrank(plm)
+    testrank(plm,opts)
 end
 
 % Check if the contrasts have all the same rank for correction over
@@ -2718,7 +2718,7 @@ end
 % Note that some lines above the same is done for the cases in which there
 % is no mean-centering
 if (opts.demean || opts.vgdemean) && ~ opts.noranktest
-    testrank(plm)
+    testrank(plm,opts)
 end
 
 % Number of tests to be selected for the low rank approximation
@@ -2755,7 +2755,7 @@ if opts.accel.lowrank
 end
 
 % ==============================================================
-function testrank(plm)
+function testrank(plm,opts)
 % Test the complicated case in which design is rank deficient, with
 % redundant dimensions being equally represented in EVs of interest and in
 % nuisance.
@@ -2763,7 +2763,7 @@ badcon = cell(plm.nM,1);
 for m = 1:plm.nM
     badcon{m} = zeros(plm.nC(m),1);
     for c = 1:plm.nC(m)
-        [Xgutt,Zgutt] = palm_partition(plm.Mset{m}(:,:,1),plm.Cset{m}{c},'Guttman');
+        [Xgutt,Zgutt] = palm_partition(plm.Mset{m}(:,:,1),plm.Cset{m}{c},opts.pmethodr);
         if size(Zgutt,2) > 0
             cc = palm_cca(Xgutt,Zgutt,plm.N);
             if cc(1) == 1
