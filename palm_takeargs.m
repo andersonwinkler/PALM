@@ -1631,6 +1631,8 @@ if ~ isempty(opts.subjidx)
     u = unique(plm.subjidx);
     if numel(u) == 1
         error('Subject indices are all identical in the -subjidx file.');
+    elseif numel(u) == 2 && u(1) == 0 && u(2) == 1
+        plm.subjidx = logical(plm.subjidx);
     end
 end
 
