@@ -1629,7 +1629,7 @@ if ~ isempty(opts.subjidx)
     plm.subjidx = palm_miscread(opts.subjidx);
     plm.subjidx = round(plm.subjidx.data);
     u = unique(plm.subjidx);
-    if numel(u) == 1
+    if numel(u) == 1 && u ~= 1
         error('Subject indices are all identical in the -subjidx file.');
     elseif numel(u) == 2 && u(1) == 0 && u(2) == 1
         plm.subjidx = logical(plm.subjidx);
