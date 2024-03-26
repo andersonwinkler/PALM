@@ -49,7 +49,7 @@ switch lower(X.readwith)
         
         % Write a CSV file.
         [~,~,fext] = fileparts(X.filename);
-        if isempty(fext)
+        if isempty(fext) || ~ strcmpi(fext,'.csv')
             X.filename = horzcat(X.filename,'.csv');
         end
         dlmwrite(X.filename,X.data,'delimiter',',','precision','%0.4f');
@@ -62,6 +62,10 @@ switch lower(X.readwith)
     case 'msetread'
         
         % Write an MSET (matrix set) file
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext) || ~ strcmpi(fext,'.mset')
+            X.filename = horzcat(X.filename,'.mset');
+        end
         palm_msetwrite(X.filename,X.data);
         
     case 'wb_command'
