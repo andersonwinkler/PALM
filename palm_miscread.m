@@ -228,7 +228,7 @@ switch lower(fext{end})
         X.readwith = 'fs_read_curv';
         [X.data,X.extra.fnum] = read_curv(X.filename);
 
-    case optsx.fscurv
+    case optsx.fssurf
 
         % Read a FreeSurfer surface file
         palm_checkprogs;
