@@ -81,7 +81,7 @@ X.filename = filename;
 
 % Take the file extension and try to load accordingly
 [~,fnam,fext] = fileparts(X.filename);
-fext = tokenize(strcat(fnam,fext));
+fext = extractAfter(fext,1);
 
 % Some formats use external i/o functions that use random numbers. Save
 % current state of the random number generator, then restore at the end.
@@ -91,7 +91,7 @@ else
     state = rng;
 end
 
-switch lower(fext{end})
+switch fext
 
     case 'txt'
 
