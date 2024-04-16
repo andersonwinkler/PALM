@@ -62,9 +62,9 @@ if nA >= 3, mz3surf     = varargin{3}; end
 % If the filename has wildcards, verify that it resolves to a unique name
 if contains(filename,'*') || contains(filename,'?')
     filelist = dir(filename);
-    if numel == 1
+    if numel(filelist) == 1
         filename = filelist(1).name;
-    elseif numel == 0
+    elseif numel(filelist) == 0
         error('File not found: %s',filename);
     else
         error('More than one file match: %s',filename);
