@@ -196,7 +196,10 @@ switch lower(X.readwith)
     case 'fs_load_mgh'
         
         % Write a FreeSurfer MGH file
-        X.filename = horzcat(X.filename,'.mgz');
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext) || ~ ( strcmpi(fext,'.mgh') || strcmpi(fext,'.mgz'))
+            X.filename = horzcat(X.filename,'.mgz');
+        end
         save_mgh(X.data,X.filename,X.extra.M,X.extra.mr_parms);
         
     case 'fs_load_annot'

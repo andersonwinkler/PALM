@@ -42,6 +42,7 @@ while a <= nargin
             if F(f).name(1) == '.'
                 F(f) = [];
             else
+                Dlist{j} = F(f).folder;
                 Flist{j} = F(f).name;
                 j = j + 1;
             end
@@ -49,17 +50,18 @@ while a <= nargin
         a = a + 1;
     end
 end
+Dlist = flipud(Dlist');
 Flist = flipud(Flist');
 
 % For each input file.
 for f = 1:numel(Flist)
-    fprintf('Working on: %s\n',Flist{f});
+    fprintf('Working on: %s\n',fullfile(Dlist{f},Flist{f}));
     
-    B = palm_miscread(Flist{f});
+    B = palm_miscread(fullfile(Dlist{f},Flist{f}));
     L = B; R = B;
     switch B.readwith
         case {'load','csvread','fs_load_mgh'}
-            
+
             nVB = size(B.data,1);
             if isempty(nVL)
                 nVL = nVB/2;
@@ -140,11 +142,13 @@ for f = 1:numel(Flist)
     if strcmpi(Flist{f}(1:2),'bh')
         L.filename = filename;
         L.filename(1:2) = 'lh';
+        L.filename = fullfile(Dlist{f},L.filename);
         R.filename = filename;
         R.filename(1:2) = 'rh';
+        R.filename = fullfile(Dlist{f},R.filename);
     else
-        L.filename = strcat('lh_',filename);
-        R.filename = strcat('rh_',filename);
+        L.filename = fullfile(Dlist{f},strcat('lh_',filename));
+        R.filename = fullfile(Dlist{f},strcat('rh_',filename));
     end
     palm_miscwrite(L);
     palm_miscwrite(R);
