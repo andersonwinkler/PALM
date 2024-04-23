@@ -51,6 +51,16 @@ MATLABBIN=/opt/r16b/bin/matlab
 IS_CLUSTER=0
 TEMP_DIR=/tmp
 
+# If you are using MATLAB and wish to use more than one compute thread
+# then set this to 1 and ensure that OMP_NUM_THREADS is set appropriately
+# e.g. set to the value of SLURM_NPROCS
+# If OMP_NUM_THREADS is not set then default to MATLAB's 'automatic' 
+# determination of number of threads.
+USE_OMP_THREADS=0
+if [[ ${USE_OMP_THREADS} -eq 1 ]] && [[ -z ${OMP_NUM_THREADS} ]]; then
+  OMP_NUM_THREADS="'automatic'"
+fi
+
 # =========================================================================
 # Normally there is no need to edit below this line:
 
@@ -76,7 +86,10 @@ fi
 
 # Command to run inside either Octave or Matlab. It varies slightly
 # depending whether it's a cluster environment or not.
-RUNCMD="addpath('$PALMDIR'); try palm ${1+"$@"} ; catch ME, palm_error(ME), exit(1), end; exit(0)"
+if [[ ${WHICH_TO_RUN} -eq 2 ]] && [[ ${USE_OMP_THREADS} -eq 1 ]]; then
+  RUNCMD="LASTN = maxNumCompThreads(${OMP_NUM_THREADS});"
+fi
+RUNCMD="$RUNCMD addpath('$PALMDIR'); try palm ${1+"$@"} ; catch ME, palm_error(ME), exit(1), end; exit(0)"
 if [[ ${IS_CLUSTER} -ne 0 ]] ; then
    TEMP_NAME=$(tr -cd '[:alnum:]' < /dev/urandom | fold -w10 | head -n 1)
    echo ${RUNCMD} > ${TEMP_DIR}/palm_temp_${TEMP_NAME}.m
@@ -114,7 +127,10 @@ elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    else
       SEDOPT=""
    fi
-   ML_OPTS="-nodesktop -nosplash -singleCompThread"
+   ML_OPTS="-nodesktop -nosplash"
+   if [[ ${USE_OMP_THREADS} -ne 1 ]]; then
+     $ML_OPTS="${ML_OPTS} -singleCompThread"
+   fi
    SED_STR='1,/^.......................................................................$/ d'
    if [[ ${IS_CLUSTER} -eq 0 ]] ; then
      ${MATLABCMD} ${ML_OPTS} -r "${RUNCMD}" | sed ${SEDOPT} -e "$SED_STR"
