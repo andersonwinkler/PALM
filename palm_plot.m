@@ -23,6 +23,9 @@ function palm_plot(Y,X,I,Z,res,F,opt)
 %              applied to the plot.
 % - opt      : (Optional) Use 'poly22' for a curvy plot
 %              (it won't match the GLM, so don't use).
+%              Alternatively, use a scaling factor to scale
+%              the mesh along the Z-axis (it also won't match
+%              the GLM, so don't use). Default opt = 1.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -68,6 +71,9 @@ end
 if exist('F','var') && ~isstruct(F) && ~isempty(F) && ~isnan(F)
     error('F must be a struct.')
 end
+if nargin == 6
+    opt = 1;
+end
 colorlist='brgymck';
 
 % Model fitting
@@ -80,7 +86,6 @@ switch J
     
     case 1
         % This is not an interaction
-        figure
         scatter(Rz*X,Rz*Y);
         if exist('F','var') && isstruct(F)
             title(F.title);
@@ -98,7 +103,6 @@ switch J
         if     numel(uA) == 2 && numel(uB)  > 2
             % If A has 2 categories and B is continuous
             rB = Rz*B;
-            figure
             xlim = [+inf -inf];
             for u = 1:numel(uA)
                 idx = A == uA(u);
@@ -125,7 +129,6 @@ switch J
         elseif numel(uA)  > 2 && numel(uB) == 2
             % If A is continuous and B has 2 categories
             rA = Rz*A;
-            figure
             xlim = [+inf -inf];
             for u = 1:numel(uB)
                 idx = B == uB(u);
@@ -162,7 +165,6 @@ switch J
                     seX(ua,ub) = std(rY(idx))/sqrt(sum(idx)); % Std Error for each category
                 end
             end
-            figure
             bar(X); hold on
             ngroups = size(X,1);
             nbars = size(X,2);
@@ -183,7 +185,6 @@ switch J
             % if A and B are continuous
             rA = Rz*A;
             rB = Rz*B;
-            figure
             if isnumeric(opt)
                 [xg,yg] = meshgrid(linspace(min(rA),max(rA),res),linspace(min(rB),max(rB),res));
                 mesh(xg,yg,xg.*yg*b(1)*opt);
