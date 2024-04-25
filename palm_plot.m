@@ -122,8 +122,9 @@ switch J
             hold('off');
             if exist('F','var') && isstruct(F)
                 title(F.title);
-                xlabel(F.xlabel);
-                ylabel(F.ylabel);
+                xlabel(F.ylabel);
+                ylabel(F.zlabel);
+                legend(F.xnames{:},'Location',F.legend_location);
             end
             
         elseif numel(uA)  > 2 && numel(uB) == 2
@@ -151,7 +152,8 @@ switch J
             if exist('F','var') && isstruct(F)
                 title(F.title);
                 xlabel(F.xlabel);
-                ylabel(F.ylabel);
+                ylabel(F.zlabel);
+                legend(F.ynames{:},'Location',F.legend_location);
             end
             
         elseif numel(uA) == 2 && numel(uB) == 2
@@ -178,7 +180,9 @@ switch J
             if exist('F','var') && isstruct(F)
                 title(F.title);
                 xlabel(F.xlabel);
-                ylabel(F.ylabel);
+                ylabel(F.zlabel);
+                xticklabels(F.xnames);
+                legend(F.ynames{:},'Location',F.legend_location);
             end
             
         else
@@ -189,7 +193,7 @@ switch J
                 [xg,yg] = meshgrid(linspace(min(rA),max(rA),res),linspace(min(rB),max(rB),res));
                 mesh(xg,yg,xg.*yg*b(1)*opt);
                 hold('on')
-                scatter3(rA,rB,rY,'.');
+                scatter3(rA,rB,rY,'k.');
             elseif ischar(opt) && strcmpi(opt,'poly22')
                 surfit = fit([rA rB],rY,'poly22');
                 plot(surfit,[rA,rB],rY);
