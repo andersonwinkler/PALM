@@ -21,6 +21,9 @@ function palm_plot(Y,X,I,Z,res,F,opt)
 % - F        : (Optional) A struct with fields 'title',
 %              'xlabel', 'ylabel' and 'zlabel', to be
 %              applied to the plot.
+%              For discrete variables, names of the categories
+%              can be passed as a cell array of strings
+%              in fields 'xnames' and 'ynames'.
 % - opt      : (Optional) Use 'poly22' for a curvy plot
 %              (it won't match the GLM, so don't use).
 %              Alternatively, use a scaling factor to scale
