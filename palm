@@ -129,7 +129,7 @@ elif [[ ${WHICH_TO_RUN} -eq 2 ]] ; then
    fi
    ML_OPTS="-nodesktop -nosplash"
    if [[ ${USE_OMP_THREADS} -ne 1 ]]; then
-     $ML_OPTS="${ML_OPTS} -singleCompThread"
+     ML_OPTS="${ML_OPTS} -singleCompThread"
    fi
    SED_STR='1,/^.......................................................................$/ d'
    if [[ ${IS_CLUSTER} -eq 0 ]] ; then
