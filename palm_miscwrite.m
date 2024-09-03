@@ -97,6 +97,17 @@ switch lower(X.readwith)
         tmp.metadata = X.extra.metadata;
         cifti_write(tmp,X.filename);
 
+    case 'ipt'
+
+        % Write NIFTI using the Image Processing Toolbox (or equivalent
+        % commands from Octave)
+        X.filename = horzcat(X.filename,'.nii');
+        tmp = ones(size(X.extra.hdr.ImageSize));
+        siz = size(X.data);
+        tmp(1:numel(siz)) = siz;
+        X.extra.hdr.ImageSize = tmp;
+        niftiwrite(X.data,X.filename,X.extra.hdr);
+
     case 'nifticlass'
         
         % Write using the NIFTI class.

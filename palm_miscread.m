@@ -62,7 +62,7 @@ if nA >= 3, mz3surf     = varargin{3}; end
 % If the filename has wildcards, verify that it resolves to a unique name
 if contains(filename,'*') || contains(filename,'?')
     filelist = dir(filename);
-    if numel(filelist) == 1
+    if isscalar(filelist)
         filename = filelist(1).name;
     elseif numel(filelist) == 0
         error('File not found: %s',filename);
@@ -90,6 +90,9 @@ if palm_isoctave
 else
     state = rng;
 end
+
+% Check for external programs
+ext = palm_checkprogs;
 
 switch lower(fext{end})
 
@@ -146,11 +149,16 @@ switch lower(fext{end})
                         'as input the .nii files instead.\n' ...
                         'File: %s'],X.filename);
                 else
-                    palm_checkprogs;
-                    X.readwith = 'fs_load_nifti';
-                    X.extra.hdr = load_nifti(X.filename);
-                    X.data = X.extra.hdr.vol;
-                    X.extra.hdr.vol = [];
+                    if ext.ipt
+                        X.readwith  = 'ipt';
+                        X.extra.hdr = niftiinfo(X.filename);
+                        X.data      = niftiread(X.filename);
+                    else
+                        X.readwith  = 'fs_load_nifti';
+                        X.extra.hdr = load_nifti(X.filename);
+                        X.data      = X.extra.hdr.vol;
+                        X.extra.hdr.vol = [];
+                    end
                 end
             end
         else
@@ -163,7 +171,6 @@ switch lower(fext{end})
         if strcmpi(fext{end},'nii') && any(strcmpi(fext{end-1},optsx.ciftitypes))
 
             % Read a CIFTI file
-            palm_checkprogs;
             X.readwith = 'cifti-matlab';
             tmp = cifti_read(X.filename);
             X.data = tmp.cdata;
@@ -179,11 +186,16 @@ switch lower(fext{end})
                 X.extra = nifti(X.filename);
                 X.data = X.extra.dat;
             else
-                palm_checkprogs;
-                X.readwith = 'fs_load_nifti';
-                X.extra.hdr = load_nifti(X.filename);
-                X.data = X.extra.hdr.vol;
-                X.extra.hdr.vol = [];
+                if ext.ipt
+                    X.readwith  = 'ipt';
+                    X.extra.hdr = niftiinfo(X.filename);
+                    X.data      = niftiread(X.filename);
+                else
+                    X.readwith  = 'fs_load_nifti';
+                    X.extra.hdr = load_nifti(X.filename);
+                    X.data      = X.extra.hdr.vol;
+                    X.extra.hdr.vol = [];
+                end
             end
         end
 
@@ -208,7 +220,6 @@ switch lower(fext{end})
     case 'mz3'
 
         % Read a MZ3 file
-        palm_checkprogs;
         X.readwith = 'mz3';
         [vtx,fac,colour] = readMz3(X.filename);
         if mz3surf
@@ -224,14 +235,12 @@ switch lower(fext{end})
     case optsx.fscurv
 
         % Read a FreeSurfer curvature file
-        palm_checkprogs;
         X.readwith = 'fs_read_curv';
         [X.data,X.extra.fnum] = read_curv(X.filename);
 
     case optsx.fssurf
 
         % Read a FreeSurfer surface file
-        palm_checkprogs;
         X.readwith = 'fs_read_surf';
         [X.data.vtx,X.data.fac] = read_surf(X.filename);
         X.data.fac = X.data.fac + 1;
@@ -239,21 +248,18 @@ switch lower(fext{end})
     case {'mgh','mgz'}
 
         % Read a FreeSurfer MGH/MGZ file
-        palm_checkprogs;
         X.readwith = 'fs_load_mgh';
         [X.data,X.extra.M,X.extra.mr_parms,X.extra.volsz] = load_mgh(X.filename);
 
     case 'annot'
 
         % Read a FreeSurfer annotation file
-        palm_checkprogs;
         X.readwith = 'fs_load_annot';
         [X.extra.vertices,X.data,X.extra.colortab] = read_annotation(X.filename);
 
     case 'gii'
 
         % Read a GIFTI file (no mapped file arrays)
-        palm_checkprogs;
         X.readwith = 'gifti';
         gii = gifti(X.filename);
         if isfield(gii,'cdata')
