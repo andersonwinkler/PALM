@@ -189,7 +189,7 @@ Y = Y(:,maskydat);
 if nargout > 2
     switch Ytmp.readwith
         case {'nifticlass','fs_load_nifti','fsl_read_avw',...
-                'spm_spm_vol','nii_load_nii'}
+                'spm_spm_vol','nii_load_nii','ipt'}
             Yisvol   = true;
             Ykindstr = '_vox';
         case {'fs_read_curv','gifti'}

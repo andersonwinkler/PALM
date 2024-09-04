@@ -78,9 +78,16 @@ switch lower(readwith)
         S.extra.diminfo{end}.maps = extra.diminfo{end}.maps(1);
         S = palm_dimreorder(S,true);
 
+    case 'ipt'
+
+        % If the original data is NIFTI and was read with the MATLAB's
+        % Image Processing Toolbox or Octave's equivalent commands
+        S.data          = palm_conv2toN(mask,extra.hdr.ImageSize(1:3));
+        S.extra.hdr     = extra.hdr;
+
     case 'nifticlass'
         
-        % If the original data is NIFTI and was read witht the NIFTI class
+        % If the original data is NIFTI and was read with the NIFTI class
         S.data          = palm_conv2toN(mask,extra.dat.dim(1:3));
         S.extra.mat     = extra.mat;
         S.extra.dat.dim = extra.dat.dim;
