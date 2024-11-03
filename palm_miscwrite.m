@@ -106,6 +106,19 @@ switch lower(X.readwith)
         siz = size(X.data);
         tmp(1:numel(siz)) = siz;
         X.extra.hdr.ImageSize = tmp;
+        X.extra.hdr.DataType = class(X.data);
+        switch X.extra.hdr.DataType
+            case {'logical','uint8','int8'}
+                X.extra.hdr.BitsPerPixel = 8;
+            case {'char','uint16','int16'}
+                X.extra.hdr.BitsPerPixel = 16;
+            case {'single','uint32','int32'}
+                X.extra.hdr.BitsPerPixel = 32;
+            case {'double','uint64','int64'}
+                X.extra.hdr.BitsPerPixel = 64;
+        end
+        %X.extra.hdr.raw.dim(2:numel(tmp)+1) = tmp;
+        %X.extra.hdr.raw.dim(1) = find(logical(X.extra.hdr.raw.dim(2:end)-1),1,'last');
         niftiwrite(X.data,X.filename,X.extra.hdr);
 
     case 'nifticlass'

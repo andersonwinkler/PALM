@@ -2255,6 +2255,7 @@ for po = P_outer
             % Cluster statistic NPC is here
             if opts.cluster.npc.do
                 if po == 1
+                    plm.Tclumax {1}{c} = zeros(plm.nP{1}(c),1);
                     [plm.Tclumax{1}{c}(po),plm.Tclu{1}{c}] = ...
                         clusterfunc(T{1}{c},1,opts.cluster.npc.thr,opts,plm);
                 else
@@ -2429,6 +2430,7 @@ for po = P_outer
             % Cluster statistic NPC is here
             if opts.cluster.npc.do
                 if po == 1
+                    plm.Tclumax{j} = zeros(plm.nP{1}(1),1);
                     [plm.Tclumax{j}(po),plm.Tclu{j}] = ...
                         clusterfunc(T{j},1,opts.cluster.npc.thr,opts,plm);
                 else
