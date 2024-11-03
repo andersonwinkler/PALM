@@ -236,11 +236,18 @@ switch lower(X.readwith)
         
         % Write a GIFTI file
         X.filename = horzcat(X.filename,'.gii');
+        for i = 1:length(X.extra.data)
+                if ~ numel(X.extra.data{i}.metadata.value)
+                    X.extra.data{i}.metadata.value = '';
+                end
+        end
         gii = gifti([]);
         F = fieldnames(X.extra);
         for f = 1:numel(F)
             gii.private.(F{f}) = X.extra.(F{f});
         end
-        gii.cdata = X.data';
-        save(gii,X.filename,gii.private.data{1}.attributes.Encoding);
+        if ~ isstruct(X.data)
+            gii.cdata = X.data';
+        end
+        save(gii,X.filename,X.extra.data{1}.attributes.Encoding);
 end
