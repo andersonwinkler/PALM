@@ -417,6 +417,7 @@ fprintf('FMRIB / University of Oxford\n');
 fprintf('%s',showversion);
 fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
 
+% ==============================================================
 function vstr = showversion
 % Read the file with the version
 fid = fopen(fullfile(fileparts(mfilename('fullpath')),'palm_version.txt'),'r');
@@ -426,3 +427,15 @@ fclose(fid);
 % Assemble back as a string
 vstr = sprintf('%s ',vstr{1}{:});
 vstr = sprintf('%s\n',vstr(1:end-1));
+
+% If it's the GitHub version (note the lower case), append the commit hash
+if strfind(vstr,'GitHub')
+    fid = fopen(fullfile(fileparts(mfilename('fullpath')),'.git','HEAD'),'r');
+    HEAD = fgetl(fid);
+    fclose(fid);
+    [~,headpath] = strtok(HEAD,' ');
+    fid = fopen(fullfile(fileparts(mfilename('fullpath')),'.git',strtrim(headpath)),'r');
+    hash = fgetl(fid);
+    fclose(fid);
+    vstr = strrep(vstr,'GitHub',sprintf('GitHub, commit:%s',hash(1:7)));
+end
