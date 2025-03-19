@@ -85,10 +85,10 @@ for f = 1:numel(Flist)
                     nXL = nVL;
                 end
             end
-            L.data      = B.data(1:nXL,:,:,:);
-            R.data      = B.data(nXL+1:end,:,:,:);
-            L.extra.crd = B.extra.crd(1:nXL,:,:,:);
-            R.extra.crd = B.extra.crd(nXL+1:end,:,:,:);
+            L.data      = B.data(1:nXL,:);
+            R.data      = B.data(nXL+1:end,:);
+            L.extra.crd = B.extra.crd(1:nXL,:);
+            R.extra.crd = B.extra.crd(nXL+1:end,:);
             L.extra.idx = (0:size(L.data,1)-1)';
             R.extra.idx = (0:size(R.data,1)-1)';
             
@@ -108,7 +108,7 @@ for f = 1:numel(Flist)
                 L.data.vtx = B.data.vtx(1:nVL,:);
                 R.data.vtx = B.data.vtx(nVL+1:end,:);
                 L.data.fac = B.data.fac(1:nFL,:);
-                R.data.fac = B.data.fac(nFL+1:end,:)-nVL;
+                R.data.fac = B.data.fac(nFL+1:end,:) - nVL;
             end
             
         case 'fs_read_curv'
@@ -117,19 +117,51 @@ for f = 1:numel(Flist)
             nFB = B.extra.fnum;
             if xor(isempty(nVL),isempty(nFL))
                 warning(...
-                    ['With curvatures, either both "-v" and "-f" must be supplied, or neither.\n'...
+                    ['With scalar fields, either both "-v" and "-f" must be supplied, or neither.\n'...
                     'Skipping: %s.'],Flist{f});
             else
                 if isempty(nVL) && isempty(nFL)
                     nVL = nVB/2;
                     nFL = nFB/2;
                 end
-                L.data      = B.data(1:nVL,:,:,:);
-                R.data      = B.data(nVL+1:end,:,:,:);
+                L.data      = B.data(1:nVL,:);
+                R.data      = B.data(nVL+1:end,:);
                 L.extra.fnum = nFL;
-                R.extra.fnum = nFB-nFL;
+                R.extra.fnum = nFB - nFL;
             end
             
+        case 'gifti'
+
+            if isfield(B.data,'vtx') && isfield(B.data,'fac')
+                nVB = size(B.data.vtx,1);
+                nFB = size(B.data.fac,1);
+                if xor(isempty(nVL),isempty(nFL))
+                    warning(...
+                        ['With surfaces (meshes), either both "-v" and "-f" must be supplied, or neither.\n'...
+                        'Skipping: %s.'],Flist{f});
+                else
+                    if isempty(nVL) && isempty(nFL)
+                        nVL = nVB/2;
+                        nFL = nFB/2;
+                    end
+                    L.data.vtx = B.data.vtx(1:nVL,:);
+                    R.data.vtx = B.data.vtx(nVL+1:end,:);
+                    L.data.fac = B.data.fac(1:nFL,:);
+                    R.data.fac = B.data.fac(nFL+1:end,:) - nVL;
+                end
+            else
+                nVB = size(B.data,1);
+                if isempty(nVL)
+                    nVL = nVB/2;
+                end
+                L.data = B.data(1:nVL,:);
+                R.data = B.data(nVL+1:end,:);
+            end
+            for d = 1:numel(B.extra.data)
+                L.extra.data{d}.attributes.Dim(1) = nVL;
+                R.extra.data{d}.attributes.Dim(1) = nVB-nVL;
+            end
+
         otherwise
             warning('Cannot deal with files read with %s. Skipping: %s\n',B.readwith,Flist{f});
     end
@@ -145,6 +177,11 @@ for f = 1:numel(Flist)
         L.filename = fullfile(Dlist{f},L.filename);
         R.filename = filename;
         R.filename(1:2) = 'rh';
+        R.filename = fullfile(Dlist{f},R.filename);
+    elseif strfind(Flist{f},'_hemi-B')
+        L.filename = strrep(filename,'_hemi-B','_hemi-L');
+        L.filename = fullfile(Dlist{f},L.filename);
+        R.filename = strrep(filename,'_hemi-B','_hemi-R');
         R.filename = fullfile(Dlist{f},R.filename);
     else
         L.filename = fullfile(Dlist{f},strcat('lh_',filename));
