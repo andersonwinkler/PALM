@@ -262,22 +262,21 @@ switch lower(fext{end})
         % Read a GIFTI file (no mapped file arrays)
         X.readwith = 'gifti';
         gii = gifti(X.filename);
-        if isfield(gii,'cdata')
-            X.data = gii.cdata';
-        end
         if isfield(gii,'vertices') && isfield(gii,'faces')
-            X.data.vtx  = gii.vertices;
-            X.data.fac  = gii.faces;
+            X.data.vtx = gii.vertices;
+            X.data.fac = gii.faces;
             if isfield(gii,'mat')
                 vtx = [X.data.vtx ones(size(X.data.vtx,1),1)];
                 vtx = vtx * gii.mat;
                 X.data.vtx = vtx(:,1:3);
+                X.extra.mat = gii.mat';
             end
+        elseif isfield(gii,'cdata')
+            X.data = gii.cdata';
+        else
+            error('Invalid GIFTI file: %s',X.filename);
         end
-        for d = numel(gii.private.data):-1:1
-            gii.private.data{d}.data = [];
-        end
-        X.extra = gii.private;
+        X.extra.gifti = gii;
 
     otherwise
         error('File extension %s not known. Data cannot be loaded\n',fext{end});

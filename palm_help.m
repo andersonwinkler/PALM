@@ -428,14 +428,18 @@ fclose(fid);
 vstr = sprintf('%s ',vstr{1}{:});
 vstr = sprintf('%s\n',vstr(1:end-1));
 
-% If it's the GitHub version (note the lower case), append the commit hash
-if strfind(vstr,'GitHub')
-    fid = fopen(fullfile(fileparts(mfilename('fullpath')),'.git','HEAD'),'r');
+% If it's the GitHub version, append the commit hash
+headfile = fullfile(fileparts(mfilename('fullpath')),'.git','HEAD');
+if strfind(vstr,'GitHub') && exist(headfile,'file') %#ok<STRIFCND>
+    fid = fopen(headfile,'r');
     HEAD = fgetl(fid);
     fclose(fid);
     [~,headpath] = strtok(HEAD,' ');
-    fid = fopen(fullfile(fileparts(mfilename('fullpath')),'.git',strtrim(headpath)),'r');
-    hash = fgetl(fid);
-    fclose(fid);
-    vstr = strrep(vstr,'GitHub',sprintf('GitHub, commit:%s',hash(1:7)));
+    headpath = fullfile(fileparts(mfilename('fullpath')),'.git',strtrim(headpath));
+    if exist(headpath,'file')
+        fid = fopen(headpath,'r');
+        hash = fgetl(fid);
+        fclose(fid);
+        vstr = strrep(vstr,'GitHub',sprintf('GitHub, commit:%s',hash(1:7)));
+    end
 end
