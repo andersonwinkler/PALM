@@ -1686,55 +1686,59 @@ for i = 1:Ni
             
             % String defining the types, for the filenames and other tasks.
             if Ns == 1, s = 1; else, s = i; end
-            if any(size(plm.srf{s}.data.vtx,1) == ...
-                    size(plm.masks{i}.data))
-                plm.Yisvol(i)   = false;
-                plm.Yissrf(i)   = true;
-                plm.Yisvtx(i)   = true;
-                plm.Yisfac(i)   = false;
-                plm.Ykindstr{i} = '_dpv';
-            elseif any(size(plm.srf{s}.data.fac,1) == ...
-                    size(plm.masks{i}.data))
-                plm.Yisvol(i)   = false;
-                plm.Yissrf(i)   = true;
-                plm.Yisvtx(i)   = false;
-                plm.Yisfac(i)   = true;
-                plm.Ykindstr{i} = '_dpf';
-            else
-                error([...
-                    'Surface file does not match the input data:\n' ...
-                    '- Surface file %d has %d vertices and %d faces (%s)\n' ...
-                    '- Input data file %d has %d points (%s)'],...
-                    s,size(plm.srf{s}.data.vtx,1),size(plm.srf{s}.data.fac,1),opts.s{s},...
-                    i,max(size(plm.masks{i}.data)),opts.i{i});
-            end
-            
-            % Surface area, to be used by the spatial statistics
-            if isempty(plm.srfarea{s}.data)
-                
-                % No area file given, use the actual surface area
-                plm.Yarea{i} = palm_calcarea(plm.srf{s}.data,plm.Yisvtx(i));
-                
-            elseif numel(plm.srfarea{s}.data) == 1
-                
-                % A weight given (such as 1): use that for each vertex or face,
-                % treating as if all had the same area.
-                if plm.Yisvtx(i)
-                    plm.Yarea{i} = plm.srfarea{s}.data .* ...
-                        ones(size(plm.srf{s}.data.vtx,1),1);
-                elseif plm.Yisfac(i)
-                    plm.Yarea{i} = plm.srfarea{s}.data .* ...
-                        ones(size(plm.srf{s}.data.fac,1),1);
+            %Changed John Williams JCW 04/03/2023
+            thisYisVol = plm.Yisvol(i);
+            if(~thisYisVol)
+                if any(size(plm.srf{s}.data.vtx,1) == ...
+                        size(plm.masks{i}.data))
+                    plm.Yisvol(i)   = false;
+                    plm.Yissrf(i)   = true;
+                    plm.Yisvtx(i)   = true;
+                    plm.Yisfac(i)   = false;
+                    plm.Ykindstr{i} = '_dpv';
+                elseif any(size(plm.srf{s}.data.fac,1) == ...
+                        size(plm.masks{i}.data))
+                    plm.Yisvol(i)   = false;
+                    plm.Yissrf(i)   = true;
+                    plm.Yisvtx(i)   = false;
+                    plm.Yisfac(i)   = true;
+                    plm.Ykindstr{i} = '_dpf';
+                else
+                    error([...
+                        'Surface file does not match the input data:\n' ...
+                        '- Surface file %d has %d vertices and %d faces (%s)\n' ...
+                        '- Input data file %d has %d points (%s)'],...
+                        s,size(plm.srf{s}.data.vtx,1),size(plm.srf{s}.data.fac,1),opts.s{s},...
+                        i,max(size(plm.masks{i}.data)),opts.i{i});
                 end
-                
-            else
-                
-                % Otherwise, just use the data from the file (already loaded).
-                plm.Yarea{i} = plm.srfarea{s}.data;
-            end
-            
-            % Compute the adjacency matrix
-            plm.Yadjacency{i} = palm_adjacency(plm.srf{s}.data.fac,plm.Yisvtx(i));
+
+                % Surface area, to be used by the spatial statistics
+                if isempty(plm.srfarea{s}.data)
+
+                    % No area file given, use the actual surface area
+                    plm.Yarea{i} = palm_calcarea(plm.srf{s}.data,plm.Yisvtx(i));
+
+                elseif numel(plm.srfarea{s}.data) == 1
+
+                    % A weight given (such as 1): use that for each vertex or face,
+                    % treating as if all had the same area.
+                    if plm.Yisvtx(i)
+                        plm.Yarea{i} = plm.srfarea{s}.data .* ...
+                            ones(size(plm.srf{s}.data.vtx,1),1);
+                    elseif plm.Yisfac(i)
+                        plm.Yarea{i} = plm.srfarea{s}.data .* ...
+                            ones(size(plm.srf{s}.data.fac,1),1);
+                    end
+
+                else
+
+                    % Otherwise, just use the data from the file (already loaded).
+                    plm.Yarea{i} = plm.srfarea{s}.data;
+                end
+
+                % Compute the adjacency matrix
+                plm.Yadjacency{i} = palm_adjacency(plm.srf{s}.data.fac,plm.Yisvtx(i));
+            end %End JCW Edit 04/03/2023
             
         elseif opts.spatial.do && Ns == 0 && any(strcmpi(plm.masks{i}.readwith,{'load','fs_load_mgh','gifti'}))
             error([ ...
