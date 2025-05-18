@@ -27,7 +27,7 @@ function X = palm_miscread(filename,varargin)
 % Anderson M. Winkler
 % FMRIB / University of Oxford
 % Aug/2013 (first version)
-% Mar/2024 (this version)
+% May/2025 (this version)
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -255,7 +255,18 @@ switch lower(fext{end})
 
         % Read a FreeSurfer annotation file
         X.readwith = 'fs_load_annot';
-        [X.extra.vertices,X.data,X.extra.colortab] = read_annotation(X.filename);
+        [X.extra.vertices,X.extra.codedlabel,X.extra.colourtab] = read_annotation(X.filename);
+
+        % For each structure, replace its label by its index, which
+        % is the actual label
+        X.data = X.extra.codedlabel;
+        for s = 1:X.extra.colourtab.numEntries
+            X.data(X.extra.codedlabel == X.extra.colourtab.table(s,5)) = s;
+        end
+        X.data(X.data == 0) = 1;
+
+        % Create a Matlab colourmap, useful to make figures
+        X.extra.colourmap = X.extra.colourtab.table(:,1:3)/255;
 
     case 'gii'
 

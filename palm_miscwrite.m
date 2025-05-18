@@ -230,7 +230,17 @@ switch lower(X.readwith)
 
         % Write a FreeSurfer annotation file
         X.filename = horzcat(X.filename,'.annot');
-        write_annotation(X.filename,X.extra.vertices,X.data,X.extra.colortab);
+        if ~all(~abs(mod(X.data(:),1)))
+            error('Data must contain only integer values.');
+        end
+        if max(X.data(:)) > size(X.extra.colourtab.table,1)
+            error('Too many labels for the size of the color table');
+        end
+        X.extra.codedlabel = X.data;
+        for s = 1:X.extra.colourtab.numEntries
+            X.extra.codedlabel(X.data == X.extra.colourtab.table(s,5)) = X.extra.colourtab.table(s,5);
+        end
+        write_annotation(X.filename,X.extra.vertices,X.extra.codelabel,X.extra.colourtab);
 
     case 'gifti'
 

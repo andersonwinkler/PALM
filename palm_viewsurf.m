@@ -3,26 +3,26 @@ function fighandle = palm_viewsurf(varargin)
 % The principles are generally similar to those of the tool "dpx2map.m",
 % described here:
 % https://brainder.org/2013/07/28/displaying-vertexwise-and-facewise-brain-maps/
-% 
+%
 % Usage:
 % h = palm_viewsurf( ...
 %                   { lh_dat_file, rh_dat_file }, ...
 %                   { lh_srf_file, rh_srf_file }, ...
 %                   Name, Value, ...)
-% 
+%
 % The first argument is a cell-array with two elements: the first is the
 % filename of the data to visualise for the left hemisphere, the second is
 % the filename of the data for the right hemisphere.
-% 
+%
 % The second argument is also a cell-array with two elements: the first
 % is the surface file for the left hemisphere, the second is the surface
 % file for the right hemisphere.
 %
 % File formats for these inputs are those accepted by PALM.
-% 
+%
 % All subsequent arguments are supplied as pairs "Name,Value", as typical
 % in many MATLAB/Octave commands. Accepted Names and descriptions are:
-% 
+%
 % MapName     : A MATLAB/Octave colourmap (default: 'viridis').
 % DataRange   : Interval to be used to define the colourscale [min max].
 %               If not specified, it uses the min and max of the DPX file.
@@ -46,7 +46,7 @@ function fighandle = palm_viewsurf(varargin)
 % Title       : Title of the figure (to appear at the top of the colourbar).
 % Layout      : How to distribute the brain views in the page? The
 %               following layouts are available:
-%               - 'Simple'      : A simple layout meant to be interactively 
+%               - 'Simple'      : A simple layout meant to be interactively
 %                                 explored using the MATLAB/Octave figure tools.
 %               - 'Cardinal'    : Show 4 views (lateral and medial of left and right
 %                                 hemispheres), plus colorbar in the centre.
@@ -77,7 +77,10 @@ function fighandle = palm_viewsurf(varargin)
 % ColourBar  : Boolean indicating whether the colour bar should be shown.
 %              Note that for the 'publication' and 'worsley' layouts, the
 %              colour bar is always shown.
-% 
+% Inflated   : Boolean indicating whether the surfaces are inflated, in
+%              which case their coordinates are shifted to avoid spatial
+%              overlap
+%
 % Example:
 % freesurfer_dir = getenv('FREESURFER_DIR');
 % data = { ...
@@ -87,7 +90,7 @@ function fighandle = palm_viewsurf(varargin)
 %     fullfile(freesurfer_dir,'subjects','fsaverage','surf','lh.pial'), ...
 %     fullfile(freesurfer_dir,'subjects','fsaverage','surf','rh.pial') };
 % palm_viewsurf(data,surfs,'layout','cardinal','background',[.5 .5 .5],'colormap','inferno');
-% 
+%
 % _____________________________________
 % Anderson M. Winkler
 % National Institutes of Health
@@ -110,6 +113,7 @@ opts.lightning  = 'gouraud'; % {'none', 'flat', 'gouraud'}
 opts.material   = 'dull';    % {'shiny', 'dull', 'metal'}
 opts.shading    = 'interp';  % {'flat', 'interp', 'faceted'}
 opts.colourbar  = true;
+opts.inflated   = false;
 
 % Parse inputs and check for most common errors.
 dat = varargin{1};
@@ -163,83 +167,107 @@ dat{2} = palm_miscread(dat{2});
 srf{1} = palm_miscread(srf{1});
 srf{2} = palm_miscread(srf{2});
 
+% Move coordinates for inflated surfaces, to avoid surface crossings
+if opts.inflated
+    srf{1}.data.vtx(:,1) = srf{1}.data.vtx(:,1) - max(srf{1}.data.vtx(:,1)) - 10;
+    srf{2}.data.vtx(:,1) = srf{2}.data.vtx(:,1) - min(srf{2}.data.vtx(:,1)) + 10;
+end
+
 % Merge left and right hemispheres (to be treated as a "third" hemisphere)
 srf{3}.data.vtx = vertcat(srf{1}.data.vtx,srf{2}.data.vtx);
 srf{3}.data.fac = vertcat(srf{1}.data.fac,srf{2}.data.fac+size(srf{1}.data.vtx,1));
-dat{3}.data = vertcat(dat{1}.data,dat{2}.data);
+dat{3}.data     = vertcat(dat{1}.data,dat{2}.data);
 for h = 1:3
     dat{h}.data = squeeze(dat{h}.data);
+end
+
+% Center the brain at (0,0,0)
+C = mean(srf{3}.data.vtx);
+for s = 1:3
+    srf{s}.data.vtx = srf{s}.data.vtx - C;
 end
 
 % Open a new figure window. The handle will be returned.
 fighandle = figure;
 
-% Ensure data and colour ranges are well behaved
-if isempty(opts.datarange)
-    iinf = isinf(dat{3}.data);
-    inan = isnan(dat{3}.data);
-    iidx = ~(iinf | inan);
-    opts.datarange = [min(dat{3}.data(iidx)) max(dat{3}.data(iidx))];
-end
-if isempty(opts.showrange)
-    opts.showrange = opts.datarange;
-end
-opts.showrange(1) = max(opts.showrange(1),opts.datarange(1));
-opts.showrange(2) = min(opts.showrange(2),opts.datarange(2));
-for h = 1:numel(dat)
-    infneg = isinf(dat{h}.data) & dat{h}.data < 0;
-    infpos = isinf(dat{h}.data) & dat{h}.data > 0;
-    dat{h}.data(infneg) = opts.datarange(1);
-    dat{h}.data(infpos) = opts.datarange(2);
-end
+% Work with colours
+if strcmpi(opts.mapname,'annot')
+    if ~ (strcmpi(dat{1}.readwith,'fs_load_annot') && strcmpi(dat{2}.readwith,'fs_load_annot'))
+        error('MapName "annot" is reserved for annotation files (with extension ".annot"');
+    end
+    map = dat{1}.extra.colourmap;
+    if isempty(opts.datarange)
+        opts.datarange = [min(dat{3}.data) max(dat{3}.data)];
+    end
+else
 
-% Define the colourmap
-if opts.dual
-    if opts.coption
+    % Ensure data and colour ranges are well behaved
+    if isempty(opts.datarange)
+        iinf = isinf(dat{3}.data);
+        inan = isnan(dat{3}.data);
+        iidx = ~(iinf | inan);
+        opts.datarange = [min(dat{3}.data(iidx)) max(dat{3}.data(iidx))];
+    end
+    if isempty(opts.showrange)
+        opts.showrange = opts.datarange;
+    end
+    opts.showrange(1) = max(opts.showrange(1),opts.datarange(1));
+    opts.showrange(2) = min(opts.showrange(2),opts.datarange(2));
+    for h = 1:numel(dat)
+        infneg = isinf(dat{h}.data) & dat{h}.data < 0;
+        infpos = isinf(dat{h}.data) & dat{h}.data > 0;
+        dat{h}.data(infneg) = opts.datarange(1);
+        dat{h}.data(infpos) = opts.datarange(2);
+    end
+
+    % Define the colourmap
+    if opts.dual
+        if opts.coption
+            neg = opts.showrange(1) - opts.datarange(1);
+            cen = opts.showrange(2) - opts.showrange(1);
+            pos = opts.datarange(2) - opts.showrange(2);
+            tot = opts.datarange(2) - opts.datarange(1);
+            fracs = round([neg cen pos]./tot*opts.mapsize);
+            maptmp = eval(sprintf('%s(%d)',opts.mapname,fracs(1)+fracs(3)));
+            map = nan(opts.mapsize,3);
+            map(1:fracs(1),:) = maptmp(1:fracs(1),:);
+            map(fracs(1)+1:fracs(1)+fracs(2),:) = repmat(opts.colourgap,[fracs(2) 1]);
+            map(fracs(1)+fracs(2)+1:sum(fracs),:) = maptmp(fracs(1)+1:fracs(1)+fracs(3),:);
+        else
+            map = eval(sprintf('%s(%d)',opts.mapname,opts.mapsize));
+            idxmin = round((opts.showrange(1) - opts.datarange(1)) / (opts.datarange(2) - opts.datarange(1)) * (opts.mapsize - 1) + 1);
+            idxmax = round((opts.showrange(2) - opts.datarange(1)) / (opts.datarange(2) - opts.datarange(1)) * (opts.mapsize - 1) + 1);
+            map(idxmin:idxmax,:) = repmat(opts.colourgap,[idxmax-idxmin+1 1]);
+        end
+    else
         neg = opts.showrange(1) - opts.datarange(1);
         cen = opts.showrange(2) - opts.showrange(1);
         pos = opts.datarange(2) - opts.showrange(2);
         tot = opts.datarange(2) - opts.datarange(1);
         fracs = round([neg cen pos]./tot*opts.mapsize);
-        maptmp = eval(sprintf('%s(%d)',opts.mapname,fracs(1)+fracs(3)));
+        maptmp = eval(sprintf('%s(%d)',opts.mapname,fracs(2)));
         map = nan(opts.mapsize,3);
-        map(1:fracs(1),:) = maptmp(1:fracs(1),:);
-        map(fracs(1)+1:fracs(1)+fracs(2),:) = repmat(opts.colourgap,[fracs(2) 1]);
-        map(fracs(1)+fracs(2)+1:sum(fracs),:) = maptmp(fracs(1)+1:fracs(1)+fracs(3),:);
-    else
-        map = eval(sprintf('%s(%d)',opts.mapname,opts.mapsize));
-        idxmin = round((opts.showrange(1) - opts.datarange(1)) / (opts.datarange(2) - opts.datarange(1)) * (opts.mapsize - 1) + 1);
-        idxmax = round((opts.showrange(2) - opts.datarange(1)) / (opts.datarange(2) - opts.datarange(1)) * (opts.mapsize - 1) + 1);
-        map(idxmin:idxmax,:) = repmat(opts.colourgap,[idxmax-idxmin+1 1]);
-    end
-else
-    neg = opts.showrange(1) - opts.datarange(1);
-    cen = opts.showrange(2) - opts.showrange(1);
-    pos = opts.datarange(2) - opts.showrange(2);
-    tot = opts.datarange(2) - opts.datarange(1);
-    fracs = round([neg cen pos]./tot*opts.mapsize);
-    maptmp = eval(sprintf('%s(%d)',opts.mapname,fracs(2)));
-    map = nan(opts.mapsize,3);
-    map(fracs(1)+1:fracs(1)+fracs(2),:) = maptmp;
-    if opts.coption
-        map(1:fracs(1),:) = repmat(maptmp(1,:),[fracs(1) 1]);
-        map(fracs(1)+fracs(2)+1:sum(fracs),:) = repmat(maptmp(fracs(2),:),[fracs(3) 1]);
-    else
-        map(1:fracs(1),:) = repmat(opts.colourgap,[fracs(1) 1]);
-        map(fracs(1)+fracs(2)+1:sum(fracs),:) = repmat(opts.colourgap,[fracs(3) 1]);
+        map(fracs(1)+1:fracs(1)+fracs(2),:) = maptmp;
+        if opts.coption
+            map(1:fracs(1),:) = repmat(maptmp(1,:),[fracs(1) 1]);
+            map(fracs(1)+fracs(2)+1:sum(fracs),:) = repmat(maptmp(fracs(2),:),[fracs(3) 1]);
+        else
+            map(1:fracs(1),:) = repmat(opts.colourgap,[fracs(1) 1]);
+            map(fracs(1)+fracs(2)+1:sum(fracs),:) = repmat(opts.colourgap,[fracs(3) 1]);
+        end
     end
 end
 colormap(map)
 
 % Render using the selected layout
 switch opts.layout
-    
+
     case 'simple'
-        
+
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
         w = 0.45;
-        
+
         % First panel (right frontal view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
@@ -249,7 +277,7 @@ switch opts.layout
             'EdgeColor','None');
         view(-245,20);
         useopts(opts,fighandle);
-        
+
         % Second panel (left frontal view)
         ax(2) = axes('Position',[0.525 0.025 w h]);
         trisurf(...
@@ -259,19 +287,19 @@ switch opts.layout
             'EdgeColor','None');
         view(245,20);
         useopts(opts,fighandle);
-        
+
         % Deal with the colourbar
         if opts.colourbar
             cb = colorbar('Location','SouthOutside');
             set(cb,'Position',[0.35 0.085 0.3 0.02]);
         end
-         
+
     case 'cardinal'
-        
+
         % Auxiliary variables for the sizes of each panel
         h = 0.5;
         w = 0.5;
-        
+
         % Upper-left panel (left lateral view)
         ax(1) = axes('Position',[0 0.5 w h]);
         trisurf(...
@@ -281,7 +309,7 @@ switch opts.layout
             'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % Upper-right panel (right lateral view)
         ax(2) = axes('Position',[0.5 0.5 w h]);
         trisurf(...
@@ -291,7 +319,7 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % Lower-left panel (left medial view)
         ax(3) = axes('Position',[0 0 w h]);
         trisurf(...
@@ -301,7 +329,7 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % Lower-right panel (right medial view)
         ax(4) = axes('Position',[0.5 0 w h]);
         trisurf(srf{2}.data.fac,...
@@ -309,19 +337,19 @@ switch opts.layout
             dat{2}.data,'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % Deal with the colourbar
         if opts.colourbar
             cb = colorbar('Location','South');
             set(cb,'Position',[0.35 0.475 0.3 0.02]);
         end
-        
+
     case 'left'
 
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
         w = 0.45;
-        
+
         % First panel (left lateral view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
@@ -331,7 +359,7 @@ switch opts.layout
             'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % Second panel (left medial view)
         ax(2) = axes('Position',[0.525 0.025 w h]);
         trisurf(...
@@ -344,13 +372,13 @@ switch opts.layout
 
         % This mode has no colourbar
         opts.colourbar = false;
-        
+
     case 'right'
-        
+
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
         w = 0.45;
-        
+
         % First panel (right lateral view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
@@ -360,7 +388,7 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % Second panel (right medial view)
         ax(2) = axes('Position',[0.525 0.025 w h]);
         trisurf(...
@@ -375,11 +403,11 @@ switch opts.layout
         opts.colourbar = false;
 
     case 'leftlateral'
-        
+
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
         w = 0.95;
-        
+
         % First panel (right lateral view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
@@ -389,16 +417,16 @@ switch opts.layout
             'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % This mode has no colourbar
         opts.colourbar = false;
-        
+
     case 'leftmedial'
-        
+
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
         w = 0.95;
-        
+
         % First panel (right lateral view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
@@ -408,16 +436,16 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % This mode has no colourbar
         opts.colourbar = false;
-        
+
     case 'rightlateral'
-        
+
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
         w = 0.95;
-        
+
         % First panel (right lateral view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
@@ -427,16 +455,16 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % This mode has no colourbar
         opts.colourbar = false;
-        
+
     case 'rightmedial'
-        
+
         % Auxiliary variables for the sizes of each panel
         h = 0.95;
         w = 0.95;
-        
+
         % First panel (right lateral view)
         ax(1) = axes('Position',[0.025 0.025 w h]);
         trisurf(...
@@ -446,18 +474,18 @@ switch opts.layout
             'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % This mode has no colourbar
         opts.colourbar = false;
 
     case 'strip'
-        
+
         % Auxiliary variables for the sizes of each panel
-        h = 0.95;
-        w = 0.2;
-        
+        h = 1;
+        w = 1/8;
+
         % First panel (left lateral view)
-        ax(1) = axes('Position',[0.025 0.025 w h]);
+        ax(1) = axes('Position',[0 0 w h]);
         trisurf(...
             srf{1}.data.fac,...
             srf{1}.data.vtx(:,1),srf{1}.data.vtx(:,2),srf{1}.data.vtx(:,3),...
@@ -465,9 +493,9 @@ switch opts.layout
             'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % Second panel (right lateral view)
-        ax(2) = axes('Position',[0.275 0.025 w h]);
+        ax(2) = axes('Position',[0.125 0 w h]);
         trisurf(...
             srf{2}.data.fac,...
             srf{2}.data.vtx(:,1),srf{2}.data.vtx(:,2),srf{2}.data.vtx(:,3),...
@@ -475,9 +503,9 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % Third panel (left medial view)
-        ax(3) = axes('Position',[0.525 0.025 w h]);
+        ax(3) = axes('Position',[0.25 0 w h]);
         trisurf(...
             srf{1}.data.fac,...
             srf{1}.data.vtx(:,1),srf{1}.data.vtx(:,2),srf{1}.data.vtx(:,3),...
@@ -485,15 +513,55 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % Fourth panel (right medial view)
-        ax(4) = axes('Position',[0.775 0.025 w h]);
+        ax(4) = axes('Position',[0.375 0 w h]);
         trisurf(srf{2}.data.fac,...
             srf{2}.data.vtx(:,1),srf{2}.data.vtx(:,2),srf{2}.data.vtx(:,3),...
             dat{2}.data,'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
+        % Fifth panel (top view)
+        ax(5) = axes('Position',[0.5 0 w h]);
+        trisurf(...
+            srf{3}.data.fac,...
+            srf{3}.data.vtx(:,1),srf{3}.data.vtx(:,2),srf{3}.data.vtx(:,3),...
+            dat{3}.data,...
+            'EdgeColor','None');
+        view(0,90);
+        useopts(opts,fighandle);
+
+        % Sixth panel (bottom view)
+        ax(6) = axes('Position',[0.625 0 w h]);
+        trisurf(...
+            srf{3}.data.fac,...
+            srf{3}.data.vtx(:,1),srf{3}.data.vtx(:,2),srf{3}.data.vtx(:,3),...
+            dat{3}.data,...
+            'EdgeColor','None');
+        view(180,-90);
+        useopts(opts,fighandle);
+
+        % Seventh panel (frontal view)
+        ax(7) = axes('Position',[0.75 0 w h]);
+        trisurf(...
+            srf{3}.data.fac,...
+            srf{3}.data.vtx(:,1),srf{3}.data.vtx(:,2),srf{3}.data.vtx(:,3),...
+            dat{3}.data,...
+            'EdgeColor','None');
+        view(180,0);
+        useopts(opts,fighandle);
+
+        % Eighth panel (occipital view)
+        ax(8) = axes('Position',[0.875 0 w h]);
+        trisurf(...
+            srf{3}.data.fac,...
+            srf{3}.data.vtx(:,1),srf{3}.data.vtx(:,2),srf{3}.data.vtx(:,3),...
+            dat{3}.data,...
+            'EdgeColor','None');
+        view(0,0);
+        useopts(opts,fighandle);
+
         % This mode has no colourbar
         opts.colourbar = false;
 
@@ -506,7 +574,7 @@ switch opts.layout
         xyz_range = max(srf{3}.data.vtx,[],1) - min(srf{3}.data.vtx,[],1);
         wb = h/xyz_range(2)*xyz_range(1)*3/4;
         hb = h/xyz_range(2)*xyz_range(1);
-        
+
         % Upper-left panel (left lateral view)
         ax(1) = axes('Position',[0.055 0.62 h*3/4 w]);
         trisurf(...
@@ -516,7 +584,7 @@ switch opts.layout
             'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % Upper-center panel (top view)
         ax(2) = axes('Position',[0.3 0.58 w h]);
         trisurf(...
@@ -526,7 +594,7 @@ switch opts.layout
             'EdgeColor','None');
         view(0,90);
         useopts(opts,fighandle);
-        
+
         % Upper-right panel (right lateral view)
         ax(3) = axes('Position',[1-0.055-h*3/4 0.62 h*3/4 w]);
         trisurf(...
@@ -546,7 +614,7 @@ switch opts.layout
             'EdgeColor','None');
         view(180,0);
         useopts(opts,fighandle);
-        
+
         % Middle-right panel (occipital view)
         ax(5) = axes('Position',[1-0.055-wb 0.345 wb hb]);
         trisurf(...
@@ -556,7 +624,7 @@ switch opts.layout
             'EdgeColor','None');
         view(0,0);
         useopts(opts,fighandle);
-        
+
         % Lower-left panel (left medial view)
         ax(6) = axes('Position',[0.055 -0.015 h*3/4 w]);
         trisurf(...
@@ -566,7 +634,7 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % Lower-center panel (bottom view)
         ax(7) = axes('Position',[0.3 0.03 w h]);
         trisurf(...
@@ -576,7 +644,7 @@ switch opts.layout
             'EdgeColor','None');
         view(180,-90);
         useopts(opts,fighandle);
-        
+
         % Lower-right panel (right medial view)
         ax(8) = axes('Position',[1-0.055-h*3/4 -0.015 h*3/4 w]);
         trisurf(srf{2}.data.fac,...
@@ -592,7 +660,7 @@ switch opts.layout
         else
             set(cb,'Position',[0.35 0.48 0.3 0.03]);
         end
-        
+
     case 'worsley'
         % This is the layout originally proposed by Keith Worsley
         % (McGill University, circa 2005).
@@ -603,7 +671,7 @@ switch opts.layout
         xyz_range = max(srf{3}.data.vtx,[],1) - min(srf{3}.data.vtx,[],1);
         wb = h/xyz_range(2)*xyz_range(1)*3/4;
         hb = h/xyz_range(2)*xyz_range(1);
-        
+
         % Upper-left panel (left lateral view)
         ax(1) = axes('Position',[0.055 0.62 h*3/4 w]);
         trisurf(...
@@ -613,7 +681,7 @@ switch opts.layout
             'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % Upper-center panel (top view)
         ax(2) = axes('Position',[0.3 0.58 w h]);
         trisurf(...
@@ -623,7 +691,7 @@ switch opts.layout
             'EdgeColor','None');
         view(0,90);
         useopts(opts,fighandle);
-        
+
         % Upper-right panel (right lateral view)
         ax(3) = axes('Position',[1-0.055-h*3/4 0.62 h*3/4 w]);
         trisurf(...
@@ -633,7 +701,7 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % Middle-left panel (left medial view)
         ax(4) = axes('Position',[0.055 0.29 h*3/4 w]);
         trisurf(...
@@ -643,7 +711,7 @@ switch opts.layout
             'EdgeColor','None');
         view(90,0);
         useopts(opts,fighandle);
-        
+
         % Middle-center panel (bottom view)
         ax(5) = axes('Position',[0.3 0.18 w h]);
         trisurf(...
@@ -653,7 +721,7 @@ switch opts.layout
             'EdgeColor','None');
         view(0,-90);
         useopts(opts,fighandle);
-        
+
         % Middle-right panel (right medial view)
         ax(6) = axes('Position',[1-0.055-h*3/4 0.29 h*3/4 w]);
         trisurf(srf{2}.data.fac,...
@@ -661,7 +729,7 @@ switch opts.layout
             dat{2}.data,'EdgeColor','None');
         view(-90,0);
         useopts(opts,fighandle);
-        
+
         % Lower-left panel (frontal view)
         ax(7) = axes('Position',[0.055 0.02 wb hb]);
         trisurf(...
@@ -671,7 +739,7 @@ switch opts.layout
             'EdgeColor','None');
         view(180,0);
         useopts(opts,fighandle);
-        
+
         % Lower-right panel (occipital view)
         ax(8) = axes('Position',[1-0.055-wb 0.03 wb hb]);
         trisurf(...
@@ -681,17 +749,17 @@ switch opts.layout
             'EdgeColor','None');
         view(0,0);
         useopts(opts,fighandle);
-        
+
         % This layout always includes a colourbar
         cb = colorbar('Location','South');
         set(cb,'Position',[0.35 0.085 0.3 0.03]);
-        
+
     otherwise
         error('Unknown layout style %s.\n',opts.layout)
 end
 
 % Deal with the colour limits
-for i=1:length(ax)
+for i = 1:length(ax)
     set(ax(i),'CLim',opts.datarange);
 end
 
@@ -703,9 +771,20 @@ end
 
 function useopts(opts,fighandle) % ==================================================
 daspect([1 1 1]);
-axis tight;
-axis vis3d off;
 box off
+if strcmpi(opts.layout,'strip')
+    if opts.inflated
+        scale = 150;
+    else
+        scale = 110;
+    end
+    maxaxis = [-1 1 -1 1 -1 1]*scale;
+    axis(maxaxis);
+    axis off
+else
+    axis tight;
+    axis vis3d off;
+end
 if strcmpi(opts.layout,'worsley')
     set(fighandle,'Color',[1 1 1],'InvertHardcopy','Off');
     camlight;
