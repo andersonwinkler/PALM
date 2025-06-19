@@ -106,8 +106,8 @@ switch lower(X.readwith)
         siz = size(X.data);
         tmp(1:numel(siz)) = siz;
         X.extra.hdr.ImageSize = tmp;
-        X.extra.hdr.DataType = class(X.data);
-        switch X.extra.hdr.DataType
+        X.extra.hdr.Datatype = class(X.data);
+        switch X.extra.hdr.Datatype
             case {'logical','uint8','int8'}
                 X.extra.hdr.BitsPerPixel = 8;
             case {'char','uint16','int16'}
