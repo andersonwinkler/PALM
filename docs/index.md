@@ -1,3 +1,4 @@
+# PALM: Permutation Analysis of Linear Models
 
 * [[User guide]]
 * [[Exchangeability blocks]]
