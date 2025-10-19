@@ -1,0 +1,10 @@
+## Why the TFCE results aren't identical to the ones produced by randomise?
+
+There are two reasons for this:
+
+* To accommodate various other statistics, such as for multivariate tests and NPC, and also to allow correction across multiple designs and modalities, a common scale is needed, something that can provided by the z-statistic. For this reason, PALM converts internally all statistics to z before computing spatial statistics as TFCE, cluster extent and cluster mass. The outputs, however, will be in the original statistic, unless the option -zstat is used. Thus, the values of the spatial statistics are not guaranteed to be identical to those produced by randomise, although the difference tends to be small, and even smaller as the sample size increases.
+* In both randomise and PALM, the TFCE equation is calculated in steps, i.e., discretely. The size of the step in randomise is fixed for all permutations and based on the first permutation, whereas in PALM it is the number of steps that is by default fixed for all permutations. As above, the reason for the difference is to accommodate the correction for multiple input modalities, designs and contrasts, such that a particular step size chosen for one is not unfavourable to the others. This is not an issue for randomise as it deals with one design, contrast and modality at a time, so there is no need for uniformity across these. PALM uses a fixed number of steps, then normalise the resulting statistic by the step size, yielding a value that still has a constant (comparable across) measurement unit.
+
+## Why are the degrees of freedom non-integers?
+
+For the v and G statistics, the degrees of freedom can indeed be non-integers. These values, even if non-integers, can be used to compute parametric p-values by referring to the t and F distributions (if the parametric assumptions are met).
