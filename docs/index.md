@@ -1,14 +1,5 @@
 # PALM: Permutation Analysis of Linear Models
 
-* [[User guide]]
-* [[Exchangeability blocks]]
-* [[Joint inference]]
-* [[Masks and voxelwise regressors]]
-* [[Faster inference]]
-* [[Viewing results]]
-* [[Examples]]
-* [[Frequently asked questions]]
-
 **PALM — Permutation Analysis of Linear Models** — is a tool that allows inference using permutation methods, offering a number of features not available in other analysis software. These features currently include:
 
 * Ability to work with volumetric and surface-based formats, including facewise data, as well as with non-imaging data;
@@ -26,7 +17,7 @@ PALM requires Matlab or Octave. It can be executed from inside either environmen
 
 **PALM is experimental software.** As novel features are introduced, tested, verified, and validated, eventually they will be implemented and made available in randomise or in other tools. PALM is for users who are familiar with statistics and willing to use experimental analysis tools. Bugs (real or suspected) can be reported via [GitHub](https://github.com/andersonwinkler/PALM) or through the [FSL mailing list](https://fsl.fmrib.ox.ac.uk/fsl/docs/support.html).
 
-To download PALM and for installation instructions, please visit the [[User guide]].
+To download PALM and for installation instructions, please visit the [User Guide](user_guide.md).
 
 ## References
 
@@ -56,3 +47,7 @@ For additional theory of permutation tests in neuroimaging, please see and cite:
 > Nichols TE, Holmes AP. [Nonparametric permutation tests for functional neuroimaging: a primer with examples.](http://dx.doi.org/10.1002/hbm.1058) Hum Brain Mapp. 2002 Jan;15(1):1-25.
 
 > Holmes AP, Blair RC, Watson JD, Ford I. [Nonparametric analysis of statistic images from functional mapping experiments.](http://dx.doi.org/10.1097/00004647-199601000-00002) J Cereb Blood Flow Metab. 1996 Jan;16(1):7-22.
+
+## Support
+
+Support is provided by the National Institutes of Health (1R01MH139547-01).

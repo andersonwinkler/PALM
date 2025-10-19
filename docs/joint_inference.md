@@ -1,3 +1,5 @@
+# Joint inference
+
 ## Non-Parametric Combination (NPC)
 
 ### Overview
@@ -8,7 +10,7 @@ As originally proposed, NPC cannot feasibly be used in brain imaging. As the sta
 
 The solution is to use a modified version of the NPC, starting from the principles that underlie direct combination of statistics, by computing for each partial test quantities that behave similarly as p-values; we call these as "u-values", to emphasise that they are not meant to be read or interpreted as p-values, but rather as transitional values that allow combinations that otherwise would not be possible. The algorithm proceeds then in single phase, with permutations being performed on-the-fly, and with no need for storage of the complete permutation distribution at each voxel. Another modification needed for brain imaging refers to spatial statistics: the asymptotic distribution of the combined statistic is used, this time to produce a z-score, from which cluster extent, cluster mass, and TFCE can be computed. A flow chart showing both the original and the modified algorithm is shown below.
 
-![](joint_inference_npc.png)
+![Overview of the NPC algorithm](images/joint_inference_npc.png)
 
 ### Combining functions
 
@@ -16,7 +18,7 @@ The joint null hypothesis of the NPC is that the null hypotheses for all partial
 
 The rejection region for the joint null hypothesis depends on how the combined statistic is produced. Various combining functions can be considered. Some of these were developed for applications such as meta-analyses. The figure below shows the rejection regions for four different popular combining functions, i.e., the ones attributed to Tippett, Fisher, Stouffer, and Mudholkar-George, and considering two partial tests, for which p-values (p1 and p2) are available.
 
-![](joint_inference_biv_rejection_simple.png)
+![Simple rejection region for some combining functions](images/joint_inference_biv_rejection_simple.png)
 
 In the NPC, these combining functions can be used even if the partial tests are not independent, as their dependence structure, whatever it might be, is implicitly accounted for during by synchronised permutation procedure.
 
@@ -24,11 +26,11 @@ The simple combination as above implies a specific direction for each of the par
 
 Another situation arises if there is no a priori direction suspected for an effect, but concordant directions for the partial tests (either direction) are more relevant than mismatching. The rejection regions for these four examples of combining functions would then be as in the figure below:
 
-![](joint_inference_biv_rejection_concordant.png)
+![Concordant rejection region for some combining functions](images/joint_inference_biv_rejection_concordant.png)
 
 It might also be the case that both directions are equally interesting for each of the partial test. If that is the case, a two-tailed test for each partial test is ideal, and the rejection region for these four examples would be as below:
 
-![](joint_inference_biv_rejection_twotailed.png)
+![Two-tailed rejection region for some combining functions](images/joint_inference_biv_rejection_twotailed.png)
 
 One of the many reasons for the superiority of NPC when compared to classical multivariate tests, such as MANCOVA, refers to its finite sample consistency, that is, even with fixed sample size, as the number of modalities being combined increases, the power of the test also increases, as shown in the simulations in the reference below. The power of MANCOVA, however, increases up to a certain point, then begins to decrease, eventually reaching zero when the number of combining variables match the sample size.
 

@@ -1,0 +1,9 @@
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: rgb(240, 80, 35);
+  --md-accent-fg-color: rgb(240, 80, 35);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: rgb(240, 80, 35);
+  --md-accent-fg-color: rgb(240, 80, 35);
+}

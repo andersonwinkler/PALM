@@ -1,3 +1,5 @@
+# Faster inference
+
 Permutation tests are computationally intensive. For small, non-imaging datasets, recomputing a model thousands of times is seldom a problem, but for large, complex models this can be prohibitively slow, even with the availability of inexpensive computing power. PALM offers the possibility of accelerating the inference through properties of statistics used with the general linear model (GLM) and their distributions, in a way that is irrespective of software or hardware improvements.
 
 | Method | Brief description | Availability | Basic usage |
@@ -9,11 +11,11 @@ Permutation tests are computationally intensive. For small, non-imaging datasets
 | **Gamma approximation** | Run a small number of permutations, compute empirically the moments of the permutation distribution, then fit a gamma distribution. | Univariate and multivariate tests (CMV and NPC), both uncorrected and corrected (FWER and FDR). Spatial statistics available (TFCE and cluster). | `-accel gamma` |
 | **Low rank matrix completion** | Run a certain number of permutations, define orthonormal bases for matrices that are linear functions of the data and from which the statistic can be obtained; continue permuting a random subset of tests, filling the missing ones via projection to these bases. | Univariate tests, uncorrected and corrected (FWER and FDR). No spatial statistics for this method (theoretically possible, but not implemented). | `-accel lowrank` |
 
-In the table, **CMV** stands for Classical Multivariate Tests (such as MANOVA, MANCOVA, CCA), whereas **NPC** stands for Non-Parametric Combination. See [[Joint inference]] for details.
+In the table, **CMV** stands for Classical Multivariate Tests (such as MANOVA, MANCOVA, CCA), whereas **NPC** stands for Non-Parametric Combination. See [here](joint_inference.md) for details.
 
 The figure below summarises the methods: With permutations (i.e., few permutations, negative binomial, and low rank matrix completion), the p-value is the fraction of the test statistics obtained after permuting that are higher than in the unpermuted. In the tail approximation, the tail of the permutation distribution is subjected to the fit of a generalised Pareto distribution (GPD), from which the p-values are computed. In the method in which no permutations are performed, the first three moments of the permutation distribution are computed from data and model, and to these which a gamma distribution is fitted, and from which the p-values are computed. In the gamma approximation, the moments of the empirical permutation distribution are used to the fit of the gamma distribution. The figure is merely illustrative: the actual fit uses the cumulative distribution function directly, such that histograms are not constructed.
 
-![](faster_inference_curvefits.png)
+![Summary of the different approaches](images/faster_inference_curvefits.png)
 
 ## Methods available
 
@@ -114,7 +116,7 @@ From all the methods, the one that is the most general, applicable to a wider va
 
 The flow chart below gives overall guidance on which method to use in particular applications.
 
-![](faster_inference_recomm.png)
+![](images/faster_inference_recomm.png)
 
 ## Advanced usage
 

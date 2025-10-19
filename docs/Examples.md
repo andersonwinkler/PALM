@@ -1,3 +1,5 @@
+# Examples
+
 Some simple examples to get started are below. Note that by default, PALM saves the actual p-values, rather than 1-p. To have 1-p, use the option `-save1-p`. Alternatively, use the option `-savelogp`, which is good for visualisation.
 
 ## Example 1: Single modality
@@ -58,7 +60,7 @@ Each contrast for each design will be tested separately, and the option -corrcon
 
 The file with the multi-level blocks is supplied with the option `-eb`. If the variances cannot be assumed to be the same for all observations, a file with variance groups can be supplied with the option `-vg`, or a conservative estimate for the groups can be defined, from the blocks, with `-vg auto`. If the option `-vg` is not used, all data is assumed as having the same variance.
 
-If the file supplied with `-eb` has just one column, the options `-whole` and/or `-within` can be used to indicate how shuffling should happen. If he file has multiple columns, the information on how the blocks should be shuffled is extracted from the blocks themselves. More details in [[Exchangeability blocks]].
+If the file supplied with `-eb` has just one column, the options `-whole` and/or `-within` can be used to indicate how shuffling should happen. If he file has multiple columns, the information on how the blocks should be shuffled is extracted from the blocks themselves. More details [here](exchangeability_blocks.md).
 
 ```
 palm -i modality1_4d.nii -d design.mat -t design.con -eb blocks.csv
@@ -74,7 +76,7 @@ For the NPC, the call is something as this:
 palm -i modality1_4d.nii -i modality2_4d.nii -i modality3_4d.nii -d design.mat -t design.con -f design.fts -n 5000 -npc
 ```
 
-This will combine the modalities using the Fisher method (default). There are various others available, and Fisher is probably the best, and it's also quite fast. The significance after the combination is assessed via permutations. More details in [[Joint inference]].
+This will combine the modalities using the Fisher method (default). There are various others available, and Fisher is probably the best, and it's also quite fast. The significance after the combination is assessed via permutations. More details [here](joint_inference.md).
 
 ## Example 7: MANOVA and MANCOVA (simple)
 
@@ -84,7 +86,7 @@ For the MV, the call is something as this:
 palm -i modality1_4d.nii -i modality2_4d.nii -i modality3_4d.nii -d design.mat -t design.con -f design.fts -n 5000 -mv
 ```
 
-For the F-contrasts, this runs the equivalent to a MANOVA/MANCOVA, computing the Wilks' Lambda (default for F-tests), and assessing its significance through permutations. Other multivariate statistics are also available (Roy, Lawley-Hotelling, Pillai). For the t-contrasts, the default Hotelling's \(T^2\). More details in [[Joint inference]].
+For the F-contrasts, this runs the equivalent to a MANOVA/MANCOVA, computing the Wilks' Lambda (default for F-tests), and assessing its significance through permutations. Other multivariate statistics are also available (Roy, Lawley-Hotelling, Pillai). For the t-contrasts, the default Hotelling's \(T^2\). More details [here](joint_inference.md).
 
 ## Example 8: MANOVA and MANCOVA (with contrasts of response variables)
 
@@ -94,11 +96,11 @@ It is possible to further refine MANOVA/MANCOVA by providing contrasts of respon
 palm -i modality1_4d.nii -i modality2_4d.nii -i modality3_4d.nii -d design.mat -con C.mset D.mset -n 5000 -mv
 ```
 
-Each `*.mset` file contains multiple C and D contrasts, pairwise, that is, if `C.mset` contains 4 contrasts, the `D.mset` needs to contain also 4 contrasts, so that 4 different null hypotheses are tested, the first using the first contrast of each file, the second using the second of each file, and so on. More details in [[Joint inference]] and the section on MSET files in the [[User guide]].
+Each `*.mset` file contains multiple C and D contrasts, pairwise, that is, if `C.mset` contains 4 contrasts, the `D.mset` needs to contain also 4 contrasts, so that 4 different null hypotheses are tested, the first using the first contrast of each file, the second using the second of each file, and so on. More details [here](joint_inference.md) and [here](user_guide.md).
 
 ## Example 9: Faster inference
 
-The most general acceleration method, that can be used in a wide variety of situations, is the tail approximation. A typical use is for FWER-corrected outputs, such that the uncorrected can be skipped. In the example below, 500 permutations are used. More details in [[Faster inference]].
+The most general acceleration method, that can be used in a wide variety of situations, is the tail approximation. A typical use is for FWER-corrected outputs, such that the uncorrected can be skipped. In the example below, 500 permutations are used. More details are [here](faster_inference.md).
 
 ```
 palm [...] -n 500 -accel tail -nouncorrected
@@ -158,7 +160,7 @@ wb_command -cifti-create-dense-from-template data.dscalar.nii results_merged_tfc
 
 These new CIFTI files can be opened with `wb_view`. The corrected significance threshold can be determined via Bonferroni, i.e., \(-log10(alpha/N) = -log10(0.05/3) = 1.7782\), or with Šidák, i.e., \(-log10(1-(1-alpha)1/N) = -log10(1-(1-0.05)1/3) = 1.7708\), the latter being therefore slightly more powerful.
 
-As in the previous example, if the input data are subjects from the Human Connectome Project, it's also necessary to supply the exchangeability blocks file (`-eb EB.csv`). More details [[Exchangeability blocks]], in the section on the Human Connectome Project.
+As in the previous example, if the input data are subjects from the Human Connectome Project, it's also necessary to supply the exchangeability blocks file (`-eb EB.csv`). More details [here](exchangeability_blocks.md) (in the section about the Human Connectome Project).
 
 ## Example 11: Using a log and/or configuration file
 

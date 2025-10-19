@@ -1,8 +1,10 @@
+# View results
+
 To view the results of an analysis done with PALM, use [FSLeyes](https://fsl.fmrib.ox.ac.uk/fsl/docs/utilities/fsleyes.html). FSLeyes can handle most of the imaging outputs, including volume and surface formats.
 
-Of course, other software can be considered, e.g., [FreeView](http://surfer.nmr.mgh.harvard.edu/fswiki/FreeviewGuide), [Connectome Workbench](https://humanconnectome.org/software/connectome-workbench), [Mango](http://rii.uthscsa.edu/mango/), [MRIcron](https://people.cas.sc.edu/rorden/mricron/index.html), or [SurfIce](https://www.nitrc.org/projects/surfice/) (the latter offers great surface visualisation capabilities, and also, it is particularly good for the highly efficient [MZ3](https://github.com/neurolabusc/surf-ice/tree/master/mz3) surface file format, as well as for the less efficient but friendly ASCII-type DPV).
-
 For CSV files, multiple outputs can be concatenated with the shell utility `cat`, then opened in a spreadsheet software such as [LibreOffice](https://www.libreoffice.org/) or Microsoft Excel.
+
+Of course, other software can be considered, e.g., [FreeView](http://surfer.nmr.mgh.harvard.edu/fswiki/FreeviewGuide), [Connectome Workbench](https://humanconnectome.org/software/connectome-workbench), [Mango](http://rii.uthscsa.edu/mango/), [MRIcron](https://people.cas.sc.edu/rorden/mricron/index.html), or [SurfIce](https://www.nitrc.org/projects/surfice/) (the latter offers great surface visualisation capabilities, and also, it is particularly good for the highly efficient [MZ3](https://github.com/neurolabusc/surf-ice/tree/master/mz3) surface file format, as well as for the less efficient but friendly ASCII-type DPV).
 
 ## A simple viewer
 
@@ -42,7 +44,7 @@ The options `dual` and `coption`, as well as how they interact with `datarange` 
 
 The output `h` is the handle for the figure window that contains the graphics. Use this handle to configure figure properties, including paper size, paper orientation, margins, etc. To generate outputs of high quality, ready for publication, use the MATLAB or Octave command `print`, in which the output format (e.g., PDF or PNG) can be defined, as well as the resolution and other properties.
 
-### Examples
+## Examples
 
 ```
 freesurfer_home = getenv('FREESURFER_HOME');
@@ -55,7 +57,7 @@ fullfile(freesurfer_home,'subjects','fsaverage','surf','rh.inflated') };
 palm_viewsurf(data,surfs,'layout','cardinal','datarange',[1.6 3.4],'mapname','viridis','title','Average Thickness (mm)','background',[0.4 0.4 0.4]);
 ```
 
-![](view_results_cardinal.png)
+![Cardinal style](images/view_results_cardinal.png)
 
 ```
 freesurfer_home = getenv('FREESURFER_HOME');
@@ -68,13 +70,13 @@ fullfile(freesurfer_home,'subjects','fsaverage','surf','rh.pial') };
 palm_viewsurf(data,surfs,'layout','publication','datarange',[1.6 3.4],'mapname','inferno','title','Average Thickness (mm)');
 ```
 
-![](view_results_publication.png)
+![Publication style](images/view_results_publication.png)
 
 ```
 palm_viewsurf(data,surfs,'layout','worsley','datarange',[1 5],'mapname','spectral','title','Average Thickness (mm)','lightning','gouraud','material','shiny');
 ```
 
-![](view_results_worsley.png)
+![Worsley style](images/view_results_worsley.png)
 
 ## References
 

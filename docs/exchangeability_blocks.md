@@ -1,3 +1,5 @@
+# Exchangeability blocks
+
 ## Freely exchangeable data
 
 For designs in which the data can be shuffled freely, there is no need to specify exchangeability blocks, and all observations are implicitly be assigned to the same large block. This also implies that the data is homoscedastic, i.e., same variance for all observations, and as a consequence, there is just one variance group (VG) for all data. The statistic that is computed by default is either t or F, depending on the rank of the contrast.
@@ -206,7 +208,7 @@ The resulting `.svg` file can be opened in [Inkscape](https://inkscape.org/) or 
 
 An example is shown below. At each permutation, branches beginning at blue dots can be permuted; those beginning in red dots cannot. Other examples and details are discussed in the respective [paper](http://www.sciencedirect.com/science/article/pii/S105381191500508X):
 
-![](exchangeability_blocks_ptree.png)
+![Example representation of a permutation tree](images/exchangeability_blocks_ptree.png)
 
 ## EBs for data of the Human Connectome Project
 
@@ -294,5 +296,5 @@ If you use the set of permutations in your algorithms, please cite the two paper
 The methods used in PALM to handle exchangeability blocks are described in:
 
 > Winkler AM, Webster MA, Vidaurre D, Nichols TE, Smith SM. [Multi-level block permutation.](http://www.sciencedirect.com/science/article/pii/S105381191500508X) Neuroimage. 2015;123:253-68. (Open Access)
-
+>
 > Winkler AM, Ridgway GR, Webster MA, Smith SM, Nichols TE. [Permutation inference for the general linear model.](http://www.sciencedirect.com/science/article/pii/S1053811914000913) NeuroImage, 2014;92:381-397. (Open Access)

@@ -1,39 +1,8 @@
+# PALM User Guide
 
-## Downloading and installing PALM
+The overall syntax and interface is purposefully similar to that of [randomise](https://fsl.fmrib.ox.ac.uk/fsl/docs/statistics/randomise.html), so moving from one to another should be straightforward.
 
-To get latest version, please click visit [the repository on GitHub](https://github.com/andersonwinkler/PALM).
-
-PALM can run as a standalone command (i.e., executed directly from the command line/terminal), or inside Octave or Matlab. In Linux and in Mac systems, it can be executed in any of these ways. In Windows, it can be executed inside Matlab or Octave.
-
-### Running as a standalone command
-
-It may be much simpler to run PALM as a command directly from the shell in Linux or in Mac, and it can easily be called from scripts. To do so:
-
-1. Uncompress the downloaded file.
-2. Open the file `palm` (not to be confused with `palm.m`). This is a script, inside which you can set whether the script should use Octave or Matlab. If the one that is chosen isn't in the `$PATH` variable, make sure to specify also the path to the directory that contains the executable for either of these (whichever you choose).
-3. To invoke PALM, simply type `./palm` in the directory where it was installed. The path can also be added to the system's `$PATH` variable, so that it can be easily called from any directory just by typing `palm.`
-
-If you are using Mac, and choose Octave, note that reading of NIFTI files need the option `-noniiclass` to work properly (more details below).
-
-### Running inside Matlab
-
-Uncompress the downloaded file, open Matlab, and add the newly created directory to the Matlab path (menu *File --> Set Path*). Typing `palm` at the prompt without arguments shows usage information. This works for Linux, Mac and Windows.
-
-### Running inside Octave
-
-Uncompress the downloaded file, start Octave, and add the newly created directory to the Octave path. This can be done with the command `addpath`:
-
-```
-addpath('/full/path/to/palm')
-```
-
-This line can be added to the `~/.octaverc` file, so that the change becomes permanent (if the `~/.octaverc` doesn't exist, an empty file can be created, then the line added). Typing `palm` at the prompt without arguments shows usage information. This works for Linux and Mac. It can work also with Windows if the paths are entered using the Windows filesystem convention (e.g., `C:\example`).
-
-For Octave for Mac, note that reading of NIFTI files need the option `-noniiclass` to work properly (more details below).
-
-For spatial statistics (cluster extent, cluster mass, and TFCE), the Octave package `image` is required.
-
-## Using PALM
+## Main options
 
 A description of the main options is below. The same information can be seen if the command `palm` is executed without arguments.
 
@@ -42,7 +11,7 @@ A description of the main options is below. The same information can be seen if 
 | `-i <file>` | Input(s). More than one can be specified, each one preceded by its own `-i`. All input files must contain the same number of observations (e.g., the same number of subjects). Except for NPC and MV, mixing is allowed (e.g., voxelwise, vertexwise and non-imaging data can be all loaded at once, and later will be all corrected across). |
 | `-m <file>` | Mask(s). Either one for all inputs, or one per input supplied in the same order as the respective `-i` appear. |
 | `-s <filesurf> [filearea]` | Surface file(s). When more than one is supplied, each `-s` should be entered in the same order as the respective `-i`. This option is needed when the input data is a scalar field over a surface and cluster extent or TFCE have been enabled. The first argument is the surface file itself. The second is an optional area-per-vertex or area-per-face file, or simply a number. If only the surface file is provided, its area is calculated and used for the computation of spatial statistics (cluster extent and TFCE). If the second argument is given, it should contain the areas, which are then used (e.g., average areas from native geometry after areal interpolation). Alternatively, if the areas are not meaningful for cluster extent or TFCE, this argument can be simply a number, such as "1", which is then used as the area of all vertices or faces. |
-| `-d <file>` | Design matrix. It can be in csv format, or in fsl's `vest` format. For information on how to construct the design matrix, see the [FSL GLM manual](../glm.html). |
+| `-d <file>` | Design matrix. It can be in csv format, or in fsl's `vest` format. For information on how to construct the design matrix, see the [FSL GLM manual](https://fsl.fmrib.ox.ac.uk/fsl/docs/statistics/glm.html). |
 | `-t <file>` | t-contrasts file, in `csv` or `vest` format (the format used by FSL). The option `-t` can be used more than once, so that more than one t-contrasts file can be loaded. |
 | `-f <file>` | F-contrasts file, in `csv` or `vest` format. The option `-f` can be used more than once, so that more than one F-contrasts file can be loaded. Each file supplied with a `-f` corresponds to the file supplied with the option `-t` immediately before. The option `-f` cannot be used more than the number of times the option `-t` is used. |
 | `-fonly` | Run only the F-contrasts, not the t-contrasts. |
@@ -73,7 +42,7 @@ A description of the main options is below. The same information can be seen if 
 | `-demean` | Mean center the data, as well as all columns of the design matrix. If the original design had an intercept, the intercept is removed. |
 | `-twotail` | Run two-tailed tests for all the t-contrasts instead of one-tailed. If NPC is used, it also becomes two-tailed for the methods which statistic are symmetric around zero under the null. |
 | `-concordant` | For the NPC, favour alternative hypotheses with concordant signs. Cannot be used with `-twotail`. |
-| `-accel <method>` | Run one of various acceleration methods (`negbin`, `tail`, `noperm`, `gamma`, `lowrank`). Visit [[Faster inference]] for details. |
+| `-accel <method>` | Run one of various acceleration methods (`negbin`, `tail`, `noperm`, `gamma`, `lowrank`). Click [here](faster_inference.md) for details. |
 | `-reversemasks` | Reverse 0/1 in the masks, so that the zero values are then used to select the voxels/vertices/faces. |
 | `-quiet` | Don't show progress as the shufflings are performed. |
 | `-advanced` | Show advanced options (see below). |
@@ -92,7 +61,7 @@ Advanced options are:
 | `-Cmv <real>` | Enable cluster inference for MV, with the supplied cluster-forming threshold (as a z-score). |
 | `-designperinput` | Use one design file for each input modality. |
 | `-ev4vg` | Add to the design one EV modelling the mean of each VG. |
-| `-evperdat <string> [integer] [integer]` | Treat the design matrix supplied with `-d` as having one column for each column in the observed data (entered with `-i`). This enables voxelwise/facewise/vertexwise regressors. For details, visit [[Masks and voxelwise regressors]]. |
+| `-evperdat <string> [integer] [integer]` | Treat the design matrix supplied with `-d` as having one column for each column in the observed data (entered with `-i`). This enables voxelwise/facewise/vertexwise regressors. For details, click [here](masks_and_voxelwise_regressors.md). |
 | `-inormal` | Apply an inverse-normal transformation to the data. This procedure can go faster if the data is known to be quantitative (in which case, use `-inormal quanti`). There are four different methods available, which can be specified as `-inormal <method>` or `-inormal quanti <method>`. The methods are `Waerden` (default), `Blom`, `Tukey` and `Bliss`. |
 | `-probit` | Apply a probit transformation to the data. |
 | `-inputmv` | Treat the (sole) input as multivariate, that is, each column is a variable in a multivariate model, as opposed to independent univariate tests. Useful with non-imaging data. |
@@ -206,7 +175,7 @@ In the example, the first matrix is defined as having 1 row and 3 columns (the n
 
 #### Support for CIFTI files
 
-Both the surface and volume components in CIFTI files that are of the type `dtseries`, `ptseries`, `dscalar` and `pscalar` can be read directly. If no spatial statistics are requested (i.e., no TFCE or cluster-level inference), all “grayordinates” (whether surface or volume) are processed without any complications. However, when spatial statistics are requested, it is currently necessary to first manually split the CIFTI files into separate surface (GIFTI) and volume (NIFTI) components, which then can be loaded and processed (see [[Examples]])). The [Connectome Workbench](http://www.humanconnectome.org/software/connectome-workbench.html) must be installed. CIFTI can be used with PALM in Octave (both Mac and Linux) and in Matlab (Linux only).
+Both the surface and volume components in CIFTI files that are of the type `dtseries`, `ptseries`, `dscalar` and `pscalar` can be read directly. If no spatial statistics are requested (i.e., no TFCE or cluster-level inference), all “grayordinates” (whether surface or volume) are processed without any complications. However, when spatial statistics are requested, it is currently necessary to first manually split the CIFTI files into separate surface (GIFTI) and volume (NIFTI) components, which then can be loaded and processed (see examples [in this page](examples.md)). The [Connectome Workbench](http://www.humanconnectome.org/software/connectome-workbench.html) must be installed. CIFTI can be used with PALM in Octave (both Mac and Linux) and in Matlab (Linux only).
 
 #### Support for GIFTI files
 
@@ -226,7 +195,7 @@ A basic definition of exchangeability blocks (EBs) can be made using a text file
 
 While the simple block specification as above, with just one column of indices, can cover various designs with structured dependence between observations, cases of more complex dependence can be accommodated using multiple, nested block definitions. In this case, the file containing the block definitions needs not just one, but multiple columns, each with a sequentially deeper level of dependence. Indices on one level indicate how the indices of the next level should be permuted. Positive indices at one level indicate that the corresponding indices of the next level should be permuted as a whole, akin to whole-block permutation with the `-whole` option described above. Negative indices at one level indicate that the corresponding indices in the next level should not be permutted, and their own subindices should be permuted within block, akin to within-block permutation described above. With this more complex structure, the option `-whole`, even if supplied, is ignored, as this information is embedded, at multiple levels, in the file with the block definitions.
 
-For more details and examples, visit [[Exchangeability blocks]].
+For more details and examples, [click here](exchangeability_blocks.md).
 
 ### Output files
 
@@ -271,23 +240,23 @@ Compared to randomise, PALM performs overall the same type of test, i.e., permut
 | --- | --- | --- |
 | Input formats | NIFTI. | NIFTI, CSV, GIFTI, FreeSurfer (surface formats, MGH files, curvature, including ASCII vertexwise and facewise). Partial support for CIFTI. |
 | Univariate statistics | t and F. | t, F, Aspin–Welch's v, G, Pearson's r and R2. |
-| Multivariate statistics | None | Hotelling's T2, Wilks' lambda, Pillai's trace, Lawley–Hotelling's trace, Roy's largest root (both variants), assessed parametrically and non-parametrically. Details in [[Joint inference]]. |
+| Multivariate statistics | None | Hotelling's T2, Wilks' lambda, Pillai's trace, Lawley–Hotelling's trace, Roy's largest root (both variants), assessed parametrically and non-parametrically. Details [here](joint_inference.md). |
 | Spatial statistics | Cluster extent, cluster mass, TFCE. All of these can be volume-based (voxelwise). | Cluster extent, cluster mass, TFCE. All of these can be volume-based (voxelwise) or surface-based (vertexwise or facewise). |
 | Regression and permutation strategies | Freedman–Lane. | Draper–Stoneman, Still–White, Freedman–Lane, ter Braak, Manly, Huh–Jhun, Dekker and parametric (no permutation). |
 | Shuffling possibilities | Permutations or sign-flippings. | Permutations, sign-flippings, and permutations with sign-flippings. |
-| Block permutation | Either whole-block or within-block. | Whole-block and/or within-block, either in isolation or in arbitrary combinations, with multiple and complex levels of tree-like dependence between observations. Details in [[Exchangeability blocks]]. |
-| Variance groups | One. Cannot be changed. | Multiple. Can be set automatically or defined by the user. Details in [[Exchangeability blocks]]. |
+| Block permutation | Either whole-block or within-block. | Whole-block and/or within-block, either in isolation or in arbitrary combinations, with multiple and complex levels of tree-like dependence between observations. Details [here](exchangeability_blocks.md). |
+| Variance groups | One. Cannot be changed. | Multiple. Can be set automatically or defined by the user. Details [here](exchangeability_blocks.md). |
 | Input datasets (modalities) | One. | Multiple. |
 | Input designs matrices | One. | Multiple. |
-| Joint permutation inference across modalities and/or contrasts (NPC) | No. | Yes. Various combining functions available: Tippett, Fisher, Pearson–David, Stouffer, Wilkinson, Winer, Edgington, Mudholkar–George, Friston, Darlington–Hayes, Zaykin, Dudbridge–Koeleman (2 variants), Taylor–Tibshirani and Jiang. Most of these can also be assessed parametrically. Details [here](joint_inference.html). |
+| Joint permutation inference across modalities and/or contrasts (NPC) | No. | Yes. Various combining functions available: Tippett, Fisher, Pearson–David, Stouffer, Wilkinson, Winer, Edgington, Mudholkar–George, Friston, Darlington–Hayes, Zaykin, Dudbridge–Koeleman (2 variants), Taylor–Tibshirani and Jiang. Most of these can also be assessed parametrically. Details [here](joint_inference.md). |
 | FWER correction | Within each contrast only. | Within contrast, across contrasts, within modality, across modalities, and across modalities and contrasts. For correction across modalities, these don't need to have the same resolution or geometry; in fact, they don't need to be imaging data (and images can be mixed with non-images). |
 | FDR correction | Yes, separate command. Correction within each contrast only. | Yes, built-in. Correction can be within contrast, across contrasts, within modality, across modalities, and across modalities and contrasts. For correction across modalities, these don't need to have the same resolution or geometry; in fact, they don't need to be imaging data (and images can be mixed with non-images). |
 | Non-stationarity correction | Yes. | No. |
-| Voxelwise regressors | Yes. | Yes. Details in [[Masks and voxelwise regressors]]. |
+| Voxelwise regressors | Yes. | Yes. Details [here](masks_and_voxelwise_regressors.md). |
 | Fast approximations | No. | Yes, various methods described here. |
 | Parametric p-values | No. | Yes, for univariate, multivariate, and most of the NPC combining functions (uncorrected and FDR-corrected). |
 | Permutation metrics | None. | Average Hamming distance, Hubermann–Hogg complexity and entropy measurements. |
-| Overall performance | Generally a bit slower, except for spatial statistics. | Generally a bit faster, except for spatial statistics, that can be extremely slow. Includes acceleration methods; details in [[Faster inference]]. |
+| Overall performance | Generally a bit slower, except for spatial statistics. | Generally a bit faster, except for spatial statistics, that can be extremely slow. Includes acceleration methods (details [here](faster_inference.md)). |
 | Parallel processing | Yes, with a separate command (`randomise_parallel`). | No. |
 | Language | Written in C++. | Written in Matlab/Octave. |
 | License | [FSL](https://fsl.fmrib.ox.ac.uk/fsl/docs/license.html) (Free for academic use). | Free ([GPL](http://www.gnu.org/licenses/gpl.html)). |

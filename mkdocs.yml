@@ -1,13 +1,51 @@
-site_name: PALM
+site_name: "PALM: Permutation Analysis of Linear Models"
 docs_dir: docs
+
 nav:
   - Home: index.md
-  - User Guide: User guide.md
-  - Exchangeability Blocks: Exchangeability blocks.md
-  - Joint Inference: Joint inference.md
-  - Masks and Voxelwise Regressors: Masks and voxelwise regressors.md
-  - Faster Inference: Faster inference.md
-  - Viewing Results: Viewing results.md
-  - Examples: Examples.md
-  - Frequently Asked Questions: Frequently asked questions.md
+  - Download: download.md
+  - User guide: user_guide.md
+  - Exchangeability blocks: exchangeability_blocks.md
+  - Joint inference: joint_inference.md
+  - Masks and voxelwise regressors: masks_and_voxelwise_regressors.md
+  - Faster inference: faster_inference.md
+  - Viewing results: view_results.md
+  - Examples: examples.md
+  - Frequently asked questions: faq.md
+  - References: references.md
 
+theme:
+  name: material
+  palette:
+    # Light mode
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra_css:
+  - custom.css
+
+repo_url: https://github.com/andersonwinkler/palm
+extra:
+  author: Anderson M. Winkler
+  site_url: https://fsl.fmrib.ox.ac.uk/fsl/docs/statistics/palm/
+  description: "PALM: Permutation Analysis of Linear Models"
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/andersonwinkler/palm
+#    - icon: fontawesome/brands/x-twitter
+#      link: https://x.com/AndersonWinkler
+#    - icon: fontawesome/brands/bluesky
+#      link: https://bsky.app/profile/brainder.org
+    - icon: fontawesome/brands/wordpress
+      link: https://brainder.org

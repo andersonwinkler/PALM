@@ -1,3 +1,5 @@
+# Frequently asked questions
+
 ## Why the TFCE results aren't identical to the ones produced by randomise?
 
 There are two reasons for this:

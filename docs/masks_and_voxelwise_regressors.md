@@ -1,3 +1,5 @@
+# Masks and voxelwise regressors
+
 It is possible to include one regressor (explanatory variable, EV) for each variable from the input files, that is, voxelwise EVs (or vertexwise, facewise, edgewise, columnwise, depending on the type of data). This is done with the option `-evperdat`. Below, the term "voxelwise EV" is used generically, even if it may actually be a vertexwise or any other type of columnwise EV.
 
 With or without `-evperdat`, each input file (supplied with -i) can have their own mask. If `-mv` or `-npc` is used, an intersection mask is produced and used for all the tests. For the voxelwise EVs, further masks are generated internally to remove tests that would have constant EVs, as well as to remove the invalid values NaN and Inf if present. These masks created internally can be saved with the option `-savemask`, which will create one file for each effective mask used for each modality.
