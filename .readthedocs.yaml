@@ -1,6 +1,10 @@
 version: 2
 build:
   os: ubuntu-lts-latest
+  tools:
+    python: "3.12"
+mkdocs:
+  configuration: mkdics.yml
 formats:
   - pdf
 
