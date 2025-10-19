@@ -1,19 +1,6 @@
 site_name: "PALM: Permutation Analysis of Linear Models"
 docs_dir: docs
 
-nav:
-  - Home: index.md
-  - Download: download.md
-  - User guide: user_guide.md
-  - Exchangeability blocks: exchangeability_blocks.md
-  - Joint inference: joint_inference.md
-  - Masks and voxelwise regressors: masks_and_voxelwise_regressors.md
-  - Faster inference: faster_inference.md
-  - Viewing results: view_results.md
-  - Examples: examples.md
-  - Frequently asked questions: faq.md
-  - References: references.md
-
 theme:
   name: material
   palette:
@@ -35,9 +22,22 @@ theme:
 extra_css:
   - custom.css
 
+nav:
+  - Home: index.md
+  - Download: download.md
+  - User guide: user_guide.md
+  - Exchangeability blocks: exchangeability_blocks.md
+  - Joint inference: joint_inference.md
+  - Masks and voxelwise regressors: masks_and_voxelwise_regressors.md
+  - Faster inference: faster_inference.md
+  - Viewing results: view_results.md
+  - Examples: examples.md
+  - Frequently asked questions: faq.md
+  - References: references.md
+
 repo_url: https://github.com/andersonwinkler/palm
 extra:
-  author: Anderson M. Winkler
+  author: "Anderson M. Winkler"
   site_url: https://fsl.fmrib.ox.ac.uk/fsl/docs/statistics/palm/
   description: "PALM: Permutation Analysis of Linear Models"
   social:

@@ -5,7 +5,6 @@ build:
     python: "3.12"
 mkdocs:
   configuration: mkdocs.yml
-formats:
-  - pdf
-
-
+python:
+   install:
+   - requirements: docs/requirements.txt
