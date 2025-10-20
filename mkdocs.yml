@@ -1,8 +1,12 @@
-site_name: "PALM: Permutation Analysis of Linear Models"
+site_name: "Permutation Analysis of Linear Models"
 docs_dir: docs
 
 theme:
   name: material
+  logo: images/palm_orange.svg
+  favicon: images/favicons/favicon.ico
+  font:
+    text: Roboto
   palette:
     # Light mode
     - scheme: default
@@ -21,6 +25,9 @@ theme:
 
 extra_css:
   - custom.css
+
+extra_javascript:
+  - images/favicons/site.webmanifest
 
 nav:
   - Home: index.md
