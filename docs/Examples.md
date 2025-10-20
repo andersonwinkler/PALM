@@ -187,3 +187,4 @@ The same log-file can also be used as the input for a second run. In this case, 
 ```
 palm myresults_palmconfig.txt
 ```
+
