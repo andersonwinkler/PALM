@@ -35,6 +35,13 @@ if opts.NPC,
     end
 end
 
+% Define function to use depending on the FDRmethod
+if strcmpi(opts.FDRmethod(1:2),'BH')
+    fastfdr = @bh;
+elseif strcmpi(opts.FDRmethod(1:3),'BKY')
+    fastfdr = @bky;
+end
+
 % For the "noperm" approximation, the statistic didn't have to be saved
 % that early, since it's all pretty fast. Save it now then.
 if opts.accel.noperm,
@@ -257,7 +264,7 @@ if opts.saveunivariate,
                     
                     % Save the distribution of the maximum statistic
                     if opts.savemax,
-                        dlmwrite(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_max',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c},'.csv'),plm.Gmax{y}{m}{c})
+                        dlmwrite(sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_max',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c},'.csv'),plm.Gmax{y}{m}{c}) %#ok<*DLMWT>
                     end
                     
                     % Permutation p-value, FDR adjusted
@@ -1610,17 +1617,35 @@ if ( opts.MV || opts.CCA || opts.PLS) && opts.corrcon,
 end
 
 % ==============================================================
-function padj = fastfdr(pval)
+function padj = bh(pval)
 % Compute FDR-adjusted p-values.
 V = numel(pval);
 [pval,oidx] = sort(pval);
 [~,oidxR]   = sort(oidx);
 padj = zeros(size(pval));
 prev = 1;
-for i = V:-1:1,
+for i = V:-1:1, % uses less memory and is just as fast as with vectorization
     padj(i) = min(prev,pval(i)*V/i);
     prev = padj(i);
 end
+padj = padj(oidxR);
+
+% ==============================================================
+function padj = bky(pval)
+% Compute BKY (Definition 7) FDR-adjusted p-values.
+V = numel(pval);
+[pval,oidx] = sort(pval);
+[~,oidxR]   = sort(oidx);
+idx = reshape(1:V,size(pval));
+pcor = ones(size(pval));
+for i = 1:V
+    pcor(i) = min(pval(i:end).*(V+1-i)./(idx(i:end)-i*pval(i:end)));
+    if pcor(i) > 1
+        pcor(i) = 1;
+        break
+    end
+end
+padj = cummax(pcor);
 padj = padj(oidxR);
 
 % ==============================================================

@@ -793,9 +793,33 @@ while a <= narginx
         case '-fdr' % basic
             
             % Compute FDR-adjusted p-values
-            opts.FDR = true;
-            a = a + 1;
+            if nargin == a
+                opts.FDR = true;
+                a = a + 1;
+
+            elseif nargin > a && strcmp(vararginx{a+1}(1),'-')
+                opts.FDR = true;
+                a = a + 1;
+
+            elseif nargin > a
+                % Which FDR method to use?
+                methlist = { ...
+                    'BH',    ...
+                    'BKY',   ...
+                    'BH+BB', ...
+                    'BKY+BB'};
+                methidx  = strcmpi(vararginx{a+1},methlist);
             
+                % Check if method exists, and load extra parameters if needed
+                if ~any(methidx)
+                    error('FDR method "%s" unknown.',vararginx{a+1});
+                else
+                    opts.FDR       = true;
+                    opts.FDRmethod = methlist{methidx};
+                end
+                a = a + 2;
+            end
+
         case {'-accel','-approx'} % advanced
             
             % Choose a method to do the approximation of p-values
