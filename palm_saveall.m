@@ -36,10 +36,12 @@ if opts.NPC,
 end
 
 % Define function to use depending on the FDRmethod
-if strcmpi(opts.FDRmethod(1:2),'BH')
+if strcmpi(opts.FDRmethod,'BH')
     fastfdr = @bh;
-elseif strcmpi(opts.FDRmethod(1:3),'BKY')
+elseif strcmpi(opts.FDRmethod,'BKY')
     fastfdr = @bky;
+else
+    error('Unknown FDR method: "%s"',opts.FDRmethod);
 end
 
 % For the "noperm" approximation, the statistic didn't have to be saved

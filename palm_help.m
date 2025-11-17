@@ -1,5 +1,5 @@
 function varargout = palm_help(varargin)
-% Shows a help text. Call palm_help('logo') to show just the logo.
+% Shows a help text.
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / Univ. of Oxford
@@ -31,6 +31,10 @@ if nargin == 0 || strcmpi(varargin{1},'basic')
 elseif strcmpi(varargin{1},'advanced')
     showlogo;
     advanced_help;
+    showdate;
+elseif strcmpi(varargin{1},'refs')
+    showlogo;
+    showrefs;
     showdate;
 elseif strcmpi(varargin{1},'logo')
     showlogo;
@@ -170,7 +174,8 @@ fprintf('-corrcon : Apply FWER-correction of p-values over multiple contrasts.\n
 fprintf('	Because multivariate and F-stats can have different df, this option\n');
 fprintf('	automatically enables "-zstat".\n\n');
 
-fprintf('-fdr : Produce FDR-adjusted p-values.\n\n');
+fprintf('-fdr <method>: Produce FDR-adjusted p-values.\n');
+fprintf('   Valid methods are "BH" and "BKY".\n\n');
 
 fprintf('-o <string> : Output prefix. It may itself be prefixed by a path.\n');
 fprintf('	Default is palm.\n\n');
@@ -220,6 +225,8 @@ fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values\n');
 fprintf('	are then used to select the voxels/vertices/faces.\n\n');
 
 fprintf('-quiet : Don''t show progress as the shufflings are performed.\n\n');
+
+fprintf('-refs : List references for the methods in PALM.\n\n');
 
 fprintf('-advanced : Show advanced options.\n\n');
 
@@ -385,6 +392,63 @@ fprintf('	matrix, within each VG. Intercepts are removed.\n\n');
 
 fprintf('-zstat : Convert the original statistic (t, F, v, G, r, R2, or any of\n');
 fprintf('	the MV statistics) to a normally distributed, z-statistic.\n\n');
+
+% ==============================================================
+function showrefs
+% Show the references (bibliography)
+fprintf('The main reference for the methods in PALM is:\n\n');
+
+fprintf('  * Winkler AM, Ridgway GR, Webster MA, Smith SM, Nichols TE.\n');
+fprintf('    Permutation inference for the general linear model.\n');
+fprintf('    NeuroImage, 2014;92:381-397. (Open Access)\n\n');
+
+fprintf('For correction across contrasts (option "-corrcon"), the most\n');
+fprintf('detailed reference is:\n\n');
+
+fprintf('  * Alberton BAV, Nichols TE, Gamba HR, Winkler AM.\n');
+fprintf('    Multiple testing correction over contrasts for brain\n');
+fprintf('    imaging. Neuroimage. 2020 Mar 19:116760. (Open Access)\n\n');
+
+fprintf('For Non-Parametric Combination (NPC; options "-npc", "-npcmod"\n');
+fprintf('and "-npccon"), classical multivariate tests (MANOVA, MANCOVA;\n');
+fprintf('option "-mv") assessed with permutations, and for correction\n');
+fprintf('over modalities and/or contrasts (options "-corrmod" and\n');
+fprintf('"-corrcon"), the reference is:\n\n');
+
+fprintf('  * Winkler AM, Webster MA, Brooks JC, Tracey I, Smith SM,\n');
+fprintf('    Nichols TE. Non-Parametric Combination and related\n');
+fprintf('    permutation tests for neuroimaging.\n');
+fprintf('    Hum Brain Mapp. 2016 Apr;37(4):1486-511. (Open Access)\n\n');
+
+fprintf('For the multi-level exchangeability blocks (options "-eb", "-vg"\n');
+fprintf('and for HCP data), the reference is:\n\n');
+
+fprintf('  * Winkler AM, Webster MA, Vidaurre D, Nichols TE, Smith SM.\n');
+fprintf('    Multi-level block permutation.\n');
+fprintf('    Neuroimage. 2015;123:253-68. (Open Access)\n\n');
+
+fprintf('For the accelerated permutation inference (options "-accel"\n');
+fprintf('or "-approx"), the reference is:\n\n');
+
+fprintf('  * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM.\n');
+fprintf('    Faster permutation inference in brain imaging.\n');
+fprintf('    Neuroimage. 2016 Jun 7;141:502-516. (Open Access)\n\n');
+
+fprintf('For additional theory of permutation tests in neuroimaging:\n\n');
+
+fprintf('  * Nichols TE, Holmes AP. Nonparametric permutation tests for\n');
+fprintf('    functional neuroimaging: a primer with examples.\n');
+fprintf('    Hum Brain Mapp. 2002 Jan;15(1):1-25.\n\n');
+
+fprintf('  * Holmes AP, Blair RC, Watson JD, Ford I. Nonparametric analysis\n');
+fprintf('    of statistic images from functional mapping experiments.\n');
+fprintf('    J Cereb Blood Flow Metab. 1996 Jan;16(1):7-22.\n\n');
+
+fprintf('For the false discovery rate (FDR) approach used in PALM (option\n');
+fprintf('"-fdr"), the reference is:\n\n');
+
+fprintf('  * Winkler AM, Taylor PA, Nichols TE, Rorden C. False discovery rate\n');
+fprintf('    and localizing power. arXiv, 2024;2401.03554. (Preprint)\n\n');
 
 
 % ==============================================================

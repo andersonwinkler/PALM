@@ -64,15 +64,19 @@ if nargin == 0 || strcmp(varargin{1},'-q')
     palm_help('basic');
     return;
 elseif nargin == 1
-    if any(strcmpi(varargin{1},{'-help','-?','-basic'}))
-        palm_help('basic');
-        return;
-    elseif strcmpi(varargin{1},'-advanced')
-        palm_help('advanced');
-        return;
-    elseif strcmpi(varargin{1},'-checkprogs')
-        palm_checkprogs;
-        return;
+    switch varargin{1}
+        case {'-help','-?','-basic'}
+            palm_help('basic');
+            return;
+        case '-advanced'
+            palm_help('advanced');
+            return;
+        case '-refs'
+            palm_help('refs');
+            return;
+        case '-checkprogs'
+            palm_checkprogs;
+            return;
     end
 end
 palm_help('logo');

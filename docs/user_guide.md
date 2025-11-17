@@ -35,7 +35,7 @@ A description of the main options is below. The same information can be seen if 
 | `-tfce2D` | Set TFCE parameters for 2D data (surface, TBSS), i.e., H = 2, E = 1, C = 26. Use this option together with `-T`. |
 | `-corrmod` | Apply FWER-correction of p-values over multiple modalities. |
 | `-corrcon` | Apply FWER-correction of p-values over multiple contrasts. |
-| `-fdr` | Produce FDR-adjusted p-values. |
+| `-fdr <method>` | Produce FDR-adjusted p-values. Valid methods are `BH` (Benjamini-Hochberg) and `BKY` (Benjamini-Krieger-Yekutieli). |
 | `-o <string>` | Output prefix. It may itself be prefixed by a path. Default is `palm`. |
 | `-save1-p` | Save (1-p) instead of the actual p-values. Instead of `-save1-p`, consider using `-logp`. |
 | `-logp` | Save the output p-values as \(-log10(p)\) (or \(-log10(1-p)\) if the option `-save1-p` is also used; using both together is not recommended). The `-logp` is not default but it is strongly recommended. |
