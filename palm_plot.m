@@ -1,39 +1,35 @@
-function palm_plot(Y,X,I,Z,res,F,opt)
+function palm_plot(varargin)
 % Take a vector of data, regressors from a design, then
 % make an interaction plot.
 %
 % Usage:
 %
-% palm_plot(Y,X,I,Z,res,F,opt)
+% palm_plot(Y,X,Z,F)
 %
 % - Y        : Data.
 % - X        : Main effects (up to 3 colums, of which
 %              no more than 2 can be continuous.
-% - I        : The interaction term, 1 column. Leave
-%              empty or NaN if not an interaction.
 % - Z        : Nuisance. It should not include the
 %              interaction that is to be plotted,
 %              otherwise the effect of the interaction
 %              is washed out.
-% - res      : Resolution of meshes (for 2-way
-%              interactions between continuous
-%              variables).
-% - F        : (Optional) A struct with fields 'title',
-%              'xlabel', 'ylabel' and 'zlabel', to be
-%              applied to the plot.
+% - F        : (Optional) A struct with fields that are Figure
+%              properties 'title', 'xlabel', 'ylabel' and 'zlabel',
+%              to be applied to the plot.
 %              For discrete variables, names of the categories
 %              can be passed as a cell array of strings
-%              in fields 'xnames' and 'ynames'.
-% - opt      : (Optional) Use 'poly22' for a curvy plot
-%              (it won't match the GLM, so don't use).
-%              Alternatively, use a scaling factor to scale
-%              the mesh along the Z-axis (it also won't match
-%              the GLM, so don't use). Default opt = 1.
+%              in fields 'xnames' and 'ynames' of F.
+%              F may also contain fields named:
+%              - 'res': Resolution of meshes (for 2-way interactions between
+%              continuous variables). Default = 10.
+%              - 'poly22' : Creates a curvy plot if 'true'
+%              (it won't match the GLM, though). Default is false.
 %
 % _____________________________________
 % Anderson M. Winkler
 % National Institutes of Health
-% Nov/2018
+% Nov/2018 (first version)
+% Nov/2025 (this version)
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -54,62 +50,79 @@ function palm_plot(Y,X,I,Z,res,F,opt)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-% Check sanity of inputs
-if size(Y,2) > 1
-    error('Input data must have just 1 column.');
+% Defaults
+res    = 10;
+poly22 = false;
+F      = struct();
+
+% Parse arguments
+narginchk(3,4);
+Y = varargin{1};
+X = varargin{2};
+Z = varargin{3};
+if nargin >= 4
+    F = varargin{4};
+    if ~isstruct(F)
+        error('Fourth argument F must be a struct or omitted.');
+    end
+    if ~ isfield(F,'res')
+        F.res = res;
+    elseif ~ isnumeric(F.res) || ~ isscalar(F.res) || F.res < 2
+       error('Resolution of meshes must be higher than 2');
+    end
+    if ~ isfield(F,'poly22')
+        F.poly22 = poly22;
+    elseif ischar(F.poly22) || isstring(F.poly22)
+        F.poly22 = contains(lower(F.poly22),'on','tr','po');
+    end
 end
-if size(I,2) ~= 1
-    error('The interaction term must have just 1 column.');
+
+% Sanity checks
+if size(Y,2) ~= 1
+    error('Y must be a column vector.');
+end
+N = size(Y,1);
+if size(X,1) ~= N || (~isempty(Z) && size(Z,1) ~= N)
+    error('Y, X, and Z must have the same number of rows.');
 end
 if size(X,2) < 1 || size(X,2) > 3
-    error('Input data must have between 1 and 3 columns (inclusive).');
+    error('X must have 1 to 3 columns.');
 end
-if      size(Y,1) ~= size(X,1) || ...
-        size(Y,1) ~= size(Z,1) || ...
-        size(Y,1) ~= size(I,1)
-    error('Input variables must all have the same number of rows.');
-else
-    N = size(Y,1);
-end
-if exist('F','var') && ~isstruct(F) && ~isempty(F) && ~isnan(F)
-    error('F must be a struct.')
-end
-if nargin == 6
-    opt = 1;
-end
+
+% Add intercept to nuisance
+Z = [Z ones(N,1)];
+
+N = size(Y,1);
 colorlist='brgymck';
 
-% Model fitting
-b = [I X Z]\Y;
+% Ensure the intercept is always included
+Z = [Z ones(size(Z,1),1)];
 
 % Residual forming matrix without interaction and without main effects
 Rz = eye(N) - Z*pinv(Z);
-J = size(X,2);
+J  = size(X,2);
 switch J
     
     case 1
         % This is not an interaction
-        scatter(Rz*X,Rz*Y);
-        if exist('F','var') && isstruct(F)
-            title(F.title);
-            xlabel(F.xlabel);
-            ylabel(F.ylabel);
-        end
-        
+        meY = mean(Y);
+        scatter(Rz*X,Rz*Y+meY);
+
     case 2
         % This is an interaction of 2 variables
-        rY = Rz*Y;
-        A = X(:,1);
-        B = X(:,2);
-        uA = unique(A);
-        uB = unique(B);
+        meY = mean(Y);
+        rY  = Rz*Y;
+        A   = X(:,1);
+        B   = X(:,2);
+        uA  = unique(A);
+        uB  = unique(B);
         if     numel(uA) == 2 && numel(uB)  > 2
             % If A has 2 categories and B is continuous
             rB = Rz*B;
             xlim = [+inf -inf];
             for u = 1:numel(uA)
                 idx = A == uA(u);
-                scatter(rB(idx),rY(idx),colorlist(u),'.');
+                scatter(rB(idx),rY(idx)+meY,colorlist(u),'.');
                 xlimc = get(gca,'Xlim');
                 xlim(1) = min(xlim(1),xlimc(1));
                 xlim(2) = max(xlim(2),xlimc(2));
@@ -119,24 +132,19 @@ switch J
                 idx = A == uA(u);
                 b = rB(idx)\rY(idx);
                 yfit = xlim*b;
-                plot(xlim,yfit,colorlist(u));
+                plot(xlim,yfit+meY,colorlist(u));
                 hold('on')
             end
-            hold('off');
-            if exist('F','var') && isstruct(F)
-                title(F.title);
-                xlabel(F.ylabel);
-                ylabel(F.zlabel);
-                legend(F.xnames{:},'Location',F.legend_location);
-            end
-            
+            ylim = get(gca,'YLim');
+            axis([xlim ylim]);
+
         elseif numel(uA)  > 2 && numel(uB) == 2
             % If A is continuous and B has 2 categories
             rA = Rz*A;
             xlim = [+inf -inf];
             for u = 1:numel(uB)
                 idx = B == uB(u);
-                scatter(rA(idx),rY(idx),colorlist(u),'.');
+                scatter(rA(idx),rY(idx)+meY,colorlist(u),'.');
                 xlimc = get(gca,'Xlim');
                 xlim(1) = min(xlim(1),xlimc(1));
                 xlim(2) = max(xlim(2),xlimc(2));
@@ -146,18 +154,12 @@ switch J
                 idx = B == uB(u);
                 b = rA(idx)\rY(idx);
                 yfit = xlim*b;
-                plot(xlim,yfit,colorlist(u));
+                plot(xlim,yfit+meY,colorlist(u));
                 hold('on')
             end
             hold('off');
             ylim = get(gca,'YLim');
             axis([xlim ylim]);
-            if exist('F','var') && isstruct(F)
-                title(F.title);
-                xlabel(F.xlabel);
-                ylabel(F.zlabel);
-                legend(F.ynames{:},'Location',F.legend_location);
-            end
             
         elseif numel(uA) == 2 && numel(uB) == 2
             % If both A and B have 2 categories
@@ -170,70 +172,69 @@ switch J
                     seX(ua,ub) = std(rY(idx))/sqrt(sum(idx)); % Std Error for each category
                 end
             end
-            bar(X); hold on
+            bar(X+meY); hold on
             ngroups = size(X,1);
             nbars = size(X,2);
+
             % Calculating the width for each bar group
             groupwidth = min(0.8, nbars/(nbars + 1.5));
             for b = 1:nbars
                 xpos = (1:ngroups) - groupwidth/2 + (2*b-1) * groupwidth / (2*nbars);
-                errorbar(xpos,X(:,b),seX(:,b),'.','Color',[0 0 0]);
+                errorbar(xpos,X(:,b)+meY,seX(:,b),'.','Color',[0 0 0]);
             end
+            ymin = min(X(:)-seX(:)+meY);
+            ymax = max(X(:)+seX(:)+meY);
+            ydelta = ymax - ymin;
+            set(gca,'YLim',[ymin-ydelta*0.10 ymax+ydelta*0.10]);
             hold off
-            if exist('F','var') && isstruct(F)
-                title(F.title);
-                xlabel(F.xlabel);
-                ylabel(F.zlabel);
-                xticklabels(F.xnames);
-                legend(F.ynames{:},'Location',F.legend_location);
-            end
             
         else
             % if A and B are continuous
             rA = Rz*A;
             rB = Rz*B;
-            if isnumeric(opt)
-                [xg,yg] = meshgrid(linspace(min(rA),max(rA),res),linspace(min(rB),max(rB),res));
-                mesh(xg,yg,xg.*yg*b(1)*opt);
+            rI = Rz*(A.*B);
+            if F.poly22
+                surfit = fit([rA rB],rY+meY,'poly22');
+                plot(surfit,[rA,rB],rY+meY);
+            else
+                b = [rA rB rI]\rY;
+                [xa,xb] = meshgrid(linspace(min(rA),max(rA),res),linspace(min(rB),max(rB),res));
+                xi = xa.*xb;
+                mesh(xa,xb,xa*b(1)+xb*b(2)+xi*b(3)+meY);
                 hold('on')
-                scatter3(rA,rB,rY,'k.');
-            elseif ischar(opt) && strcmpi(opt,'poly22')
-                surfit = fit([rA rB],rY,'poly22');
-                plot(surfit,[rA,rB],rY);
-            end
-            if exist('F','var') && isstruct(F)
-                title(F.title);
-                xlabel(F.xlabel);
-                ylabel(F.ylabel);
-                zlabel(F.zlabel);
+                scatter3(rA,rB,rY+meY,'k.');
             end
             hold('off')
         end
+        if isfield(F,'title')  title( F.title ); end %#ok<*SEPEX>
+        if isfield(F,'xlabel') xlabel(F.xlabel); end
+        if isfield(F,'ylabel') ylabel(F.ylabel); end
+        if isfield(F,'xnames')
+            xticklabels(F.xnames);
+        end
+        if isfield(F,'ynames')
+            legend(F.ynames{:},'Location',F.legend_location);
+        end
+        hold('off');
+
     case 3
         % This is an interaction of 3 variables
+        % First, identify which one is the discrete
         U  = cell(J,1);
         nU = zeros(J,1);
         for j = 1:J
             U{j}  = unique(X(:,j));
             nU(j) = numel(U{j});
         end
-        idxU = find(nU == 2,1,'last');
-        C = X(:,idxU);
+        idxU = find(nU == 2,1,'first');
+        D = X(:,idxU); % discrete regressor
         X(:,idxU) = [];
         U = U{idxU};
         for u = 1:numel(U)
-            if isnumeric(opt)
-                optu = sign(U(u));
-            else
-                optu = opt;
-            end
-            Yu = Y(C == U(u),:);
-            Iu = I(C == U(u),:);
-            Xu = X(C == U(u),:);
-            Xu(:,any(abs(corr(Iu,Xu)) > 1-10*eps,1)) = [];
-            Zu = Z(C == U(u),:);
-            Zu(:,any(abs(corr([Iu Xu],Zu)) > 1-10*eps,1)) = [];
-            Zu(:,any(triu(abs(corr(Zu)))-eye(size(Zu,2)) > 1-10*eps,2)) = [];
-            palm_plot(Yu,Iu,Xu,Zu,res,F,optu);
+            Yu = Y(D == U(u),:);
+            Xu = X(D == U(u),:);
+            Zu = Z(D == U(u),:);
+            subplot(1,2,u);
+            palm_plot(Yu,Xu,Zu,F);
         end
 end
