@@ -1771,7 +1771,7 @@ if palm_isoctave
     if opts.spatial.do && any(plm.Yisvol)
         pkg load image
     end
-    if opts.accel.lowrank || opts.zstat || opts.corrcon
+    if opts.accel.lowrank || opts.zstat || opts.corrcon || Nf > 0
         pkg load statistics
     end
 end

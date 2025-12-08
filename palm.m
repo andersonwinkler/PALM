@@ -24,10 +24,6 @@ function palm(varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-% This is redundant in when running as a function as all files should
-% be together, but it helps when running from the shell
-addpath(fileparts(mfilename('fullpath')));
-
 % If Octave
 if palm_isoctave
     
@@ -48,6 +44,7 @@ if palm_isoctave
     warning('off','Octave:precedence-change');
     warning('off','Octave:possible-matlab-short-circuit-operator');
     warning('off','Octave:function-name-clash');
+    warning('off','Octave:shadowed-function');
     
 else
     % This line marks the place up to nothing will be printed. It's long as
@@ -55,6 +52,10 @@ else
     % purposeful from the outside :-)
     fprintf('.......................................................................\n');
 end
+
+% This is redundant in when running as a function as all files should
+% be together, but it helps when running from the shell
+addpath(fileparts(mfilename('fullpath')));
 
 % This is probably redundant but fixes a bug in an old Matlab version
 nargin = numel(varargin);

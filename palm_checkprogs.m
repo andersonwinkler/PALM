@@ -37,12 +37,13 @@ function ext = palm_checkprogs
 persistent palm_extern;
 if isempty(palm_extern)
 
-    % Check the path of PALM and add the path for the NIFTI and GIFTI I/O.
+    % Check the path of PALM and add the paths for file I/O and other pieces
     palm_extern.palmpath = fileparts(mfilename('fullpath'));
-    addpath(fullfile(palm_extern.palmpath,'fileio'));
-    addpath(fullfile(palm_extern.palmpath,'fileio','extras'));
-    addpath(fullfile(palm_extern.palmpath,'fileio','freesurfer'));
-    addpath(fullfile(palm_extern.palmpath,'fileio','cifti-matlab'));
+    addpath(fullfile(palm_extern.palmpath,'lib'));
+    addpath(fullfile(palm_extern.palmpath,'lib','extras'));
+    addpath(fullfile(palm_extern.palmpath,'lib','freesurfer'));
+    addpath(fullfile(palm_extern.palmpath,'lib','cifti-matlab'));
+    addpath(fullfile(palm_extern.palmpath,'lib','arrow3'));
     fprintf('PALM is located at %s\n',palm_extern.palmpath);
     addpath(fullfile(palm_extern.palmpath,'colourmaps'));
 
