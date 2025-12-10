@@ -89,12 +89,15 @@ if isempty(palm_extern)
     end
 
     % Check if the Image Processing Toolbox is installed
-    palm_extern.ipt = license('test','Image_Toolbox');
-    if ~ palm_extern.ipt && ...
-            (exist('niftiread', 'builtin') == 5 || exist('niftiread', 'file') == 2) && ...
+    palm_extern.ipt = false;
+    if license('test','Image_Toolbox')
+        palm_extern.ipt = true;
+        fprintf('Image Processing Toolbox is available.');
+    elseif  (exist('niftiread', 'builtin') == 5 || exist('niftiread', 'file') == 2) && ...
             (exist('niftiwrite','builtin') == 5 || exist('niftiwrite','file') == 2) && ...
             (exist('niftiinfo', 'builtin') == 5 || exist('niftiinfo', 'file') == 2)
         palm_extern.ipt = true;
+        fprintf('Internal NIFTI read/write functions are available.');
     end
 end
 ext = palm_extern;

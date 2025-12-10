@@ -392,10 +392,10 @@ if strcmp(get(ax,'nextplot'),'add') && strcmp(get(fig,'nextplot'),'add')
        error('Nonpositive log data not supported')
     end
   else, mode='manual';
-    if strcmp(get(ax,'WarpToFill'),'on')
-      warning('Arrow3:WarpToFill',['Stretch-to-fill scaling not ',...
-        'supported;\nuse DASPECT or PBASPECT before calling ARROW3.']);
-    end
+    %if strcmp(get(ax,'WarpToFill'),'on')
+    %  warning('Arrow3:WarpToFill',['Stretch-to-fill scaling not ',...
+    %    'supported;\nuse DASPECT or PBASPECT before calling ARROW3.']);
+    %end
   end
   set(ax,'XLimMode',mode,'YLimMode',mode,'ZLimMode',mode,...
     'CLimMode','manual');

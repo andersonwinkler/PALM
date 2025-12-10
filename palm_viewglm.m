@@ -1,4 +1,6 @@
 function h = palm_viewglm(Y,M,C,submodels)
+% Plot a vector view of a GLM and its fit.
+% 
 % Usage:
 % h = palm_viewglm(Y,M,C,show_submodels)
 % 
@@ -36,17 +38,20 @@ end
 bfac = 0.05; % extra room around the axes bounding box
 tfac = 0.05; % space between tip of vector and center of vector label 
 
+% Ensure we have the relevant paths
+palm_checkprogs;
+
 % Default labels and colors
 lc = { ...
     '$\mathbf{Y}$',                '_g';...
     '$\mathbf{X}$',                '^r';...
     '$\mathbf{Z}$',                '^b';...
-    '$\mathbf{\hat{\epsilon}}$',   '_m';...
     '$\mathbf{\hat{Y}}$',          '_m';...
-    '$\mathbf{\hat{\epsilon}_X}$', '_r';...
+    '$\mathbf{\hat{\epsilon}}$',   '_m';...
     '$\mathbf{\hat{Y}_X}$',        '_r';...
-    '$\mathbf{\hat{\epsilon}_Z}$', '_b';...
-    '$\mathbf{\hat{Y}_Z}$',        '_b'};
+    '$\mathbf{\hat{\epsilon}_X}$', '_r';...
+    '$\mathbf{\hat{Y}_Z}$',        '_b';...
+    '$\mathbf{\hat{\epsilon}_Z}$', '_b'};
 
 % Partition the model and ensure X and Z are vectors
 % representing their respective subspaces that
@@ -159,9 +164,17 @@ hold off
 ssqy  = (y'*y);
 ssqyh = (yhat'*yhat);
 ssqe  = (ehat'*ehat);
-fprintf('Y:    %g\t%g\n', ssqy,  ssqy*ssqY);
-fprintf('Yhat: %g\t%g\n', ssqyh, ssqyh*ssqY);
-fprintf('ehat: %g\t%g\n', ssqe,  ssqe*ssqY);
+fmt_head = '%-8s %15s %15s\n';
+if ssqyh > 1e-6 && ssqe > 1e-6
+    fmt_row  = '%-8s %15.6f %15.6f\n';
+else
+    fmt_row  = '%-8s %15.6e %15.6e\n';
+end
+fprintf(fmt_head,'ssq','scaled','original');
+fprintf('%s', repmat('-',[1 45])); fprintf('\n');
+fprintf(fmt_row,'Y',    ssqy,  ssqy*ssqY);  %#ok<CTPCT>
+fprintf(fmt_row,'Yhat', ssqyh, ssqyh*ssqY); %#ok<CTPCT>
+fprintf(fmt_row,'ehat', ssqe,  ssqe*ssqY);  %#ok<CTPCT>
 
 % ==============================================================
 function rgb = colortable(str)
