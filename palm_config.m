@@ -1,9 +1,9 @@
-function varargout = palm_configrw(varargin)
+function varargout = palm_config(varargin)
 % Read and write PALM configuration files.
 % 
 % Usage:
-% cfg = palm_configrw(fname)
-% palm_configrw(cfg,fname)
+% cfg = palm_config(fname)
+% palm_config(cfg,fname)
 % 
 % cfg   : Configurations (cell array).
 % fname : Text-file with the configurations.
@@ -46,7 +46,7 @@ if nargin == 1
 elseif nargin == 2
     
     % Version & environment
-    ver = fliplr(strtok(fliplr(palm_help('version')),' '));
+    [~,ver] = strtok(palm_help('version'),'(');
     if palm_isoctave
         envrun = 'Octave';
     else
@@ -59,7 +59,7 @@ elseif nargin == 2
     fid = fopen(plmfile,'w');
     fprintf(fid,'# Configuration file for PALM.\n');
     fprintf(fid,'# Version %s, running in %s %s.\n',ver,envrun,version);
-    fprintf(fid,'# %s\n',datestr(now));
+    fprintf(fid,'# %s\n',datestr(now)); %#ok<TNOW1,DATST>
     fprintf('Running PALM %s using %s %s with the following options:',ver,envrun,version);
     for c = 1:numel(cfg)
         s2d = str2double(cfg{c});

@@ -434,6 +434,12 @@ fprintf('  * Winkler AM, Ridgway GR, Douaud G, Nichols TE, Smith SM.\n');
 fprintf('    Faster permutation inference in brain imaging.\n');
 fprintf('    Neuroimage. 2016 Jun 7;141:502-516. (Open Access)\n\n');
 
+fprintf('For the false discovery rate (FDR) approach used in PALM (option\n');
+fprintf('"-fdr"), the reference is:\n\n');
+
+fprintf('  * Winkler AM, Taylor PA, Nichols TE, Rorden C. False discovery rate\n');
+fprintf('    and localizing power. arXiv, 2024;2401.03554. (Preprint)\n\n');
+
 fprintf('For additional theory of permutation tests in neuroimaging:\n\n');
 
 fprintf('  * Nichols TE, Holmes AP. Nonparametric permutation tests for\n');
@@ -443,13 +449,6 @@ fprintf('    Hum Brain Mapp. 2002 Jan;15(1):1-25.\n\n');
 fprintf('  * Holmes AP, Blair RC, Watson JD, Ford I. Nonparametric analysis\n');
 fprintf('    of statistic images from functional mapping experiments.\n');
 fprintf('    J Cereb Blood Flow Metab. 1996 Jan;16(1):7-22.\n\n');
-
-fprintf('For the false discovery rate (FDR) approach used in PALM (option\n');
-fprintf('"-fdr"), the reference is:\n\n');
-
-fprintf('  * Winkler AM, Taylor PA, Nichols TE, Rorden C. False discovery rate\n');
-fprintf('    and localizing power. arXiv, 2024;2401.03554. (Preprint)\n\n');
-
 
 % ==============================================================
 function showlogo
@@ -478,7 +477,7 @@ function showdate
 fprintf('_____________________________________\n');
 fprintf('Anderson M. Winkler\n');
 fprintf('FMRIB / University of Oxford\n');
-fprintf('%s',showversion);
+fprintf('%s\n',showversion);
 fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
 
 % ==============================================================
@@ -490,7 +489,7 @@ fclose(fid);
 
 % Assemble back as a string
 vstr = sprintf('%s ',vstr{1}{:});
-vstr = sprintf('%s\n',vstr(1:end-1));
+vstr = deblank(sprintf('%s',vstr));
 
 % If it's the GitHub version, append the commit hash
 headfile = fullfile(fileparts(mfilename('fullpath')),'.git','HEAD');
@@ -504,6 +503,6 @@ if strfind(vstr,'GitHub') && exist(headfile,'file') %#ok<STRIFCND>
         fid = fopen(headpath,'r');
         hash = fgetl(fid);
         fclose(fid);
-        vstr = strrep(vstr,'GitHub',sprintf('GitHub, commit:%s',hash(1:7)));
+        vstr = strrep(vstr,'GitHub',sprintf('GitHub/commit:%s',hash(1:7)));
     end
 end

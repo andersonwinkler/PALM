@@ -31,7 +31,7 @@ opts = palm_defaults;
 % As varargin is actually from another function, fix it.
 if nargin == 1
     if exist(varargin{1},'file')
-        vararginx = palm_configrw(varargin{1});
+        vararginx = palm_config(varargin{1});
     else
         error('Unknown option or file not found: %s',varargin{1});
     end
@@ -51,7 +51,7 @@ else
     if ~isempty(opth) && ~exist(opth,'dir')
         mkdir(opth);
     end
-    palm_configrw(vararginx,cfgname);
+    palm_config(vararginx,cfgname);
 end
 
 % Number of input images/masks/surfaces
