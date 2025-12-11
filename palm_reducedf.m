@@ -40,7 +40,16 @@ function A = palm_reducedf(Y,M,k)
 % http://brainder.org
 
 [Qm,~,~] = svd(M,'econ');
-Mn       = null(M');
-e        = Y - M*(M\Y);
-[Qe,~,~] = svds([Mn e/norm(e)],k);
+Mn       = null(Qm');
+e        = Y - Qm*(Qm\Y);
+% For typical designs, we want e/norm(e) so that e enters in
+% the 2nd svd with same norm as the columns of Mn. However, if
+% the residuals are zero (within the eps), then norming
+% becomes a problem (for example, ssq(A'*Y) > ssq(Y)).
+if e'*e > eps(10)
+    e    = e/norm(e);
+else
+    e    = [];
+end
+[Qe,~,~] = svds([Mn e],k); % see note below
 A        = [Qm Qe];

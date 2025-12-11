@@ -1,9 +1,9 @@
-function h = palm_viewglm(Y,M,C,submodels)
+function h = palm_viewglm(Y,M,C,submodels,figtitle)
 % Plot a vector view of a GLM and its fit.
-% 
+%
 % Usage:
 % h = palm_viewglm(Y,M,C,show_submodels)
-% 
+%
 % Inputs:
 % Y : Dependent data (N by 1)
 % M : Design matrix (N by R, for R regressors)
@@ -12,10 +12,11 @@ function h = palm_viewglm(Y,M,C,submodels)
 %             two submodels given by:
 %             Y = X*b_X + e_X and Y = Z*b_Z + e_Z
 %             Default is false.
+% figtitle  : Title for the figure. Default is ''.
 %
 % Outputs:
 % h : Figure handle
-% 
+%
 % _____________________________________
 % Anderson M. Winkler
 % UTRGV
@@ -23,7 +24,7 @@ function h = palm_viewglm(Y,M,C,submodels)
 % http://brainder.org
 
 % Argument sanity
-narginchk(3,4);
+narginchk(3,5);
 if size(Y,1) ~= size(M,1)
     error('Y and M must have the same number of rows.');
 end
@@ -36,7 +37,7 @@ end
 
 % Defaults
 bfac = 0.05; % extra room around the axes bounding box
-tfac = 0.05; % space between tip of vector and center of vector label 
+tfac = 0.05; % space between tip of vector and center of vector label
 
 % Ensure we have the relevant paths
 palm_checkprogs;
@@ -52,20 +53,31 @@ lc = { ...
     '$\mathbf{\hat{\epsilon}_X}$', '_r';...
     '$\mathbf{\hat{Y}_Z}$',        '_b';...
     '$\mathbf{\hat{\epsilon}_Z}$', '_b'};
+addtxt = false(size(lc,1));
 
 % Partition the model and ensure X and Z are vectors
 % representing their respective subspaces that
-% capture the projections of Y in each of them
+% capture the projections of Y in each of them.
+% Doing SVD here and recasting C isn't needed, but helps
+% with rank-deficient designs entered by the user.
+[u,s,v] = svd(M,'econ');
+idx = diag(s) ~= 0;
+M1 = u(:,idx)*s(idx,idx)*v(:,idx)';
+C1 = M1'*pinv(M)'*C;
+M  = M1;
+C  = C1;
 Cn = null(C');
-b = M\Y;
-X = M*(C*C')*b;
-Z = M*(Cn*Cn')*b;
-M = [X,Z];
+b  = M\Y;
+X  = M*(C*C')*b;
+Z  = M*(Cn*Cn')*b;
+M  = [X,Z];
 
 % Rescale to unit norm (easier on the figures)
-ssqY = Y'*Y;
-Y = Y./sqrt(sum(Y.^2,1));
-M = M./sqrt(sum(M.^2,1));
+ssqY  = Y'*Y;
+normY = sqrt(sum(Y.^2,1));
+normM = sqrt(sum(M.^2,1));
+Y     = Y./(normY + (normY == 0));
+M     = M./(normM + (normM == 0));
 
 % Reduce the df of the design
 A    = palm_reducedf(Y,M,1);
@@ -83,7 +95,7 @@ yhat = m*(m\y);
 ehat = y - yhat;
 
 % If we want to see the fittings of the submodels:
-% Y = X*b_X + e_X and Y = Z*b_Z + e_Z 
+% Y = X*b_X + e_X and Y = Z*b_Z + e_Z
 if submodels
     yhatx = x*(x\y);
     ehatx = y - yhatx;
@@ -100,9 +112,16 @@ end
 uvw = [y x z yhat ehat yhatx ehatx yhatz ehatz]';
 if rank(uvw) == 2
     [~,~,v]=svd(uvw,0);
-    uvw = uvw*v;
+    uvw  = uvw*v;
+    is2d = true;
+else
+    is2d = false;
 end
 org = zeros(size(uvw)); % origin of the coordinate system
+
+% Vector lengths and distances from y
+d0 = sqrt(sum(uvw.^2,2));
+dy = sqrt(sum((uvw-uvw(1,:)).^2,2));
 
 % Define range of values to plot and aspect ratio
 mi   = min(uvw);
@@ -117,33 +136,76 @@ pba(pba==0) = 2*bfac;
 h = figure;
 axis(box(:)');
 pbaspect(pba);
-view(145,20)
+if is2d
+    view(0,90)
+    zticklabels([]);
+else
+    view(145,20)
+end
+title(figtitle)
 grid on
 hold on
 
+% Place the little square indicating whether the angle
+% between x and z is 90 degrees
+anglesymbol(uvw(2,:),uvw(3,:),.05);
+
 % Plot the vectors and their projections
-arrow3(org(1,:),uvw(1,:),lc{1,2});                  % y
-arrow3(org(2,:),uvw(2,:),lc{2,2});                  % x
-arrow3(org(3,:),uvw(3,:),lc{3,2});                  % z
-arrow3(org(4,:),uvw(4,:),lc{4,2});                  % yhat
-arrow3(uvw(1,:),uvw(4,:),['--',lc{4,2}],0);         % projection y->yhat
-if ehat'*ehat > eps(10)
-    arrow3(org(5,:),uvw(5,:),lc{5,2});              % ehat
-    arrow3(uvw(1,:),uvw(5,:),['--',lc{5,2}],0);     % projection y->ehat
+if d0(1) > eps(10) % y
+    arrow3(org(1,:),uvw(1,:),lc{1,2});
+    addtxt(1) = true;
+end
+if d0(2) > eps(10) % x
+    arrow3(org(2,:),uvw(2,:),lc{2,2});
+    addtxt(2) = true;
+end
+if d0(3) > eps(10) % z
+    arrow3(org(3,:),uvw(3,:),lc{3,2});
+    addtxt(3) = true;
+end
+if d0(4) > eps(10) % yhat
+    arrow3(org(4,:),uvw(4,:),lc{4,2});
+    addtxt(4) = true;
+    if dy(4) > eps(10) % projection y->yhat
+        arrow3(uvw(1,:),uvw(4,:),['--',lc{4,2}],0);
+    end
+end
+if d0(5) > eps(10) % ehat
+    arrow3(org(5,:),uvw(5,:),lc{5,2});
+    addtxt(5) = true;
+    if dy(5) > eps(10) % projection y->ehat
+        arrow3(uvw(1,:),uvw(5,:),['--',lc{5,2}],0);
+    end
 end
 if submodels
-    arrow3(org(6,:),uvw(6,:),lc{6,2});              % yhatx
-    arrow3(uvw(1,:),uvw(6,:),[':',lc{6,2}],0);      % projection y->yhatx
-    if ehatx'*ehatx > eps(10)
-        arrow3(org(7,:),uvw(7,:),lc{7,2});          % ehatx
-        arrow3(uvw(1,:),uvw(7,:),[':',lc{7,2}],0);  % projection y->ehatx
+    if d0(6) > eps(10) % yhatx
+        arrow3(org(6,:),uvw(6,:),lc{6,2});
+        addtxt(6) = true;
+        if dy(6) > eps(10) % projection y->yhatx
+            arrow3(uvw(1,:),uvw(6,:),[':',lc{6,2}],0);
+        end
     end
-    arrow3(org(8,:),uvw(8,:),lc{8,2});              % yhatz
-    arrow3(uvw(1,:),uvw(8,:),[':',lc{8,2}],0);      % projection y->yhatz
-    if ehatz'*ehatz > eps(10)
-        arrow3(org(9,:),uvw(9,:),lc{9,2});          % ehatz
-        arrow3(uvw(1,:),uvw(9,:),[':',lc{9,2}],0);  % projection y->ehatz
-    end 
+    if d0(7) > eps(10) % ehatx
+        arrow3(org(7,:),uvw(7,:),lc{7,2});
+        addtxt(7) = true;
+        if dy(7) > eps(10) % projection y->ehatx
+            arrow3(uvw(1,:),uvw(7,:),[':',lc{7,2}],0);
+        end
+    end
+    if d0(8) > eps(10) % yhatz
+        arrow3(org(8,:),uvw(8,:),lc{8,2});
+        addtxt(8) = true;
+        if dy(8) > eps(10) % projection y->yhatz
+            arrow3(uvw(1,:),uvw(8,:),[':',lc{8,2}],0);
+        end
+    end
+    if d0(9) > eps(10) % ehatz
+        arrow3(org(9,:),uvw(9,:),lc{9,2});
+        addtxt(9) = true;
+        if dy(9) > eps(10) % projection y->ehatz
+            arrow3(uvw(1,:),uvw(9,:),[':',lc{9,2}],0);
+        end
+    end
 end
 
 % Plot the vector names
@@ -154,9 +216,11 @@ textopts = { ...
 gap  = uvw./sqrt(sum(uvw.^2,2))*tfac;
 tpos = uvw + gap;
 for a = 1:size(uvw,1)
-    text(tpos(a,1),tpos(a,2),tpos(a,3),lc{a,1},...
-        'Color',colortable(lc{a,2}),...
-        textopts{:});
+    if addtxt(a)
+        text(tpos(a,1),tpos(a,2),tpos(a,3),lc{a,1},...
+            'Color',colortable(lc{a,2}),...
+            textopts{:});
+    end
 end
 hold off
 
@@ -248,3 +312,24 @@ else % Power-law for other cases
     expn = (1 - min(1-eps, abs(beta)))^sign(beta);
     c = c.^expn;
 end
+
+function anglesymbol(u,v,s)
+% Draw symbol for 90 degrees angle
+% u, v : two 3D vectors (row or column)
+% s    : length of side of the little square
+u = u/norm(u);
+v = v/norm(v);
+if abs(u*v') > eps(10)
+    return
+end
+corners = [ ...
+    0 0 0;
+    s*u;
+    s*u + s*v;
+    s*v];
+fill3( ...
+    corners([1:4 1],1), ...
+    corners([1:4 1],2), ...
+    corners([1:4 1],3), ...
+    [1 1 0],... % fill color
+    'EdgeColor','k');
