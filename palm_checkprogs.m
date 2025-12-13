@@ -92,7 +92,7 @@ if isempty(palm_extern)
     palm_extern.ipt = false;
     if license('test','Image_Toolbox')
         palm_extern.ipt = true;
-        fprintf('Image Processing Toolbox is available.');
+        fprintf('Image Processing Toolbox is available.\n');
     elseif  (exist('niftiread', 'builtin') == 5 || exist('niftiread', 'file') == 2) && ...
             (exist('niftiwrite','builtin') == 5 || exist('niftiwrite','file') == 2) && ...
             (exist('niftiinfo', 'builtin') == 5 || exist('niftiinfo', 'file') == 2)

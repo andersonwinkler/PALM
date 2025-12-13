@@ -5,19 +5,25 @@ function h = palm_viewglm(Y,M,C,style)
 % h = palm_viewglm(Y,M,C,show_submodels)
 %
 % Inputs:
-% Y : Dependent data (N by 1)
-% M : Design matrix (N by R, for R regressors)
-% C : Contrast vector or matrix (R by S, S<=R)
+% Y     : Dependent data (N by 1)
+% M     : Design matrix (N by R, for R regressors)
+% C     : Contrast vector or matrix (R by S, S<=R)
 % style : Choose a figure style:
-%         1: Shows Y, Yhat, and ehat
+%         1: Shows Y, X, Z, Yhat, and ehat, that is,
+%            it shows Y, X, Z, Hm*Y, and Rm*Y, where
+%            the design matrix M is [X Z].
 %         2: Same as (1) but with additional vectors
 %            for the two submodels given by:
-%            Y = X*b_X + e_X and Y = Z*b_Z + e_Z
+%            Y = X*b_X + e_X and Y = Z*b_Z + e_Z,
+%            that is, it shows additionally:
+%            Hx*Y and Rx*Y, as well as Hz*Y and Rz*Y.
 %         3: Shows Z, as well as the models:
-%            Y = Z*b_Z and X = Z*b_X
+%            Y = Z*b_Z + e_Y and X = Z*b_X + e_X
+%            that is, it shows:
+%            Z, X, Y, Hz*Y, Rz*Y, Hz*X, and Rz*X.
 %
 % Outputs:
-% h : Figure handle
+% h     : Figure handle
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -38,76 +44,102 @@ if nargin < 4
 end
 
 % Defaults
-bfac = 0.05; % extra room around the axes bounding box
-tfac = 0.05; % space between tip of vector and center of vector label
+bfac = 0.05;  % extra room around the axes bounding box
+tfac = 0.075; % space between tip of vector and center of vector label
+radius = .2;  % radius of the arcs that represent the angles
 
 % Ensure we have the relevant paths
 palm_checkprogs;
 
-% Default labels and colors
-lc = cell(3,1); % one per style
-lc{1} = { ...
-    '$\mathbf{Y}$',     '_g';...
-    '$\mathbf{X}$',     '^r';...
-    '$\mathbf{Z}$',     '^b';...
-    '$\mathbf{H_M Y}$', '_m';...
-    '$\mathbf{R_M Y}$', '_m'};
-lc{2} = { ...
-    '$\mathbf{Y}$',     '_g';...
-    '$\mathbf{X}$',     '^r';...
-    '$\mathbf{Z}$',     '^b';...
-    '$\mathbf{H_M Y}$', '_m';...
-    '$\mathbf{R_M Y}$', '_m';...
-    '$\mathbf{H_X Y}$', '_r';...
-    '$\mathbf{R_X Y}$', '_r';...
-    '$\mathbf{H_Z Y}$', '_b';...
-    '$\mathbf{R_Z Y}$', '_b'};
-lc{3} = { ...
-    '$\mathbf{Z}$',     '_g';...
-    '$\mathbf{X}$',     '^r';...
-    '$\mathbf{Y}$',     '^b';...
-    '$\mathbf{H_Z X}$', '_y';...
-    '$\mathbf{R_Z X}$', '_y';...
-    '$\mathbf{H_Z Y}$', '_c';...
-    '$\mathbf{R_Z Y}$', '_c'};
-addtxt = false(size(lc{style},1));
+% Default vector labels and colors
+vecs = cell(3,1); % one per style
+%    LaTeX label        % Color code
+vecs{1} = { ...
+    '$\mathbf{Y}$',       '_g';...
+    '$\mathbf{X}$',       '_r';...
+    '$\mathbf{Z}$',       '_b';...
+    '$\mathbf{H_M Y}$',    'm';...
+    '$\mathbf{R_M Y}$',    'm'};
+vecs{2} = { ...
+    '$\mathbf{Y}$',       '_g';...
+    '$\mathbf{X}$',       '_r';...
+    '$\mathbf{Z}$',       '_b';...
+    '$\mathbf{H_M Y}$',    'm';...
+    '$\mathbf{R_M Y}$',    'm';...
+    '$\mathbf{H_X Y}$',   '^r';...
+    '$\mathbf{R_X Y}$',   '^r';...
+    '$\mathbf{H_Z Y}$',   '^b';...
+    '$\mathbf{R_Z Y}$',   '^b'};
+vecs{3} = { ...
+    '$\mathbf{Z}$',       '_g';...
+    '$\mathbf{X}$',       '_r';...
+    '$\mathbf{Y}$',       '_b';...
+    '$\mathbf{H_Z X}$',   '^r';...
+    '$\mathbf{R_Z X}$',   '^r';...
+    '$\mathbf{H_Z Y}$',   '^b';...
+    '$\mathbf{R_Z Y}$',   '^b'};
+addtxt = false(size(vecs{style},1));
 
-% Partition the model and ensure X and Z are vectors
-% representing their respective subspaces that
-% capture the projections of Y in each of them.
-% Doing SVD here and recasting C isn't needed, but helps
-% with rank-deficient designs entered by the user.
-[u,s,v] = svd(M,'econ');
-idx = diag(s) ~= 0;
-M1 = u(:,idx)*s(idx,idx)*v(:,idx)';
-C1 = M1'*pinv(M)'*C;
-M  = M1;
-C  = C1;
-Cn = null(C');
-b  = M\Y;
-X  = M*(C*C')*b;
-Z  = M*(Cn*Cn')*b;
-M  = [X,Z];
+% Default arc labels and colors
+arcs = cell(3,1); % one per style
+%    LaTeX label                     Color code   Position  Value
+arcs{1} = { ...
+    '$\cos(\theta_{\mathbf{YX}})$',      '_y',    [],    [];
+    '$\cos(\theta_{\mathbf{XZ}})$',      '_m',    [],    []};
+arcs{2} = arcs{1};
+arcs{3} = { ...
+    '$\cos(\theta_{\mathbf{YX}})$',      '_m',    [],    [];
+    '$\cos(\theta_{\mathbf{YR_{Z}X}})$',  'm',    [],    []};
 
-% Rescale to unit norm (easier on the figures)
+% Options for arrow3
+arrowopts = {...
+    .75,... % arrow width (default = 1)
+    1.5 };  % arrow height (in relation to width, default = 3*width)
+
+% Keep track of the original sum of squares
 ssqY  = Y'*Y;
-normY = sqrt(sum(Y.^2,1));
-normM = sqrt(sum(M.^2,1));
-Y     = Y./(normY + (normY == 0));
-M     = M./(normM + (normM == 0));
 
-% Reduce the df of the design
-A    = palm_reducedf(Y,M,1);
-y    = A'*Y;
-for d = 1:3
-    if y(d) < 0
-        A(:,d) = -A(:,d); % ensure Y is in the all-positive octant
-    end
+% Recast the model into only 2 columns
+[M,C] = recast(Y,M,C);
+
+% Independent variables
+X = M(:,1);
+Z = M(:,2);
+
+% Find A that reduces the df of the model
+if any([1,2] == style)
+
+    % Rescale to unit norm (easier on the figures)
+    Y     = normed(Y);
+    X     = normed(X);
+    Z     = normed(Z);
+
+    % Reduce the df proper
+    A     = palm_reducedf(Y,[X Z],1,true);
+
+elseif style == 3
+
+    % Now that we've recasted the model into X and Z,
+    % let's recast again with Z as dependent; if we don't
+    % do this, the figure won't represent the fact that
+    % in this style, since we residualize Z, it is Z that
+    % is the dependent variable in the figure
+    [M,~] = recast(Z,[X Y],C);
+
+    % Rescale to unit norm
+    Z     = normed(Z);
+    X     = normed(M(:,1));
+    Y     = normed(M(:,2));
+
+    % Reduce the df proper
+    A     = palm_reducedf(Z,[X Y],1,true);
 end
-y    = A'*Y;
-m    = A'*M;
-x    = m(:,1);
-z    = m(:,2);
+
+% Apply A
+y = A'*Y;
+x = A'*X;
+z = A'*Z;
+m = [x z];
 
 % If we want to see the fittings of the submodels:
 % Y = X*b_X + e_X and Y = Z*b_Z + e_Z
@@ -150,10 +182,8 @@ dv = sqrt( ...
     (uvw(:,3)-uvw(:,3)').^2);
 
 % Define range of values to plot and aspect ratio
-mi   = min(uvw);
-ma   = max(uvw);
-mi   = ~(abs(mi)<eps(10)).*sign(mi);
-ma   =  (abs(ma)>eps(10)).*sign(ma);
+mi   = floor(min(uvw));
+ma   = ceil (max(uvw));
 box  = [mi-bfac;ma+bfac];
 pba  = range([mi;ma]);
 pba(pba==0) = 2*bfac;
@@ -171,125 +201,149 @@ end
 grid on
 hold on
 
-% Place the little square indicating whether the angle
-% between x and z is 90 degrees
-anglesymbol(uvw(2,:),uvw(3,:),.05);
-
 % Plot the vectors and their projections
 if any([1 2] == style)
+
+    % Angle arcs
+    [arcs{style}{1,3},arcs{style}{1,4}] = ...
+        anglesymbol(uvw(1,:),uvw(2,:),1.25*radius,arcs{style}{1,2});
+    [arcs{style}{2,3},arcs{style}{2,4}] = ...
+        anglesymbol(uvw(2,:),uvw(3,:),0.80*radius,arcs{style}{2,2});
+
+    % Vectors
     if d0(1) > eps(10) % Y
-        arrow3(org(1,:),uvw(1,:),lc{style}{1,2});
+        arrow3(org(1,:),uvw(1,:),vecs{style}{1,2},arrowopts{:});
         addtxt(1) = true;
     end
     if d0(2) > eps(10) % X
-        arrow3(org(2,:),uvw(2,:),lc{style}{2,2});
+        arrow3(org(2,:),uvw(2,:),vecs{style}{2,2},arrowopts{:});
         addtxt(2) = true;
     end
     if d0(3) > eps(10) % Z
-        arrow3(org(3,:),uvw(3,:),lc{style}{3,2});
+        arrow3(org(3,:),uvw(3,:),vecs{style}{3,2},arrowopts{:});
         addtxt(3) = true;
     end
     if d0(4) > eps(10) % Hm*Y
-        arrow3(org(4,:),uvw(4,:),lc{style}{4,2});
+        arrow3(org(4,:),uvw(4,:),vecs{style}{4,2},arrowopts{:});
         addtxt(4) = true;
         if dv(1,4) > eps(10) % projection Y->Hm*Y
-            arrow3(uvw(1,:),uvw(4,:),['--',lc{style}{4,2}],0);
+            arrow3(uvw(1,:),uvw(4,:),['--',vecs{style}{4,2}],0);
         end
     end
     if d0(5) > eps(10) % Rm*Y
-        arrow3(org(5,:),uvw(5,:),lc{style}{5,2});
+        arrow3(org(5,:),uvw(5,:),vecs{style}{5,2},arrowopts{:});
         addtxt(5) = true;
         if dv(1,5) > eps(10) % projection Y->Rm*Y
-            arrow3(uvw(1,:),uvw(5,:),['--',lc{style}{5,2}],0);
+            arrow3(uvw(1,:),uvw(5,:),['--',vecs{style}{5,2}],0);
         end
     end
 end
 if style == 2
+
+    % Vectors only (extra in relation to style 1
     if d0(6) > eps(10) % Hx*Y
-        arrow3(org(6,:),uvw(6,:),lc{style}{6,2});
+        arrow3(org(6,:),uvw(6,:),vecs{style}{6,2},arrowopts{:});
         addtxt(6) = true;
         if dv(1,6) > eps(10) % projection Y->Hx*Y
-            arrow3(uvw(1,:),uvw(6,:),[':',lc{style}{6,2}],0);
+            arrow3(uvw(1,:),uvw(6,:),[':',vecs{style}{6,2}],0);
         end
     end
     if d0(7) > eps(10) % Rx*Y
-        arrow3(org(7,:),uvw(7,:),lc{style}{7,2});
+        arrow3(org(7,:),uvw(7,:),vecs{style}{7,2},arrowopts{:});
         addtxt(7) = true;
         if dv(1,7) > eps(10) % projection Y->Rx*Y
-            arrow3(uvw(1,:),uvw(7,:),[':',lc{style}{7,2}],0);
+            arrow3(uvw(1,:),uvw(7,:),[':',vecs{style}{7,2}],0);
         end
     end
     if d0(8) > eps(10) % Hz*Y
-        arrow3(org(8,:),uvw(8,:),lc{style}{8,2});
+        arrow3(org(8,:),uvw(8,:),vecs{style}{8,2},arrowopts{:});
         addtxt(8) = true;
         if dv(1,8) > eps(10) % projection Y->Hz*Y
-            arrow3(uvw(1,:),uvw(8,:),[':',lc{style}{8,2}],0);
+            arrow3(uvw(1,:),uvw(8,:),[':',vecs{style}{8,2}],0);
         end
     end
     if d0(9) > eps(10) % Rz*Y
-        arrow3(org(9,:),uvw(9,:),lc{style}{9,2});
+        arrow3(org(9,:),uvw(9,:),vecs{style}{9,2},arrowopts{:});
         addtxt(9) = true;
         if dv(1,9) > eps(10) % projection Y->Rz*Y
-            arrow3(uvw(1,:),uvw(9,:),[':',lc{style}{9,2}],0);
+            arrow3(uvw(1,:),uvw(9,:),[':',vecs{style}{9,2}],0);
         end
     end
 end
 if style == 3
+
+    % Angle arcs
+    [arcs{style}{1,3},arcs{style}{1,4}] = ...
+        anglesymbol(uvw(2,:),uvw(3,:),1.25*radius,arcs{style}{1,2});
+    [arcs{style}{2,3},arcs{style}{2,4}] = ...
+        anglesymbol(uvw(5,:),uvw(7,:),0.80*radius,arcs{style}{2,2});
+
+    % Vectors
     if d0(1) > eps(10) % Z
-        arrow3(org(1,:),uvw(1,:),lc{style}{1,2});
+        arrow3(org(1,:),uvw(1,:),vecs{style}{1,2},arrowopts{:});
         addtxt(1) = true;
     end
     if d0(2) > eps(10) % X
-        arrow3(org(2,:),uvw(2,:),lc{style}{2,2});
+        arrow3(org(2,:),uvw(2,:),vecs{style}{2,2},arrowopts{:});
         addtxt(2) = true;
     end
     if d0(3) > eps(10) % Y
-        arrow3(org(3,:),uvw(3,:),lc{style}{3,2});
+        arrow3(org(3,:),uvw(3,:),vecs{style}{3,2},arrowopts{:});
         addtxt(3) = true;
     end
     if d0(4) > eps(10) % Hz*X
-        arrow3(org(4,:),uvw(4,:),lc{style}{4,2});
+        arrow3(org(4,:),uvw(4,:),vecs{style}{4,2},arrowopts{:});
         addtxt(4) = true;
         if dv(2,4) > eps(10) % projection X->Hz*X
-            arrow3(uvw(2,:),uvw(4,:),[':',lc{style}{4,2}],0);
+            arrow3(uvw(2,:),uvw(4,:),['--',vecs{style}{4,2}],0);
         end
     end
     if d0(5) > eps(10) % Rz*X
-        arrow3(org(5,:),uvw(5,:),lc{style}{5,2});
+        arrow3(org(5,:),uvw(5,:),vecs{style}{5,2},arrowopts{:});
         addtxt(5) = true;
         if dv(2,5) > eps(10) % projection X->Rz*X
-            arrow3(uvw(2,:),uvw(5,:),[':',lc{style}{5,2}],0);
+            arrow3(uvw(2,:),uvw(5,:),['--',vecs{style}{5,2}],0);
         end
     end
     if d0(6) > eps(10) % Hz*Y
-        arrow3(org(6,:),uvw(6,:),lc{style}{6,2});
+        arrow3(org(6,:),uvw(6,:),vecs{style}{6,2},arrowopts{:});
         addtxt(6) = true;
         if dv(3,6) > eps(10) % projection Y->Hz*Y
-            arrow3(uvw(3,:),uvw(6,:),[':',lc{style}{6,2}],0);
+            arrow3(uvw(3,:),uvw(6,:),['--',vecs{style}{6,2}],0);
         end
     end
     if d0(7) > eps(10) % Rz*Y
-        arrow3(org(7,:),uvw(7,:),lc{style}{7,2});
+        arrow3(org(7,:),uvw(7,:),vecs{style}{7,2},arrowopts{:});
         addtxt(7) = true;
         if dv(3,7) > eps(10) % projection Y->Rz*Y
-            arrow3(uvw(3,:),uvw(7,:),[':',lc{style}{7,2}],0);
+            arrow3(uvw(3,:),uvw(7,:),['--',vecs{style}{7,2}],0);
         end
     end
 end
 
-% Plot the vector names
+% Add vector names to plot
 textopts = { ...
     'VerticalAlignment','middle',...
     'HorizontalAlignment','center',...
     'Interpreter','latex'};
-gap  = uvw./sqrt(sum(uvw.^2,2))*tfac;
+gap  = normed(uvw')'*tfac;
 tpos = uvw + gap;
-for a = 1:size(uvw,1)
-    if addtxt(a)
-        text(tpos(a,1),tpos(a,2),tpos(a,3),lc{style}{a,1},...
-            'Color',colortable(lc{style}{a,2}),...
+for v = 1:size(uvw,1)
+    if addtxt(v)
+        text(tpos(v,1),tpos(v,2),tpos(v,3),vecs{style}{v,1},...
+            'Color',colortable(vecs{style}{v,2}),...
             textopts{:});
     end
+end
+
+% Add cosines to the plot
+for a = 1:size(arcs{style},1)
+    gap  = normed(arcs{style}{a,3}')'*tfac;
+    tpos = arcs{style}{a,3} + gap;
+    text(tpos(1),tpos(2),tpos(3),...
+        sprintf('%s: %g',arcs{style}{a,1},arcs{style}{a,4}),...
+        'Color',colortable(arcs{style}{a,2}),...
+        textopts{:});
 end
 hold off
 
@@ -312,6 +366,31 @@ if any([1 2] == style)
 end
 
 % ==============================================================
+function [M,C] = recast(Y,M,C)
+% Partition the model and ensure X and Z are vectors
+% representing their respective subspaces that
+% capture the projections of Y in each of them.
+% Doing SVD here and recasting C isn't needed, but helps
+% with rank-deficient designs entered by the user.
+[u,s,v] = svd(M,'econ');
+idx = diag(s) ~= 0;
+M1 = u(:,idx)*s(idx,idx)*v(:,idx)';
+C1 = M1'*pinv(M)'*C;
+M  = M1;
+C  = C1;
+Cn = null(C');
+b  = M\Y;
+X  = M*(C*C')*b;
+Z  = M*(Cn*Cn')*b;
+M  = [X,Z];
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function M = normed(M)
+% Normalize columns to unit norm
+normM = sqrt(sum(M.^2,1));
+M     = M./(normM + (normM == 0));
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function rgb = colortable(str)
 % Return RGB triplet for a code following the convention from arrow3.m
 beta = 0.4; % default factor for lightening/darkening
@@ -372,36 +451,86 @@ end
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function c = brighten(c,beta)
 % Lighten or darker the color
-% Linear scaling for "pure" colors
 if all(ismember(c,[0 1])) && ~all(c==0) && ~all(c==1)
+    % Linear scaling for pure colors
     if beta < 0 % darkening
         c = (1 + beta) * c;
     else        % lightening
         c(c==0) = beta;
     end
-else % Power-law for other cases
+else
+    % Power-law for other cases
     expn = (1 - min(1-eps, abs(beta)))^sign(beta);
     c = c.^expn;
 end
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-function anglesymbol(u,v,s)
+function [b,cos_angle] = anglesymbol(u,v,r,rgb)
 % Draw symbol for 90 degrees angle
-% u, v : two 3D vectors (row or column)
-% s    : length of side of the little square
-u = u/norm(u);
-v = v/norm(v);
-if abs(u*v') > eps(10)
-    return
+% u, v  : two 3D vectors (row or column)
+% r     : radius of the arc
+% rgb   : color of the arc
+% b     : bisecting vector, scaled by the radius (to add text later)
+% angle : angle between u and v
+
+% Line color
+if ischar(rgb)
+    rgb = colortable(rgb);
 end
-corners = [ ...
-    0 0 0;
-    s*u;
-    s*u + s*v;
-    s*v];
-fill3( ...
-    corners([1:4 1],1), ...
-    corners([1:4 1],2), ...
-    corners([1:4 1],3), ...
-    [1 1 0],... % fill color
-    'EdgeColor','k');
+
+% Radius
+normu = norm(u);
+normv = norm(v);
+r     = min([r,normu,normv]);
+
+% Angle between u and v
+u = u/normu;
+v = v/normv;
+cos_angle = dot(u,v);
+sin_angle = norm(cross(u,v));
+angle = atan2(sin_angle,cos_angle); % signed angle, shortest path
+
+% Normalize to [0, pi]
+abs_angle = abs(angle);
+if abs_angle > pi
+    abs_angle = 2*pi - abs_angle;
+end
+
+if abs(abs_angle - pi) < eps(10)
+
+    % If u and v are at 180 deg, we want two squares for the two right angles
+    b   = [u(2) v(1) 0]; % bisecting vector
+    fac = 4; % scale factor for the square and text
+    anglesymbol(u,b,r,rgb);
+    anglesymbol(b,v,r,rgb);
+
+elseif  abs(mod(abs_angle,pi/2)     ) < eps(10) || ...
+        abs(mod(abs_angle,pi/2)-pi/2) < eps(10)
+
+    % If u and v are at 90 deg, we show a square filled in yellow
+    b = u + v;
+    s = r*sqrt(pi)/2; % side of square so that 4 squares together have area of full circle
+    fac = 4; % scale factor for the square and text
+    s = s/fac; % let's make it further smaller
+    corners = [ ...
+        0 0 0;
+        s*u;
+        s*u + s*v;
+        s*v];
+    fill3( ...
+        corners([1:4 1],1), ...
+        corners([1:4 1],2), ...
+        corners([1:4 1],3), ...
+        [1 1 0],... % fill color, yellow
+        'EdgeColor',rgb);
+    
+else
+
+    % If u and v are in any other angle, we show an arc
+    b     = u + v;
+    fac   = 1; % keep at one
+    a     = 0:(pi/180):angle; % one segment every pi/360 = .5 degree
+    arc   = r * (sin(angle - a')*v + sin(a')*u)/sin_angle;
+    plot3(arc(:,1),arc(:,2),arc(:,3),'Color',rgb);
+end
+b = b/norm(b)*r/sqrt(fac);
