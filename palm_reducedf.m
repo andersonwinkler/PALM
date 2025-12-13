@@ -65,7 +65,8 @@ else
 end
 [Qe,~,~] = svds([Mn e],k);
 
-% A is simply a matrix that spans both the design and the residual space
+% A is simply an orthogonal matrix that spans both the design
+% and the residual space
 A = [Qm Qe];
 
 % Ensure the dependent data Y is in the all positive octant

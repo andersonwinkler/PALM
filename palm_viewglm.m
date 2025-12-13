@@ -100,11 +100,8 @@ arrowopts = {...
 ssqY  = Y'*Y;
 
 % Recast the model into only 2 columns
-[M,C] = recast(Y,M,C);
+[X,Z,C] = palm_partition(M,C,'visualization',Y);
 
-% Independent variables
-X = M(:,1);
-Z = M(:,2);
 
 % Find A that reduces the df of the model
 if any([1,2] == style)
@@ -124,12 +121,12 @@ elseif style == 3
     % do this, the figure won't represent the fact that
     % in this style, since we residualize Z, it is Z that
     % is the dependent variable in the figure
-    [M,~] = recast(Z,[X Y],C);
+    [X,Y,~] = palm_partition([X Y],C,'visualization',Z);
 
     % Rescale to unit norm
     Z     = normed(Z);
-    X     = normed(M(:,1));
-    Y     = normed(M(:,2));
+    X     = normed(X);
+    Y     = normed(Y);
 
     % Reduce the df proper
     A     = palm_reducedf(Z,[X Y],1,true);
@@ -321,7 +318,7 @@ if style == 3
     end
 end
 
-% Add vector names to plot
+% Add vector names to the plot
 textopts = { ...
     'VerticalAlignment','middle',...
     'HorizontalAlignment','center',...
@@ -366,29 +363,81 @@ if any([1 2] == style)
 end
 
 % ==============================================================
-function [M,C] = recast(Y,M,C)
-% Partition the model and ensure X and Z are vectors
-% representing their respective subspaces that
-% capture the projections of Y in each of them.
-% Doing SVD here and recasting C isn't needed, but helps
-% with rank-deficient designs entered by the user.
-[u,s,v] = svd(M,'econ');
-idx = diag(s) ~= 0;
-M1 = u(:,idx)*s(idx,idx)*v(:,idx)';
-C1 = M1'*pinv(M)'*C;
-M  = M1;
-C  = C1;
-Cn = null(C');
-b  = M\Y;
-X  = M*(C*C')*b;
-Z  = M*(Cn*Cn')*b;
-M  = [X,Z];
-
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function M = normed(M)
 % Normalize columns to unit norm
 normM = sqrt(sum(M.^2,1));
 M     = M./(normM + (normM == 0));
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function [b,cos_angle] = anglesymbol(u,v,r,rgb)
+% Draw symbol for 90 degrees angle
+% u, v  : two 3D vectors (row or column)
+% r     : radius of the arc
+% rgb   : color of the arc
+% b     : bisecting vector, scaled by the radius (to add text later)
+% angle : angle between u and v
+
+% Line color
+if ischar(rgb)
+    rgb = colortable(rgb);
+end
+
+% Radius
+normu = norm(u);
+normv = norm(v);
+r     = min([r,normu,normv]);
+
+% Angle between u and v
+u = u/normu;
+v = v/normv;
+cos_angle = dot(u,v);
+sin_angle = norm(cross(u,v));
+angle = atan2(sin_angle,cos_angle); % signed angle, shortest path
+
+% Normalize to [0, pi]
+abs_angle = abs(angle);
+if abs_angle > pi
+    abs_angle = 2*pi - abs_angle;
+end
+
+if abs(abs_angle - pi) < eps(10)
+
+    % If u and v are at 180 deg, we want two squares for the two right angles
+    b   = [u(2) v(1) 0]; % bisecting vector
+    fac = 4; % scale factor for the square and text
+    anglesymbol(u,b,r,rgb);
+    anglesymbol(b,v,r,rgb);
+
+elseif  abs(mod(abs_angle,pi/2)     ) < eps(10) || ...
+        abs(mod(abs_angle,pi/2)-pi/2) < eps(10)
+
+    % If u and v are at 90 deg, we show a square filled in yellow
+    b = u + v;
+    s = r*sqrt(pi)/2; % side of square so that 4 squares together have area of full circle
+    fac = 4; % scale factor for the square and text
+    s = s/fac; % let's make it further smaller
+    corners = [ ...
+        0 0 0;
+        s*u;
+        s*u + s*v;
+        s*v];
+    fill3( ...
+        corners([1:4 1],1), ...
+        corners([1:4 1],2), ...
+        corners([1:4 1],3), ...
+        [1 1 0],... % fill color, yellow
+        'EdgeColor',rgb);
+    
+else
+
+    % If u and v are in any other angle, we show an arc
+    b     = u + v;
+    fac   = 1; % keep at one
+    a     = 0:(pi/180):angle; % one segment every pi/360 = .5 degree
+    arc   = r * (sin(angle - a')*v + sin(a')*u)/sin_angle;
+    plot3(arc(:,1),arc(:,2),arc(:,3),'Color',rgb);
+end
+b = b/norm(b)*r/sqrt(fac);
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function rgb = colortable(str)
@@ -463,74 +512,3 @@ else
     expn = (1 - min(1-eps, abs(beta)))^sign(beta);
     c = c.^expn;
 end
-
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-function [b,cos_angle] = anglesymbol(u,v,r,rgb)
-% Draw symbol for 90 degrees angle
-% u, v  : two 3D vectors (row or column)
-% r     : radius of the arc
-% rgb   : color of the arc
-% b     : bisecting vector, scaled by the radius (to add text later)
-% angle : angle between u and v
-
-% Line color
-if ischar(rgb)
-    rgb = colortable(rgb);
-end
-
-% Radius
-normu = norm(u);
-normv = norm(v);
-r     = min([r,normu,normv]);
-
-% Angle between u and v
-u = u/normu;
-v = v/normv;
-cos_angle = dot(u,v);
-sin_angle = norm(cross(u,v));
-angle = atan2(sin_angle,cos_angle); % signed angle, shortest path
-
-% Normalize to [0, pi]
-abs_angle = abs(angle);
-if abs_angle > pi
-    abs_angle = 2*pi - abs_angle;
-end
-
-if abs(abs_angle - pi) < eps(10)
-
-    % If u and v are at 180 deg, we want two squares for the two right angles
-    b   = [u(2) v(1) 0]; % bisecting vector
-    fac = 4; % scale factor for the square and text
-    anglesymbol(u,b,r,rgb);
-    anglesymbol(b,v,r,rgb);
-
-elseif  abs(mod(abs_angle,pi/2)     ) < eps(10) || ...
-        abs(mod(abs_angle,pi/2)-pi/2) < eps(10)
-
-    % If u and v are at 90 deg, we show a square filled in yellow
-    b = u + v;
-    s = r*sqrt(pi)/2; % side of square so that 4 squares together have area of full circle
-    fac = 4; % scale factor for the square and text
-    s = s/fac; % let's make it further smaller
-    corners = [ ...
-        0 0 0;
-        s*u;
-        s*u + s*v;
-        s*v];
-    fill3( ...
-        corners([1:4 1],1), ...
-        corners([1:4 1],2), ...
-        corners([1:4 1],3), ...
-        [1 1 0],... % fill color, yellow
-        'EdgeColor',rgb);
-    
-else
-
-    % If u and v are in any other angle, we show an arc
-    b     = u + v;
-    fac   = 1; % keep at one
-    a     = 0:(pi/180):angle; % one segment every pi/360 = .5 degree
-    arc   = r * (sin(angle - a')*v + sin(a')*u)/sin_angle;
-    plot3(arc(:,1),arc(:,2),arc(:,3),'Color',rgb);
-end
-b = b/norm(b)*r/sqrt(fac);

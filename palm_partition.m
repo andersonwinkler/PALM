@@ -3,7 +3,7 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 % nuisance according to a given contrast.
 %
 % Usage
-% [X,Z] = palm_partition(M,C,meth,Y)
+% [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 %
 % Inputs:
 % M    : Design matrix, to be partitioned.
@@ -13,7 +13,7 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 %        - 'Beckmann'
 %        - 'Ridgway'
 %        - 'none' (does nothing, X=M, Z=[])
-% Y    : (Optional) For the 'Winkler' method only.
+% Y    : (Optional) For the 'visualization' method only.
 %
 % Outputs:
 % X    : Matrix with regressors of interest.
@@ -115,6 +115,25 @@ switch lower(meth)
             eCm = eye(size(X,2));
         end
         
+    case {'view','visualization'}
+
+        % Recast the model so that X and Z are rank-1 vectors
+        % that represent their respective subspaces, 
+        % capturing the projections of Y in each of them.
+        % Doing SVD here and recasting C isn't needed, but helps
+        % with rank-deficient designs entered by the user.
+        % This method is intended for visualization only.
+        [u,s,v] = svd(M,'econ');
+        idx = diag(s) ~= 0;
+        M1  = u(:,idx)*s(idx,idx)*v(:,idx)';
+        C1  = M1'*pinv(M)'*C;
+        M   = M1;
+        Cn  = null(C1');
+        b   = M\Y;
+        X   = M*(C1*C1')*b;
+        Z   = M*(Cn*Cn')*b;
+        eCm = [1 0]';
+
     case 'none' % works for evperdat (3D)
         X     = M;
         Z     = [];
