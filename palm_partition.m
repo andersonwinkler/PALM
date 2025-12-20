@@ -1,4 +1,4 @@
-function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
+function [X,Z,eCm,eCx] = palm_partition(M,C,meth)
 % Partition a design matrix into regressors of interest and
 % nuisance according to a given contrast.
 %
@@ -13,7 +13,6 @@ function [X,Z,eCm,eCx] = palm_partition(M,C,meth,Y)
 %        - 'Beckmann'
 %        - 'Ridgway'
 %        - 'none' (does nothing, X=M, Z=[])
-% Y    : (Optional) For the 'visualization' method only.
 %
 % Outputs:
 % X    : Matrix with regressors of interest.
@@ -107,7 +106,7 @@ switch lower(meth)
         else
             for t = 1:size(M,3)
                 if t == 1
-                    X = zeros(size(M,1),size(pinvC,2),size(M,3));
+                    X = zeros(size(M,1),size(pinvC,2),size(M,3)); % FIXME
                     Z = zeros(size(M,1),rZ,size(M,3));
                 end
                 X = M(:,:,t)*pinvC;
@@ -129,21 +128,20 @@ switch lower(meth)
         C1  = M1'*pinv(M)'*C;
         M   = M1;
         Cn  = null(C1');
-        b   = M\Y;
-        X   = M*(C1*C1')*b;
-        Z   = M*(Cn*Cn')*b;
+        X   = M*(C1*C1')*ones(size(C1,1),1);
+        Z   = M*(Cn*Cn')*ones(size(Cn,1),1);
         eCm = [1 0]';
-
+        
     case 'none' % works for evperdat (3D)
-        X     = M;
-        Z     = [];
-        eCm   = C;
+        X   = M;
+        Z   = [];
+        eCm = C;
         
     case 'sometest' % this is just for testing, and doesn't work with evperdat
-        D     = pinv(M'*M);
-        X     = M*D*C*pinv(C'*D*C);
-        Z     = (M*D*M'-X*pinv(X))*Y;
-        eCm   = vertcat(eye(size(X,2)),...
+        D   = pinv(M'*M);
+        X   = M*D*C*pinv(C'*D*C);
+        Z   = (M*D*M'-X*pinv(X))*Y;
+        eCm = vertcat(eye(size(X,2)),...
             zeros(size(Z,2),size(X,2)));
         
     otherwise

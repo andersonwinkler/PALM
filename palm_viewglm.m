@@ -1,30 +1,33 @@
-function h = palm_viewglm(Y,M,C,style)
+function ax = palm_viewglm(Y,M,C,style)
 % Plot a vector view of a GLM and its fit.
 %
 % Usage:
-% h = palm_viewglm(Y,M,C,show_submodels)
+% palm_viewglm(Y,M,C,show_submodels)
 %
 % Inputs:
 % Y     : Dependent data (N by 1)
 % M     : Design matrix (N by R, for R regressors)
-% C     : Contrast vector or matrix (R by S, S<=R)
+% C     : Contrast vector or matrix (R by S, S<=R).
+%         The contrast vector implicitly defines the
+%         regressors of interest X and the nuisance
+%         regressors Z.
 % style : Choose a figure style:
-%         1: Shows Y, X, Z, Yhat, and ehat, that is,
+%         1: Shows Y, X, Z, Yhat, and ehat, i.e.,
 %            it shows Y, X, Z, Hm*Y, and Rm*Y, where
 %            the design matrix M is [X Z].
 %         2: Same as (1) but with additional vectors
 %            for the two submodels given by:
 %            Y = X*b_X + e_X and Y = Z*b_Z + e_Z,
-%            that is, it shows additionally:
+%            i.e., it shows additionally:
 %            Hx*Y and Rx*Y, as well as Hz*Y and Rz*Y.
 %         3: Shows Z, as well as the models:
 %            Y = Z*b_Z + e_Y and X = Z*b_X + e_X
-%            that is, it shows:
+%            i.e., it shows:
 %            Z, X, Y, Hz*Y, Rz*Y, Hz*X, and Rz*X.
 %
 % Outputs:
-% h     : Figure handle
-%
+% ax    : Axes handle. Use it to set custom axes properties.
+% 
 % _____________________________________
 % Anderson M. Winkler
 % UTRGV
@@ -44,9 +47,9 @@ if nargin < 4
 end
 
 % Defaults
-bfac = 0.05;  % extra room around the axes bounding box
-tfac = 0.075; % space between tip of vector and center of vector label
-radius = .2;  % radius of the arcs that represent the angles
+bfac   = 0.05;  % extra room around the axes bounding box
+tfac   = 0.075; % space between tip of vector and center of vector label
+radius = 0.2;   % radius of the arcs that represent the angles
 
 % Ensure we have the relevant paths
 palm_checkprogs;
@@ -82,7 +85,7 @@ addtxt = false(size(vecs{style},1));
 
 % Default arc labels and colors
 arcs = cell(3,1); % one per style
-%    LaTeX label                     Color code   Position  Value
+%    LaTeX label                   Color code   Position   Value
 arcs{1} = { ...
     '$\cos(\theta_{\mathbf{YX}})$',      '_y',    [],    [];
     '$\cos(\theta_{\mathbf{XZ}})$',      '_m',    [],    []};
@@ -100,19 +103,30 @@ arrowopts = {...
 ssqY  = Y'*Y;
 
 % Recast the model into only 2 columns
-[X,Z,C] = palm_partition(M,C,'visualization',Y);
+[X,Z,C] = palm_partition(M,C,'visualization');
 
+% If Z is not provided or has rank = 0, there is no point
+% in using style "2". Also, it would cause issues with style "3".
+if rank(Z) == 0
+    if style == 2
+        style = 1;
+    elseif style == 3
+        emptysymbol;
+        warning('Cannot use style "3" if Z is empty or has rank = 0.')
+        return
+    end
+end
 
 % Find A that reduces the df of the model
 if any([1,2] == style)
 
     % Rescale to unit norm (easier on the figures)
-    Y     = normed(Y);
-    X     = normed(X);
-    Z     = normed(Z);
+    Y = normed(Y);
+    X = normed(X);
+    Z = normed(Z);
 
     % Reduce the df proper
-    A     = palm_reducedf(Y,[X Z],1,true);
+    A = palm_reducedf(Y,[X Z],1,true);
 
 elseif style == 3
 
@@ -121,22 +135,26 @@ elseif style == 3
     % do this, the figure won't represent the fact that
     % in this style, since we residualize Z, it is Z that
     % is the dependent variable in the figure
-    [X,Y,~] = palm_partition([X Y],C,'visualization',Z);
+    [X,Y,~] = palm_partition([X Y],C,'visualization');
 
     % Rescale to unit norm
-    Z     = normed(Z);
-    X     = normed(X);
-    Y     = normed(Y);
+    Z = normed(Z);
+    X = normed(X);
+    Y = normed(Y);
 
     % Reduce the df proper
-    A     = palm_reducedf(Z,[X Y],1,true);
+    A = palm_reducedf(Z,[X Y],1,false);
 end
 
 % Apply A
 y = A'*Y;
 x = A'*X;
 z = A'*Z;
-m = [x z];
+if rank(z) == 0
+    m = x;
+else
+    m = [x z];
+end
 
 % If we want to see the fittings of the submodels:
 % Y = X*b_X + e_X and Y = Z*b_Z + e_Z
@@ -163,11 +181,11 @@ end
 
 % Prepare vectors to plot, ensure X and Z are in the main horizontal plane
 if rank(uvw) == 2
-    [~,~,v]=svd(uvw,0);
-    uvw  = uvw*v;
-    is2d = true;
+    [~,~,v] = svd(uvw,0);
+    uvw     = uvw*v;
+    is2d    = true;
 else
-    is2d = false;
+    is2d    = false;
 end
 org = zeros(size(uvw)); % origin of the coordinate system
 
@@ -186,7 +204,7 @@ pba  = range([mi;ma]);
 pba(pba==0) = 2*bfac;
 
 % Prepare figure axes
-h = figure;
+ax = newplot;
 axis(box(:)');
 pbaspect(pba);
 if is2d
@@ -200,12 +218,6 @@ hold on
 
 % Plot the vectors and their projections
 if any([1 2] == style)
-
-    % Angle arcs
-    [arcs{style}{1,3},arcs{style}{1,4}] = ...
-        anglesymbol(uvw(1,:),uvw(2,:),1.25*radius,arcs{style}{1,2});
-    [arcs{style}{2,3},arcs{style}{2,4}] = ...
-        anglesymbol(uvw(2,:),uvw(3,:),0.80*radius,arcs{style}{2,2});
 
     % Vectors
     if d0(1) > eps(10) % Y
@@ -234,6 +246,12 @@ if any([1 2] == style)
             arrow3(uvw(1,:),uvw(5,:),['--',vecs{style}{5,2}],0);
         end
     end
+
+    % Angle arcs
+    [arcs{style}{1,3},arcs{style}{1,4}] = ...
+        anglesymbol(uvw(1,:),uvw(2,:),1.25*radius,arcs{style}{1,2});
+    [arcs{style}{2,3},arcs{style}{2,4}] = ...
+        anglesymbol(uvw(2,:),uvw(3,:),0.80*radius,arcs{style}{2,2});
 end
 if style == 2
 
@@ -268,12 +286,6 @@ if style == 2
     end
 end
 if style == 3
-
-    % Angle arcs
-    [arcs{style}{1,3},arcs{style}{1,4}] = ...
-        anglesymbol(uvw(2,:),uvw(3,:),1.25*radius,arcs{style}{1,2});
-    [arcs{style}{2,3},arcs{style}{2,4}] = ...
-        anglesymbol(uvw(5,:),uvw(7,:),0.80*radius,arcs{style}{2,2});
 
     % Vectors
     if d0(1) > eps(10) % Z
@@ -316,13 +328,19 @@ if style == 3
             arrow3(uvw(3,:),uvw(7,:),['--',vecs{style}{7,2}],0);
         end
     end
+
+    % Angle arcs
+    [arcs{style}{1,3},arcs{style}{1,4}] = ...
+        anglesymbol(uvw(2,:),uvw(3,:),1.25*radius,arcs{style}{1,2});
+    [arcs{style}{2,3},arcs{style}{2,4}] = ...
+        anglesymbol(uvw(5,:),uvw(7,:),0.80*radius,arcs{style}{2,2});
 end
 
 % Add vector names to the plot
 textopts = { ...
-    'VerticalAlignment','middle',...
-    'HorizontalAlignment','center',...
-    'Interpreter','latex'};
+    'VerticalAlignment',   'middle',...
+    'HorizontalAlignment', 'center',...
+    'Interpreter',         'latex' };
 gap  = normed(uvw')'*tfac;
 tpos = uvw + gap;
 for v = 1:size(uvw,1)
@@ -400,16 +418,17 @@ if abs_angle > pi
     abs_angle = 2*pi - abs_angle;
 end
 
-if abs(abs_angle - pi) < eps(10)
+if abs(abs_angle - pi) <= eps(10)
 
     % If u and v are at 180 deg, we want two squares for the two right angles
     b   = [u(2) v(1) 0]; % bisecting vector
     fac = 4; % scale factor for the square and text
     anglesymbol(u,b,r,rgb);
     anglesymbol(b,v,r,rgb);
+    cos_angle = -1;
 
-elseif  abs(mod(abs_angle,pi/2)     ) < eps(10) || ...
-        abs(mod(abs_angle,pi/2)-pi/2) < eps(10)
+elseif  abs(mod(abs_angle,pi/2)     ) <= eps(10) || ...
+        abs(mod(abs_angle,pi/2)-pi/2) <= eps(10)
 
     % If u and v are at 90 deg, we show a square filled in yellow
     b = u + v;
@@ -427,7 +446,8 @@ elseif  abs(mod(abs_angle,pi/2)     ) < eps(10) || ...
         corners([1:4 1],3), ...
         [1 1 0],... % fill color, yellow
         'EdgeColor',rgb);
-    
+    cos_angle = 0;
+
 else
 
     % If u and v are in any other angle, we show an arc
@@ -438,6 +458,23 @@ else
     plot3(arc(:,1),arc(:,2),arc(:,3),'Color',rgb);
 end
 b = b/norm(b)*r/sqrt(fac);
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+function emptysymbol
+newplot;
+text(0.5, 0.5,           ...
+    '$\emptyset$',       ...
+    'FontSize', 80,      ...
+    'Color', [1 .5 .5],  ...
+    'VerticalAlignment',   'middle', ...
+    'HorizontalAlignment', 'center', ...
+    'Interpreter',         'latex');
+set(gca, ...
+    'Visible', 'off', ...
+    'XTick',      [], ...
+    'YTick',      [], ...
+    'XTickLabel', [], ...
+    'YTickLabel', []);
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function rgb = colortable(str)
