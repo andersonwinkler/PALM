@@ -60,8 +60,6 @@ Ni     = sum(strcmp(vararginx,'-i'));        % number of data inputs
 Nm     = sum(strcmp(vararginx,'-m'));        % number of masks
 Ns     = sum(strcmp(vararginx,'-s'));        % number of surfaces
 Nd     = sum(strcmp(vararginx,'-d'));        % number of design files
-Nimiss = sum(strcmp(vararginx,'-imiss'));    % number of missing indicators for inputs
-Ndmiss = sum(strcmp(vararginx,'-dmiss'));    % number of missing indicators for designs
 Nt     = sum(strcmp(vararginx,'-t'));        % number of t-contrast files
 Nf     = sum(strcmp(vararginx,'-f'));        % number of F-test files
 Ncon   = sum(strcmp(vararginx,'-con'));      % number of contrast files (t or F, mset format)
@@ -71,8 +69,6 @@ opts.m     = cell(Nm,1);   % Mask file(s)
 opts.s     = cell(Ns,1);   % Surface file(s)
 opts.sa    = cell(Ns,1);   % Area file(s) or weight(s)
 opts.d     = cell(Nd,1);   % Design file(s)
-opts.imiss = cell(Nd,1);   % Design file(s)
-opts.dmiss = cell(Nd,1);   % Design file(s)
 opts.t     = cell(Nt,1);   % t contrast file(s)
 opts.f     = opts.t;       % F contrast file(s)
 opts.Ccon  = cell(Ncon,1); % Contrast file(s) (t or F, mset format)
@@ -92,7 +88,6 @@ plm.subjidx   = [];       % Indices of subjects to keep
 i = 1; m = 1; d = 1;
 t = 1; s = 1;
 con = 1; ev = 1;
-imiss = 1; dmiss = 1;
 
 % Remove trailing empty arguments. This is useful for some Octave versions.
 while numel(vararginx) > 0 && isempty(vararginx{1})
@@ -179,26 +174,6 @@ while a <= narginx
                 a = a + 4;
             end
             ev = ev + 1;
-            
-        case '-imiss' % basic
-            
-            % Get the filenames for the missing data indicators (inputs).
-            opts.imiss{imiss} = vararginx{a+1};
-            imiss = imiss + 1;
-            a = a + 2;
-            
-        case '-dmiss' % basic
-            
-            % Get the filenames for the missing data indicators (designs).
-            opts.dmiss{dmiss} = vararginx{a+1};
-            dmiss = dmiss + 1;
-            a = a + 2;
-            
-        case '-mcar'
-            
-            % For the missing data, treat as missing completely at random.
-            opts.mcar = true;
-            a = a + 1;
             
         case '-t' % basic
             
@@ -1350,48 +1325,8 @@ if opts.accel.lowrank
     if opts.evperdat
         error('The option "-accel lowrank" cannot be used with "-evperdat".');
     end
-    if opts.missingdata
-        error('The option "-accel lowrank" cannot be used with missing data.');
-    end
     if opts.saveglm
         error('The option "-accel lowrank" cannot be used with "-saveglm".');
-    end
-end
-
-% Some options can't be used with missing data
-if Nimiss || Ndmiss
-    opts.missingdata = true;
-    if opts.MV
-        error('The option "-mv" cannot be used with missing data.');
-    end
-    if ~ opts.zstat && ~ opts.mcar
-        warning([...
-            'With missing data MAR/MNAR, the option "-zstat" is mandatory.\n' ...
-            '         Adding it automatically.%s'],'');
-        opts.zstat = true;
-    end
-    if ~ opts.cmcx && ~ opts.mcar
-        warning([...
-            'With missing data, the option "-cmcx" is mandatory.\n' ...
-            '         Adding it automatically.%s'],'');
-        opts.cmcx = true;
-    end
-    if opts.demean && ~ opts.mcar
-        warning([...
-            'With missing data, the option "-demean" must not be used.\n' ...
-            '         Removing it automatically.%s'],'');
-        opts.demean = false;
-    end
-    if ~ strcmpi(opts.pmethodp,'guttman') || ~ strcmpi(opts.pmethodr,'guttman')
-        warning([...
-            'With missing data, the partitioning must use the "Guttman".\n' ...
-            '         method. Adding automatically the options\n' ...
-            '         "-pmethodp Guttman" and "-pmethodr Guttman".%s'],'');
-        opts.pmethodp = 'guttman';
-        opts.pmethodr = 'guttman'; 
-    end
-    if opts.ev4vg || opts.removevgbysize > 0
-        error('Missing data cannot be used with "-ev4vg" or "-removevgbysize".')
     end
 end
 
@@ -2534,103 +2469,6 @@ if opts.MV && plm.nVG > 1
     error('There are more than one variance group. MV cannot be used (but NPC can).');
 end
 
-% There should be no more missing indicators than modalities, or designs.
-% These need to be either 1 or the same as the corresponding numbers of
-% modalities/designs.
-if Nimiss > Ni
-    error([...
-        'There are more missing indicators supplied with "-imiss" (%d) than\n'...
-        'modalities supplied with "-i" (%d)'],Nimiss,Ni);
-elseif Nimiss > 1 && Nimiss ~= Ni
-    error([...
-        'The number of missing indicators supplied with "-imiss" (%d) is larger,\n'...
-        'than 1, but still not the same as the number of modalities supplied with\n'...
-        'the option "-i" (%d).'],Nimiss,Ni);
-end
-if Ndmiss > Nd
-    error([...
-        'There are more missing indicators supplied with "-dmiss" (%d) than\n'...
-        'designs supplied with "-d" (%d)'],Nimiss,Ni);
-elseif Ndmiss > 1 && Ndmiss ~= Nd
-    error([...
-        'The number of missing indicators supplied with "-dmiss" (%d) is larger,\n'...
-        'than 1, but still not the same as the number of modalities supplied with\n'...
-        'the option "-d" (%d).'],Ndmiss,Nd);
-end
-
-% Load the missing indicators for the data ("imiss"):
-for i = 1:Nimiss
-    if strcmpi(opts.imiss{i},'none')
-        if isempty(plm.subjidx)
-            tmp = zeros(plm.N,1);
-        else
-            tmp = zeros(size(plm.subjidx,1),1);
-        end
-    else
-        tmp = palm_miscread(opts.imiss{i});
-        tmpfname = tmp.filename;
-        tmp = tmp.data;
-        if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N
-            tmp = tmp(plm.subjidx,:);
-        end
-        checkmiss(tmp,tmpfname,plm.N);
-    end
-    plm.Ymiss{i} = tmp;
-end
-if Nimiss == 1
-    for i = 2:Ni
-        plm.Ymiss{i} = plm.Ymiss{1};
-    end
-end
-
-% Load the missing indicators for the design ("dmiss"):
-for d = 1:Ndmiss
-    if strcmpi(opts.dmiss{d},'none')
-        if isempty(plm.subjidx)
-            tmp = zeros(plm.N,1);
-        else
-            tmp = zeros(size(plm.subjidx,1),1);
-        end
-    else
-        tmp = palm_miscread(opts.dmiss{d});
-        tmpfname = tmp.filename;
-        tmp = tmp.data;
-        if ~ isempty(plm.subjidx) && size(tmp,1) ~= plm.N
-            tmp = tmp(plm.subjidx,:);
-        end
-        checkmiss(tmp,tmpfname,plm.N);
-    end
-    plm.Mmiss{d} = tmp;
-end
-if Ndmiss == 1
-    for d = 2:Nd
-        plm.Mmiss{d} = plm.Mmiss{1};
-    end
-end
-for d = 1:Ndmiss
-    if any(size(plm.Mmiss{d}) ~= size(plm.Mset{d}))
-        if strcmpi(opts.dmiss{d},'none')
-            plm.Mmiss{d} = repmat(plm.Mmiss{d},[1 size(plm.Mset{d},2)]);
-        else
-            error([ ...
-                'The missing data indicator ("-dmiss") must have\n', ...
-                'the same size as the respective design.%s'],'');
-        end
-    end
-end
-
-% If only data or design missing indicators are missing, fill the other
-% with all-false indicators.
-if     Nimiss && ~ Ndmiss
-    for m = 1:plm.nM
-        plm.Mmiss{m} = false(size(plm.Mset{m}));
-    end
-elseif Ndmiss && ~ Nimiss
-    for y = 1:plm.nY
-        plm.Ymiss{y} = false(size(plm.Yset{y}));
-    end
-end
-
 % Remove the variance groups with tiny sample sizes?
 if plm.nVG > 1 && ~ opts.removevgbysize && (opts.vgdemean || opts.ev4vg) && ...
         any(sum(bsxfun(@eq,plm.VG,unique(plm.VG)'),1) == 1)
@@ -2844,28 +2682,3 @@ if any(idxbad)
         'The following contrasts try to test regressor(s) also fully represented by\n'...
         'by nuisance variable(s), but such tests are not possible (rank deficiency):\n%s'],badmsg); %#ok<SPERR>
 end
-
-% ==============================================================
-function checkmiss(A,Afname,N)
-% Check if the missing data indicators are sane.
-for a = 1:size(A,2)
-    U = unique(A(:,a));
-    if size(A,1) ~= N
-        error([ ...
-            'The missing data indicators ("-imiss" and "-dmiss") must have\n', ...
-            'the same number of observations as the data and design.'],'');
-    elseif ...
-            (numel(U) >  2) || ...
-            (numel(U) == 2 && ~ any(U == 0)) || ...
-            (numel(U) == 2 && ~ any(U(U~=0) == [-1 1 2])) || ...
-            (numel(U) == 1 && U ~= 0) %#ok
-        error([ ...
-            'The missing data indicators ("-imiss" and "-dmiss") must have\n', ...
-            'no more than two unique values per column, one being 0, the\n', ...
-            'the other being either -1, 1, or 2.\n', ...
-            'Consult the documentation for details.\n'...
-            '- Filename: %s\n',...
-            '- Column: %d (possibly also others)'],Afname,a);
-    end
-end
-

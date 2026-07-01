@@ -99,5 +99,13 @@ if isempty(palm_extern)
         palm_extern.ipt = true;
         fprintf('Internal NIFTI read/write functions are available.');
     end
+
+    % Check if DuckDB is installed (to read Parquet files in Octave)
+    palm_extern.duckdb = false;
+    [status,duckdb] = system('which duckdb');
+    if status == 0
+        palm_extern.duckdb = true;
+        fprintf('Found DuckDB executable in %s',duckdb);
+    end
 end
 ext = palm_extern;

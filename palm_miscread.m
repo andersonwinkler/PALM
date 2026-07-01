@@ -22,7 +22,7 @@ function X = palm_miscread(filename,varargin)
 % X.extra     : Contain extra information, depending on the kind
 %               of data that was read and the function or
 %               program used for reading.
-% affine      : Affine matrix, to be used only for information hence
+% X.affine    : Affine matrix, to be used only for information hence
 %               here in a consistent place for different formats.
 %               The affine matrix that matters when saving the data is
 %               the one inside extras.
@@ -139,6 +139,23 @@ switch lower(fext{end})
         X.data     = palm_msetread(X.filename);
         X.affine   = NaN;
         X.size     = size(X.data);
+
+    case 'parquet'
+
+        % Apache Parquet files
+        if palm_isoctave
+            X.readwith = 'duckdb-parquet';
+            [X.data,X.extra.VariableNames] = palm_parquetread(X.filename);
+            X.affine   = NaN;
+            X.size     = size(X.data);
+        else
+            X.readwith = 'matlab-parquet';
+            X.data     = parquetread(X.filename);
+            X.extra.VariableNames = X.data.Properties.VariableNames;
+            X.data     = table2array(X.data);
+            X.affine   = NaN;
+            X.size     = size(X.data);
+        end
 
     case 'gz'
 

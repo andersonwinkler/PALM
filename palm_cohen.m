@@ -38,19 +38,19 @@ end
 
 % Fork for t or F contrasts
 if plm.rC0{m}(c) == 1
-    cope  = plm.eC{y}{m}{c}{o}'*psi;
-    Xr    = range(vertcat(M*plm.eC{y}{m}{c}{o},0),1);
-    sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
+    cope  = plm.eC{y}{m}{c}'*psi;
+    Xr    = range(vertcat(M*plm.eC{y}{m}{c},0),1);
+    sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c});
     cohen = cope*Xr./sigsq.^.5;
     cfvar = 1./cohen;
     if opts.evperdat
         Theta = zeros(1,size(psi,2));
         for t = 1:size(psi,2)
-            Theta(t) = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o};
+            Theta(t) = plm.mrdiv(plm.eC{y}{m}{c}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c};
         end
         varcope = Theta ./ sigsq;
     else
-        varcope = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o} * sigsq;
+        varcope = plm.mrdiv(plm.eC{y}{m}{c}',(M'*M))*plm.eC{y}{m}{c} * sigsq;
     end
     palm_quicksave(cope,0,opts,plm,y,m,c, ...
         sprintf('%s',opts.o,plm.Ykindstr{y},'_cope',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c},pstr));
@@ -62,23 +62,23 @@ if plm.rC0{m}(c) == 1
         sprintf('%s',opts.o,plm.Ykindstr{y},'_cfvar',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c},pstr));
 else
     error('The option -saveglm hasn''t yet been implemented for F-tests.')
-    cope  = plm.eC{y}{m}{c}{o}'*psi;
+    cope  = plm.eC{y}{m}{c}'*psi;
     if opts.evperdat
         Theta = zeros(1,size(psi,2));
         for t = 1:size(psi,2)
-            Theta(t) = pinv(plm.mrdiv(plm.eC{y}{m}{c}{o}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c}{o});
+            Theta(t) = pinv(plm.mrdiv(plm.eC{y}{m}{c}',(M(:,:,t)'*M(:,:,t)))*plm.eC{y}{m}{c});
         end
         varcope = Theta .* sigsq;
     else
-        % varcope = plm.mrdiv(plm.eC{y}{m}{c}{o}',(M'*M))*plm.eC{y}{m}{c}{o} * sigsq;
+        % varcope = plm.mrdiv(plm.eC{y}{m}{c}',(M'*M))*plm.eC{y}{m}{c} * sigsq;
         varcope = zeros(size(cope));
     end
     
     
     
-    Xr    = range(vertcat(M*plm.eC{y}{m}{c}{o},zeros(1,size(plm.eC{y}{m}{c}{o},2))),1);
+    Xr    = range(vertcat(M*plm.eC{y}{m}{c},zeros(1,size(plm.eC{y}{m}{c},2))),1);
     cope  = sqrt(mean(cope.^2,1));
-    sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c}{o});
+    sigsq = sum(res.^2,1)./(plm.N-plm.rM{y}{m}{c});
     cohen = cope./sigsq;
     cfvar = 1./cohen.^.5;
 
