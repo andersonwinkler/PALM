@@ -29,8 +29,10 @@ function palm_miscwrite(varargin)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-X = varargin{1};
+% Check for external programs
+palm_checkprogs;
 
+X = varargin{1};
 switch lower(X.readwith)
 
     case 'textscan'
@@ -52,7 +54,7 @@ switch lower(X.readwith)
         if isempty(fext) || ~ strcmpi(fext,'.csv')
             X.filename = horzcat(X.filename,'.csv');
         end
-        dlmwrite(X.filename,X.data,'delimiter',',','precision','%0.4f');
+        dlmwrite(X.filename,X.data,'delimiter',',','precision','%0.4f'); %#ok<DLMWT>
 
     case 'vestread'
 
@@ -67,6 +69,25 @@ switch lower(X.readwith)
             X.filename = horzcat(X.filename,'.mset');
         end
         palm_msetwrite(X.filename,X.data);
+
+    case 'octave-parquet'
+        
+        % Write Parquet files (in Octave)
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext) || ~ strcmpi(fext,'.parquet')
+            X.filename = horzcat(X.filename,'.parquet');
+        end
+        palm_parquetwrite(X.filename,X.data,X.extra.VariableNames);
+
+    case 'matlab-parquet'
+
+        % Write Parquet files (in Matlab)
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext) || ~ strcmpi(fext,'.parquet')
+            X.filename = horzcat(X.filename,'.parquet');
+        end
+        T = array2table(X.data,'VariableNames',X.extra.VariableNames);
+        parquetwrite(X.filename,T);
 
     case 'wb_command'
 

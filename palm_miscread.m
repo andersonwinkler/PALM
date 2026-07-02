@@ -144,7 +144,7 @@ switch lower(fext{end})
 
         % Apache Parquet files
         if palm_isoctave
-            X.readwith = 'duckdb-parquet';
+            X.readwith = 'octave-parquet';
             [X.data,X.extra.VariableNames] = palm_parquetread(X.filename);
             X.affine   = NaN;
             X.size     = size(X.data);
