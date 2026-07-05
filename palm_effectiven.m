@@ -46,27 +46,36 @@ function n = palm_effectiven(nP,EE,ISE,islog)
 
 % Simple argument parsing
 narginchk(1,4);
-if nargin == 1,
+if nargin == 1
     EE    = true;
     ISE   = false;
     islog = false;
-elseif nargin == 2,
+elseif nargin == 2
     ISE   = false;
     islog = false;
-elseif nargin == 3,
+elseif nargin == 3
     islog = false;
 end
 
 % The Lambert's W function requires the 'specfun' package in Octave.
 % For Matlab, it requires the Symbolic Math Toolbox.
-if palm_isoctave,
-    pkg load specfun
+ext = palm_checkprogs;
+if palm_isoctave
+    if ext.octave_specfun
+        pkg load specfun
+    else
+        error('In Octave, the package "specfun" is required to use this function.')
+    end
+else
+    if ~ ext.matlab_symbolic
+        error('In MATLAB, the "Symbolic Math Toolbox" is required to use this function.');
+    end
 end
 
-if EE && ~ISE,
+if EE && ~ISE
     
     % Permutations only
-    if islog,
+    if islog
         cte = nP - log(sqrt(2*pi));
         n   = cte./lambertw(cte/exp(1))-.5;
     else
@@ -74,19 +83,19 @@ if EE && ~ISE,
         n   = cte./lambertw(cte/exp(1))-.5;
     end
     
-elseif ~EE && ISE,
+elseif ~EE && ISE
     
     % Sign-flippings only
-    if islog,
+    if islog
         n = nP*log2(exp(1));
     else
         n = log2(nP);
     end
     
-elseif EE && ISE,
+elseif EE && ISE
     
     % Permutations with sign-flippings
-    if islog,
+    if islog
         cte = nP - log(sqrt(pi));
         n   = cte./lambertw(2*cte/exp(1))-.5;
     else

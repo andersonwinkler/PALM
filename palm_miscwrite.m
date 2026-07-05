@@ -32,7 +32,18 @@ function palm_miscwrite(varargin)
 % Check for external programs
 palm_checkprogs;
 
+% Struct that will be saved
 X = varargin{1};
+
+% If the filename is in fact an HDF5 spec, then lets save as HDF5
+[filename,dataset,~] = palm_hdf5spec(X.filename);
+if ischar(dataset)
+    X.filename = filename;
+    X.dataset  = dataset;
+    X.readwith = 'h5read';
+end
+
+% For each type of data (based on how it was originally read)
 switch lower(X.readwith)
 
     case 'textscan'
@@ -54,14 +65,14 @@ switch lower(X.readwith)
         if isempty(fext) || ~ strcmpi(fext,'.csv')
             X.filename = horzcat(X.filename,'.csv');
         end
-        dlmwrite(X.filename,X.data,'delimiter',',','precision','%0.4f'); %#ok<DLMWT>
+        dlmwrite(X.filename,X.data,'delimiter',',','precision','%g'); %#ok<DLMWT>
 
     case 'vestread'
 
         % Write an FSL "VEST" file
         palm_vestwrite(X.filename,X.data);
 
-    case 'msetread'
+    case 'mset'
 
         % Write an MSET (matrix set) file
         [~,~,fext] = fileparts(X.filename);
@@ -70,6 +81,11 @@ switch lower(X.readwith)
         end
         palm_msetwrite(X.filename,X.data);
 
+    case {'octave-load-hdf5','h5read'}
+
+        % Write an HDF5 file
+        palm_hdf5write(X)
+        
     case 'octave-parquet'
         
         % Write Parquet files (in Octave)
@@ -88,20 +104,6 @@ switch lower(X.readwith)
         end
         T = array2table(X.data,'VariableNames',X.extra.VariableNames);
         parquetwrite(X.filename,T);
-
-    case 'wb_command'
-
-        % Write a CIFTI file using the HCP Workbench
-        if nargin == 2
-            toscalar = varargin{2};
-        else
-            toscalar = false;
-        end
-        siz = size(X.data);
-        if siz(1) == 1 && siz(2) > 1
-            X.data = X.data';
-        end
-        palm_ciftiwrite(X.filename,X.data,X.extra,[],toscalar);
 
     case 'cifti-matlab'
 
@@ -122,7 +124,10 @@ switch lower(X.readwith)
 
         % Write NIFTI using the Image Processing Toolbox (or equivalent
         % commands from Octave)
-        X.filename = horzcat(X.filename,'.nii');
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext)
+            X.filename = horzcat(X.filename,'.nii');
+        end
         tmp = ones(size(X.extra.hdr.ImageSize));
         siz = size(X.data);
         tmp(1:numel(siz)) = siz;
@@ -179,7 +184,10 @@ switch lower(X.readwith)
     case 'fs_load_nifti'
 
         % Write NIFTI with FreeSurfer
-        X.filename            = horzcat(X.filename,'.nii.gz');
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext)
+            X.filename = horzcat(X.filename,'.nii.gz');
+        end
         X.extra.hdr.vol       = X.data;
         X.extra.hdr.datatype  = 64; % for now, save everything as double
         X.extra.hdr.bitpix    = 64; % for now, save everything as double
@@ -223,7 +231,7 @@ switch lower(X.readwith)
 
         % Write a MZ3 file
         if numel(fieldnames(X.data)) == 2
-            writeMz3(X.filename,X.data.fac,X.data.vtx,X.extra.colours);
+            writeMz3(X.filename,X.data.fac,X.data.vtx,X.extra.colour);
         else
             writeMz3(X.filename,X.extra.fac,X.extra.vtx,X.data);
         end
@@ -250,23 +258,29 @@ switch lower(X.readwith)
     case 'fs_load_annot'
 
         % Write a FreeSurfer annotation file
-        X.filename = horzcat(X.filename,'.annot');
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext) || ~ strcmpi(fext,'.annot')
+            X.filename = horzcat(X.filename,'.annot');
+        end
         if ~all(~abs(mod(X.data(:),1)))
             error('Data must contain only integer values.');
         end
         if max(X.data(:)) > size(X.extra.colourtab.table,1)
             error('Too many labels for the size of the color table');
         end
-        X.extra.codedlabel = X.data;
+        X.extra.label = zeros(size(X.data));
         for s = 1:X.extra.colourtab.numEntries
-            X.extra.codedlabel(X.data == X.extra.colourtab.table(s,5)) = X.extra.colourtab.table(s,5);
+            X.extra.label(X.data == s) = X.extra.colourtab.table(s,5);
         end
-        write_annotation(X.filename,X.extra.vertices,X.extra.codelabel,X.extra.colourtab);
+        write_annotation(X.filename,X.extra.vertices,X.extra.label,X.extra.colourtab);
 
     case 'gifti'
 
         % Write a GIFTI file
-        X.filename = horzcat(X.filename,'.gii');
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext) || ~ strcmpi(fext,'.gii')
+            X.filename = horzcat(X.filename,'.gii');
+        end
         gii = X.extra.gifti;
         if isfield(X.data,'vtx') && isfield(X.data,'fac')
             gii.vertices = X.data.vtx;
@@ -289,4 +303,7 @@ switch lower(X.readwith)
             encoding  = 'GZipBase64Binary';
         end
         save(gii,X.filename,encoding);
+
+    otherwise
+        error('Cannot write files read with or of the type %s',X.readwith);
 end

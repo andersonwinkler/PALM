@@ -112,15 +112,12 @@ opts.accel.lowrank_val   = NaN;                % Use NaN for N*(N+1)/2. Values <
 opts.accel.lowrank_recon = false;              % Reconstruct past permutations in the new basis? This is very slow.
 opts.accel.G1out         = false;              % Exclude (true) or not (false) the unpermuted statistic in the null distribution for tail and gamma?
 
-% Missing data options:
-opts.missingdata         = false;              % Are there missing data?
-opts.mcar                = false;              % Data missing completely at random?
-opts.npcmethodmiss       = 'Fisher';           % Combination method for missing data.
-
 % File parsing options:
 opts.useniiclass         = true;               % Use the NIFTI class (saves memory)
 opts.precision           = [];                 % Precision? Can be 'single', 'double', or [] for what the file defines.
 opts.mz3surf             = false;              % Treat mz3 files as surfaces (true) or curvatures (false)?
+opts.hdf5                = { ...               % Recognized extensions for HDF5 files
+    'h5','hdf5','nwb','mat'};
 opts.fscurv              = { ...               % Recognized extensions for FreeSurfer curvature types
     'area','avg_curv','crv','curv',      ...
     'h','k','jacobian_white','mid',      ...
@@ -128,7 +125,7 @@ opts.fscurv              = { ...               % Recognized extensions for FreeS
 opts.fssurf              = { ...               % Recognized extensions for FreeSurfer surface types
     'inflated','nofix','orig','pial',    ...
     'smoothwm','sphere','reg',           ...
-    'white','white_reg'};
+    'white'};
 opts.ciftitypes          = { ...               % Recognized CIFTI types
     'dscalar','pscalar','pconnscalar',   ...
     'dtseries','ptseries','pconnseries', ...
@@ -137,4 +134,6 @@ opts.ciftitypes          = { ...               % Recognized CIFTI types
     'dlabel','merge'};
 
 % Note that there are no adjustable defaults for EE, ISE, whole or within.
-% These are hard coded and not meant to be ever changed (EE is default, within-block is also default).
+% These are hard coded and not meant to be changed unless by options "-ee",
+% "-ise", "-within", and "-whole" passed at runtime (EE is default, and
+% within-block is also default).

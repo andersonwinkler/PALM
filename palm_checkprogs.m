@@ -1,9 +1,8 @@
 function ext = palm_checkprogs
 % Test whether some external programs or toolboxes
-% are available, namely, FSL, FreeSurfer, SPM and
-% Jimmy Shen's NIFTI toolbox.
+% are available.
 %
-% ext = checkprogs
+% ext = palm_checkprogs
 %
 % 'ext' is a struct containing one field for each
 % of these applications, each being containing
@@ -47,7 +46,8 @@ if isempty(palm_extern)
     fprintf('PALM is located at %s\n',palm_extern.palmpath);
     addpath(fullfile(palm_extern.palmpath,'colourmaps'));
 
-    % Check for FSL
+    % External programs - - - - - - - - - - - - - - - - - - - - - - - - - -
+    % Check FSL
     palm_extern.fsl = false;
     fsldir = getenv('FSLDIR');
     if ~isempty(fsldir)
@@ -56,7 +56,7 @@ if isempty(palm_extern)
         fprintf('Found FSL in %s\n',fsldir);
     end
 
-    % Check for FreeSurfer
+    % Check FreeSurfer
     palm_extern.fs  = false;
     fshome = getenv('FREESURFER_HOME');
     if ~isempty(fshome)
@@ -65,13 +65,7 @@ if isempty(palm_extern)
         fprintf('Found FreeSurfer in %s\n',fshome);
     end
 
-    % Check for the NIFTI toolbox
-    palm_extern.nii = false;
-    if exist('load_nii') == 2 && exist('save_nii') == 2, %#ok
-        palm_extern.nii = true;
-    end
-
-    % Check for SPM
+    % Check SPM
     palm_extern.spm = false;
     try %#ok
         spm_check_installation('basic');
@@ -80,7 +74,7 @@ if isempty(palm_extern)
         fprintf('Found SPM in %s\n',spmpath);
     end
 
-    % Check for the HCP Workbench
+    % Check HCP Workbench
     palm_extern.wb_command = false;
     [status,wb_command] = system('which wb_command');
     if status == 0
@@ -88,24 +82,67 @@ if isempty(palm_extern)
         fprintf('Found HCP Workbench executable in %s',wb_command);
     end
 
-    % Check if the Image Processing Toolbox is installed
-    palm_extern.ipt = false;
-    if license('test','Image_Toolbox')
-        palm_extern.ipt = true;
-        fprintf('Image Processing Toolbox is available.\n');
-    elseif  (exist('niftiread', 'builtin') == 5 || exist('niftiread', 'file') == 2) && ...
-            (exist('niftiwrite','builtin') == 5 || exist('niftiwrite','file') == 2) && ...
-            (exist('niftiinfo', 'builtin') == 5 || exist('niftiinfo', 'file') == 2)
-        palm_extern.ipt = true;
-        fprintf('Internal NIFTI read/write functions are available.');
-    end
-
-    % Check if DuckDB is installed (to read Parquet files in Octave)
+    % Check DuckDB (to read Parquet files in Octave)
     palm_extern.duckdb = false;
     [status,duckdb] = system('which duckdb');
     if status == 0
         palm_extern.duckdb = true;
         fprintf('Found DuckDB executable in %s',duckdb);
+    end
+
+    % Octave packages - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    palm_extern.octave_hdf5oct    = false;
+    palm_extern.octave_image      = false;
+    palm_extern.octave_specfun    = false;
+    palm_extern.octave_statistics = false;
+    if palm_isoctave
+        pkg_installed = pkg('list');
+        pkg_names     = cellfun(@(p)p.name,pkg_installed,'UniformOutput',false);
+        palm_extern.octave_hdf5oct    = any(strcmp(pkg_names,'hdf5oct'));
+        palm_extern.octave_image      = any(strcmp(pkg_names,'image'));
+        palm_extern.octave_specfun    = any(strcmp(pkg_names,'specfun'));
+        palm_extern.octave_statistics = any(strcmp(pkg_names,'statistics'));
+        if palm_extern.octave_hdf5oct
+            fprintf('Octave package "hdf5oct" is available.\n');
+        else
+            fprintf('Octave package "hdf5oct" is not available.\n');
+        end
+        if palm_extern.octave_image
+            fprintf('Octave package "image" is available.\n');
+        else
+            fprintf('Octave package "image" is not available.\n');
+        end
+        if palm_extern.octave_specfun
+            fprintf('Octave package "specfun" is available.\n');
+        else
+            fprintf('Octave package "specfun" is not available.\n');
+        end
+        if palm_extern.octave_statistics
+            fprintf('Octave package "statistics" is available.\n');
+        else
+            fprintf('Octave package "statistics" is not available.\n');
+        end
+    end
+
+    % MATLAB toolboxes  - - - - - - - - - - - - - - - - - - - - - - - - - -
+    palm_extern.matlab_ipt      = false;
+    palm_extern.matlab_symbolic = false;
+    if ~ palm_isoctave
+        % Image Processing Toolbox
+        if license('test','Image_Toolbox')
+            palm_extern.matlab_ipt = true;
+            fprintf('Image Processing Toolbox is available.\n');
+        elseif  (exist('niftiread', 'builtin') == 5 || exist('niftiread', 'file') == 2) && ...
+                (exist('niftiwrite','builtin') == 5 || exist('niftiwrite','file') == 2) && ...
+                (exist('niftiinfo', 'builtin') == 5 || exist('niftiinfo', 'file') == 2)
+            palm_extern.matlab_ipt = true;
+            fprintf('Internal NIFTI read/write functions are available.');
+        end
+        % Symbolic Math Toolbox
+        if license('test','Symbolic_Toolbox')
+            palm_extern.matlab_symbolic = true;
+            fprintf('Symbolic Math Toolbox is available.\n');
+        end
     end
 end
 ext = palm_extern;

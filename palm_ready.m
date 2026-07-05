@@ -112,8 +112,8 @@ end
 % Now deal with the actual data
 if ndims(Ytmp.data) == 2, %#ok
 
-    % Not all later functions are defined for file_array class,
-    % so convert to single or double (this is probably no longer needed
+    % Not all later functions are defined for file_array class, so
+    % convert to single or double (this is probably no longer needed
     % since the file_array is removed when precision is set in
     % palm_miscwrite.m)
     if strcmpi(Ytmp.readwith,'nifticlass')

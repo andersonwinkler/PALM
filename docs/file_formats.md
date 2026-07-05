@@ -1,6 +1,6 @@
 # File formats
 
-Supported file formats are listed below. Formats are identified by the file extension. Different options may accept only one type of file (for example the option `-s` will only accept surface geometry formats).
+Supported file formats are listed below. Formats are identified by the file extension. Different options may accept only certain types of files (for example, the option `-s` will only accept surface geometry formats).
 
 | Extension | Read as |
 | --- | --- |
@@ -24,9 +24,9 @@ Files with extensions not listed above won't be read.
 
 Support for uncompressed NIFTI files (extension `.nii`) is provided, internally, by the publicly available NIFTI class. This allows reading and writing even huge files without using too much computer memory. However, the NIFTI class does not operate on compressed files, i.e., with extension `.nii.gz`. To read these files, it is recommended that they are uncompressed first (with `gunzip`).
 
-Alternatively, if the datasets are small, the NIFTI class can be disabled with the option `-noniiclass`. This allows to read/write these `.nii.gz` files directly. However, if the files are too large, this can easily use all the computer memory and the system may become unstable/unusable. The option `-noniiclass` should be used with caution for large datasets. If the option `-noniiclass` is provided and PALM is running with MATLAB as the engine, then if the Image Processing Toolbox is installed, `.nii.gz` files will be read with the command `niftiread`; otherwise, i.e., if the PALM is running with Octave as the engine or if the Image Processing Toolbox is not available, then if the option `-noniiclass` is provided, `.nii.gz` files will be read using the command `load_nifti`, which is available internally within PALM (courtesy from the FreeSurfer developers).
+Alternatively, if the datasets are small, the NIFTI class can be disabled with the option `-noniiclass`. This allows reading and writing `.nii.gz` files directly. However, if the files are too large, this can easily use all the computer memory and the system may become unstable/unusable. The option `-noniiclass` should be used with caution for large datasets. If the option `-noniiclass` is provided and PALM is running with MATLAB as the engine, then if the Image Processing Toolbox is installed, `.nii.gz` files will be read with the command `niftiread`; otherwise, i.e., if the PALM is running with Octave as the engine or if the Image Processing Toolbox is not available, then if the option `-noniiclass` is provided, `.nii.gz` files will be read using the command `load_nifti`, which is available internally within PALM (courtesy from the FreeSurfer developers).
 
-The NIFTI class, that is used by default, already comes with precompiled binaries for MATLAB for various platforms, and for Octave for most 64-bit Linux distributions. Nonetheless, if compilation is needed, use:
+The NIFTI class is used by default. It is provided with precompiled binaries for MATLAB for various platforms, and for Octave for most 64-bit Linux distributions. Nonetheless, if compilation is needed, use:
 
 ```
 cd /full/path/to/palm/fileio/@file_array/private
@@ -45,7 +45,13 @@ FreeSurfer "curvature" files converted to pseudo-volumes (with extension `.mgh` 
 
 ### Support for HDF5 files
 
-[HDF5 (Hierarchical Data Format)](https://www.hdfgroup.org/) is a high-performance, open-source file format designed for storing and managing complex, multi-dimensional scientific datasets. PALM can read and write HDF5 files. The user needs to indicate which specific datablock is to be used from the file (a single HDF5 file can hold multiple multidimensional arrays). A valid specificication for a datablock is as:
+[HDF5 (Hierarchical Data Format)](https://www.hdfgroup.org/) is a high-performance, open-source file format designed for storing and managing complex, multi-dimensional scientific datasets. PALM can read and write HDF5 files natively with MATLAB; for Octave, the package `hdf5oct` (details [here](https://gnu-octave.github.io/packages/hdf5oct/)) must be installed. To install it, run from the Octave prompt:
+
+```
+pkg install -forge hdf5oct
+```
+
+The user needs to indicate which specific datablock is to be used from the file (a single HDF5 file can hold multiple multidimensional arrays). A valid specificication for a datablock is as:
 
 ```
 /path/to/file.h5:/path/to/data:N
@@ -54,6 +60,8 @@ FreeSurfer "curvature" files converted to pseudo-volumes (with extension `.mgh` 
 where `/path/to/file.h5` is the path to the HDF5 file (can use absolute or relative paths; if no path is provided, the file is assumed to exist in the current directory); `/path/to/data` is the full path to the multidimensional array that is intended to be used, and `N` is an integer that indicates dimension along which the data should be permuted.
 
 If an HDF5 file is specified as output (e.g., `-o /my/directory/myresults.h5`), then all outputs will be stored into the same HDF5 file, which is a convenient way to store an entire analysis into a single file.
+
+HDF5 files can be loaded with any extension (including `.mat` and `.nwb`), but PALM must be able to recognize these extensions. Make sure to list them in `palm_defaults.m`, under the variable `opts.hdf5`.
 
 ### Support for Parquet files
 

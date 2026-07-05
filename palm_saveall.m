@@ -233,7 +233,7 @@ if opts.saveunivariate,
                 if opts.accel.negbin,
                     
                     % Permutation p-value, uncorrected (the -nouncorrected
-                    % is caught in palm_takeargs.m already)
+                    % is caught in palm_args.m already)
                     palm_quicksave(plm.Gpperm{y}{m}{c},1,opts,plm,y,m,c, ...
                         sprintf('%s',opts.o,plm.Ykindstr{y},plm.Gname{m}{c},'_uncp',plm.ystr{y},plm.mstr{m},plm.cstr{m}{c}));
                     

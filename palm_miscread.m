@@ -1,9 +1,10 @@
-function X = palm_miscread(filename,varargin)
+function X = palm_miscread(filespec,varargin)
 % Read various scalar data formats based on the file extension.
 %
-% X = palm_miscread(filename,useniiclass,precision,mz3surf);
+% X = palm_miscread(filespec,useniiclass,precision,mz3surf);
 %
-% filename    : File to be read.
+% filespec    : Path to file to be read or specification of an HDF5
+%               datablock (see palm_hdf5spec.m).
 % useniiclass : True/False. For NIFTI files, use the NIFTI class
 %               when reading them. It requires less memory.
 % precision   : Ensure the output data is 'single' or 'double'
@@ -19,19 +20,19 @@ function X = palm_miscread(filename,varargin)
 %               data back, to use a compatible function.
 % X.data      : Array with the actual data. The size can vary
 %               according to what was read.
-% X.extra     : Contain extra information, depending on the kind
-%               of data that was read and the function or
-%               program used for reading.
 % X.affine    : Affine matrix, to be used only for information hence
 %               here in a consistent place for different formats.
 %               The affine matrix that matters when saving the data is
 %               the one inside extras.
+% X.extra     : Contain extra information, depending on the kind
+%               of data that was read and the function or
+%               program used for reading.
 %
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
 % Aug/2013 (first version)
-% Mar/2026 (this version)
+% Jul/2026 (this version)
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -64,28 +65,33 @@ if nA >= 2, precision   = varargin{2}; end
 if nA >= 3, mz3surf     = varargin{3}; end
 
 % If the filename has wildcards, verify that it resolves to a unique name
-if contains(filename,'*') || contains(filename,'?')
-    filelist = dir(filename);
+if contains(filespec,'*') || contains(filespec,'?')
+    filelist = dir(filespec);
     if isscalar(filelist)
-        filename = filelist(1).name;
+        filespec = filelist(1).name;
     elseif numel(filelist) == 0
-        error('File not found: %s',filename);
+        error('File not found: %s',filespec);
     else
-        error('More than one file match: %s',filename);
+        error('More than one file match: %s',filespec);
     end
 end
 
-% Check if the file actually exists before doing anything else
+% Figure out the file extension and check if file exists
+[filename,datablock,~] = palm_hdf5spec(filespec);
+[~,fnam,fext]  = fileparts(filename);
+fext = tokenize(strcat(fnam,fext),'.');
 if ~ exist(filename,'file')
     error('File not found: %s',filename);
 end
 
+% A small exception since .mat can be a MATLAB workspace (HDF5) or an
+% FSL VEST. The logic breaks slighly here
+if strcmpi(fext,'mat') && ~ischar(datablock)
+    fext = 'vest';
+end
+
 % Store the filename, in case there is a need to overwrite this later
 X.filename = filename;
-
-% Take the file extension and try to load accordingly
-[~,fnam,fext] = fileparts(X.filename);
-fext = tokenize(strcat(fnam,fext));
 
 % Some formats use external i/o functions that use random numbers. Save
 % current state of the random number generator, then restore at the end.
@@ -124,7 +130,7 @@ switch lower(fext{end})
         X.affine   = NaN;
         X.size     = size(X.data);
 
-    case {'mat','con','fts','grp'}
+    case {'mat','con','fts','grp','vest'} % note the 'mat' exception above
 
         % Read an FSL "VEST" file.
         X.readwith = 'vestread';
@@ -139,6 +145,14 @@ switch lower(fext{end})
         X.data     = palm_msetread(X.filename);
         X.affine   = NaN;
         X.size     = size(X.data);
+
+    case optsx.hdf5
+
+        % HDF5 files
+        % Note that 'mat' with a valid datablock will be head as HDF5
+        X        = palm_hdf5read(filespec);
+        X.affine = NaN;
+        X.size   = size(X.data);
 
     case 'parquet'
 
@@ -178,7 +192,7 @@ switch lower(fext{end})
                         'as input the .nii files instead.\n' ...
                         'File: %s'],X.filename);
                 else
-                    if ext.ipt
+                    if ext.matlab_ipt
                         X.readwith  = 'ipt';
                         X.extra.hdr = niftiinfo(X.filename);
                         X.data      = niftiread(X.filename);
@@ -228,7 +242,7 @@ switch lower(fext{end})
                 X.affine   = X.extra.mat;
                 X.size     = size(X.data);
             else
-                if ext.ipt
+                if ext.matlab_ipt
                     X.readwith  = 'ipt';
                     X.extra.hdr = niftiinfo(X.filename);
                     X.data      = niftiread(X.filename);
@@ -321,17 +335,17 @@ switch lower(fext{end})
 
         % Read a FreeSurfer annotation file
         X.readwith = 'fs_load_annot';
-        [X.extra.vertices,X.extra.codedlabel,X.extra.colourtab] = read_annotation(X.filename);
-        X.affine   = NaN;
-        X.size     = size(X.data);
-
+        [X.extra.vertices,X.extra.label,X.extra.colourtab] = read_annotation(X.filename);
+        
         % For each structure, replace its label by its index, which
         % is the actual label
-        X.data = X.extra.codedlabel;
+        X.data = X.extra.label;
         for s = 1:X.extra.colourtab.numEntries
-            X.data(X.extra.codedlabel == X.extra.colourtab.table(s,5)) = s;
+            X.data(X.extra.label == X.extra.colourtab.table(s,5)) = s;
         end
         X.data(X.data == 0) = 1;
+        X.affine = NaN;
+        X.size   = size(X.data);
 
         % Create a Matlab colourmap, useful to make figures
         X.extra.colourmap = X.extra.colourtab.table(:,1:3)/255;
@@ -389,9 +403,9 @@ if ~ (isstruct(X.data) || iscell(X.data))
 end
 
 % ==============================================================
-function spl = tokenize(str)
-% Split a string at the dots (.)
-idx  = find(str == '.');
+function spl = tokenize(str,sep)
+% Split a string at the separator "sep" (e.g., '.', ':')
+idx  = find(str == sep);
 idxb = [1 idx+1];
 idxe = [idx-1 numel(str)];
 spl  = cell(numel(idxb),1);

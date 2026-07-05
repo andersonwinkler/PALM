@@ -1,4 +1,4 @@
-function [opts,plm] = palm_takeargs(varargin)
+function [opts,plm] = palm_args(varargin)
 % Handle the inputs for PALM.
 %
 % _____________________________________
@@ -1174,7 +1174,7 @@ while a <= narginx
 end
 
 % Check for the existence of other programs for input/output
-palm_checkprogs;
+ext = palm_checkprogs;
 
 if Ni == 0
     error('Missing input data (missing "-i").');
@@ -1734,12 +1734,18 @@ if opts.npcmod || opts.MV || opts.CCA || opts.PLS
 end
 
 % Some extra packages for Octave
-if palm_isoctave
-    if opts.spatial.do && any(plm.Yisvol)
+if opts.spatial.do && any(plm.Yisvol)
+    if palm_isoctave && ext.octave_image
         pkg load image
+    else
+        error('In Octave, spatial statistics with volume data requires the "image" package.');
     end
-    if opts.accel.lowrank || opts.zstat || opts.corrcon || Nf > 0
+end
+if opts.accel.lowrank || opts.zstat || opts.corrcon || Nf > 0
+    if palm_isoctave && ext.statistics
         pkg load statistics
+    else
+        error('In Octave, the following options require the "statistics" package: "-f", "-zstat", "-corrcon", and "-accel lowrank".');
     end
 end
 
