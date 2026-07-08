@@ -1,4 +1,4 @@
-function [filename,dataset,permdim] = palm_hdf5spec(spec)
+function [filename,datapath,permdim] = palm_hdf5spec(spec)
 % Parse a compact HDF5 dataset specification string of the form:
 % 
 %     /path/to/file.h5:/path/to/dataset[:N]
@@ -30,7 +30,7 @@ function [filename,dataset,permdim] = palm_hdf5spec(spec)
 % 
 % spec     : Specification, as described above
 % filename : Filename (returned unchanged for a non-HDF5 spec)
-% dataset  : Dataset path within the HDF5 file, or NaN if the spec does
+% datapath : Path to dataset within the HDF5 file, or NaN if the spec does
 %            not refer to an HDF5 file
 % permdim  : Permutation dimension (NaN if not supplied, or if the spec
 %            does not refer to an HDF5 file)
@@ -79,7 +79,7 @@ if nSep < 1
     % HDF5 file. Return the filename unchanged and flag the non-HDF5 case
     % by returning both dataset and permdim as NaN.
     filename = spec;
-    dataset  = NaN;
+    datapath = NaN;
     permdim  = NaN;
     return
 elseif nSep > 2
@@ -94,19 +94,19 @@ if nSep == 2
     cPath    = colons(end-1);   % between the file name and the in-file path
     cDim     = colons(end);     % between the in-file path and the dimension count
     filename = spec(1:cPath-1);
-    dataset  = spec(cPath+1:cDim-1);
+    datapath = spec(cPath+1:cDim-1);
     dimStr   = strtrim(spec(cDim+1:end));
 else
     % Permutation dimension omitted (single separator)
     cPath    = colons(end);     % between the file name and the in-file path
     filename = spec(1:cPath-1);
-    dataset  = spec(cPath+1:end);
+    datapath = spec(cPath+1:end);
     dimStr   = '';
 end
 if isempty(filename)
     error('The file name is empty: %s',spec);
 end
-if isempty(dataset) || dataset(1) ~= '/'
+if isempty(datapath) || datapath(1) ~= '/'
     error('The dataset path is empty or does not start with "/": %s',spec);
 end
 

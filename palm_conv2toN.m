@@ -1,8 +1,11 @@
-function YNd = palm_conv2toN(Y2d,siz)
-% Convert a 2D array (t,x*y*z) into a N-D dataset (x,y,z,t,...)
+function YNd = palm_conv2toN(Y2d,siz,N)
+% Convert a 2D array back into an N-D dataset, reversing palm_convNto2.
+% The 1st dimension (rows) of the 2D array is placed back at dimension N
+% of the N-D output, and the 2nd dimension (columns) is rewrapped into
+% all the other dimensions.
 % 
 % Usage:
-% YNd = conv2toN(Y2d,siz);
+% YNd = palm_conv2toN(Y2d,siz);
 %
 % Y2d : 2D data
 % siz : Sizes up to dimension N-1
@@ -10,7 +13,8 @@ function YNd = palm_conv2toN(Y2d,siz)
 % _____________________________________
 % Anderson M. Winkler
 % FMRIB / University of Oxford
-% Sep/2012
+% Sep/2012 (first version)
+% May/2026 (this version)
 % http://brainder.org
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -31,7 +35,20 @@ function YNd = palm_conv2toN(Y2d,siz)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+% First version:
 % tmp = reshape(Y2d,[size(Y2d,1) siz]);
 % Y4d = permute(tmp,[2 3 4 1]);
 
-YNd = reshape(Y2d',[siz(:)' size(Y2d,1)]);
+% Second version:
+% YNd = reshape(Y2d',[siz(:)' size(Y2d,1)]);
+
+% Third version:
+if nargin < 3 || isempty(N)
+    N = numel(siz);
+end
+nd            = max(numel(siz),N);
+siz(end+1:nd) = 1;
+d             = 1:nd;
+d(N)          = [];
+perm          = [N d];
+YNd           = ipermute(reshape(Y2d,siz(perm)),perm);

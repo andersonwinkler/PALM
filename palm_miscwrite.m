@@ -81,12 +81,12 @@ switch lower(X.readwith)
         end
         palm_msetwrite(X.filename,X.data);
 
-    case {'octave-load-hdf5','h5read'}
+    case 'hdf5read'
 
         % Write an HDF5 file
-        palm_hdf5write(X)
+        palm_hdf5write(X.filename,X.extra.datapath,X.data);
         
-    case 'octave-parquet'
+    case 'parquet'
         
         % Write Parquet files (in Octave)
         [~,~,fext] = fileparts(X.filename);
@@ -95,30 +95,44 @@ switch lower(X.readwith)
         end
         palm_parquetwrite(X.filename,X.data,X.extra.VariableNames);
 
-    case 'matlab-parquet'
+    case 'nifticlass'
 
-        % Write Parquet files (in Matlab)
+        % Write using the NIFTI class.
         [~,~,fext] = fileparts(X.filename);
-        if isempty(fext) || ~ strcmpi(fext,'.parquet')
-            X.filename = horzcat(X.filename,'.parquet');
+        if isempty(fext)
+            X.filename = horzcat(X.filename,'.nii');
         end
-        T = array2table(X.data,'VariableNames',X.extra.VariableNames);
-        parquetwrite(X.filename,T);
-
-    case 'cifti-matlab'
-
-        % Write a CIFTI file using the CIFTI-Matlab toolbox
-        % First deal with the file extension
-        [fpth,fnam,fext] = fileparts(X.filename);
-        if strcmpi(fext,['.',X.extra.cifti_file_extension])
-            X.filename = fullfile(fpth,[fnam,fext,'.nii']);
-        elseif ~ strcmpi(fext,'.nii')
-            X.filename = fullfile(fpth,[fnam,fext,'.',X.extra.cifti_file_extension,'.nii']);
+        dat = file_array(  ...
+            X.filename,    ...
+            size(X.data),  ...
+            'FLOAT32-LE',  ...
+            ceil(348/8)*8);
+        nii      = nifti;
+        nii.dat  = dat;
+        nii.mat  = X.extra.mat;
+        if isfield(X.extra,'mat0')
+            nii.mat0 = X.extra.mat0;
+        else
+            nii.mat0 = X.extra.mat;
         end
-        tmp.cdata    = X.data;
-        tmp.diminfo  = X.extra.diminfo;
-        tmp.metadata = X.extra.metadata;
-        cifti_write(tmp,X.filename);
+        create(nii);
+        nii.dat(:,:,:) = X.data(:,:,:);
+
+    case 'fs_load_nifti'
+
+        % Write NIFTI with FreeSurfer
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext)
+            X.filename = horzcat(X.filename,'.nii.gz');
+        end
+        X.extra.hdr.vol       = X.data;
+        X.extra.hdr.datatype  = 64; % for now, save everything as double
+        X.extra.hdr.bitpix    = 64; % for now, save everything as double
+        X.extra.hdr.scl_inter = 0; % ideally we'd rescale X.data based on the current scl_slope and scl_intercept. However, this introduces unneccessary rounding errors
+        X.extra.hdr.scl_slope = 1;
+        X.extra.hdr.cal_max   = max(X.data(:));
+        X.extra.hdr.cal_min   = min(X.data(:));
+        save_nifti(X.extra.hdr,X.filename);
 
     case 'ipt'
 
@@ -146,76 +160,6 @@ switch lower(X.readwith)
         %X.extra.hdr.raw.dim(2:numel(tmp)+1) = tmp;
         %X.extra.hdr.raw.dim(1) = find(logical(X.extra.hdr.raw.dim(2:end)-1),1,'last');
         niftiwrite(X.data,X.filename,X.extra.hdr);
-
-    case 'nifticlass'
-
-        % Write using the NIFTI class.
-        [~,~,fext] = fileparts(X.filename);
-        if isempty(fext)
-            X.filename = horzcat(X.filename,'.nii');
-        end
-        dat = file_array(  ...
-            X.filename,    ...
-            size(X.data),  ...
-            'FLOAT32-LE',  ...
-            ceil(348/8)*8);
-        nii      = nifti;
-        nii.dat  = dat;
-        nii.mat  = X.extra.mat;
-        if isfield(X.extra,'mat0')
-            nii.mat0 = X.extra.mat0;
-        else
-            nii.mat0 = X.extra.mat;
-        end
-        create(nii);
-        nii.dat(:,:,:) = X.data(:,:,:);
-
-    case 'spm_spm_vol'
-
-        % Write NIFTI with SPM
-        [~,~,fext] = fileparts(X.filename);
-        if isempty(fext)
-            X.filename = horzcat(X.filename,'.nii');
-        end
-        X.extra.fname = X.filename;
-        X.extra.dt(1) = spm_type('float32'); % for now, save everything as double
-        spm_write_vol(X.extra,X.data);
-
-    case 'fs_load_nifti'
-
-        % Write NIFTI with FreeSurfer
-        [~,~,fext] = fileparts(X.filename);
-        if isempty(fext)
-            X.filename = horzcat(X.filename,'.nii.gz');
-        end
-        X.extra.hdr.vol       = X.data;
-        X.extra.hdr.datatype  = 64; % for now, save everything as double
-        X.extra.hdr.bitpix    = 64; % for now, save everything as double
-        X.extra.hdr.scl_inter = 0; % ideally we'd rescale X.data based on the current scl_slope and scl_intercept. However, this introduces unneccessary rounding errors
-        X.extra.hdr.scl_slope = 1;
-        X.extra.hdr.cal_max   = max(X.data(:));
-        X.extra.hdr.cal_min   = min(X.data(:));
-        save_nifti(X.extra.hdr,X.filename);
-
-    case 'fsl_read_avw'
-
-        % Write NIFTI with FSL
-        if ~ isfield(X.extra,'vtype')
-            X.extra.vtype = 'd'; % for now, save everything as double
-        end
-        % The evalc is needed until that empty 'disp' goes away
-        try
-            [~] = evalc('save_avw(X.data,X.filename,X.extra.vtype,X.extra.voxsize)');
-        catch
-            save_avw(X.data,X.filename,X.extra.vtype,X.extra.voxsize);
-        end
-
-    case 'nii_load_nii'
-
-        % Write NIFTI with the NIFTI toolbox
-        X.filename = horzcat(X.filename,'.nii');
-        X.extra.img = X.data;
-        save_nii(X.extra,X.filename);
 
     case 'dpxread'
 
@@ -273,6 +217,21 @@ switch lower(X.readwith)
             X.extra.label(X.data == s) = X.extra.colourtab.table(s,5);
         end
         write_annotation(X.filename,X.extra.vertices,X.extra.label,X.extra.colourtab);
+
+    case 'cifti-matlab'
+
+        % Write a CIFTI file using the CIFTI-Matlab toolbox
+        % First deal with the file extension
+        [fpth,fnam,fext] = fileparts(X.filename);
+        if strcmpi(fext,['.',X.extra.cifti_file_extension])
+            X.filename = fullfile(fpth,[fnam,fext,'.nii']);
+        elseif ~ strcmpi(fext,'.nii')
+            X.filename = fullfile(fpth,[fnam,fext,'.',X.extra.cifti_file_extension,'.nii']);
+        end
+        tmp.cdata    = X.data;
+        tmp.diminfo  = X.extra.diminfo;
+        tmp.metadata = X.extra.metadata;
+        cifti_write(tmp,X.filename);
 
     case 'gifti'
 

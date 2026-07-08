@@ -1,9 +1,9 @@
 function S = palm_maskstruct(mask,readwith,extra,affine,size)
 % Create a struct for a mask, as if it had been read from a file.
-% This is useful to save later the data.
+% This is useful to save the data later.
 %
 % Usage:
-% M = maskstruct(mask,readwith,extra)
+% M = palm_maskstruct(mask,readwith,extra)
 %
 % Inputs:
 % mask     : A (1 by m) real array.
@@ -55,16 +55,65 @@ switch lower(readwith)
     case {'load','csvread','vestread'}
         
         % If the original data is a CSV or VEST file.
-        S.data = mask;
+        S.data  = mask;
+        S.extra = extra;
+
+    case 'nifticlass'
+
+        % If the original data is NIFTI and was read with the NIFTI class
+        S.data          = palm_conv2toN(mask,extra.dat.dim(1:3));
+        S.extra.mat     = extra.mat;
+        S.extra.dat.dim = extra.dat.dim;
+
+    case 'fs_load_nifti'
+
+        % If the original data is NIFTI and was read with FreeSurfer.
+        S.data                 = palm_conv2toN(mask,extra.hdr.dim(2:4));
+        S.extra                = extra;
+        S.extra.hdr.scl_slope  = 1;
+        S.extra.hdr.dim([1 5]) = [3 1];
+        S.extra.hdr.pixdim(5)  = 0;
+        S.extra.hdr.datatype   = 64;
+        S.extra.hdr.bitpix     = 64;
+
+    case 'ipt'
+
+        % If the original data is NIFTI and was read with the MATLAB's
+        % Image Processing Toolbox or Octave's equivalent commands
+        S.data      = palm_conv2toN(mask,extra.hdr.ImageSize(1:3));
+        S.extra.hdr = extra.hdr;
+
+    case 'parquet'
+
+        % If the original data is an Apache Parquet file
+        S.data  = mask;
+        S.extra = extra;
+
+    case 'hdf5'
+
+        % If the original data is an HDF5 file
+        S.data  = mask;
+        S.extra = extra;
+
+    case {'fs_read_curv','dpxread'}
+        
+        % If the original data is an FS curvature.
+        S.data  = mask;
         S.extra = extra;
         
+    case 'fs_load_mgh'
+        
+        % If the original data is an FS MGH/MGZ file.
+        S.data  = palm_conv2toN(mask,extra.volsz(1:3));
+        S.extra = extra;
+ 
     case 'wb_command'
 
         % If the original data is CIFTI and was read after convering via
         % via wb_command
         S.data  = mask;
         S.extra = extra;
-        
+
     case 'cifti-matlab'
 
         % If the original data is CIFTI and was read with
@@ -80,70 +129,6 @@ switch lower(readwith)
         S.extra.diminfo{end}.maps = extra.diminfo{end}.maps(1);
         S = palm_dimreorder(S,true);
 
-    case 'ipt'
-
-        % If the original data is NIFTI and was read with the MATLAB's
-        % Image Processing Toolbox or Octave's equivalent commands
-        S.data          = palm_conv2toN(mask,extra.hdr.ImageSize(1:3));
-        S.extra.hdr     = extra.hdr;
-
-    case 'nifticlass'
-        
-        % If the original data is NIFTI and was read with the NIFTI class
-        S.data          = palm_conv2toN(mask,extra.dat.dim(1:3));
-        S.extra.mat     = extra.mat;
-        S.extra.dat.dim = extra.dat.dim;
-        
-    case 'spm_spm_vol' % no longer used
-        
-        % If the original data is NIFTI and was read with SPM.
-        S.data           = palm_conv2toN(mask,extra(1).dim(1:3));
-        S.extra          = extra(1);
-        S.extra.dt(1)    = spm_type('float64');
-        S.extra.pinfo(1) = 1;
-        
-    case 'fs_load_nifti'
-        
-        % If the original data is NIFTI and was read with FreeSurfer.
-        S.data                 = palm_conv2toN(mask,extra.hdr.dim(2:4));
-        S.extra                = extra;
-        S.extra.hdr.scl_slope  = 1;
-        S.extra.hdr.dim([1 5]) = [3 1];
-        S.extra.hdr.pixdim(5)  = 0;
-        S.extra.hdr.datatype   = 64;
-        S.extra.hdr.bitpix     = 64;
-        
-    case 'fsl_read_avw' % no longer used
-        
-        % If the original data is NIFTI and was read with FSL.
-        S.data  = palm_conv2toN(mask,extra.dims(1:3));
-        S.extra = extra;
-        if ~ isfield(S.extra,'vtype')
-            S.extra.vtype = 'd';
-        end
-        
-    case 'nii_load_nii' % no longer used
-        
-        % If the original data is NIFTI and was read with the NIFTI toolbox.
-        S.data                      = palm_conv2toN(mask,extra.hdr.dime.dim(2:4));
-        S.extra                     = extra;
-        S.extra.hdr.dime.dim([1 5]) = [3 1];
-        S.extra.hdr.dime.pixdim(5)  = 0;
-        S.extra.hdr.dime.datatype   = 64;
-        S.extra.hdr.dime.bitpix     = 64;
-        
-    case {'fs_read_curv','dpxread'}
-        
-        % If the original data is an FS curvature.
-        S.data  = mask;
-        S.extra = extra;
-        
-    case 'fs_load_mgh'
-        
-        % If the original data is an FS MGH/MGZ file.
-        S.data  = palm_conv2toN(mask,extra.volsz(1:3));
-        S.extra = extra;
-        
     case 'gifti'
         
         % If the original data is a GIFTI file.

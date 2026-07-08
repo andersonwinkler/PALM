@@ -77,15 +77,15 @@ if contains(filespec,'*') || contains(filespec,'?')
 end
 
 % Figure out the file extension and check if file exists
-[filename,datablock,~] = palm_hdf5spec(filespec);
-[~,fnam,fext]  = fileparts(filename);
+[filename,datablock,permdim] = palm_hdf5spec(filespec);
+[~,fnam,fext] = fileparts(filename);
 fext = tokenize(strcat(fnam,fext),'.');
 if ~ exist(filename,'file')
     error('File not found: %s',filename);
 end
 
 % A small exception since .mat can be a MATLAB workspace (HDF5) or an
-% FSL VEST. The logic breaks slighly here
+% FSL VEST file. The logic breaks slightly here
 if strcmpi(fext,'mat') && ~ischar(datablock)
     fext = 'vest';
 end
@@ -149,27 +149,26 @@ switch lower(fext{end})
     case optsx.hdf5
 
         % HDF5 files
-        % Note that 'mat' with a valid datablock will be head as HDF5
-        X        = palm_hdf5read(filespec);
+        % Note that 'mat' with a valid datablock will be head as HDF5,
+        % per the exception above
+        X.readwith        = 'hdf5read';
+        X.data            = palm_hdf5read(filename,datablock);
+        X.extra.datablock = datablock;
+        X.extra.permdim   = permdim;
+        if ~isnan(permdim) && ndims(X.data) < permdim
+            error('Data "%s" has %d dimension(s), but you asked to permute dimension %d.', ...
+                X.extra.datapath,ndims(X.data),X.extra.permdim);
+        end
         X.affine = NaN;
         X.size   = size(X.data);
 
     case 'parquet'
 
         % Apache Parquet files
-        if palm_isoctave
-            X.readwith = 'octave-parquet';
-            [X.data,X.extra.VariableNames] = palm_parquetread(X.filename);
-            X.affine   = NaN;
-            X.size     = size(X.data);
-        else
-            X.readwith = 'matlab-parquet';
-            X.data     = parquetread(X.filename);
-            X.extra.VariableNames = X.data.Properties.VariableNames;
-            X.data     = table2array(X.data);
-            X.affine   = NaN;
-            X.size     = size(X.data);
-        end
+        X.readwith = 'parquet';
+        [X.data,X.extra.VariableNames] = palm_parquetread(X.filename);
+        X.affine   = NaN;
+        X.size     = size(X.data);
 
     case 'gz'
 

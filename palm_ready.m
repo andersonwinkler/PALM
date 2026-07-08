@@ -103,26 +103,13 @@ if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4
     end
 end
 
-% Only CIFTI of the types series and scalar are allowed as inputs.
-% Reorder dimensions so that the last is the one permutable
+% For CIFTI, reorder dimensions so that the last is the one permutable
 if strcmpi(Ytmp.readwith,'cifti-matlab')
     Ytmp = palm_dimreorder(Ytmp);
 end
 
 % Now deal with the actual data
-if ndims(Ytmp.data) == 2, %#ok
-
-    % Not all later functions are defined for file_array class, so
-    % convert to single or double (this is probably no longer needed
-    % since the file_array is removed when precision is set in
-    % palm_miscwrite.m)
-    if strcmpi(Ytmp.readwith,'nifticlass')
-        if strcmpi(opts.precision,'single')
-            Ytmp.data = single(Ytmp.data);
-        else
-            Ytmp.data = double(Ytmp.data);
-        end
-    end
+if ndims(Ytmp.data) == 2 %#ok<ISMAT>
 
     % Transpose if that was chosen.
     % We always transpose 2D CIFTI files at this stage since the permutation
@@ -139,7 +126,7 @@ elseif ndims(Ytmp.data) == 3
 
     % For 3D files in which the 3rd dim is what needs to be permuted (e.g.,
     % with some CIFTI variants), that has now become the first
-    Y = palm_convNto2(Ytmp.data);
+    Y = palm_convNto2(Ytmp.data,3);
 
 elseif ndims(Ytmp.data) == 4
 
@@ -156,7 +143,7 @@ elseif ndims(Ytmp.data) == 4
         end
     else
         % If not read with the NIFTI class, get all immediately
-        Y = palm_convNto2(Ytmp.data);
+        Y = palm_convNto2(Ytmp.data,4);
     end
 end
 
@@ -223,13 +210,13 @@ if nargout > 2
             Ykindstr = '_dpv';
         case 'dpxread'
             Yissrf   = true;
-            Ykindstr = '_dpx'; % this may be overriden later if a surface file is supplied
+            Ykindstr = '_dpx'; % this may be overridden later if a surface file is supplied
         case 'fs_load_mgh'
             if ndims(Ytmp.data) == 4 && ...
                     size(Ytmp.data,2) == 1 && ...
                     size(Ytmp.data,3) == 1
                 Yissrf   = true;
-                Ykindstr = '_dpx'; % this may be overriden later if a surface file is supplied
+                Ykindstr = '_dpx'; % this may be overridden later if a surface file is supplied
             else
                 Yisvol   = true;
                 Ykindstr = '_vox';
@@ -239,7 +226,7 @@ if nargout > 2
     end
 end
 
-% If the Ytmp will also be returned (used in the palm_mediation). Unless
+% If the Ytmp will also be returned (used in the palm_mediation.m). Unless
 % this is a single vector, there is no need to keep the actual data; it's
 % the mask that matters.
 if nargout == 6 && numel(maskstruct.data) > 1

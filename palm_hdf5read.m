@@ -1,21 +1,15 @@
-function X = palm_hdf5read(spec)
-% Read an HDF5 dataset selected by a compact specification string of the
-% form:
-% 
-%     /path/to/file.h5:/path/to/dataset[:N]
+function data = palm_hdf5read(filename,datapath)
+% Read an N-D array from an HDF5 file, specified by its path within the file
 % 
 % Usage:
 % 
-% X = palm_hdf5read(spec);
+% data = palm_hdf5read(filename,datapath);
 % 
-% spec       : Specification string (see palm_hdf5spec)
-% X.filename : HDF5 filename
-% X.dataset  : Dataset path within HDF5
-% X.data     : Data, as read
-% X.permdim  : Permutation dimension (NaN if not supplied)
-% X.readwith : Engine used to read the data
+% filename : HDF5 filename
+% datapath : Dataset path within HDF5
+% data     : Data, as read
 %
-% See also: palm_hdf5spec.m
+% See also: palm_hdf5write.m, palm_hdf5spec.m
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -41,9 +35,6 @@ function X = palm_hdf5read(spec)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-% Parse the specification string into its three components
-[filename,dataset,permdim] = palm_hdf5spec(spec);
-
 % The file must exist
 if exist('isfile','builtin') ~= 0
     tf = isfile(filename);
@@ -56,37 +47,23 @@ end
 
 % Read the dataset (engine dependent)
 if palm_isoctave && ~ exist('h5read') %#ok<EXIST>
-    % Octave without hdf5oct package
-    % Basic functionality only, will use more memory and
-    % will fail for some HDF5 files
-    data     = octave_load(filename,dataset);
-    readwith = 'octave-load-hdf5';
+    % Octave without hdf5oct package: basic, memory-heavy fallback that
+    % only understands Octave's own "-hdf5" files.
+    warning('The package "hdf5oct" is not installed. Thus, there is only partial support for HDF5 files.')
+    data = octave_h5read(filename,datapath);
 else
-    % Octave with hdf5oct package or MATLAB
-    % Complete functionality, will use less memory
-    % and should work with any HDF5 file
-    data     = h5read(filename,dataset);
-    readwith = 'h5read';
+    % Octave with hdf5oct package, or MATLAB
+    data = h5read(filename,datapath);
 end
 
-% Dimensionality check (skipped when no permutation dimension was supplied)
-if ~isnan(permdim) && ndims(data) < permdim
-    error('Dataset "%s" has %d dimension(s), but you want to permute dimension %d.', ...
-        dataset,ndims(data),permdim);
-end
-
-% Outputs
-X.filename = filename;
-X.dataset  = dataset;
-X.permdim  = permdim;
-X.data     = data';
-X.readwith = readwith;
+% Ensure we have column-major (HDF5 stores as row-major)
+data = permute(data,ndims(data):-1:1);
 
 % ------------------------------------------------------------------
-function raw = octave_load(filename, dataset)
-% If hdf5oct package is not available, will open using "load",
-% but this has incomplete support for HDF5. Fallback only.
-% It will load the whole file, then walk the path into the struct tree.
+function raw = octave_h5read(filename,dataset)
+% Fallback used when hdf5oct is unavailable. Loads the whole file with
+% load('-hdf5',...) and walks the dataset path into the resulting struct
+% tree. Counterpart of octave_h5write in palm_hdf5write.
 S = load('-hdf5',filename);
 parts = strsplit(dataset, '/');
 parts = parts(~cellfun('isempty',parts));

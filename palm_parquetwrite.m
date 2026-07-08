@@ -41,32 +41,43 @@ if ~iscell(cols)
 end
 if numel(cols) ~= size(T,2)
     error('Number of column names (%d) does not match the number of data columns (%d).', ...
-          numel(cols), size(T,2));
+        numel(cols), size(T,2));
 end
 
-% Create a temporary CSV file: a header row with the names, then the data
-csvfile = [tempname() '.csv'];
-fid     = fopen(csvfile, 'w');
-if fid == -1
-    error('Could not open temporary file for writing: %s', csvfile);
-end
-hdr = cellfun(@(c) ['"' strrep(c,'"','""') '"'],cols,'UniformOutput',false);
-fprintf(fid,'%s\n',strjoin(hdr,','));
-fclose(fid);
-dlmwrite(csvfile,T,'-append','delimiter',',','precision',17); %#ok<DLMWT>
+if palm_isoctave
+    
+    % Octave
+    % Create a temporary CSV file: a header row with the names, then the data
+    csvfile = [tempname() '.csv'];
+    fid     = fopen(csvfile, 'w');
+    if fid == -1
+        error('Could not open temporary file for writing: %s', csvfile);
+    end
+    hdr = cellfun(@(c) ['"' strrep(c,'"','""') '"'],cols,'UniformOutput',false);
+    fprintf(fid,'%s\n',strjoin(hdr,','));
+    fclose(fid);
+    dlmwrite(csvfile,T,'-append','delimiter',',','precision',17); %#ok<DLMWT>
 
-% Convert the CSV into Parquet, forcing every column to DOUBLE
-typelist = strjoin(repmat({'''DOUBLE'''}, 1, numel(cols)), ',');
-cmd      = sprintf(['duckdb -c "COPY (SELECT * FROM read_csv(''%s'', ' ...
-                    'header = true, delim = '','', types = [%s])) ' ...
-                    'TO ''%s'' (FORMAT PARQUET);"'], ...
-                   csvfile,typelist,filename);
-[status,output] = system(cmd);
+    % Convert the CSV into Parquet, forcing every column to DOUBLE
+    typelist = strjoin(repmat({'''DOUBLE'''}, 1, numel(cols)), ',');
+    cmd      = sprintf(['duckdb -c "COPY (SELECT * FROM read_csv(''%s'', ' ...
+        'header = true, delim = '','', types = [%s])) ' ...
+        'TO ''%s'' (FORMAT PARQUET);"'], ...
+        csvfile,typelist,filename);
+    [status,output] = system(cmd);
 
-% Clean up the temporary file (whether or not DuckDB succeeded)
-if exist(csvfile,'file')
-    delete(csvfile);
-end
-if status ~= 0
-    error('DuckDB failed while writing Parquet file %s:\n%s', filename, output);
+    % Clean up the temporary file (whether or not DuckDB succeeded)
+    if exist(csvfile,'file')
+        delete(csvfile);
+    end
+    if status ~= 0
+        error('DuckDB failed while writing Parquet file %s:\n%s', filename, output);
+    end
+
+else
+
+    % MATLAB
+    T = array2table(T,'VariableNames',cols);
+    parquetwrite(filename,T);
+
 end

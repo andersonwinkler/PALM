@@ -36,32 +36,43 @@ if ~exist(filename,'file')
     error('File not found: %s',filename);
 end
 
-% Create temporary CSV file (data only, no headers)
-csvfile = [tempname() '.csv'];
-cmd     = sprintf(['duckdb -c "COPY (SELECT * FROM read_parquet(''%s'')) ' ...
-                   'TO ''%s'' (FORMAT CSV, HEADER FALSE, DELIMITER '','');"'], ...
-                  filename,csvfile);
-[status,output] = system(cmd);
-if status ~= 0
-    error('DuckDB failed while reading Parquet file %s:\n%s',filename,output);
-end
+if palm_isoctave
 
-% Get column names from Parquet file
-cmd = sprintf('duckdb -csv -c "DESCRIBE (SELECT * FROM read_parquet(''%s''));"',filename);
-[status, cols] = system(cmd);
-if status ~= 0
-    cols = {};
+    % Octave
+    % Create temporary CSV file (data only, no headers)
+    csvfile = [tempname() '.csv'];
+    cmd     = sprintf(['duckdb -c "COPY (SELECT * FROM read_parquet(''%s'')) ' ...
+        'TO ''%s'' (FORMAT CSV, HEADER FALSE, DELIMITER '','');"'], ...
+        filename,csvfile);
+    [status,output] = system(cmd);
+    if status ~= 0
+        error('DuckDB failed while reading Parquet file %s:\n%s',filename,output);
+    end
+
+    % Get column names from Parquet file
+    cmd = sprintf('duckdb -csv -c "DESCRIBE (SELECT * FROM read_parquet(''%s''));"',filename);
+    [status, cols] = system(cmd);
+    if status ~= 0
+        cols = {};
+    else
+        lines = regexp(strtrim(cols),'\r?\n','split'); % keep first field
+        lines(cellfun(@isempty,lines)) = [];
+        cols = cellfun(@(s)strtrim(strtok(s,',')),lines,'UniformOutput',false);
+        cols = cols(2:end); % drop the header
+    end
+
+    % Load the data (assumed numeric only)
+    T = load(csvfile);
+
+    % Clean up
+    if exist(csvfile,'file')
+        delete(csvfile);
+    end
+
 else
-    lines = regexp(strtrim(cols),'\r?\n','split'); % keep first field
-    lines(cellfun(@isempty,lines)) = [];
-    cols = cellfun(@(s)strtrim(strtok(s,',')),lines,'UniformOutput',false);
-    cols = cols(2:end); % drop the header
-end
 
-% Load the data (assumed numeric only)
-T = load(csvfile);
-
-% Clean up
-if exist(csvfile,'file')
-    delete(csvfile);
+    % MATLAB
+    T    = parquetread(filename);
+    cols = T.Properties.VariableNames;
+    T    = table2array(T);
 end
