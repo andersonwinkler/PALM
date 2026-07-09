@@ -8,6 +8,7 @@ static char svnid[] = "$Id: nifti_stats_mex.c 7147 2017-08-03 14:07:01Z spm $";
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "mex.h"
 
@@ -25,7 +26,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
    double *val, *p, p1=0.0,p2=0.0,p3=0.0 ;
    int code=5, dop=1, doq=0, dod=0, doi=0, doz=0, doh=0 ;
    int ndim, i, n;
-   const int *dim;
+   const mwSize *dim;
 
    if (nlhs>1) mexErrMsgTxt("Too many output arguments.");
    if (nrhs<1) mexErrMsgTxt("Not enough input arguments.");

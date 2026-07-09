@@ -1,38 +1,25 @@
-# Makefile default variables
+# Makefile default variables for @gifti MEX files
 #
 # Copyright (C) 1991-2018 Wellcome Trust Centre for Neuroimaging
+# PALM adaptations for Octave, Apple Silicon, and MSYS2 (2026)
 #
-# $Id: Makefile.var 7356 2018-06-26 08:55:33Z guillaume $
+# Build for MATLAB (platform-specific .mex* suffix):
+#   make matlab
 #
-###############################################################################
+# Build for Octave (generic .mex suffix):
+#   make octave
 #
-# This file defines variables used in Makefile and has been tested under 
-# Linux, Windows and MacOS.
-# 
-# If you have to tweak this file to compile the SPM MEX-files for your 
-# platform, please send the details to <fil.spm@ucl.ac.uk> so they can be 
-# included here. 
+# Auto-detect mex or mkoctfile in PATH:
+#   make
 #
-# You can find some more help online on the SPM wikibook:
-#  * Linux:
-#      http://en.wikibooks.org/wiki/SPM/Installation_on_Linux
-#      http://en.wikibooks.org/wiki/SPM/Installation_on_64bit_Linux 
-#  * Windows:
-#      http://en.wikibooks.org/wiki/SPM/Installation_on_Windows
-#      http://en.wikibooks.org/wiki/SPM/Installation_on_64bit_Windows
-#      MinGW: http://www.mingw.org/
-#  * MacOS:
-#      http://en.wikibooks.org/wiki/SPM/Installation_on_Mac_OS_(Intel)
-#      http://en.wikibooks.org/wiki/SPM/Installation_on_64bit_Mac_OS_(Intel)
-#
-###############################################################################
+# Override explicitly:
+#   make RUNTIME=matlab
+#   make RUNTIME=octave
+#   make RUNTIME=matlab PLATFORM=Darwin
+#   make RUNTIME=matlab SUF=mexa64
 
 SHELL          = /bin/sh
 MAKE           = make
-MEXBIN         = mex
-MEXOPTS        = -O -largeArrayDims
-MEXEND         = 
-MOSUF          = o # mex output object suffix
 UNAME          = uname
 AR             = ar rcs
 COPY           = cp -f
@@ -40,59 +27,119 @@ DEL            = rm -f
 MOVE           = mv -f
 TAR            = tar
 ZIP            = gzip -f
+MOSUF          = o
+
+# Runtime: matlab | octave | auto
+ifndef RUNTIME
+  RUNTIME      = auto
+endif
+ifeq (auto,$(RUNTIME))
+  ifneq ($(shell command -v mex 2>/dev/null),)
+    RUNTIME    := matlab
+  else ifneq ($(shell command -v mkoctfile 2>/dev/null),)
+    RUNTIME    := octave
+  else
+    $(error Neither mex nor mkoctfile found in PATH. Install MATLAB or Octave, or set RUNTIME=matlab/octave with the compiler on PATH.)
+  endif
+endif
+
+# Defaults for MATLAB builds
+MEXBIN         = mex
+MEXOPTS        = -O -largeArrayDims
+MEXEND         =
 
 ifndef SUF
   ifndef PLATFORM
-    PLATFORM   = $(shell $(UNAME))
-  endif
-  ##### Linux #####
-  ifeq (Linux,$(PLATFORM))
-    SUF        = mexa64
-  endif
-  ##### MacOS #####
-  ifeq (Darwin,$(PLATFORM))
-    SUF        = mexmaci64
-  endif
-  ##### Windows #####
-  ifeq (MINGW32,$(word 1,$(subst _, ,$(PLATFORM)))) # MSC
-    override PLATFORM = windows
-    ifeq (x86,$(PROCESSOR_ARCHITECTURE))
-      SUF      = mexw32
+    ifeq (octave,$(RUNTIME))
+      PLATFORM   = octave
     else
-      SUF      = mexw64
+      PLATFORM   = $(shell $(UNAME))
     endif
-    MEXBIN     = cmd /c "mex.bat
-    MEXOPTS   += -DSPM_WIN32
-    MEXEND     = "
-    MOSUF      = obj
-    AR         = lib.exe /out:
   endif
-  ifeq (MSYS,$(word 1,$(subst _, ,$(PLATFORM)))) # GCC
-    SUF        = mexw64
-    MEXOPTS   += -DSPM_WIN32
-    MOSUF      = obj
-  endif
-  #### Octave ####
+
+  ##### Octave (all host OS) #####
   ifeq (octave,$(PLATFORM))
-    MEXBIN     = mkoctfile
-    MEXOPTS    = --mex
-    SUF        = mex
-    override PLATFORM = $(shell $(UNAME))
-  endif
-  #### Otherwise ####
-  ifndef SUF
-    $(error Unknowm platform $(PLATFORM))
+    MEXBIN       = mkoctfile
+    MEXOPTS      = --mex -O -std=c99 -Wno-deprecated-non-prototype
+    SUF          = mex
+    HOST_OS      = $(shell $(UNAME))
+    ifneq (,$(filter MINGW% MSYS%,$(HOST_OS)))
+      MEXOPTS   += -DSPM_WIN32
+    endif
+  else
+    ##### Linux #####
+    ifeq (Linux,$(PLATFORM))
+      HARDWARE   = $(shell $(UNAME) -m)
+      ifneq (,$(filter i386 i686,$(HARDWARE)))
+        SUF      = mexglx
+      endif
+      ifneq (,$(filter x86_64 amd64,$(HARDWARE)))
+        SUF      = mexa64
+      endif
+      ifneq (,$(filter aarch64 arm64,$(HARDWARE)))
+        SUF      = mexa64
+      endif
+      ifndef SUF
+        $(error Unknown Linux architecture: $(HARDWARE))
+      endif
+    endif
+
+    ##### macOS #####
+    ifeq (Darwin,$(PLATFORM))
+      HARDWARE   = $(shell $(UNAME) -m)
+      ifneq (,$(filter x86_64 i386,$(HARDWARE)))
+        SUF      = mexmaci64
+      endif
+      ifeq (arm64,$(HARDWARE))
+        SUF      = mexmaca64
+      endif
+      ifndef SUF
+        $(error Unknown macOS architecture: $(HARDWARE))
+      endif
+    endif
+
+    ##### Windows (MATLAB mex.bat via cmd) #####
+    ifneq (,$(filter MINGW32,$(word 1,$(subst _, ,$(PLATFORM)))))
+      override PLATFORM = windows
+    endif
+    ifeq (windows,$(PLATFORM))
+      ifeq (x86,$(PROCESSOR_ARCHITECTURE))
+        SUF        = mexw32
+      else
+        SUF        = mexw64
+      endif
+      MEXBIN       = cmd /c "mex.bat
+      MEXOPTS     += -DSPM_WIN32
+      MEXEND       = "
+      MOSUF        = obj
+      AR           = lib.exe /out:
+    endif
+
+    ##### Windows (MSYS2 / MinGW-w64, gcc-based mex) #####
+    ifneq (,$(filter MSYS,$(word 1,$(subst _, ,$(PLATFORM)))))
+      HARDWARE   = $(shell $(UNAME) -m)
+      ifeq (i686,$(HARDWARE))
+        SUF        = mexw32
+      else
+        SUF        = mexw64
+      endif
+      MEXOPTS     += -DSPM_WIN32
+      MOSUF        = obj
+    endif
+
+    ifndef SUF
+      $(error Unknown platform: $(PLATFORM))
+    endif
   endif
 endif
 
 MEX            = $(MEXBIN) $(MEXOPTS)
 
-MATLABROOT     = $(realpath $(shell which $(firstword $(MEXBIN))))
-
 define verb
 	@ echo "_____________________________________________________________"
 	@ echo ""
-	@ echo "        " $(1)
+	@ echo "  RUNTIME=$(RUNTIME)  PLATFORM=$(PLATFORM)  SUF=$(SUF)"
+	@ echo "  $(1)"
 	@ echo "_____________________________________________________________"
 	@ echo ""
 endef

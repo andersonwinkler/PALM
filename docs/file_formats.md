@@ -26,11 +26,18 @@ Support for uncompressed NIFTI files (extension `.nii`) is provided, internally,
 
 Alternatively, if the datasets are small, the NIFTI class can be disabled with the option `-noniiclass`. This allows reading and writing `.nii.gz` files directly. However, if the files are too large, this can easily use all the computer memory and the system may become unstable/unusable. The option `-noniiclass` should be used with caution for large datasets. If the option `-noniiclass` is provided and PALM is running with MATLAB as the engine, then if the Image Processing Toolbox is installed, `.nii.gz` files will be read with the command `niftiread`; otherwise, i.e., if the PALM is running with Octave as the engine or if the Image Processing Toolbox is not available, then if the option `-noniiclass` is provided, `.nii.gz` files will be read using the command `load_nifti`, which is available internally within PALM (courtesy from the FreeSurfer developers).
 
-The NIFTI class is used by default. It is provided with precompiled binaries for MATLAB for various platforms, and for Octave for most 64-bit Linux distributions. Nonetheless, if compilation is needed, use:
+The NIFTI class is used by default. It is provided with precompiled binaries for MATLAB for various platforms, and for Octave for most 64-bit Linux distributions. If compilation is needed on your platform (for example, Apple Silicon or a platform without a matching precompiled binary), build all bundled compiled extensions from the `lib` folder:
 
 ```
-cd /full/path/to/palm/fileio/@file_array/private
-./compile.sh
+cd /full/path/to/palm/lib
+make
+```
+
+This auto-detects MATLAB or Octave and builds the MEX/oct files for NIFTI memory-mapping (`@file_array`), GIFTI, CIFTI XML helpers, and (for Octave) HDF5 support. To target a specific runtime explicitly:
+
+```
+make matlab    # MATLAB (.mexa64, .mexmaca64, ...)
+make octave    # Octave (.mex, hdf5oct.oct)
 ```
 
 ### Support for FreeSurfer files

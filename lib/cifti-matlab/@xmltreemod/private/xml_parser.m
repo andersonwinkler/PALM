@@ -19,8 +19,8 @@ function tree = xml_parser(xmlstr)
 
     % A C-MEX file xml_findstr.c is also available, to improve performance
     % compared to the built-in STRFIND function.
-    % Compile it on your architecture using the private/compile_mex.sh script
-    % if the compiled version for your system is not provided.
+    % Compile it on your architecture from the PALM lib folder:
+    %   cd /full/path/to/palm/lib && make
     % If this function does not behave as expected, comment the line
     % '#define __HACK_MXCHAR__' in xml_findstr.c and compile it again.
     %--------------------------------------------------------------------------

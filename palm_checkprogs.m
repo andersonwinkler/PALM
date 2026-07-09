@@ -38,13 +38,28 @@ if isempty(palm_extern)
 
     % Check the path of PALM and add the paths for file I/O and other pieces
     palm_extern.palmpath = fileparts(mfilename('fullpath'));
+    fprintf('PALM is located at %s\n',palm_extern.palmpath);
     addpath(fullfile(palm_extern.palmpath,'lib'));
     addpath(fullfile(palm_extern.palmpath,'lib','extras'));
     addpath(fullfile(palm_extern.palmpath,'lib','freesurfer'));
     addpath(fullfile(palm_extern.palmpath,'lib','cifti-matlab'));
     addpath(fullfile(palm_extern.palmpath,'lib','arrow3'));
-    fprintf('PALM is located at %s\n',palm_extern.palmpath);
     addpath(fullfile(palm_extern.palmpath,'colourmaps'));
+
+    % Internalized hdf5oct library
+    hdf5dir = fullfile(palm_extern.palmpath,'lib','hdf5','src');
+    addpath(hdf5dir);
+    octfile = fullfile(hdf5dir,'hdf5oct.oct');
+    if exist(octfile,'file') == 0
+        error('hdf5oct.oct not found in %s',octdir);
+    end
+    autoload('__h5read__',    octfile);
+    autoload('__h5readatt__', octfile);
+    autoload('__h5write__',   octfile);
+    autoload('__h5writeatt__',octfile);
+    autoload('__h5create__',  octfile);
+    autoload('__h5delete__',  octfile);
+    autoload('h5info',        octfile);
 
     % External programs - - - - - - - - - - - - - - - - - - - - - - - - - -
     % Check FSL
@@ -98,15 +113,9 @@ if isempty(palm_extern)
     if palm_isoctave
         pkg_installed = pkg('list');
         pkg_names     = cellfun(@(p)p.name,pkg_installed,'UniformOutput',false);
-        palm_extern.octave_hdf5oct    = any(strcmp(pkg_names,'hdf5oct'));
         palm_extern.octave_image      = any(strcmp(pkg_names,'image'));
         palm_extern.octave_specfun    = any(strcmp(pkg_names,'specfun'));
         palm_extern.octave_statistics = any(strcmp(pkg_names,'statistics'));
-        if palm_extern.octave_hdf5oct
-            fprintf('Octave package "hdf5oct" is available.\n');
-        else
-            fprintf('Octave package "hdf5oct" is not available.\n');
-        end
         if palm_extern.octave_image
             fprintf('Octave package "image" is available.\n');
         else

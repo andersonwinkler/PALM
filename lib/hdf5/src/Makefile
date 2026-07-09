@@ -1,38 +1,83 @@
+#!/usr/bin/env make -f
+# hdf5oct build for PALM
+#
+# Builds hdf5oct.oct — Octave-only HDF5 backend for h5read, h5write, etc.
+# MATLAB uses built-in h5* functions and needs no compilation from this tree.
+#
+# Targets:
+#   make octave   - build hdf5oct.oct
+#   make matlab   - print note (no build needed)
+#   make help     - show usage
+#
+# Prerequisites:
+#   - octave and mkoctfile in PATH
+#   - Octave built with HDF5 >= 1.8, OR HDF5_PREFIX set to a system install
 
-OCTAVE ?= octave
-MKOCTFILE ?= mkoctfile
+include Makefile.var
 
-OCTAVE_CMD = ${OCTAVE} -H -q -W -f --eval
+.PHONY: all octave matlab help clean distclean distclean-all check-tools test_hdf5
 
-H5FLAGS=$(shell ${OCTAVE_CMD} 's="";if __octave_config_info__().build_features.HDF5==1,s="-DHAVE_HDF5";end;printf(s)') \
-		$(shell ${OCTAVE_CMD} 's="";if __octave_config_info__().build_features.HDF5_18==1,s="-DHAVE_HDF5_18";end;printf(s)') \
-		$(shell ${OCTAVE_CMD} 's="";if __octave_config_info__().build_features.HDF5_H==1,s="-DHAVE_HDF5_H";end;printf(s)') \
-		$(shell ${OCTAVE_CMD} 's="";if __octave_config_info__().build_features.HDF5_INT2FLOAT_CONVERSIONS==1,s="-DHAVE_HDF5_INT2FLOAT_CONVERSIONS";end;printf(s)') \
-		$(shell ${OCTAVE_CMD} 's="";if __octave_config_info__().build_features.HDF5_UTF8==1,s="-DHAVE_HDF5_UTF8";end;printf(s)')
+help:
+	@echo "Build hdf5oct for PALM (Octave HDF5 I/O)"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make octave        Build hdf5oct.oct for Octave"
+	@echo "  make matlab        No build (MATLAB has built-in h5read/h5write)"
+	@echo "  make               Same as make octave"
+	@echo "  make check-tools   Verify octave and mkoctfile are available"
+	@echo "  make clean         Remove intermediate object files"
+	@echo "  make distclean     Remove hdf5oct.oct"
+	@echo ""
+	@echo "Variables:"
+	@echo "  OCTAVE=path        Octave executable (default: octave)"
+	@echo "  MKOCTFILE=path     mkoctfile executable (default: mkoctfile)"
+	@echo "  HDF5_PREFIX=path   Optional system HDF5 if Octave lacks HDF5"
+	@echo "  V=1                Verbose mkoctfile output"
+	@echo ""
+	@echo "Prerequisite: Octave must be built with HDF5 support, unless HDF5_PREFIX"
+	@echo "is set. Check with:"
+	@echo "  octave --eval \"disp(__octave_config_info__().build_features.HDF5)\""
+	@echo ""
+	@echo "Alternative install: pkg install -forge hdf5oct"
 
-INCLUDES = $(shell ${OCTAVE_CMD} "printf ('%s', __octave_config_info__().build_environment.HDF5_CPPFLAGS)") \
-           -I./third_party/HighFive-2.9.0/include
-
-LIBS = $(shell ${OCTAVE_CMD} "printf ('%s %s', __octave_config_info__().build_environment.HDF5_LDFLAGS, __octave_config_info__().build_environment.HDF5_LIBS)")
-
-TEST1 = $(findstring HAVE_HDF5,$(H5FLAGS))
-TEST2 = $(findstring HAVE_HDF5_18,$(H5FLAGS))
-
-.PHONY: clean 
-
-all: hdf5oct.cc hdf5oct.h test_hdf5
-	$(MKOCTFILE) -v $(H5FLAGS) $(INCLUDES) $(LIBS) hdf5oct.cc 
+check-tools:
+	@if ! command -v $(OCTAVE) >/dev/null 2>&1; then \
+		echo "Error: $(OCTAVE) not found in PATH."; exit 1; \
+	fi
+	@if ! command -v $(MKOCTFILE) >/dev/null 2>&1; then \
+		echo "Error: $(MKOCTFILE) not found in PATH."; exit 1; \
+	fi
 
 test_hdf5:
-	@if [ "$(TEST1)" != "HAVE_HDF5" ]; then \
-		echo "hdf5oct cannot be installed because octave has not been built with HDF5 support"; \
-		false; \
+ifndef HDF5_PREFIX
+	@if [ "$(TEST_HDF5)" != "HAVE_HDF5" ]; then \
+		echo "Error: Octave was not built with HDF5 support."; \
+		echo "  Reinstall Octave with HDF5, set HDF5_PREFIX, or use:"; \
+		echo "  pkg install -forge hdf5oct"; \
+		exit 1; \
 	fi
-	@if [ "$(TEST2)" != "HAVE_HDF5_18" ]; then \
-		echo "hdf5oct cannot be installed because octave has been built with HDF5 < 1.8.0"; \
-		false; \
+	@if [ "$(TEST_HDF5_18)" != "HAVE_HDF5_18" ]; then \
+		echo "Error: Octave was built with HDF5 < 1.8.0."; \
+		exit 1; \
 	fi
+endif
+
+all: octave
+
+octave: check-tools test_hdf5 $(OCTFILE)
+	$(call verb,Build complete.)
+
+matlab:
+	@echo "MATLAB provides built-in h5read, h5write, h5create, h5info, etc."
+	@echo "No compilation is needed from lib/hdf5."
+
+$(OCTFILE): $(SRC)
+	$(MKOCTFILE) $(MKOCTFLAGS) $(H5FLAGS) $(INCLUDES) $(LIBS) hdf5oct.cc -o $(OCTFILE)
 
 clean:
-	rm -f hdf5oct.oct 
+	$(DEL) *.o
 
+distclean: clean
+	$(DEL) $(OCTFILE)
+
+distclean-all: distclean

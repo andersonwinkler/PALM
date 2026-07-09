@@ -1,4 +1,4 @@
-# Makefile default variables for @file_array MEX files
+# Makefile default variables for @xmltree MEX files
 #
 # Copyright (C) 1991-2014 Wellcome Trust Centre for Neuroimaging
 # PALM adaptations for Octave, Apple Silicon, and MSYS2 (2026)
@@ -60,12 +60,8 @@ ifndef SUF
   ##### Octave (all host OS) #####
   ifeq (octave,$(PLATFORM))
     MEXBIN       = mkoctfile
-    MEXOPTS      = --mex -O -std=c99 -Wno-deprecated-non-prototype
+    MEXOPTS      = --mex -O -Wno-deprecated-non-prototype
     SUF          = mex
-    HOST_OS      = $(shell $(UNAME))
-    ifneq (,$(filter MINGW% MSYS%,$(HOST_OS)))
-      MEXOPTS   += -DSPM_WIN32
-    endif
   else
     ##### Linux #####
     ifeq (Linux,$(PLATFORM))
@@ -109,7 +105,6 @@ ifndef SUF
         SUF        = mexw64
       endif
       MEXBIN       = cmd /c "mex.bat
-      MEXOPTS     += -DSPM_WIN32
       MEXEND       = "
       MOSUF        = obj
       AR           = lib.exe /out:
@@ -123,7 +118,6 @@ ifndef SUF
       else
         SUF        = mexw64
       endif
-      MEXOPTS     += -DSPM_WIN32
       MOSUF        = obj
     endif
 

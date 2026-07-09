@@ -1,0 +1,66 @@
+# Makefile variables for hdf5oct (PALM vendored copy)
+#
+# hdf5oct is Octave-only. MATLAB uses built-in h5read/h5write.
+#
+# Build:
+#   make octave          (from lib/hdf5 or lib/hdf5/src)
+#
+# Requires Octave built with HDF5 >= 1.8. Check with:
+#   octave --eval "disp(__octave_config_info__().build_features.HDF5)"
+
+SHELL          = /bin/sh
+MAKE           = make
+DEL            = rm -f
+
+OCTAVE         ?= octave
+MKOCTFILE      ?= mkoctfile
+OCTAVE_CMD     = $(OCTAVE) -H -q -W -f --eval
+
+OCTFILE        = hdf5oct.oct
+SRC            = hdf5oct.cc hdf5oct.h
+HIGHFIVE_INC   = ./third_party/HighFive-2.9.0/include
+
+# Optional: system HDF5 when Octave's build_environment lacks paths
+#   make HDF5_PREFIX=/usr/local/hdf5
+ifdef HDF5_PREFIX
+  HDF5_CPPFLAGS = -I$(HDF5_PREFIX)/include
+  HDF5_LDFLAGS  = -L$(HDF5_PREFIX)/lib
+  HDF5_LIBS     = -lhdf5 -lhdf5_hl
+endif
+
+H5FLAGS = $(shell $(OCTAVE_CMD) 's="";if __octave_config_info__().build_features.HDF5==1,s="-DHAVE_HDF5";end;printf(s)') \
+          $(shell $(OCTAVE_CMD) 's="";if __octave_config_info__().build_features.HDF5_18==1,s="-DHAVE_HDF5_18";end;printf(s)') \
+          $(shell $(OCTAVE_CMD) 's="";if __octave_config_info__().build_features.HDF5_H==1,s="-DHAVE_HDF5_H";end;printf(s)') \
+          $(shell $(OCTAVE_CMD) 's="";if __octave_config_info__().build_features.HDF5_INT2FLOAT_CONVERSIONS==1,s="-DHAVE_HDF5_INT2FLOAT_CONVERSIONS";end;printf(s)') \
+          $(shell $(OCTAVE_CMD) 's="";if __octave_config_info__().build_features.HDF5_UTF8==1,s="-DHAVE_HDF5_UTF8";end;printf(s)')
+
+ifndef HDF5_PREFIX
+  OCT_INCLUDES = $(shell $(OCTAVE_CMD) "printf ('%s', __octave_config_info__().build_environment.HDF5_CPPFLAGS)")
+  OCT_LIBS     = $(shell $(OCTAVE_CMD) "printf ('%s %s', __octave_config_info__().build_environment.HDF5_LDFLAGS, __octave_config_info__().build_environment.HDF5_LIBS)")
+else
+  OCT_INCLUDES = $(HDF5_CPPFLAGS)
+  OCT_LIBS     = $(HDF5_LDFLAGS) $(HDF5_LIBS)
+  H5FLAGS     += -DHAVE_HDF5 -DHAVE_HDF5_18 -DHAVE_HDF5_H
+endif
+
+INCLUDES = $(OCT_INCLUDES) -I$(HIGHFIVE_INC)
+LIBS     = $(OCT_LIBS)
+
+TEST_HDF5     = $(findstring HAVE_HDF5,$(H5FLAGS))
+TEST_HDF5_18  = $(findstring HAVE_HDF5_18,$(H5FLAGS))
+
+# Verbose mkoctfile when V=1
+ifeq ($(V),1)
+  MKOCTFLAGS = -v
+else
+  MKOCTFLAGS =
+endif
+
+define verb
+	@ echo "_____________________________________________________________"
+	@ echo ""
+	@ echo "  OCTFILE=$(OCTFILE)"
+	@ echo "  $(1)"
+	@ echo "_____________________________________________________________"
+	@ echo ""
+endef

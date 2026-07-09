@@ -1,0 +1,41 @@
+# Shared variables for lib/ top-level build
+#
+# Detects whether to build for MATLAB (mex) or Octave (mkoctfile / mkoctfile+hdf5oct).
+#
+# Override:
+#   make RUNTIME=matlab
+#   make RUNTIME=octave
+
+SHELL = /bin/sh
+MAKE  = make
+
+ifndef RUNTIME
+  RUNTIME = auto
+endif
+
+ifeq (auto,$(RUNTIME))
+  ifneq ($(shell command -v mex 2>/dev/null),)
+    RUNTIME := matlab
+  else ifneq ($(shell command -v mkoctfile 2>/dev/null),)
+    RUNTIME := octave
+  else
+    $(error Neither mex nor mkoctfile found in PATH. Install MATLAB or Octave, or set RUNTIME=matlab or RUNTIME=octave.)
+  endif
+endif
+
+# MEX bundles (each has its own Makefile)
+MEX_DIRS = \
+	@file_array/private \
+	@gifti/private \
+	@xmltree/private \
+	cifti-matlab/@xmltreemod/private \
+	extras \
+	@nifti/private
+
+define banner
+	@echo "_____________________________________________________________"
+	@echo ""
+	@echo "  $(1)"
+	@echo "_____________________________________________________________"
+	@echo ""
+endef

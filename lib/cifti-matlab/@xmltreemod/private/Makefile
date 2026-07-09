@@ -1,5 +1,5 @@
 #!/usr/bin/env make -f
-# @xmltree MEX build for PALM
+# @xmltreemod MEX build for PALM / cifti-matlab
 #
 # Builds xml_findstr for faster XML string search (optional; pure-MATLAB
 # fallback exists in xml_findstr.m).
@@ -19,7 +19,7 @@ SPMMEX = xml_findstr.$(SUF)
 .PHONY: all matlab octave help clean distclean distclean-all check-tools
 
 help:
-	@echo "Build @xmltree MEX files for PALM"
+	@echo "Build @xmltreemod MEX files for PALM / cifti-matlab"
 	@echo ""
 	@echo "Targets:"
 	@echo "  make matlab        Build for MATLAB (platform-specific .mex* suffix)"
@@ -72,4 +72,4 @@ install:
 	@:
 
 tarball: all
-	$(TAR) cf xmltree_mex.tar $(SPMMEX)
+	$(TAR) cf xmltreemod_mex.tar $(SPMMEX)

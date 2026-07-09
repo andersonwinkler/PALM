@@ -1,8 +1,11 @@
 #!/usr/bin/env make -f
-# @xmltree MEX build for PALM
+# lib/extras MEX build for PALM
 #
-# Builds xml_findstr for faster XML string search (optional; pure-MATLAB
-# fallback exists in xml_findstr.m).
+# Builds spm_existfile for fast file-existence checks (optional; pure-MATLAB
+# fallback exists in spm_existfile.m).
+#
+# Other files in this directory (spm_fileparts, spm_type, spm_flip_analyze_images)
+# are pure MATLAB and require no compilation.
 #
 # Targets:
 #   make matlab   - build for MATLAB  (.mexa64, .mexmaca64, .mexw64, ...)
@@ -10,16 +13,16 @@
 #   make          - auto-detect mex or mkoctfile in PATH
 #   make help     - show usage
 #
-# Copyright (C) 2008-2013 Wellcome Trust Centre for Neuroimaging
+# Copyright (C) 2008-2012 Wellcome Trust Centre for Neuroimaging
 
 include Makefile.var
 
-SPMMEX = xml_findstr.$(SUF)
+SPMMEX = spm_existfile.$(SUF)
 
 .PHONY: all matlab octave help clean distclean distclean-all check-tools
 
 help:
-	@echo "Build @xmltree MEX files for PALM"
+	@echo "Build lib/extras MEX files for PALM"
 	@echo ""
 	@echo "Targets:"
 	@echo "  make matlab        Build for MATLAB (platform-specific .mex* suffix)"
@@ -64,12 +67,12 @@ distclean: clean
 	$(DEL) $(SPMMEX)
 
 distclean-all: clean
-	$(DEL) xml_findstr.mex xml_findstr.mexglx xml_findstr.mexa64 \
-	       xml_findstr.mexmaci64 xml_findstr.mexmaca64 \
-	       xml_findstr.mexw32 xml_findstr.mexw64
+	$(DEL) spm_existfile.mex spm_existfile.mexglx spm_existfile.mexa64 \
+	       spm_existfile.mexmaci64 spm_existfile.mexmaca64 \
+	       spm_existfile.mexw32 spm_existfile.mexw64
 
 install:
 	@:
 
 tarball: all
-	$(TAR) cf xmltree_mex.tar $(SPMMEX)
+	$(TAR) cf extras_mex.tar $(SPMMEX)
