@@ -1,0 +1,25 @@
+Summary of important user-visible changes for hdf5oct 1.2.0:
+-------------------------------------------------------------------
+
+ New functions:
+ ==============
+
+ ** h5delete
+
+    Delete a dataset, group, or attribute from a HDF5 file.
+    Attributes are specified by path, e.g. `h5delete ('data.h5', '/my_dataset/units')`.
+    This function is not provided by the MATLAB high-level HDF5 interface.
+
+Summary of important user-visible changes for hdf5oct 1.1.0:
+-------------------------------------------------------------------
+
+ New functions:
+ ==============
+
+ ** h5load
+
+ Improvements:
+ =============
+
+ ** `double complex`, `single complex` and `logical` datatypes are supported
+    in compatibility with `h5py`

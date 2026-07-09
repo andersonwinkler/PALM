@@ -47,12 +47,13 @@ end
 
 % Read the dataset (engine dependent)
 if palm_isoctave && ~ exist('h5read') %#ok<EXIST>
-    % Octave without hdf5oct package: basic, memory-heavy fallback that
+    % Octave without hdf5oct: basic, memory-heavy fallback that
     % only understands Octave's own "-hdf5" files.
-    warning('The package "hdf5oct" is not installed. Thus, there is only partial support for HDF5 files.')
+    warning('This Octave installation has incomplete support for HDF5 files.')
     data = octave_h5read(filename,datapath);
 else
-    % Octave with hdf5oct package, or MATLAB
+    % Octave with the hdf5oct package (shipped with PALM or 
+    % installed by the user), or MATLAB
     data = h5read(filename,datapath);
 end
 

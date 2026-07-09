@@ -64,22 +64,42 @@ if palm_isoctave
         ds       = find_dataset(filename,datapath);
         existing = ~ isempty(ds);
         if existing
-            % As long as h5delete is not implemented, we cannot do the same
-            % as in MATLAB
-            error('Dataset %s already exists in file %s. Delete either the dataset or the file first.',datapath,filename)
-        else
+            if exist('h5delete') %#ok<EXIST>
+                same_shape = isequal(ds.Dataspace.Size,size(data));
+                same_type  = strcmp(class(data),h5_class_to_matlab(ds.Datatype));
+                if ~ (same_shape && same_type)
+                    % A dataset is there but its shape or type differs. HDF5 cannot
+                    % resize/retype in place through the high-level interface, so
+                    % drop the old link and recreate.
+                    h5delete(filename,datapath);
+                    existing = false;
+                end
+                % A matching dataset (or the freshly created one) is now in place, so
+                % h5write simply overwrites the values.
+                h5write(filename,datapath,data);
+            else
+                % If h5delete is not available, we cannot do the same
+                error([
+                    'Dataset %s already exists in file %s, but this Octave installation does not have the h5delete command.\n',...
+                    'You have to either delete either the dataset or the entire file first.\n'], ...
+                    datapath,filename);
+            end
+        end
+        if ~ existing
             % If the dataset doesn't already exist, we can create it and
             % write the file
             h5create(filename,datapath,size(data),'Datatype',class(data));
             h5write(filename,datapath,data);
         end
-    else
+    else % if no hdf5oct functions
         % Octave without hdf5oct package: fallback using Octave own
         % "-hdf5" format (not interchangeable with standard HDF5 readers).
         warning('The package "hdf5oct" is not installed. Thus, there is only partial support for HDF5 files.')
         octave_h5write(filename,datapath,data);
     end
+
 else
+
     % In MATLAB, we look up whether the dataset exists (and whether it 
     % matches in size and shape) to decide whether overwriting or
     % creating a dataset.
@@ -91,9 +111,7 @@ else
         if ~ (same_shape && same_type)
             % A dataset is there but its shape or type differs. HDF5 cannot
             % resize/retype in place through the high-level interface, so
-            % drop the old link and recreate. Other datasets stay intact.
-            % (HDF5 does not reclaim the freed space, so replacing a dataset
-            % of a different size or type grows the file a little.)
+            % drop the old link and recreate.
             remove_link(filename,datapath);
             existing = false;
         end

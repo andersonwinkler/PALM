@@ -1,0 +1,11 @@
+Name: hdf5oct
+Version: 1.1.0
+Date: 2025-10-08
+Author: Tom Mullins, Anton Starikov, Thorsten Liebig, Stefan Großhauser, George Apostolopoulos
+Maintainer: George Apostolopoulos <gapost@ipta.demokritos.gr>
+Title: a HDF5 wrapper for GNU Octave
+Description: MATLAB compatible high-level functions for HDF5 file I/O
+Categories: io
+Depends: octave (>= 6.4.0)
+License: LGPLv3+
+Url: https://github.com/gapost/hdf5oct

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>a HDF5 wrapper for GNU Octave: h5read</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+    <script type="text/javascript" async
+      src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML">
+    </script>
+    <script type="text/javascript">
+      window.addEventListener("load", () => {
+        for (let i of document.querySelectorAll(".collapse ul")) {
+          let tog = document.createElement("div");
+          tog.innerHTML = i.previousSibling.textContent;
+          tog.className = "toggle";
+          tog.onclick = () => tog.classList.toggle("show");
+          i.parentElement.removeChild(i.previousSibling);
+          i.parentElement.insertBefore(tog, i);
+        }
+      });
+    </script>
+    <style>
+    h5.fs {
+    margin-top: -0.15em;
+    margin-bottom: -0.15em;
+    }
+    h6:hover {
+      color: gray;
+    }
+    code {
+    font-family: Consolas, "Courier New", monospace;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    color: gray;
+    }
+    code.description {
+    font-family: Consolas, "Courier New", monospace;
+    border-radius: 0.3em;
+    white-space: normal;
+    font-size:1.2em;
+    color: gray;
+    }
+    var {
+    font-family: Consolas, "Courier New", monospace;
+    border-radius: 0.3em;
+    font-style: normal;
+    font-weight: bold;
+    color: gray;
+    }
+    td {
+      vertical-align: top;
+    }
+    [id^="togList"],                        /* HIDE CHECKBOX */
+    [id^="togList"] ~ .list,                /* HIDE LIST */
+    [id^="togList"] + label  span + span,   /* HIDE "Collapse" */
+    [id^="togList"]:checked + label span{   /* HIDE "Expand" (IF CHECKED) */
+      display:none;
+    }
+    [id^="togList"]:checked + label span + span{
+      display:inline-block;                 /* SHOW "Collapse" (IF CHECKED) */
+    }
+    [id^="togList"]:checked ~ .list{
+      display:block;                        /* SHOW LIST (IF CHECKED) */
+    }
+    </style>
+  </head>
+  <body>
+    <div class="bg-dark">
+      <div class="container-xl">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+          <div class="container-fluid">
+            <a class="navbar-brand" href=index.html>
+              <img src="assets/hdf5oct.png" alt="hdf5oct" class="d-inline-block align-top" width="25" height="25">
+              a HDF5 wrapper for GNU Octave
+            </a>
+            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+              <ul class="navbar-nav">
+                <li class="nav-item">
+                  <a class="nav-link" href="index.html#HDF5 file I/O">
+                    <i class="fas fa-list-alt"></i>
+                    HDF5 file I/O
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://gnu-octave.github.io/packages/">
+                  <img src="assets/octave-logo.svg" alt="GNU Octave logo" class="d-inline-block align-top" width="25" height="25">
+                    Octave Packages
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="https://www.octave.org">
+                    <i class="fas fa-home"></i>
+                    GNU Octave website
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </div>
+    <div class="container-xl my-4">
+      <div class="row flex-nowrap" style="min-height:0">
+        <div class="col-md-2 bg-light" style="overflow-y: scroll; width: 250px;">
+          <div class="p-2" style="text-align: center;">
+            <h3>Categories &</h3>
+            <h4 style="color: blue">Functions List</h4>
+          </div>
+			<div class="row">
+				<input id="togList1" type="checkbox" checked>
+				<label for="togList1">
+					<span><h6>HDF5 file I/O</h6></span>
+					<span><h6>HDF5 file I/O</h6></span>
+				</label>
+				<div class="list">
+				<ul style="list-style-type: none; padding-left: 20px;">
+					<li><a href="h5create.html" class="text-decoration-none font-monospace"><small>h5create</small></a></li>
+					<li><a href="h5write.html" class="text-decoration-none font-monospace"><small>h5write</small></a></li>
+					<li><a href="h5writeatt.html" class="text-decoration-none font-monospace"><small>h5writeatt</small></a></li>
+					<li><a href="h5read.html" class="text-decoration-none font-monospace fw-bolder"><small>h5read</small></a></li>
+					<li><a href="h5readatt.html" class="text-decoration-none font-monospace"><small>h5readatt</small></a></li>
+					<li><a href="h5load.html" class="text-decoration-none font-monospace"><small>h5load</small></a></li>
+					<li><a href="h5delete.html" class="text-decoration-none font-monospace"><small>h5delete</small></a></li>
+				</ul>
+				</div>
+			</div>
+			<div class="row">
+				<input id="togList2" type="checkbox">
+				<label for="togList2">
+					<span><h6>HDF5 file info</h6></span>
+					<span><h6>HDF5 file info</h6></span>
+				</label>
+				<div class="list">
+				<ul style="list-style-type: none; padding-left: 20px;">
+					<li><a href="h5info.html" class="text-decoration-none font-monospace"><small>h5info</small></a></li>
+					<li><a href="h5disp.html" class="text-decoration-none font-monospace"><small>h5disp</small></a></li>
+				</ul>
+				</div>
+			</div>
+
+			  </div>
+			  <div class="col-md-10">
+          <div class="card rounded">
+            <div class="card-header card-header-mod">
+              <div class="row d-flex flex-wrap align-items-center">
+                <h3 class="d-inline-block mr-2">
+                Function&nbsp;Reference: <b><code>h5read</code></b>
+                </h3>
+              </div>
+            </div>
+            <div class="card-body">
+<dl>
+<dt><code><h5 class="fs">Function File: <var>data</var>= <b>h5read</b> (<var>filename</var>, <var>dsetname</var>)</code></h5></dt>
+<dt><code><h5 class="fs">Function File: <var>data</var>= <b>h5read</b> (<var>filename</var>, <var>dsetname</var>, <var>start</var>, <var>count</var>)</code></h5></dt>
+<dt><code><h5 class="fs">Function File: <var>data</var>= <b>h5read</b> (<var>filename</var>, <var>dsetname</var>, <var>start</var>, <var>count</var>, <var>stride</var>)</code></h5></dt>
+</dl>
+
+<p> Read data from a HDF5 dataset.
+</p>
+<div class="ms-5">
+<p> <code>data = h5read(<var>filename</var>, <var>dsetname</var>)</code> 
+ reads all the data from the dataset <var>dsetname</var>
+ contained in the HDF5 file <var>filename</var>.
+</p>
+<p> <code>data = h5read(<var>filename</var>, <var>dsetname</var>, <var>start</var>, <var>count</var>)</code> 
+ reads a subset of data from the dataset
+ beginning at the location specified in <var>start</var>.
+ <var>count</var> specifies the number of elements to read along each dimension.
+</p>
+<p> <code>data = h5read(<var>filename</var>, <var>dsetname</var>, <var>start</var>, <var>count</var>, <var>stride</var>)</code> 
+ returns a subset of data with
+ the interval between the indices of each dimension of the dataset specified by stride.
+</p>
+<p> Input arguments:
+</p>
+ <dl compact="compact">
+<dt> <var>filename</var></dt>
+</dl>
+<p> Filename of an existing HDF5 file, specified as a string
+ </p></dd>
+<dt> <var>dsetname</var></dt>
+</dl>
+<p> Dataset name, specified as a string scalar or character vector containing
+ the name of an existing dataset in the HDF5 file.
+ </p></dd>
+<dt> <var>start</var></dt>
+</dl>
+<p> Starting location, specified as a numeric vector of positive integers.
+ For an n-dimensional dataset, start is a vector of length n containing 1-based
+ indices. The elements of start correspond, in order, to the dataset dimensions.
+ If any dimension of ds is unlimited, you must specify start.
+</p>
+<p> If you do not specify start, then the h5write function starts writing
+ to the dataset from the first index along each dimension.
+ </p></dd>
+<dt> <var>count</var></dt>
+</dl>
+<p> Number of elements to write, specified as a numeric vector of positive integers. 
+ For an n-dimensional dataset, count is a vector of length n, 
+ specifying the number of elements to write to the dataset 
+ along each dimension. If any dimension of ds is unlimited, 
+ then count must be specified.
+ </p></dd>
+<dt> <var>stride</var></dt>
+</dl>
+<p> Optional spacing between elements along each dimension. For an n-dimensional
+ dataset, stride is a vector of length n. A value of 1 reads without 
+ skipping elements in the corresponding dimension, a value of 
+ 2 reads every other element, and so on.
+ </p></dd>
+</dl>
+
+<p> <strong>See also: </strong>
+  <a href="h5create.html">h5create</a>, 
+  <a href="h5write.html">h5write</a>
+</p>
+<p><strong>Source Code: </strong>
+  <a href="https://github.com/gapost/hdf5oct/tree/main/src/h5read.m">h5read</a>
+</div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
