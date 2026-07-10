@@ -10,55 +10,54 @@ Supported file formats are listed below. Formats are identified by the file exte
 | `.dpv`, `.dpf`, `.dpx` | Data-per-vertex (vertexwise), data-per-face (facewise), or unspecified surface-based data. Can be used to specify a mask (option `-m`) for surface-based data. Multiple such files can be merged into a `csv` table, and then input with the option `-i`; see details below. |
 | `.csv` | Table in `csv` format. Can be used to specify input data (option `-i`), mask for the same kind of data (option `-m`), design matrix (option `-d`), contrasts (options `-t` and `-f`), exchangeability blocks (`-eb`) and variance groups (`-vg`). |
 |`.parquet`|Apache Parquet. Can be used to specify large tables. Make sure you have enough memory to load all data.|
-|`.h5`, `.hdf5`|HDF5 (Hierarchical Data Format). Can be used to supply very large files. Make sure you have enough memory to load all data.|
+|`.h5`, `.hdf5`, `.nwb`, `.mat`|HDF5 (Hierarchical Data Format). Can be used to supply very large files. Make sure you have enough memory to load all data.|
 | `.mat`, `.con`, `.fts`, `.grp` | Table in the FSL `vest` format. Can be used essentially in the same way as `csv` files, i.e., to specify input data (option `-i`), mask for the same kind of data (`-m`) design matrix (`-d`), contrasts (options `-t` and `-f`), exchangeability blocks (`-eb`) and variance groups (`-vg`). |
 | `.mset` | Multiple tables (arrays) in a single ASCII file. This format can be used with the option `-con`. |
 | `.srf` | Surface in ASCII format (option `-s`). |
 | `.inflated`, `.nofix`, `.orig`, `.pial`, `.smoothwm`, `.sphere`, `.reg`, `.white` | Files with these extensions are read as FreeSurfer surface (option `-s`). |
 | `.gii` | GIFTI file. |
-| `.dtseries.nii`, `.ptseries.nii`, `.dscalar.nii`, `.pscalar.nii` | CIFTI file. Support is currently available for `.dscalar.nii`, `.dtseries.nii`, `.pscalar.nii` and `.ptseries.nii.` It is expected that in the future there will be complete support for CIFTI files. |
+| `dscalar.nii`, `pscalar.nii`, `pconnscalar.nii`, `dtseries.nii`, `ptseries.nii`, `pconnseries.nii`, `dconn.nii`, `pconn.nii`, `pdconn.nii`, `dpconn.nii`, `dfan.nii`, `dfibersamp.nii`, `dfansamp.nii`, `dlabel.nii`, `merge.nii` | CIFTI file.|
 
-Files with extensions not listed above won't be read.
+Files with extensions not listed above will not be read. If there is a format that you need and that you believe should be implemented, please open an Issue on GitHub.
+
+### Compiling internal libraries
+
+Reading and writing some of these formats require either external libraries (described below for each format where applicable) or compilation of `.mex` or `.oct` files in MATLAB/Octave before PALM is executed for the first time.
+
+For compiled code, run the following from a terminal window (not from within MATLAB or Octave):
+
+- For Octave, run:
+
+```
+cd /path/to/palm/lib
+make octave
+```
+
+- For MATLAB, run:
+
+```
+cd /path/to/palm/lib
+make matlab
+```
+
 
 ### Support for NIFTI files
 
-Support for uncompressed NIFTI files (extension `.nii`) is provided, internally, by the publicly available NIFTI class. This allows reading and writing even huge files without using too much computer memory. However, the NIFTI class does not operate on compressed files, i.e., with extension `.nii.gz`. To read these files, it is recommended that they are uncompressed first (with `gunzip`).
+Support for uncompressed [NIFTI files](https://brainder.org/2012/09/23/the-nifti-file-format/) (extension `.nii`) is provided by default in MATLAB by the NIFTI class (courtesy of Guillaume Flandin). This allows reading and writing even huge files without using too much computer memory. However, the NIFTI class does not operate on compressed files, i.e., with extension `.nii.gz`. To read these files, it is recommended that they are uncompressed first (with `gunzip`). Alternatively, if the datasets can fit in the memory, the NIFTI class can be disabled with the option `-noniiclass`. This allows reading and writing `.nii.gz` files directly.
 
-Alternatively, if the datasets are small, the NIFTI class can be disabled with the option `-noniiclass`. This allows reading and writing `.nii.gz` files directly. However, if the files are too large, this can easily use all the computer memory and the system may become unstable/unusable. The option `-noniiclass` should be used with caution for large datasets. If the option `-noniiclass` is provided and PALM is running with MATLAB as the engine, then if the Image Processing Toolbox is installed, `.nii.gz` files will be read with the command `niftiread`; otherwise, i.e., if the PALM is running with Octave as the engine or if the Image Processing Toolbox is not available, then if the option `-noniiclass` is provided, `.nii.gz` files will be read using the command `load_nifti`, which is available internally within PALM (courtesy from the FreeSurfer developers).
+In Octave, if the option `-noniiclass` is used, then NIFTI files (`.nii` or `.nii.gz`) are read using the command `load_nifti`, which is available within PALM (courtesy from the FreeSurfer developers).
 
-The NIFTI class is used by default. It is provided with precompiled binaries for MATLAB for various platforms, and for Octave for most 64-bit Linux distributions. If compilation is needed on your platform (for example, Apple Silicon or a platform without a matching precompiled binary), build all bundled compiled extensions from the `lib` folder:
-
-```
-cd /full/path/to/palm/lib
-make
-```
-
-This auto-detects MATLAB or Octave and builds the MEX/oct files for NIFTI memory-mapping (`@file_array`), GIFTI, CIFTI XML helpers, and (for Octave) HDF5 support. To target a specific runtime explicitly:
-
-```
-make matlab    # MATLAB (.mexa64, .mexmaca64, ...)
-make octave    # Octave (.mex, hdf5oct.oct)
-```
+In MATLAB, if the option `-noniiclass` is used, then if the Image Processing Toolbox is installed, NIFTI files (`.nii` or `.nii.gz`) are read with the command `niftiread`; if the Image Processing Toolbox is not installed, then NIFTI files are read using the command `load_nifti`.
 
 ### Support for FreeSurfer files
 
-FreeSurfer binary files (surfaces and curvatures) are read directly. Surface files in ASCII format are also read directly by PALM as long as their file extension is srf.
+[FreeSurfer](https://surfer.nmr.mgh.harvard.edu/) binary surface files are read directly. Surface files in ASCII format are also read directly by PALM as long as their file extension is srf. FreeSurfer "curvature" files converted to pseudo-volumes (with extension `.mgh` or `.mgz`) are also read directly.
 
-FreeSurfer "curvature" files converted to pseudo-volumes (with extension `.mgh` or `.mgz`) are read directly. For ASCII (`asc`/`dpv`/`dpf`/`dpx`), these need to be merged across subects and converted to `.csv` tables. To generate a valid `.csv` file, use the command `dpx2csv` (available [here](https://raw.githubusercontent.com/andersonwinkler/toolbox/master/bin/dpx2csv)); this will initially create a file with one column per subject and one row per vertex or face, then transpose the rows and columns of this file with the command `transpose` (available [here](https://raw.githubusercontent.com/andersonwinkler/toolbox/master/bin/transpose)), or use the option `-transposedata`.
-
-### Support for MZ3 files
-
-[MZ3](https://github.com/neurolabusc/surf-ice/tree/master/mz3) is a highly efficient, fast and compressed format to store triangular surfaces developed by Chris Rorden and colleagues, and is the default format used by SurfIce. Read/write support is provided natively.
+For ASCII (`.asc`, `.dpv`, `.dpf`, or `.dpx`), these need to be merged across subects and converted to `.csv` tables. To generate a valid `.csv` file, use the command `dpx2csv` (available [here](https://raw.githubusercontent.com/andersonwinkler/toolbox/master/bin/dpx2csv)); this will initially create a file with one column per subject and one row per vertex or face, then transpose the rows and columns of this file with the command `transpose` (available [here](https://raw.githubusercontent.com/andersonwinkler/toolbox/master/bin/transpose)), or use the option `-transposedata` in PALM.
 
 ### Support for HDF5 files
 
-[HDF5 (Hierarchical Data Format)](https://www.hdfgroup.org/) is a high-performance, open-source file format designed for storing and managing complex, multi-dimensional scientific datasets. PALM can read and write HDF5 files natively with MATLAB; for Octave, the package `hdf5oct` (details [here](https://gnu-octave.github.io/packages/hdf5oct/)) must be installed. To install it, run from the Octave prompt:
-
-```
-pkg install -forge hdf5oct
-```
-
-The user needs to indicate which specific datablock is to be used from the file (a single HDF5 file can hold multiple multidimensional arrays). A valid specificication for a datablock is as:
+[HDF5 (Hierarchical Data Format)](https://www.hdfgroup.org/) is a high-performance, open-source file format designed for storing and managing complex, multi-dimensional scientific datasets. The user needs to indicate which specific datablock is to be used from the file (a single HDF5 file can hold multiple multidimensional arrays). A valid specificication for a datablock is as:
 
 ```
 /path/to/file.h5:/path/to/data:N
@@ -66,13 +65,9 @@ The user needs to indicate which specific datablock is to be used from the file 
 
 where `/path/to/file.h5` is the path to the HDF5 file (can use absolute or relative paths; if no path is provided, the file is assumed to exist in the current directory); `/path/to/data` is the full path to the multidimensional array that is intended to be used, and `N` is an integer that indicates dimension along which the data should be permuted.
 
-If an HDF5 file is specified as output (e.g., `-o /my/directory/myresults.h5`), then all outputs will be stored into the same HDF5 file, which is a convenient way to store an entire analysis into a single file.
-
 HDF5 files can be loaded with any extension (including `.mat` and `.nwb`), but PALM must be able to recognize these extensions. Make sure to list them in `palm_defaults.m`, under the variable `opts.hdf5`.
 
-### Support for Parquet files
-
-[Apache Parquet](https://parquet.apache.org/) files (`.parquet`) are supported natively with MATLAB. With Octave, support requires that [DuckDB](https://duckdb.org/) is installed in the system, and reading/writing uses a `.csv` file as intermediate.
+If an HDF5 file is specified as output (e.g., `-o /my/directory/myresults.h5`), then all outputs will be stored into the same HDF5 file, which is a convenient way to store an entire analysis into a single file. If an output HDF5 file already exists, new datablocks will be appended; if these datablocks already exist, they will be overwritten. PALM is unable to reclaim space of datablocks overwritten in smaller size. To reclaim space in the files, you can use the tool [h5repack](https://support.hdfgroup.org/documentation/hdf5/latest/_h5_t_o_o_l__r_p__u_g.html#sec_cltools_h5repack) (installed separately).
 
 ### Support for CSV files
 
@@ -107,13 +102,27 @@ Matrix 2 3
 
 In the example, the first matrix is defined as having 1 row and 3 columns (the numbers after the keyword `Matrix`). The second matrix is defined as having 2 rows and 3 columns. Files as these are meant to be used to test multivariate hypotheses as `H: C'*Beta*D` using the option `-con <file1> <file2>`, where `<file1>` is a file with multiple contrasts C and `<file2>` with multiple contrasts D. Each contrast in C pairs with a contrast in D.
 
+### Support for Parquet files
+
+[Apache Parquet](https://parquet.apache.org/) files (`.parquet`) are supported natively with MATLAB. With Octave, support requires that [DuckDB](https://duckdb.org/) is installed in the system, and reading/writing uses automatically a `.csv` file as intermediate.
+
+### Support for MZ3 files
+
+[MZ3](https://github.com/neurolabusc/surf-ice/tree/master/mz3) is a highly efficient, fast and compressed format to store triangular surfaces developed by Chris Rorden and colleagues, and is the default format used by SurfIce. Read/write support is provided natively.
+
 ### Support for CIFTI files
 
-Both the surface and volume components in CIFTI files that are of the types `dscalar`, `pscalar`, `pconnscalar`, `dtseries`, `ptseries`, `pconnseries`, `dconn`, `pconn`, `pdconn`, `dpconn`, `dfan`, `dfibersamp`, `dfansamp`,  `dlabel`, and `merge` can be read directly. If no spatial statistics are requested (i.e., no TFCE or cluster-level inference), all “grayordinates” (whether surface or volume) are processed. However, when spatial statistics are requested, it is currently necessary to first manually split the CIFTI files into separate surface (GIFTI) and volume (NIFTI) components, which then can be loaded and processed (see examples [in this page](examples.md)). The [Connectome Workbench](http://www.humanconnectome.org/software/connectome-workbench.html) must be installed.
+Both the surface and volume components in CIFTI files that are of the types `dscalar`, `pscalar`, `pconnscalar`, `dtseries`, `ptseries`, `pconnseries`, `dconn`, `pconn`, `pdconn`, `dpconn`, `dfan`, `dfibersamp`, `dfansamp`,  `dlabel`, and `merge` can be read directly. If no spatial statistics are requested (i.e., no TFCE or cluster-level inference), all “grayordinates” (whether surface or volume) are processed. However, when spatial statistics are requested, it is currently necessary to first manually split the CIFTI files into separate surface (GIFTI) and volume (NIFTI) components, which then can be loaded and processed (see examples [in this page](examples.md)).
+
+Reading the older CIFTI-1 format requires that the [Connectome Workbench](http://www.humanconnectome.org/software/connectome-workbench.html) is installed, that is, `wb_command` must be available in the system. General manipulation of any CIFTI files, such as splitting and merging components (outside PALM) also requires `wb_command`.
 
 ### Support for GIFTI files
 
-GIFTI files are supported. However, note that the access to the actual data depends on parsing a potentially large XML tree, which can be slow in both MATLAB and Octave. Other equivalent formats are usually faster to load.
+GIFTI files are supported. However, note that the access to the actual data depends on parsing a potentially large XML tree, which can be slow in both Octave and MATLAB. Other equivalent formats are usually faster to load.
+
+### Files with extension `.mat`
+
+Files with extension `.mat` pose certain ambiguities as they can, for example, represent an FSL design matrix file, contain an affine matrix for spatial transformations (not used in PALM) or can be a MATLAB workspace saved in HDF5 format. If the filename contains extension `.mat` and nothing else, it is read as an FSL design matrix file. If, after the extension `.mat`, the filename contains a datablock specification (e.g., `something.mat:/datablock`), then it is read as an HDF5 file.
 
 ### Support for other file formats
 

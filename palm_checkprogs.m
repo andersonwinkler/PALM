@@ -46,21 +46,6 @@ if isempty(palm_extern)
     addpath(fullfile(palm_extern.palmpath,'lib','arrow3'));
     addpath(fullfile(palm_extern.palmpath,'colourmaps'));
 
-    % Internalized hdf5oct library
-    hdf5dir = fullfile(palm_extern.palmpath,'lib','hdf5','src');
-    addpath(hdf5dir);
-    octfile = fullfile(hdf5dir,'hdf5oct.oct');
-    if exist(octfile,'file') == 0
-        error('hdf5oct.oct not found in %s',octdir);
-    end
-    autoload('__h5read__',    octfile);
-    autoload('__h5readatt__', octfile);
-    autoload('__h5write__',   octfile);
-    autoload('__h5writeatt__',octfile);
-    autoload('__h5create__',  octfile);
-    autoload('__h5delete__',  octfile);
-    autoload('h5info',        octfile);
-
     % External programs - - - - - - - - - - - - - - - - - - - - - - - - - -
     % Check FSL
     palm_extern.fsl = false;
@@ -106,7 +91,6 @@ if isempty(palm_extern)
     end
 
     % Octave packages - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    palm_extern.octave_hdf5oct    = false;
     palm_extern.octave_image      = false;
     palm_extern.octave_specfun    = false;
     palm_extern.octave_statistics = false;
@@ -130,6 +114,23 @@ if isempty(palm_extern)
             fprintf('Octave package "statistics" is available.\n');
         else
             fprintf('Octave package "statistics" is not available.\n');
+        end
+
+        % Internalized hdf5oct package (will shadow an existing hdf5oct)
+        hdf5dir = fullfile(palm_extern.palmpath,'lib','hdf5','src');
+        addpath(hdf5dir);
+        octfile = fullfile(hdf5dir,'hdf5oct.oct');
+        if exist(octfile,'file') == 0
+            fprintf('Internal HDF5 library is not compiled for your platform. If you plan to use HDF5 files, consult the documentation.\n');
+        else
+            fprintf('Internal HDF5 library is available.\n');
+            autoload('__h5read__',    octfile);
+            autoload('__h5readatt__', octfile);
+            autoload('__h5write__',   octfile);
+            autoload('__h5writeatt__',octfile);
+            autoload('__h5create__',  octfile);
+            autoload('__h5delete__',  octfile);
+            autoload('h5info',        octfile);
         end
     end
 

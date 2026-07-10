@@ -13,9 +13,6 @@ Additionally, the library provides numerous helper functions to make many
 common operations (such as extracting the data for one structure) into a
 single line of intuitive code.
 
-The previous code that was derived from FieldTrip is in the "ft_cifti"
-folder.
-
 The cifti structure returned by this library uses 0-based
 indices for vertex and voxel indices, 1-based for cifti indices, and
 the helper functions return 1-based indices for everything.

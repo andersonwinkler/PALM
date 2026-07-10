@@ -4,8 +4,6 @@ INCLUDED SOFTWARE WITH OTHER LICENSES:
 
 All contents of @xmltree/ are copyright 2002-2015 Guillaume Flandin, and released under LGPL v3+, see @xmltree/LICENSE
 
-All contents of ft_cifti/ are copyright various authors, and released under GPL v3+, see ft_cifti/LICENSE.* and ft_cifti/ft_read_cifti.m
-
 The file private/read_nifti2_hdr.m is copyright 2013 Robert Oostenveld, and is dual licensed under your choice of GPL v3+ or BSD 2-clause, see private/read_nifti2_hdr.m
 
 ------------------------------------------------------------------------
