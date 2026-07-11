@@ -117,7 +117,7 @@ opts.useniiclass         = true;               % Use the NIFTI class (saves memo
 opts.precision           = [];                 % Precision? Can be 'single', 'double', or [] for what the file defines.
 opts.mz3surf             = false;              % Treat mz3 files as surfaces (true) or curvatures (false)?
 opts.hdf5                = { ...               % Recognized extensions for HDF5 files
-    'h5','hdf5','nwb','mat'};
+    'h5','hdf5','nwb'};
 opts.fscurv              = { ...               % Recognized extensions for FreeSurfer curvature types
     'area','avg_curv','crv','curv',      ...
     'h','k','jacobian_white','mid',      ...

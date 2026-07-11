@@ -28,42 +28,28 @@ function [opts,plm] = palm_args(varargin)
 % Load the defaults
 opts = palm_defaults;
 
-% As varargin is actually from another function, fix it.
+% Read/write configuration file
 if nargin == 1
     if exist(varargin{1},'file')
-        vararginx = palm_config(varargin{1});
+        args = palm_config(varargin{1},'read');
     else
         error('Unknown option or file not found: %s',varargin{1});
     end
 else
-    vararginx = varargin;
-    idxa = find(strcmpi(vararginx,'-o'));
-    if isempty(idxa)
-        otmp = opts.o;
-    else
-        otmp = vararginx{idxa+1};
-    end
-    if ~ strcmp(otmp(end),'_')
-        otmp = horzcat(otmp,'_');
-    end
-    cfgname = horzcat(otmp,'palmconfig.txt');
-    [opth,~,~] = fileparts(cfgname);
-    if ~isempty(opth) && ~exist(opth,'dir')
-        mkdir(opth);
-    end
-    palm_config(vararginx,cfgname);
+    args = varargin;
+    plm.elapsed.cfgname = palm_config(args,'write');
 end
 
 % Number of input images/masks/surfaces
 % These are NOT meant to be edited.
-Ni     = sum(strcmp(vararginx,'-i'));        % number of data inputs
-Nm     = sum(strcmp(vararginx,'-m'));        % number of masks
-Ns     = sum(strcmp(vararginx,'-s'));        % number of surfaces
-Nd     = sum(strcmp(vararginx,'-d'));        % number of design files
-Nt     = sum(strcmp(vararginx,'-t'));        % number of t-contrast files
-Nf     = sum(strcmp(vararginx,'-f'));        % number of F-test files
-Ncon   = sum(strcmp(vararginx,'-con'));      % number of contrast files (t or F, mset format)
-Nevd   = sum(strcmp(vararginx,'-evperdat')); % number of EV per datum inputs
+Ni     = sum(strcmp(args,'-i'));        % number of data inputs
+Nm     = sum(strcmp(args,'-m'));        % number of masks
+Ns     = sum(strcmp(args,'-s'));        % number of surfaces
+Nd     = sum(strcmp(args,'-d'));        % number of design files
+Nt     = sum(strcmp(args,'-t'));        % number of t-contrast files
+Nf     = sum(strcmp(args,'-f'));        % number of F-test files
+Ncon   = sum(strcmp(args,'-con'));      % number of contrast files (t or F, mset format)
+Nevd   = sum(strcmp(args,'-evperdat')); % number of EV per datum inputs
 opts.i     = cell(Ni,1);   % Input files (to constitute Y later)
 opts.m     = cell(Nm,1);   % Mask file(s)
 opts.s     = cell(Ns,1);   % Surface file(s)
@@ -90,15 +76,15 @@ t = 1; s = 1;
 con = 1; ev = 1;
 
 % Remove trailing empty arguments. This is useful for some Octave versions.
-while numel(vararginx) > 0 && isempty(vararginx{1})
-    vararginx(1) = [];
+while numel(args) > 0 && isempty(args{1})
+    args(1) = [];
 end
-narginx = numel(vararginx);
+narginx = numel(args);
 
 % Take the input arguments
 a = 1;
 while a <= narginx
-    switch vararginx{a}
+    switch args{a}
         case {'-help','-?','-basic','-advanced'}
             
             % Do nothing, as these options are parsed separately,
@@ -108,26 +94,26 @@ while a <= narginx
         case '-i' % basic
             
             % Get the filenames for the data.
-            opts.i{i} = vararginx{a+1};
+            opts.i{i} = args{a+1};
             i = i + 1;
             a = a + 2;
             
         case '-m' % basic
             
             % Get the filenames for the masks, if any.
-            opts.m{m} = vararginx{a+1};
+            opts.m{m} = args{a+1};
             m = m + 1;
             a = a + 2;
 
         case {'-s','-surf'} % basic
             
             % Get the filenames for the surfaces, if any.
-            opts.s{s}  = vararginx{a+1};
-            if nargin == a+1 || (narginx>a+1 && strcmp(vararginx{a+2}(1),'-'))
+            opts.s{s}  = args{a+1};
+            if nargin == a+1 || (narginx>a+1 && strcmp(args{a+2}(1),'-'))
                 opts.sa{s} = [];
                 a = a + 2;
             else
-                opts.sa{s} = vararginx{a+2};
+                opts.sa{s} = args{a+2};
                 a = a + 3;
             end
             s = s + 1;
@@ -135,7 +121,7 @@ while a <= narginx
         case '-d' % basic
             
             % Get the design matrix file.
-            opts.d{d} = vararginx{a+1};
+            opts.d{d} = args{a+1};
             d = d + 1;
             a = a + 2;
             
@@ -143,33 +129,33 @@ while a <= narginx
             
             % Use one EV per datum?
             opts.evperdat = true;
-            opts.evdatfile{ev} = vararginx{a+1};
+            opts.evdatfile{ev} = args{a+1};
             if nargin == a + 1 || ...
-                    ischar(vararginx{a+2}) && ...
-                    strcmpi(vararginx{a+2}(1),'-')
+                    ischar(args{a+2}) && ...
+                    strcmpi(args{a+2}(1),'-')
                 opts.evpos{ev}(1) = 1;  % EV position
                 opts.evpos{ev}(2) = 1;  % Design number
                 a = a + 2;
             elseif nargin == a + 2 || ...
-                    ischar(vararginx{a+3}) && ...
-                    strcmpi(vararginx{a+3}(1),'-')
-                if ischar(vararginx{a+2}) % EV position
-                    opts.evpos{ev}(1) = eval(vararginx{a+2});
+                    ischar(args{a+3}) && ...
+                    strcmpi(args{a+3}(1),'-')
+                if ischar(args{a+2}) % EV position
+                    opts.evpos{ev}(1) = eval(args{a+2});
                 else
-                    opts.evpos{ev}(1) = vararginx{a+2};
+                    opts.evpos{ev}(1) = args{a+2};
                 end
                 opts.evpos{ev}(2) = 1;  % Design number
                 a = a + 3;
             else
-                if ischar(vararginx{a+2}) % EV position
-                    opts.evpos{ev}(1) = eval(vararginx{a+2});
+                if ischar(args{a+2}) % EV position
+                    opts.evpos{ev}(1) = eval(args{a+2});
                 else
-                    opts.evpos{ev}(1) = vararginx{a+2};
+                    opts.evpos{ev}(1) = args{a+2};
                 end
-                if ischar(vararginx{a+3}) % Design number
-                    opts.evpos{ev}(2) = eval(vararginx{a+3});
+                if ischar(args{a+3}) % Design number
+                    opts.evpos{ev}(2) = eval(args{a+3});
                 else
-                    opts.evpos{ev}(2) = vararginx{a+3};
+                    opts.evpos{ev}(2) = args{a+3};
                 end
                 a = a + 4;
             end
@@ -178,7 +164,7 @@ while a <= narginx
         case '-t' % basic
             
             % Get the t contrast files.
-            opts.t{t} = vararginx{a+1};
+            opts.t{t} = args{a+1};
             t = t + 1;
             a = a + 2;
             
@@ -188,7 +174,7 @@ while a <= narginx
             if t == 1
                 error('The option "-f" cannot be specified before its respective "-t".');
             end
-            opts.f{t-1} = vararginx{a+1};
+            opts.f{t-1} = args{a+1};
             a = a + 2;
             
         case '-con' % advanced
@@ -196,14 +182,14 @@ while a <= narginx
             % Get the contrast files from an .mset file or
             % pair of files. If a pair, the 1st is for Cset
             % and the second for Dset.
-            opts.Ccon{con} = vararginx{a+1};
+            opts.Ccon{con} = args{a+1};
             if nargin == a + 1 || ...
-                    ischar(vararginx{a+2}) && ...
-                    strcmpi(vararginx{a+2}(1),'-')
+                    ischar(args{a+2}) && ...
+                    strcmpi(args{a+2}(1),'-')
                 opts.Dcon{con} = [];
                 a = a + 2;
             else
-                opts.Dcon{con} = vararginx{a+2};
+                opts.Dcon{con} = args{a+2};
                 a = a + 3;
             end
             con = con + 1;
@@ -211,7 +197,7 @@ while a <= narginx
         case '-conskipcount' % advanced
             
             % Numbers to skip when saving the contrasts
-            opts.conskipcount = vararginx{a+1};
+            opts.conskipcount = args{a+1};
             if ischar(opts.conskipcount)
                 opts.conskipcount = str2double(opts.conskipcount);
             end
@@ -232,13 +218,13 @@ while a <= narginx
         case '-eb' % basic
             
             % Get the exchangeability blocks file.
-            opts.eb = vararginx{a+1};
+            opts.eb = args{a+1};
             a = a + 2;
             
         case '-vg' % basic
             
             % Get the variance groups file.
-            opts.vg = vararginx{a+1};
+            opts.vg = args{a+1};
             if     ischar(opts.vg) && ...
                     any(strcmpi(opts.vg,{'single'}))
                 opts.vg = 'single';
@@ -261,13 +247,13 @@ while a <= narginx
         case '-o' % basic
             
             % Output prefix for the files to be saved.
-            opts.o = vararginx{a+1};
+            opts.o = args{a+1};
             a = a + 2;
             
         case '-n' % basic
             
             % Number of permutations
-            opts.nP0 = vararginx{a+1};
+            opts.nP0 = args{a+1};
             if ischar(opts.nP0)
                 opts.nP0 = str2double(opts.nP0);
             end
@@ -277,17 +263,17 @@ while a <= narginx
             
             % Threshold for cluster extent, univariate, NPC and MV
             opts.cluster.uni.do = true;
-            opts.cluster.uni.thr = vararginx{a+1};
+            opts.cluster.uni.thr = args{a+1};
             if ischar(opts.cluster.uni.thr)
                 opts.cluster.uni.thr = str2double(opts.cluster.uni.thr);
             end
             opts.cluster.npc.do = true;
-            opts.cluster.npc.thr = vararginx{a+1};
+            opts.cluster.npc.thr = args{a+1};
             if ischar(opts.cluster.npc.thr)
                 opts.cluster.npc.thr = str2double(opts.cluster.npc.thr);
             end
             opts.cluster.mv.do  = true;
-            opts.cluster.mv.thr = vararginx{a+1};
+            opts.cluster.mv.thr = args{a+1};
             if ischar(opts.cluster.mv.thr)
                 opts.cluster.mv.thr = str2double(opts.cluster.mv.thr);
             end
@@ -297,7 +283,7 @@ while a <= narginx
             
             % Threshold for cluster statistic, univariate
             opts.cluster.uni.do = true;
-            opts.cluster.uni.thr = vararginx{a+1};
+            opts.cluster.uni.thr = args{a+1};
             if ischar(opts.cluster.uni.thr)
                 opts.cluster.uni.thr = str2double(opts.cluster.uni.thr);
             end
@@ -308,7 +294,7 @@ while a <= narginx
             % Threshold for cluster statistic, NPC
             opts.NPC = true;
             opts.cluster.npc.do = true;
-            opts.cluster.npc.thr = vararginx{a+1};
+            opts.cluster.npc.thr = args{a+1};
             if ischar(opts.cluster.npc.thr)
                 opts.cluster.npc.thr = str2double(opts.cluster.npc.thr);
             end
@@ -319,7 +305,7 @@ while a <= narginx
             % Threshold for cluster statistic, MV
             opts.MV = true;
             opts.cluster.mv.do = true;
-            opts.cluster.mv.thr = vararginx{a+1};
+            opts.cluster.mv.thr = args{a+1};
             if ischar(opts.cluster.mv.thr)
                 opts.cluster.mv.thr = str2double(opts.cluster.mv.thr);
             end
@@ -328,7 +314,7 @@ while a <= narginx
         case '-Cstat' % advanced
             
             % Type of cluster statistic
-            opts.cluster.stat = vararginx{a+1};
+            opts.cluster.stat = args{a+1};
             if ~ any(strcmp(opts.cluster.stat,{'extent','mass','density','tippett','pivotal'}))
                 error('Cluster statistic "%s" unknown.',opts.cluster.stat);
             end
@@ -346,7 +332,7 @@ while a <= narginx
         case '-Tstat' % not in the help
             
             % Type of cluster statistic
-            opts.tfce.stat = vararginx{a+1};
+            opts.tfce.stat = args{a+1};
             if ~ any(strcmp(opts.tfce.stat,{'tfce','density','tippett'}))
                 error('TFCE statistic "%s" unknown.',opts.tfce.stat);
             end
@@ -393,7 +379,7 @@ while a <= narginx
         case {'-tfce_H','-tfce_h'} % advanced
             
             % TFCE H parameter
-            opts.tfce.H = vararginx{a+1};
+            opts.tfce.H = args{a+1};
             if ischar(opts.tfce.H)
                 opts.tfce.H = str2double(opts.tfce.H);
             end
@@ -402,7 +388,7 @@ while a <= narginx
         case {'-tfce_E','-tfce_e'} % advanced
             
             % TFCE E parameter
-            opts.tfce.E = vararginx{a+1};
+            opts.tfce.E = args{a+1};
             if ischar(opts.tfce.E)
                 opts.tfce.E = str2double(opts.tfce.E);
             end
@@ -411,7 +397,7 @@ while a <= narginx
         case {'-tfce_C','-tfce_c'} % advanced
             
             % TFCE connectivity
-            opts.tfce.conn = vararginx{a+1};
+            opts.tfce.conn = args{a+1};
             if ischar(opts.tfce.conn)
                 opts.tfce.conn = str2double(opts.tfce.conn);
             end
@@ -420,7 +406,7 @@ while a <= narginx
         case '-tfce_dh' % advanced
             
             % TFCE delta-h parameter
-            opts.tfce.deltah = vararginx{a+1};
+            opts.tfce.deltah = args{a+1};
             if ischar(opts.tfce.deltah)
                 if strcmpi(opts.tfce.deltah,'auto')
                     opts.tfce.deltah = 0;
@@ -553,9 +539,9 @@ while a <= narginx
                     'Manly',           ...
                     'Huh-Jhun',        ...
                     'Dekker'};
-                methidx = strcmpi(vararginx{a+1},methlist);
+                methidx = strcmpi(args{a+1},methlist);
                 if ~any(methidx)
-                    error('Regression/Permutation method "%s" unknown.',vararginx{a+1});
+                    error('Regression/Permutation method "%s" unknown.',args{a+1});
                 else
                     a = a + 2;
                 end
@@ -576,7 +562,7 @@ while a <= narginx
         case '-npcmethod' % basic
             
             % Do the non-parametric combination?
-            if nargin == a || (nargin > a && strcmp(vararginx{a+1}(1),'-'))
+            if nargin == a || (nargin > a && strcmp(args{a+1}(1),'-'))
                 error('The option "-npcmethod" requires a combining method to be indicated.');
                 
             elseif nargin > a
@@ -598,76 +584,76 @@ while a <= narginx
                     'Dudbridge-Koeleman2', ...
                     'Taylor-Tibshirani',   ...
                     'Jiang'};
-                methidx = strcmpi(vararginx{a+1},methlist);
+                methidx = strcmpi(args{a+1},methlist);
                 
                 % Check if method exists, and load extra parameters if needed
                 if ~any(methidx)
-                    error('Combining method "%s" unknown.',vararginx{a+1});
-                elseif any(strcmpi(vararginx{a+1},{...
+                    error('Combining method "%s" unknown.',args{a+1});
+                elseif any(strcmpi(args{a+1},{...
                         'Wilkinson',       ...
                         'Zaykin',          ...
                         'Jiang'}))
-                    if ischar(vararginx{a+2}) && ...
-                            strcmpi(vararginx{a+2}(1),'-')
+                    if ischar(args{a+2}) && ...
+                            strcmpi(args{a+2}(1),'-')
                         plm.npcparm = 0.05;
                         a = a + 2;
-                    elseif ischar(vararginx{a+2})
+                    elseif ischar(args{a+2})
                         a = a + 3;
-                        plm.npcparm = eval(vararginx{a+2});
+                        plm.npcparm = eval(args{a+2});
                     else
-                        plm.npcparm = vararginx{a+2};
+                        plm.npcparm = args{a+2};
                         a = a + 3;
                     end
-                elseif any(strcmpi(vararginx{a+1},{...
+                elseif any(strcmpi(args{a+1},{...
                         'Darlington-Hayes',   ...
                         'Dudbridge-Koeleman', ...
                         'Jiang'}))
                     if nargin == a + 1 || ...
-                            ischar(vararginx{a+2}) && ...
-                            strcmpi(vararginx{a+2}(1),'-')
+                            ischar(args{a+2}) && ...
+                            strcmpi(args{a+2}(1),'-')
                         plm.npcparm = 1;
                         a = a + 2;
-                    elseif ischar(vararginx{a+2})
-                        plm.npcparm = eval(vararginx{a+2});
+                    elseif ischar(args{a+2})
+                        plm.npcparm = eval(args{a+2});
                         a = a + 3;
                     else
-                        plm.npcparm = vararginx{a+2};
+                        plm.npcparm = args{a+2};
                         a = a + 3;
                     end
-                elseif strcmpi(vararginx{a+1},'Friston')
+                elseif strcmpi(args{a+1},'Friston')
                     if nargin == a + 1 || ...
-                            ischar(vararginx{a+2}) && ...
-                            strcmpi(vararginx{a+2}(1),'-')
+                            ischar(args{a+2}) && ...
+                            strcmpi(args{a+2}(1),'-')
                         plm.npcparm = 1;
                         a = a + 2;
-                    elseif ischar(vararginx{a+2})
-                        plm.npcparm = eval(vararginx{a+2});
+                    elseif ischar(args{a+2})
+                        plm.npcparm = eval(args{a+2});
                         a = a + 3;
                     else
-                        plm.npcparm = vararginx{a+2};
+                        plm.npcparm = args{a+2};
                         a = a + 3;
                     end
-                elseif strcmpi(vararginx{a+1},'Dudbridge-Koeleman2')
+                elseif strcmpi(args{a+1},'Dudbridge-Koeleman2')
                     if nargin == a + 1 || ...
-                            ischar(vararginx{a+2}) && ...
-                            strcmpi(vararginx{a+2}(1),'-')
+                            ischar(args{a+2}) && ...
+                            strcmpi(args{a+2}(1),'-')
                         plm.npcparm  = 1;
                         plm.npcparm2 = 0.05;
                         a = a + 2;
                     else
-                        if ischar(vararginx{a+2})
-                            plm.npcparm = eval(vararginx{a+2});
+                        if ischar(args{a+2})
+                            plm.npcparm = eval(args{a+2});
                         else
-                            plm.npcparm = vararginx{a+2};
+                            plm.npcparm = args{a+2};
                         end
                         if nargin == a + 2 || ...
-                                ischar(vararginx{a+3}) && ...
-                                strcmpi(vararginx{a+3}(1),'-')
+                                ischar(args{a+3}) && ...
+                                strcmpi(args{a+3}(1),'-')
                             plm.npcparm2 = 0.05;
-                        elseif ischar(vararginx{a+3})
-                            plm.npcparm2 = eval(vararginx{a+3});
+                        elseif ischar(args{a+3})
+                            plm.npcparm2 = eval(args{a+3});
                         else
-                            plm.npcparm2 = vararginx{a+3};
+                            plm.npcparm2 = args{a+3};
                         end
                         a = a + 4;
                     end
@@ -700,7 +686,7 @@ while a <= narginx
                 opts.MV = true;
                 a = a + 1;
                 
-            elseif nargin > a && strcmp(vararginx{a+1}(1),'-')
+            elseif nargin > a && strcmp(args{a+1}(1),'-')
                 opts.MV = true;
                 a = a + 1;
                 
@@ -719,41 +705,41 @@ while a <= narginx
                     'Roy-iii',          ...
                     'CCA',              ...
                     'PLS'};
-                methidx = strcmpi(vararginx{a+1},methlist);
+                methidx = strcmpi(args{a+1},methlist);
                 
                 % Check if method exists, and load extra parameters if needed
                 if ~any(methidx)
-                    error('Multivariate statistic "%s" unknown.',vararginx{a+1});
-                elseif strcmpi(vararginx{a+1},'CCA')
+                    error('Multivariate statistic "%s" unknown.',args{a+1});
+                elseif strcmpi(args{a+1},'CCA')
                     opts.MV  = false;
                     opts.CCA = true;
                     opts.PLS = false;
                     if nargin == a + 1 || ...
-                            ischar(vararginx{a+2}) && ...
-                            strcmpi(vararginx{a+2}(1),'-')
+                            ischar(args{a+2}) && ...
+                            strcmpi(args{a+2}(1),'-')
                         opts.ccaorplsparm = 1;
                         a = a + 2;
-                    elseif ischar(vararginx{a+2})
-                        opts.ccaorplsparm = eval(vararginx{a+2});
+                    elseif ischar(args{a+2})
+                        opts.ccaorplsparm = eval(args{a+2});
                         a = a + 3;
                     else
-                        opts.ccaorplsparm = vararginx{a+2};
+                        opts.ccaorplsparm = args{a+2};
                         a = a + 3;
                     end
-                elseif strcmpi(vararginx{a+1},'PLS')
+                elseif strcmpi(args{a+1},'PLS')
                     opts.MV  = false;
                     opts.CCA = false;
                     opts.PLS = true;
                     if nargin == a + 1 || ...
-                            ischar(vararginx{a+2}) && ...
-                            strcmpi(vararginx{a+2}(1),'-')
+                            ischar(args{a+2}) && ...
+                            strcmpi(args{a+2}(1),'-')
                         opts.ccaorplsparm = 1;
                         a = a + 2;
-                    elseif ischar(vararginx{a+2})
-                        opts.ccaorplsparm = eval(vararginx{a+2});
+                    elseif ischar(args{a+2})
+                        opts.ccaorplsparm = eval(args{a+2});
                         a = a + 3;
                     else
-                        opts.ccaorplsparm = vararginx{a+2};
+                        opts.ccaorplsparm = args{a+2};
                         a = a + 3;
                     end
                 else
@@ -772,18 +758,18 @@ while a <= narginx
                 opts.FDR = true;
                 a = a + 1;
 
-            elseif nargin > a && strcmp(vararginx{a+1}(1),'-')
+            elseif nargin > a && strcmp(args{a+1}(1),'-')
                 opts.FDR = true;
                 a = a + 1;
 
             elseif nargin > a
                 % Which FDR method to use?
                 methlist = {'BH','BKY'};
-                methidx  = strcmpi(vararginx{a+1},methlist);
+                methidx  = strcmpi(args{a+1},methlist);
             
                 % Check if method exists, and load extra parameters if needed
                 if ~any(methidx)
-                    error('FDR method "%s" unknown.',vararginx{a+1});
+                    error('FDR method "%s" unknown.',args{a+1});
                 else
                     opts.FDR       = true;
                     opts.FDRmethod = methlist{methidx};
@@ -794,16 +780,16 @@ while a <= narginx
         case {'-accel','-approx'} % advanced
             
             % Choose a method to do the approximation of p-values
-            if narginx > a && ~strcmpi(vararginx{a+1}(1),'-')
+            if narginx > a && ~strcmpi(args{a+1}(1),'-')
                 methlist = {   ...
                     'negbin',  ...
                     'tail',    ...
                     'noperm',  ...
                     'gamma',   ...
                     'lowrank'};
-                methidx = strcmpi(vararginx{a+1},methlist);
+                methidx = strcmpi(args{a+1},methlist);
                 if ~ any(methidx)
-                    error('Approximation method "%s" unknown.',vararginx{a+1});
+                    error('Approximation method "%s" unknown.',args{a+1});
                 end
                 for mm = 1:numel(methlist)
                     opts.accel.(methlist{mm}) = methidx(mm);
@@ -813,11 +799,11 @@ while a <= narginx
                 if opts.accel.negbin
                     
                     % Number of exceedances:
-                    if narginx > a+1 && ~strcmpi(vararginx{a+2}(1),'-')
-                        if ischar(vararginx{a+2})
-                            opts.accel.negbin = str2double(vararginx{a+2});
+                    if narginx > a+1 && ~strcmpi(args{a+2}(1),'-')
+                        if ischar(args{a+2})
+                            opts.accel.negbin = str2double(args{a+2});
                         else
-                            opts.accel.negbin = vararginx{a+2};
+                            opts.accel.negbin = args{a+2};
                         end
                         a = a + 3;
                     else
@@ -828,16 +814,16 @@ while a <= narginx
                 elseif opts.accel.tail
                     
                     % Define whether include or not the unpermuted stat:
-                    if narginx > a+1 && ~strcmpi(vararginx{a+2}(1),'-')
-                        if ischar(vararginx{a+2})
-                            if     any(strcmpi(vararginx{a+2},{'out','G1out','T1out','true', '1'}))
+                    if narginx > a+1 && ~strcmpi(args{a+2}(1),'-')
+                        if ischar(args{a+2})
+                            if     any(strcmpi(args{a+2},{'out','G1out','T1out','true', '1'}))
                                 opts.accel.G1out = true;
                                 opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
-                            elseif any(strcmpi(vararginx{a+2},{'in', 'G1in', 'T1in', 'false','0'}))
+                            elseif any(strcmpi(args{a+2},{'in', 'G1in', 'T1in', 'false','0'}))
                                 opts.accel.G1out = false;
                             end
                         else
-                            if vararginx{a+2}
+                            if args{a+2}
                                 opts.accel.G1out = true;
                                 opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
                             else
@@ -852,16 +838,16 @@ while a <= narginx
                 elseif opts.accel.gamma
                     
                     % Define whether include or not the unpermuted stat:
-                    if narginx > a+1 && ~strcmpi(vararginx{a+2}(1),'-')
-                        if ischar(vararginx{a+2})
-                            if     any(strcmpi(vararginx{a+2},{'out','G1out','T1out','true', '1'}))
+                    if narginx > a+1 && ~strcmpi(args{a+2}(1),'-')
+                        if ischar(args{a+2})
+                            if     any(strcmpi(args{a+2},{'out','G1out','T1out','true', '1'}))
                                 opts.accel.G1out = true;
                                 opts.saveuncorrected = false;
-                            elseif any(strcmpi(vararginx{a+2},{'in', 'G1in', 'T1in', 'false','0'}))
+                            elseif any(strcmpi(args{a+2},{'in', 'G1in', 'T1in', 'false','0'}))
                                 opts.accel.G1out = false; % defensive, as the uncorrected will be invalid here.
                             end
                         else
-                            if vararginx{a+2}
+                            if args{a+2}
                                 opts.accel.G1out = true;
                                 opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
                             else
@@ -877,11 +863,11 @@ while a <= narginx
                     
                     % Fraction of voxels to be sampled (if < 1) or actual
                     % number of voxels to be sampled.
-                    if narginx > a+1 && ~strcmpi(vararginx{a+2}(1),'-')
-                        if ischar(vararginx{a+2})
-                            opts.accel.lowrank_val = str2double(vararginx{a+2});
+                    if narginx > a+1 && ~strcmpi(args{a+2}(1),'-')
+                        if ischar(args{a+2})
+                            opts.accel.lowrank_val = str2double(args{a+2});
                         else
-                            opts.accel.lowrank_val = vararginx{a+2};
+                            opts.accel.lowrank_val = args{a+2};
                         end
                         a = a + 3;
                     else
@@ -906,11 +892,11 @@ while a <= narginx
         case '-precision' % advanced
             
             % Precision to use?
-            if narginx > a && ~strcmpi(vararginx{a+1}(1),'-')
+            if narginx > a && ~strcmpi(args{a+1}(1),'-')
                 methlist = {'single','double'};
-                methidx = strcmpi(vararginx{a+1},methlist);
+                methidx = strcmpi(args{a+1},methlist);
                 if ~any(methidx)
-                    error('Precision "%s" unknown. Use "single" or "double".',vararginx{a+1});
+                    error('Precision "%s" unknown. Use "single" or "double".',args{a+1});
                 else
                     a = a + 2;
                 end
@@ -948,13 +934,13 @@ while a <= narginx
             % Take the parameters given to -inormal
             parms = {};
             if narginx - a >= 1
-                if ~strcmp(vararginx{a+1}(1),'-')
-                    parms{1} = vararginx{a+1};
+                if ~strcmp(args{a+1}(1),'-')
+                    parms{1} = args{a+1};
                 end
             end
             if narginx - a >= 2
-                if ~strcmp(vararginx{a+2}(1),'-')
-                    parms{2} = vararginx{a+2};
+                if ~strcmp(args{a+2}(1),'-')
+                    parms{2} = args{a+2};
                 end
             end
             a = a + 1 + numel(parms);
@@ -988,7 +974,7 @@ while a <= narginx
         case '-seed' % advanced
             
             % Seed for the random number generator
-            opts.seed = vararginx{a+1};
+            opts.seed = args{a+1};
             if ischar(opts.seed) && ...
                     ~any(strcmpi(opts.seed,{'shuffle','twist','reset'}))
                 opts.seed = str2double(opts.seed);
@@ -1019,7 +1005,7 @@ while a <= narginx
             
             % Remove from the analysis observations that are the only
             % in their variance group.
-            opts.removevgbysize = vararginx{a+1};
+            opts.removevgbysize = args{a+1};
             if ischar(opts.removevgbysize)
                 opts.removevgbysize = str2double(opts.removevgbysize);
             end
@@ -1082,7 +1068,7 @@ while a <= narginx
         case '-subjidx' % advanced
             
             % Indices of the subjects to keep in the design
-            opts.subjidx = vararginx{a+1};
+            opts.subjidx = args{a+1};
             a = a + 2;
             
         case '-quiet' % basic
@@ -1119,15 +1105,15 @@ while a <= narginx
             
             % Which method to use to partition the model when defining
             % the permutations?
-            if narginx > a && ~strcmpi(vararginx{a+1}(1),'-')
+            if narginx > a && ~strcmpi(args{a+1}(1),'-')
                 methlist = {    ...
                     'Guttman',  ...
                     'Beckmann', ...
                     'Ridgway',  ...
                     'none'};
-                methidx = strcmpi(vararginx{a+1},methlist);
+                methidx = strcmpi(args{a+1},methlist);
                 if ~any(methidx)
-                    error('Partition method "%s" unknown.',vararginx{a+1});
+                    error('Partition method "%s" unknown.',args{a+1});
                 else
                     a = a + 2;
                 end
@@ -1142,15 +1128,15 @@ while a <= narginx
             
             % Which method to use to partition the model when defining
             % doing the actual regression?
-            if narginx > a && ~strcmpi(vararginx{a+1}(1),'-')
+            if narginx > a && ~strcmpi(args{a+1}(1),'-')
                 methlist = {    ...
                     'Guttman',  ...
                     'Beckmann', ...
                     'Ridgway',  ...
                     'none'};
-                methidx = strcmpi(vararginx{a+1},methlist);
+                methidx = strcmpi(args{a+1},methlist);
                 if ~any(methidx)
-                    error('Partition method "%s" unknown.',vararginx{a+1});
+                    error('Partition method "%s" unknown.',args{a+1});
                 else
                     a = a + 2;
                 end
@@ -1169,7 +1155,7 @@ while a <= narginx
             a = a + 1;
             
         otherwise
-            error('Unknown option: "%s"',vararginx{a});
+            error('Unknown option: "%s"',args{a});
     end
 end
 

@@ -35,14 +35,6 @@ palm_checkprogs;
 % Struct that will be saved
 X = varargin{1};
 
-% If the filename is in fact an HDF5 spec, then lets save as HDF5
-[filename,dataset,~] = palm_hdf5spec(X.filename);
-if ischar(dataset)
-    X.filename = filename;
-    X.dataset  = dataset;
-    X.readwith = 'h5read';
-end
-
 % For each type of data (based on how it was originally read)
 switch lower(X.readwith)
 
@@ -84,8 +76,24 @@ switch lower(X.readwith)
     case 'hdf5read'
 
         % Write an HDF5 file
+        [filename,datapath,~] = palm_filespec(X.filename);
+        if ischar(datapath)
+            X.filename        = filename;
+            X.extra.datapath  = datapath;
+        end
+        [~,~,fext] = fileparts(X.filename);
+        if isempty(fext) || ~ strcmpi(fext,'.h5')
+            X.filename = horzcat(X.filename,'.h5');
+        end
         palm_hdf5write(X.filename,X.extra.datapath,X.data);
         
+    case 'matlab'
+
+        % Write a MATLAB workspace file
+        save(X.filename,...
+            '-fromstruct',struct(X.extra.varname,X.data),...
+            X.extra.version);
+
     case 'parquet'
         
         % Write Parquet files (in Octave)

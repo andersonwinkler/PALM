@@ -482,7 +482,9 @@ fprintf('http://www.fmrib.ox.ac.uk/fsl\n');
 
 % ==============================================================
 function vstr = showversion
-% Read the file with the version
+% Make string with the running version
+
+% First read the file with the version
 fid = fopen(fullfile(fileparts(mfilename('fullpath')),'palm_version.txt'),'r');
 vstr = textscan(fid,'%s');
 fclose(fid);
@@ -491,18 +493,20 @@ fclose(fid);
 vstr = sprintf('%s ',vstr{1}{:});
 vstr = deblank(sprintf('%s',vstr));
 
-% If it's the GitHub version, append the commit hash
+% If it's the GitHub version, append the branch name and commit hash
 headfile = fullfile(fileparts(mfilename('fullpath')),'.git','HEAD');
 if strfind(vstr,'GitHub') && exist(headfile,'file') %#ok<STRIFCND>
     fid = fopen(headfile,'r');
     HEAD = fgetl(fid);
     fclose(fid);
     [~,headpath] = strtok(HEAD,' ');
-    headpath = fullfile(fileparts(mfilename('fullpath')),'.git',strtrim(headpath));
+    headpath = strtrim(headpath);
+    branch   = regexprep(headpath,'^refs/heads/','');
+    headpath = fullfile(fileparts(mfilename('fullpath')),'.git',headpath);
     if exist(headpath,'file')
         fid = fopen(headpath,'r');
         hash = fgetl(fid);
         fclose(fid);
-        vstr = strrep(vstr,'GitHub',sprintf('GitHub/commit:%s',hash(1:7)));
+        vstr = strrep(vstr,'GitHub',sprintf('GitHub/%s:%s',branch,hash(1:7)));
     end
 end

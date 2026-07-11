@@ -31,6 +31,7 @@ function palm_core(varargin)
 % Parse the arguments. Save a small log if needed.
 ticI = tic;
 [opts,plm] = palm_args(varargin{:});
+plm.elapsed.ticI = ticI;
 
 % Variables to store stuff for later.
 nY = 1;
@@ -324,8 +325,8 @@ end
 plm.mldiv = @mldivide;
 plm.mrdiv = @mrdivide;
 
-tocI = toc(ticI);
-fprintf('Elapsed time parsing inputs: ~ %g seconds.\n',tocI);
+plm.elapsed.tocI = toc(plm.elapsed.ticI);
+fprintf('Elapsed time parsing inputs: ~ %g seconds.\n',plm.elapsed.tocI);
 
 % For each design matrix and contrast:
 prepglm = cell(plm.nM,1);
@@ -957,7 +958,7 @@ else
 end
 
 % For each permutation (outer loop)
-ticP = tic;
+plm.elapsed.ticP = tic;
 for po = P_outer
     
     % For each design matrix
@@ -2322,17 +2323,19 @@ for po = P_outer
         end; clear j
     end
 end; clear po
-tocP = toc(ticP);
-fprintf('Elapsed time with permutations: ~ %g seconds.\n',tocP);
+plm.elapsed.tocP = toc(plm.elapsed.ticP);
+fprintf('Elapsed time with permutations: ~ %g seconds.\n',plm.elapsed.tocP);
 clear('M','Y','psi','res','G','df2','T','Q');
 
 % Save everything, except the few bits saved above
-ticS = tic;
+plm.elapsed.ticS = tic;
 palm_saveall(plm,opts);
-tocS = toc(ticS);
-fprintf('Elapsed time generating and saving results: ~ %g seconds.\n',tocS);
-fprintf('Overall elapsed time: ~ %g seconds.\n',tocI+tocP+tocS);
-csvwrite(sprintf('%s_elapsed.csv',opts.o),[tocI tocP tocS]);
+plm.elapsed.tocS = toc(plm.elapsed.ticS);
+fprintf('Elapsed time generating and saving results: ~ %g seconds.\n',plm.elapsed.tocS);
+fprintf('Overall elapsed time: ~ %g seconds.\n',...
+    plm.elapsed.tocI + plm.elapsed.tocP + plm.elapsed.tocS);
+csvwrite(sprintf('%selapsed.csv',plm.elapsed.cfgname),...
+    [plm.elapsed.tocI plm.elapsed.tocP plm.elapsed.tocS]); %#ok<CSVWT>
 
 % Finished.
 fprintf('PALM finished at %s.\n',datestr(now));

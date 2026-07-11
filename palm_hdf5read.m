@@ -58,15 +58,15 @@ else
 end
 
 % Ensure we have column-major (HDF5 stores as row-major)
-data = permute(data,ndims(data):-1:1);
+%data = permute(data,ndims(data):-1:1);
 
 % ------------------------------------------------------------------
-function raw = octave_h5read(filename,dataset)
+function raw = octave_h5read(filename,datapath)
 % Fallback used when hdf5oct is unavailable. Loads the whole file with
 % load('-hdf5',...) and walks the dataset path into the resulting struct
 % tree. Counterpart of octave_h5write in palm_hdf5write.
 S = load('-hdf5',filename);
-parts = strsplit(dataset, '/');
+parts = strsplit(datapath, '/');
 parts = parts(~cellfun('isempty',parts));
 node = S;
 for k = 1:numel(parts)

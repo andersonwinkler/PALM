@@ -58,11 +58,16 @@ optsx       = palm_defaults;
 useniiclass = optsx.useniiclass;
 precision   = optsx.precision;
 mz3surf     = optsx.mz3surf;
+
+% Parse arguments
 narginchk(1,4);
 nA = numel(varargin);
 if nA >= 1, useniiclass = varargin{1}; end
 if nA >= 2, precision   = varargin{2}; end
 if nA >= 3, mz3surf     = varargin{3}; end
+if ~ischar(filespec) && ~isstring(filespec)
+    error('Input must be a string');
+end
 
 % If the filename has wildcards, verify that it resolves to a unique name
 if contains(filespec,'*') || contains(filespec,'?')
@@ -77,17 +82,21 @@ if contains(filespec,'*') || contains(filespec,'?')
 end
 
 % Figure out the file extension and check if file exists
-[filename,datablock,permdim] = palm_hdf5spec(filespec);
+[filename,datapath,permdim] = palm_filespec(filespec);
 [~,fnam,fext] = fileparts(filename);
 fext = tokenize(strcat(fnam,fext),'.');
 if ~ exist(filename,'file')
     error('File not found: %s',filename);
 end
 
-% A small exception since .mat can be a MATLAB workspace (HDF5) or an
+% A small exception since .mat can be a MATLAB workspace or an
 % FSL VEST file. The logic breaks slightly here
-if strcmpi(fext,'mat') && ~ischar(datablock)
-    fext = 'vest';
+if strcmpi(fext{end},'mat') && ischar(datapath)
+    if contains(datapath,'/')
+        error('Variable names for MATLAB files must not contain the symbol "/".')
+    else
+        fext = {'matlab'};
+    end
 end
 
 % Store the filename, in case there is a need to overwrite this later
@@ -104,6 +113,7 @@ end
 % Check for external programs
 ext = palm_checkprogs;
 
+% For each file type, act accordingly
 switch lower(fext{end})
 
     case 'txt'
@@ -130,7 +140,7 @@ switch lower(fext{end})
         X.affine   = NaN;
         X.size     = size(X.data);
 
-    case {'mat','con','fts','grp','vest'} % note the 'mat' exception above
+    case {'mat','con','fts','grp'} % note the 'mat' exception above
 
         % Read an FSL "VEST" file.
         X.readwith = 'vestread';
@@ -149,15 +159,29 @@ switch lower(fext{end})
     case optsx.hdf5
 
         % HDF5 files
-        % Note that 'mat' with a valid datablock will be head as HDF5,
-        % per the exception above
-        X.readwith        = 'hdf5read';
-        X.data            = palm_hdf5read(filename,datablock);
-        X.extra.datablock = datablock;
-        X.extra.permdim   = permdim;
+        X.readwith       = 'hdf5read';
+        X.data           = palm_hdf5read(filename,datapath);
+        X.extra.datapath = datapath;
+        X.extra.permdim  = permdim;
         if ~isnan(permdim) && ndims(X.data) < permdim
-            error('Data "%s" has %d dimension(s), but you asked to permute dimension %d.', ...
-                X.extra.datapath,ndims(X.data),X.extra.permdim);
+            error('Dataset "%s" in file "%s" has %d dimension(s), but you asked to permute dimension %d.', ...
+                X.extra.datapath,filename,ndims(X.data),X.extra.permdim);
+        end
+        X.affine = NaN;
+        X.size   = size(X.data);
+
+    case 'matlab'
+
+        % MATLAB workspace files
+        X.readwith      = 'matlab';
+        X.data          = load(filename,datapath);
+        X.data          = X.data.(datapath);
+        X.extra.varname = datapath;
+        X.extra.permdim = permdim;
+        X.extra.version = matversion(filename);
+        if ~isnan(permdim) && ndims(X.data) < permdim
+            error('Variable "%s" in file "%s" has %d dimension(s), but you asked to permute dimension %d.', ...
+                X.extra.varname,filename,ndims(X.data),X.extra.permdim);
         end
         X.affine = NaN;
         X.size   = size(X.data);
@@ -208,7 +232,7 @@ switch lower(fext{end})
                         if X.extra.hdr.sform_code > 0 % but sform will prevail
                             X.affine = X.extra.hdr.sform;
                         end
-                        X.size      = size(X.data);
+                        X.size = size(X.data);
                     end
                 end
             end
@@ -335,7 +359,7 @@ switch lower(fext{end})
         % Read a FreeSurfer annotation file
         X.readwith = 'fs_load_annot';
         [X.extra.vertices,X.extra.label,X.extra.colourtab] = read_annotation(X.filename);
-        
+
         % For each structure, replace its label by its index, which
         % is the actual label
         X.data = X.extra.label;
@@ -416,3 +440,50 @@ end
 function result = contains(str,ch)
 % Test is a character exists in a string
 result = any(str == ch);
+
+% ==============================================================
+function ver = matversion(filename)
+% Determines the version of a MATLAB .mat file
+
+% Read first 128 bytes (header size for Level 5)
+fid    = fopen(filename,'r');
+header = fread(fid,128,'*char')';
+fclose(fid);
+
+% v7.3 (HDF5)
+sig = 'MATLAB 7.3 MAT-file';
+if strcmp(header(1:length(sig)),sig)
+    ver = '-v7.3';
+    return;
+end
+
+% Level 5 files (v6 / v7)
+sig = 'MATLAB 5.0 MAT-file';
+if strcmp(header(1:length(sig)),sig)
+    % Distinguishing v6 vs v7 isn't always possible from header alone
+    % (both use Level 5 format; v7 adds compression + Unicode).
+    % Will use v7 as its the current format
+    ver = '-v7';  % change from -v7 to -v6 to drop compression and use in older MATLABs
+    return;
+end
+
+% v4 v4 files do not have the "MATLAB 5.0" header.
+% Check first 4 bytes (MOPT) for valid v4 signature.
+fid  = fopen(filename,'r');
+mopt = fread(fid,4,'uint8');
+fclose(fid);
+
+% Valid MOPT for v4: first byte 0-4, second=0, etc.
+if mopt(1) <= 4 && mopt(2) == 0 && mopt(3) <= 5 && mopt(4) <= 2
+    % Additional heuristic: v4 often has printable chars early on
+    fid   = fopen(filename,'r');
+    early = fread(fid,32,'*char')';
+    fclose(fid);
+    if any(early >= 32 & early <= 126) || sum(mopt == 0) > 0
+        ver = 'v4';
+        return;
+    end
+end
+
+% Not a recognized .mat file
+ver = NaN;

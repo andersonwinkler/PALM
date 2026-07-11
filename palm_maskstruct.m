@@ -89,9 +89,15 @@ switch lower(readwith)
         S.data  = mask;
         S.extra = extra;
 
-    case 'hdf5'
+    case 'hdf5read'
 
         % If the original data is an HDF5 file
+        S.data  = mask;
+        S.extra = extra;
+
+    case 'matlab'
+
+        % If the original data is in a MATLAB .mat file
         S.data  = mask;
         S.extra = extra;
 
