@@ -44,7 +44,7 @@ if isempty(palm_extern)
     addpath(fullfile(palm_extern.palmpath,'lib','freesurfer'));
     addpath(fullfile(palm_extern.palmpath,'lib','cifti-matlab'));
     addpath(fullfile(palm_extern.palmpath,'lib','arrow3'));
-    addpath(fullfile(palm_extern.palmpath,'colourmaps'));
+    addpath(fullfile(palm_extern.palmpath,'lib','colourmaps'));
 
     % External programs - - - - - - - - - - - - - - - - - - - - - - - - - -
     % Check FSL
