@@ -1,0 +1,182 @@
+
+<TITLE> Vicente Zarzoso: RobustICA algorithm</TITLE>
+
+<META name="description" content = "RobustICA package">
+<META name="keywords" content = "RobustICA, robustICA, robustica,
+robust ica, ROBUST ICA, ROBUSTICA, independent component analysis, ICA, blind source
+separation, BSS, instantaneous linear mixtures, Matlab code">
+
+<BODY TEXT="#000000" LINK="#D21034" VLINK="#FF8888" ALINK="#FF8888"
+      BACKGR="#FFFFFF" BACKGROUND = "logos/stone2.gif"
+      ONLOAD="window.self.defaultStatus='Research: RobustICA algorithm.'"> 
+
+<!-- Charte graphique I3S:  purpre: $AC0481; bleu: 00267F; rouge: $D21034 -->
+
+
+<H2>RobustICA algorithm for independent component analysis</H2><P>
+
+RobustICA is based on the normalized kurtosis contrast function, which is optimized by a
+computationally efficient iterative technique. This technique computes algebraically
+the step size (adaption coefficient) globally optimizing the contrast in the search direction
+at each iteration. Any independent component with non-zero kurtosis can be extracted in this
+manner.<p>
+
+The present implementation performs the deflationary separation of statistically independent
+sources under the instantaneous linear mixture model. Full separation is achieved if at most
+one source has zero kurtosis.<p>
+
+<br>
+
+<b>Some advantages of RobustICA</b> are:
+
+<UL>
+<LI> <u>Real- and complex-valued signals</u> are treated by exactly the same algorithm. Both type of
+   source signals can be present simultaneously in a given mixture. Complex sources need not be
+   circular. The mixing matrix coefficients may be real or complex, regardless of the source type.<p>
+
+<LI> <u>Prewhitening is not required</u>, so that the performance limitations it imposes can be avoided.
+   In particular, the absence of prewhitening improves asymptotic performance. In that case, 
+   sequential extraction (deflation) can be performed via linear regression.<p>
+
+<LI> The algorithm <u>can target sub-Gaussian or super-Gaussian sources</u> in the order defined by a
+   by a kurtosis-sign vector provided by the user. Full separation, as well as the consequent
+   increase in complexity and estimation error, can be spared if the Gaussianity character of
+   the source(s) of interest is known in advance.<p>
+
+ <LI> The optimal step-size technique provides some <u>robustness to</u> the presence of saddle points and
+   <u>spurious local extrema</u> in the contrast function, which tend to appear when processing short
+   data sizes.<p>
+
+ <LI> The method shows a <u>very high convergence speed</u> measured in terms of source extraction quality
+   versus number of operations. In the real-valued two-signal case, the algorithm theoretically 
+   converges in a single iteration, even without prewhitening.
+</UL>
+
+More details about the RobustICA algorithm and its comparative performance analysis can be found
+ in references [1]-[3] below. A similar optimization technique is used in the <a
+ href = oscma.html>OS-CMA</a>.<p>
+
+<br>
+
+<b>References</b>
+
+<UL>
+<a name=tnn10>
+[1] V. Zarzoso and P. Comon, <a href=biblio/tnn10.pdf>"Robust Independent
+Component Analysis by Iterative Maximization of the Kurtosis Contrast
+with Algebraic Optimal Step Size"</a>, <EM>IEEE Transactions on Neural
+Networks</EM>, Vol. 21, No. 2, February 2010, pp. 248-261. <CODE>(721KB)</CODE><P>
+
+[2] V. Zarzoso and P. Comon, <a href = "biblio/ica07.pdf">"Comparative Speed Analysis of FastICA"</a>, 
+   in: <em>Proceedings ICA-2007, 7th International Conference on Independent Component Analysis
+   and Signal Separation</em>, London, UK, September 9-12, 2007,
+   pp. 293-300. <CODE>(336KB)</CODE><P>
+ 
+[3] V. Zarzoso, P. Comon and M. Kallel, <a href =
+   "biblio/eusipco06.pdf">"How Fast is FastICA?"</a>, 
+   in: <em>Proceedings EUSIPCO-2006, XIV European Signal Processing Conference</em>, 
+   Florence, Italy, September 4-8, 2006. <CODE>(172KB)</CODE><P>
+</UL>
+
+<br>
+
+<hr>
+
+<!--IMG SRC = logos/new2.gif ALIGN=middle--><a href =
+ "robustica_package_v3.zip"><b>Download the RobustICA package</b></a>
+ (Release 3, November 21, 2014; Matlab version; <code>27KB</code>).
+
+<ul>
+  
+<em>What's new in Release 3</em>:<p>
+
+<ul>
+<li> If required, the user can force the separating matrix to be real-valued. This is useful, e.g., 
+   when the mixing matrix is known to take real values but the separation is carried out in a complex domain
+   (e.g., after Fourier transform).<p>
+<li> The calling syntax has been simplified by using a cell-array
+  input argument.  <p>
+<li> The code is now licensed under a Creative Commons Non-Commercial License
+   (see <a href=#conditions>Conditions of use</a> for details).<p>
+</ul>
+
+  
+<em>What was new in Release 2</em> (Feb. 16, 2010):<p>
+
+<ul>
+<li> The optimal step-size computation has been refined (<code>kurt_gradient_optstep.m</code> function).<p>
+<li> Circular and noncircular complex sources are now included in the
+  demonstration (<code>robustica_demo.m</code> function). <p>
+<li> For the sake of reproducible research, the code used to generate
+  some of the results reported in reference [1] has been added to the
+  package (<code>robustica_tnn_fig3_sim.m</code> and related
+  functions).<p>
+</ul>
+
+<em>Download and installation instructions</em>:<p>
+
+<ul>
+<li> Download the zip-file by clicking on the above link.<p>
+<li> Extract the files into <code>robustica_package</code> directory.<p>
+<li> From Matlab's command line, set current directory to
+<code>robustica_package</code>.<p>
+<li> Type <code>help robustica_package</code> or <code>doc robustica_package</code> for details about the algorithm
+and the different functions contained in the package.<p>
+<li> Type <code>robustica_demo</code> to run a simple demo.<p>
+</ul>
+
+<a name=conditions>
+<em>Conditions of use</em>:<p>
+
+<ul>
+This is open-source code. Please, feel free to edit the M-files and
+modify them as you wish. It is only requested that original authorship
+be acknowledged and modifications be clearly indicated in the code
+(history section and elsewhere as appropriate).<p>
+If you use this package to generate results in your publications,
+  please cite at least reference <a href=#tnn10>[1]</a> above.<p>
+
+  <!-- CREATIVE COMMONS LICENSE -->
+
+  <a rel="license"
+  href="http://creativecommons.org/licenses/by-nc/4.0/"><img
+  alt="Creative Commons License" style="border-width:0"
+  src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a><br
+  /><span xmlns:dct="http://purl.org/dc/terms/"
+  href="http://purl.org/dc/dcmitype/Text" property="dct:title"
+  rel="dct:type">The RobustICA algorithm</span> by <span
+  xmlns:cc="http://creativecommons.org/ns#"
+  property="cc:attributionName">Vicente Zarzoso and Pierre
+  Comon</span> is licensed under a <a rel="license"
+  href="http://creativecommons.org/licenses/by-nc/4.0/">Creative
+  Commons Attribution-NonCommercial 4.0 International License</a>.
+
+</ul>
+
+
+
+<em>Compatibility</em>:<p>
+<ul>
+The package has been tested on Matlab 7.14. <p>
+</ul>
+
+<em>Feedback</em>:<p>
+
+<ul>
+Please, report any bugs, comments or suggestions to &lt;<IMG ALIGN=top SRC = logos/email.png>&gt;.<P>
+</ul>
+
+</ul>
+
+<!-- <hr> &#169 2008-2010 V. Zarzoso, P. Comon. -->
+
+<HR>
+
+Back to <A HREF = research.html#soft ONMOUSEOVER="window.self.status='Go back
+to sofware'; return true">software</A>
+
+</BODY>
+
+
+   
+

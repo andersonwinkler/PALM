@@ -60,7 +60,7 @@ switch lower(action)
             otmp = args{idxa+1};
         end
         [filename,~,~] = palm_filespec(otmp);
-        fext = tokenize(strcat(filename),'.');
+        fext = palm_tokenize(strcat(filename),'.');
         if any(strcmpi(fext{end},optsx.hdf5)) || ...
                strcmpi(fext{end},'mat')
             [fpth,fnam,~] = fileparts(filename);
@@ -117,15 +117,4 @@ switch lower(action)
 
     otherwise
         error('Incorrect number of input arguments.');
-end
-
-% ==============================================================
-function spl = tokenize(str,sep)
-% Split a string at the separator "sep" (e.g., '.', ':')
-idx  = find(str == sep);
-idxb = [1 idx+1];
-idxe = [idx-1 numel(str)];
-spl  = cell(numel(idxb),1);
-for s = 1:numel(idxb)
-    spl{s} = str(idxb(s):idxe(s));
 end

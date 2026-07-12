@@ -84,7 +84,7 @@ end
 % Figure out the file extension and check if file exists
 [filename,datapath,permdim] = palm_filespec(filespec);
 [~,fnam,fext] = fileparts(filename);
-fext = tokenize(strcat(fnam,fext),'.');
+fext = palm_tokenize(strcat(fnam,fext),'.');
 if ~ exist(filename,'file')
     error('File not found: %s',filename);
 end
@@ -423,17 +423,6 @@ if ~ (isstruct(X.data) || iscell(X.data))
     elseif strcmpi(precision,'single')
         X.data = single(X.data);
     end
-end
-
-% ==============================================================
-function spl = tokenize(str,sep)
-% Split a string at the separator "sep" (e.g., '.', ':')
-idx  = find(str == sep);
-idxb = [1 idx+1];
-idxe = [idx-1 numel(str)];
-spl  = cell(numel(idxb),1);
-for s = 1:numel(idxb)
-    spl{s} = str(idxb(s):idxe(s));
 end
 
 % ==============================================================
