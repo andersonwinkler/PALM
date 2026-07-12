@@ -1,10 +1,10 @@
-# =============================================================================
-# Apptainer.def — Apptainer / Singularity definition for PALM
-# =============================================================================
+# Apptainer/Singularity definition file for PALM
+# --------------------------------------------------------------
 #
-# Use this file if you want to build a container with Apptainer or Singularity.
-# For Docker, use Dockerfile in this directory instead (do not pass this .def
-# file to "docker build").
+# Use this file if you want to build a container for PALM with
+# Apptainer or Singularity.
+# (For Docker, use Dockerfile in this directory instead;
+# do not pass this .def file to "docker build".)
 #
 # Contents of the image:
 #   - GNU Octave (base: docker.io/gnuoctave/octave)
@@ -29,7 +29,29 @@
 #   apptainer   exec palm.sif /opt/PALM/palm -h
 #   singularity exec palm.sif /opt/PALM/palm -h
 #
-# =============================================================================
+# _______________________________________
+# Juan M. Peralta and Anderson M. Winkler
+# UTRGV
+# June/2026
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% PALM -- Permutation Analysis of Linear Models
+% Copyright (C) 2015 Anderson M. Winkler
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% any later version.
+%
+% This program is distributed in the hope that it will be useful
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 Bootstrap: docker
 From: docker.io/gnuoctave/octave:7.3.0 

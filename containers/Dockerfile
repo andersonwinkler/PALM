@@ -1,12 +1,11 @@
-# =============================================================================
-# Dockerfile — Docker image for PALM
-# =============================================================================
+# Docker definition file for PALM
+# -------------------------------
 #
-# Use this file if you want to build a container for PALM with Docker 
-# (or Podman with Docker-compatible commands).
-# For Apptainer / Singularity, use Apptainer.def in this directory instead
-# (do not pass this Dockerfile to "apptainer build" or "singularity build").
-#
+# Use this file if you want to build a container for PALM with
+# Docker (or Podman with Docker-compatible commands).
+# (For Apptainer/Singularity, use Apptainer.def in this directory instead;
+# do not pass this Dockerfile to "apptainer build" or "singularity build".)
+# 
 # Contents of the image:
 #   - GNU Octave (base: docker.io/gnuoctave/octave)
 #   - PALM from the GitHub "dev" branch
@@ -29,7 +28,29 @@
 # Override the entrypoint to open an Octave shell inside the image:
 #   docker run --rm -it --entrypoint octave palm
 #
-# =============================================================================
+# _______________________________________
+# Juan M. Peralta and Anderson M. Winkler
+# UTRGV
+# June/2026
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% PALM -- Permutation Analysis of Linear Models
+% Copyright (C) 2015 Anderson M. Winkler
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% any later version.
+%
+% This program is distributed in the hope that it will be useful
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 FROM docker.io/gnuoctave/octave:7.3.0
 
