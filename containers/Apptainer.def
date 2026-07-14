@@ -34,23 +34,23 @@
 # UTRGV
 # June/2026
 
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-% PALM -- Permutation Analysis of Linear Models
-% Copyright (C) 2015 Anderson M. Winkler
-%
-% This program is free software: you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation, either version 3 of the License, or
-% any later version.
-%
-% This program is distributed in the hope that it will be useful
-% but WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-% GNU General Public License for more details.
-%
-% You should have received a copy of the GNU General Public License
-% along with this program.  If not, see <http://www.gnu.org/licenses/>.
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# PALM -- Permutation Analysis of Linear Models
+# Copyright (C) 2015 Anderson M. Winkler
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 Bootstrap: docker
@@ -61,7 +61,11 @@ From: docker.io/gnuoctave/octave:7.3.0
   sed -i -e 's,^#\(OCTAVEBIN=/usr/bin/octave\),\1,' -e 's,^\(OCTAVEBIN=/opt/local/bin/octave\),#\1,' /opt/PALM/palm
   chmod +x /opt/PALM/palm
   echo -e "\n\naddpath('/opt/PALM')\n" >> "$(octave-config --print LOCALSTARTUPFILEDIR)/octaverc"
-  octave --quiet --eval "pkg install -forge image statistics specfun"
+  for pkg in image-2.14.0 statistics-1.4.3 ; do
+     wget --output-document /tmp/${pkg}.tar.gz "https://sourceforge.net/projects/octave/files/Octave%20Forge%20Packages/Individual%20Package%20Releases/${pkg}.tar.gz/download"
+     octave --quiet --eval "pkg install /tmp/${pkg}.tar.gz"
+     rm /tmp/${pkg}.tar.gz
+  done
   cd /opt/PALM/lib
   make distclean
   make octave
