@@ -322,7 +322,7 @@ switch lower(fext{end})
             X.extra.colour = colour;
             X.size     = NaN;
         else
-            X.data = colour;
+            X.data      = colour;
             X.extra.vtx = vtx;
             X.extra.fac = fac;
             X.size      = size(X.data);

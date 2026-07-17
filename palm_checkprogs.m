@@ -127,7 +127,7 @@ if isempty(palm_extern)
         end
 
         % Other Octave-specific functions
-        addpath(fullfile(palm_extern.palmpath,'lib','octave'));
+        addpath(fullfile(palm_extern.palmpath,'lib','shared'));
     end
 
     % MATLAB toolboxes  - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -149,7 +149,7 @@ if isempty(palm_extern)
             palm_extern.matlab_symbolic = true;
             fprintf('Symbolic Math Toolbox is available.\n');
         else
-            addpath(fullfile(palm_extern.palmpath,'lib','octave'));
+            addpath(fullfile(palm_extern.palmpath,'lib','shared'));
         end
     end
 end
