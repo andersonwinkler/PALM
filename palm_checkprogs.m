@@ -92,23 +92,16 @@ if isempty(palm_extern)
 
     % Octave packages - - - - - - - - - - - - - - - - - - - - - - - - - - -
     palm_extern.octave_image      = false;
-    palm_extern.octave_specfun    = false;
     palm_extern.octave_statistics = false;
     if palm_isoctave
         pkg_installed = pkg('list');
         pkg_names     = cellfun(@(p)p.name,pkg_installed,'UniformOutput',false);
         palm_extern.octave_image      = any(strcmp(pkg_names,'image'));
-        palm_extern.octave_specfun    = any(strcmp(pkg_names,'specfun'));
         palm_extern.octave_statistics = any(strcmp(pkg_names,'statistics'));
         if palm_extern.octave_image
             fprintf('Octave package "image" is available.\n');
         else
             fprintf('Octave package "image" is not available.\n');
-        end
-        if palm_extern.octave_specfun
-            fprintf('Octave package "specfun" is available.\n');
-        else
-            fprintf('Octave package "specfun" is not available.\n');
         end
         if palm_extern.octave_statistics
             fprintf('Octave package "statistics" is available.\n');
@@ -132,6 +125,9 @@ if isempty(palm_extern)
             autoload('__h5delete__',  octfile);
             autoload('h5info',        octfile);
         end
+
+        % Other Octave-specific functions
+        addpath(fullfile(palm_extern.palmpath,'lib','octave'));
     end
 
     % MATLAB toolboxes  - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -152,6 +148,8 @@ if isempty(palm_extern)
         if license('test','Symbolic_Toolbox')
             palm_extern.matlab_symbolic = true;
             fprintf('Symbolic Math Toolbox is available.\n');
+        else
+            addpath(fullfile(palm_extern.palmpath,'lib','octave'));
         end
     end
 end

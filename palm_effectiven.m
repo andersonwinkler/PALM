@@ -57,21 +57,6 @@ elseif nargin == 3
     islog = false;
 end
 
-% The Lambert's W function requires the 'specfun' package in Octave.
-% For Matlab, it requires the Symbolic Math Toolbox.
-ext = palm_checkprogs;
-if palm_isoctave
-    if ext.octave_specfun
-        pkg load specfun
-    else
-        error('In Octave, the package "specfun" is required to use this function.')
-    end
-else
-    if ~ ext.matlab_symbolic
-        error('In MATLAB, the "Symbolic Math Toolbox" is required to use this function.');
-    end
-end
-
 if EE && ~ISE
     
     % Permutations only
