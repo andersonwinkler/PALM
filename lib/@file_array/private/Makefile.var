@@ -60,7 +60,7 @@ ifndef SUF
   ##### Octave (all host OS) #####
   ifeq (octave,$(PLATFORM))
     MEXBIN       = mkoctfile
-    MEXOPTS      = --mex -O -std=c99 -Wno-deprecated-non-prototype
+    MEXOPTS      = --mex -O -Wno-deprecated-non-prototype
     SUF          = mex
     HOST_OS      = $(shell $(UNAME))
     ifneq (,$(filter MINGW% MSYS%,$(HOST_OS)))
