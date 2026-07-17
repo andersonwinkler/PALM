@@ -1,13 +1,12 @@
 #include "mex.h"
 
 /*
- * $Id: xml_findstr.c 6480 2015-06-13 01:08:30Z guillaume $
- * Guillaume Flandin <guillaume@artefact.tk>
+ * Copyright (C) 2002-2022 Guillaume Flandin
  */
 
 /*
     Differences with built-in findstr:
-        - allows to search only the n first occurences of a pattern
+        - allows to search only the n first occurrences of a pattern
         - allows to search only in a substring (given an index of the beginning)
    
     MATLAB hack:

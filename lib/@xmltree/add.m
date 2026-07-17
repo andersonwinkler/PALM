@@ -1,5 +1,5 @@
 function varargout = add(tree,uid,type,parameter)
-% XMLTREE/ADD Method (add childs to elements of an XML Tree)
+% XMLTREE/ADD Method (add children to elements of an XML Tree)
 % FORMAT vararout = add(tree,uid,type,parameter)
 % 
 % tree      - XMLTree object
@@ -20,10 +20,8 @@ function varargout = add(tree,uid,type,parameter)
 % deal with the attributes of an element node (initialized empty).
 % The tree parameter must be in input AND in output.
 %__________________________________________________________________________
-% Copyright (C) 2002-2011  http://www.artefact.tk/
 
-% Guillaume Flandin
-% $Id: add.m 4460 2011-09-05 14:52:16Z guillaume $
+% Copyright (C) 2002-2022 Guillaume Flandin
 
 
 if ~isa(uid,'double')

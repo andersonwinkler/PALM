@@ -31,15 +31,13 @@ function varargout = subsref(opt,subs)
 %               Setting frequency, phase or slice to 0 will remove it.
 % timing      - timing information.  When present, contains the fields
 %               toffset - acquisition time of first volume (seconds)
-%               tspace  - time between sucessive volumes (seconds)
+%               tspace  - time between successive volumes (seconds)
 % descrip     - a brief description of the image
 % cal         - a two-element vector containing cal_min and cal_max
 % aux_file    - name of an auxiliary file
 %__________________________________________________________________________
-% Copyright (C) 2005-2017 Wellcome Trust Centre for Neuroimaging
 
-%
-% $Id: subsref.m 7147 2017-08-03 14:07:01Z spm $
+% Copyright (C) 2005-2022 Wellcome Centre for Human Neuroimaging
 
 
 varargout = rec(opt,subs);

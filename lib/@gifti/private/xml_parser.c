@@ -1,6 +1,6 @@
 /*
- * $Id$
  * Guillaume Flandin
+ * Copyright (C) 2008-2023 Wellcome Centre for Human Neuroimaging
  */
 
 #ifndef MATLAB_MEX_FILE

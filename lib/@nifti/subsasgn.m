@@ -2,10 +2,8 @@ function obj = subsasgn(obj,subs,varargin)
 % Subscript assignment
 % See subsref for meaning of fields.
 %__________________________________________________________________________
-% Copyright (C) 2005-2017 Wellcome Trust Centre for Neuroimaging
 
-%
-% $Id: subsasgn.m 7147 2017-08-03 14:07:01Z spm $
+% Copyright (C) 2005-2022 Wellcome Centre for Human Neuroimaging
 
 
 switch subs(1).type
@@ -323,6 +321,26 @@ case {'.'}
                 error('"aux_file" must be a string.');
             end
 
+        case {'ext'}
+            if ~valid_fields(val1,{'esize','ecode','edata'})
+                error('Invalid extension.');
+            end
+            obj.hdr.ext = val1;
+            if ~isfield(obj.hdr.ext,'ecode')
+                error('NIfTI extension code missing.');
+            end
+            if ~isfield(obj.hdr.ext,'edata')
+                error('NIfTI extension data missing.');
+            end
+            if ~isa(obj.hdr.ext.edata,'uint8')
+                obj.hdr.ext.edata = uint8(obj.hdr.ext.edata);
+            end
+            obj.hdr.ext.ecode = obj.hdr.ext.ecode(:);
+            if ~isfield(obj.hdr.ext,'esize') || ~obj.hdr.ext.esize
+                obj.hdr.ext.esize = numel(obj.hdr.ext.edata) + 8;
+                obj.hdr.ext.esize = ceil(obj.hdr.ext.esize/16)*16;
+            end
+            
         case {'hdr'}
             error('hdr is a read-only field.');
             obj.hdr = val1;
@@ -351,7 +369,7 @@ if isa(val,'file_array')
     sz = [sz 1 1 1 1 1 1 1];
     sz = sz(1:7);
     use_nifti2 = obj.hdr.sizeof_hdr ~= 348; % i.e. == 540
-    if any(sz > spm_type('int16','maxval')) && ~use_nifti2
+    if any(sz > 32767) && ~use_nifti2 % spm_type('int16','maxval') = 32767
         warning('Image dimensions are too large for NIfTI-1 format.');
         obj.hdr = empty_hdr('nifti2'); % should also copy modified fields
         use_nifti2 = true;

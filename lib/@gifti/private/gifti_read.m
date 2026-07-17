@@ -4,10 +4,10 @@ function this = gifti_read(filename, this)
 % filename    - XML GIfTI filename
 % this        - structure with fields 'metaData', 'label' and 'data'.
 %__________________________________________________________________________
-% Copyright (C) 2008 Wellcome Trust Centre for Neuroimaging
 
 % Guillaume Flandin
-% $Id: read_gifti_file.m 7366 2018-07-03 16:02:11Z guillaume $
+% Copyright (C) 2008-2023 Wellcome Centre for Human Neuroimaging
+
 
 % Import XML-based GIfTI file
 %--------------------------------------------------------------------------
@@ -179,7 +179,7 @@ switch s.Encoding
         if isempty(p)
             s.ExternalFileName = fullfile(pwd,[f e]);
         end
-        if true
+        if false
             fid = fopen(s.ExternalFileName,'r');
             if fid == -1
                 error('[GIFTI] Unable to read binary file %s.',s.ExternalFileName);
@@ -199,7 +199,16 @@ end
 if length(s.Dim) == 1, s.Dim(end+1) = 1; end
 switch s.ArrayIndexingOrder
     case 'RowMajorOrder'
-        d = permute(reshape(d,fliplr(s.Dim)),length(s.Dim):-1:1);
+        if length(s.Dim) == 2 && any(s.Dim==1)
+            % special case that does not require permuting
+            d = reshape(d,s.Dim);
+        else
+            if isa(d,'file_array')
+                %warning('Memory-mapped data are loaded into memory');
+                d = subsref(d,substruct('()',repmat({':'},1,numel(d.dim))));
+            end
+            d = permute(reshape(d,fliplr(s.Dim)),length(s.Dim):-1:1);
+        end
     case 'ColumnMajorOrder'
         d = reshape(d,s.Dim);
     otherwise

@@ -9,10 +9,9 @@ function M = obj_read(filename)
 % Wavefront OBJ Format Specification:
 % https://en.wikipedia.org/wiki/Wavefront_.obj_file
 %__________________________________________________________________________
-% Copyright (C) 2017 Wellcome Trust Centre for Neuroimaging
 
 % Guillaume Flandin
-% $Id: obj_read.m 7390 2018-08-13 09:51:20Z guillaume $
+% Copyright (C) 2008-2023 Wellcome Centre for Human Neuroimaging
 
 
 fid = fopen(filename,'rt');
@@ -41,7 +40,7 @@ while true
                 otherwise
                     v = sscanf(l(2:end),'%f %f %f');
                     if numel(v) > 3, v = v(1:3); end
-                    M.vertices(size(M.vertices,1)+1,:) = v;
+                    M.vertices(:,size(M.vertices,2)+1) = v;
             end
         case 'f'
             f = sscanf(l(2:end),'%d %d %d');
@@ -65,8 +64,8 @@ while true
                 end
             end
             i = find(f<0);
-            if isempty(i), f(i) = size(M.vertices,1) + f(i); end
-            M.faces(size(M.faces,1)+1,:) = f;
+            if isempty(i), f(i) = size(M.vertices,2) + f(i); end
+            M.faces(:,size(M.faces,2)+1) = f;
         case 'o'
             fprintf('Ignoring named objects.\n');
         case 'g'
@@ -83,3 +82,6 @@ while true
 end
 
 fclose(fid);
+
+M.vertices = M.vertices';
+M.faces = M.faces';

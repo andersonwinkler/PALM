@@ -5,10 +5,10 @@ function this = gifti(varargin)
 %                 http://www.nitrc.org/projects/gifti/
 %                      http://nifti.nimh.nih.gov/
 %__________________________________________________________________________
-% Copyright (C) 2008 Wellcome Trust Centre for Neuroimaging
 
 % Guillaume Flandin
-% $Id: gifti.m 7621 2019-06-20 16:58:59Z guillaume $
+% Copyright (C) 2008-2023 Wellcome Centre for Human Neuroimaging
+
 
 switch nargin
     
@@ -21,8 +21,8 @@ switch nargin
             this = varargin{1};
             
         elseif isstruct(varargin{1})
-            f       = {'faces', 'face', 'tri' 'vertices', 'vert', 'pnt', 'cdata', 'indices'};
-            ff      = {'faces', 'faces', 'faces', 'vertices', 'vertices', 'vertices', 'cdata', 'indices'};
+            f       = {'faces', 'face', 'tri' 'vertices', 'vert', 'pnt', 'pos', 'cdata', 'indices'};
+            ff      = {'faces', 'faces', 'faces', 'vertices', 'vertices', 'vertices', 'vertices', 'cdata', 'indices'};
             [c, ia] = intersect(f,fieldnames(varargin{1}));
             if ~isempty(c)
                 this = gifti;
@@ -83,7 +83,7 @@ switch nargin
                 end
             elseif ismember(lower(e),{'.asc','.srf','.mgh','.mgz','.pial',...
                     '.white','.inflated','.nofix','.orig','.smoothwm',...
-                    '.sphere','.reg','.surf','.curv','.area','.sulc'})
+                    '.sphere','.reg','.surf','.curv','.area','.sulc','.annot'})
                 this = freesurfer_read(varargin{1});
                 this = gifti(this);
             elseif strcmpi(e,'.vtk')
@@ -94,6 +94,9 @@ switch nargin
                 this = gifti(this);
             elseif strcmpi(e,'.ply')
                 this = ply_read(varargin{1});
+                this = gifti(this);
+            elseif strcmpi(e,'.off')
+                this = off_read(varargin{1});
                 this = gifti(this);
             elseif strcmpi(e,'.stl')
                 this = stl_read(varargin{1});

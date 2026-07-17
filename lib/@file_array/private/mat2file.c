@@ -1,6 +1,6 @@
 /*
- * $Id: mat2file.c 7510 2019-01-02 15:06:12Z guillaume $
  * John Ashburner
+ * Copyright (C) 2005-2022 Wellcome Centre for Human Neuroimaging
  */
 
 #define _LARGEFILE_SOURCE
@@ -33,7 +33,7 @@
 
 typedef struct dtype {
     int code;
-    void (*swap)();
+    void (*swap)(int n, unsigned char id[], unsigned char od[]);
     mxClassID clss;
     int bits;
     int channels;
@@ -81,7 +81,6 @@ static void swap64(int n, unsigned char id[], unsigned char od[])
     }
 }
 
-
 static Dtype table[] = {
 {   1, swap8 , mxLOGICAL_CLASS, 1,1},
 {   2, swap8 , mxUINT8_CLASS  , 8,1},
@@ -93,6 +92,8 @@ static Dtype table[] = {
 { 256, swap8 , mxINT8_CLASS   , 8,1},
 { 512, swap16, mxUINT16_CLASS ,16,1},
 { 768, swap32, mxUINT32_CLASS ,32,1},
+{1024, swap64, mxINT64_CLASS  ,64,1},
+{1280, swap64, mxUINT64_CLASS ,64,1},
 {1792, swap64, mxDOUBLE_CLASS ,64,2}
 };
 
@@ -111,7 +112,7 @@ static long len;
 #define BLEN 131072
 static unsigned char wbuf[BLEN], *dptr;
 
-static void put_bytes(int ndim, FILE *fp, int *ptr[], int idim[], unsigned char idat[], off_t indo, off_t indi, void (*swap)())
+static void put_bytes(int ndim, FILE *fp, int *ptr[], int idim[], unsigned char idat[], off_t indo, off_t indi, void (*swap)(int n, unsigned char id[], unsigned char od[]))
 {
     int i;
     off_t nb = ocumprod[ndim];
@@ -157,7 +158,7 @@ static void put_bytes(int ndim, FILE *fp, int *ptr[], int idim[], unsigned char 
 static void put(FTYPE map, int *ptr[], int idim[], void *idat)
 {
     int i, nbytes;
-    void (*swap)();
+    void (*swap)(int n, unsigned char id[], unsigned char od[]);
 
     dptr   = idat;
     nbytes = map.dtype->bits/8;

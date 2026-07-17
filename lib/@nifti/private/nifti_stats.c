@@ -1,6 +1,3 @@
-#ifndef lint
-static char sccsid[] = "%W% R.W. Cox %E%";
-#endif
  /************************************************************************/
  /**  Functions to compute cumulative distributions and their inverses  **/
  /**  for the NIfTI-1 statistical types.  Much of this code is taken    **/
@@ -7031,7 +7028,7 @@ static double dt1(double *p,double *q,double *df)
 **********************************************************************
 
      double dt1(double *p,double *q,double *df)
-     Double precision Initalize Approximation to
+     Double precision initialize Approximation to
            INVerse of the cumulative T distribution
 
 

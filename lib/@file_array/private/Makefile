@@ -17,6 +17,17 @@ include Makefile.var
 
 SPMMEX = file2mat.$(SUF) mat2file.$(SUF) init.$(SUF)
 
+# MATLAB: silence deprecated non-prototype calls (void (*func)() / void (*swap)() table).
+# Octave already gets -Wno-deprecated-non-prototype from Makefile.var.
+ifneq (octave,$(RUNTIME))
+  ifeq (windows,$(PLATFORM))
+    MEXOPTS += CFLAGS=\"$$CFLAGS -Wno-deprecated-non-prototype\"
+  else
+    MEXOPTS += CFLAGS='$$CFLAGS -Wno-deprecated-non-prototype'
+  endif
+  MEX := $(MEXBIN) $(MEXOPTS)
+endif
+
 .PHONY: all matlab octave help clean distclean distclean-all check-tools
 
 help:

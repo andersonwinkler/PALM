@@ -11,7 +11,7 @@ function tree = xml_parser(xml)
 %   https://yorhel.nl/
 %
 % A pure MATLAB implementation of a similar XML parser is available at:
-%   https://www.artefact.tk/software/matlab/xml/
+%   https://github.com/gllmflndn/xmltree
 %__________________________________________________________________________
 %
 % The tree representation of the XML document is stores as a struct array
@@ -28,10 +28,9 @@ function tree = xml_parser(xml)
 %
 % Processing instructions and comments are not reported.
 %__________________________________________________________________________
-% Copyright (C) 2019 Wellcome Trust Centre for Neuroimaging
 
 % Guillaume Flandin
-% $Id$
+% Copyright (C) 2008-2023 Wellcome Centre for Human Neuroimaging
 
 
 error('A compiled version of "xml_parser" is not available for your platform.');

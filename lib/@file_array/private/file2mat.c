@@ -1,6 +1,6 @@
 /*
- * $Id: file2mat.c 7510 2019-01-02 15:06:12Z guillaume $
  * John Ashburner
+ * Copyright (C) 2005-2022 Wellcome Centre for Human Neuroimaging
  */
 
 /*
@@ -26,7 +26,7 @@ http://www.mathworks.com/company/newsletters/digest/mar04/memory_map.html
 HANDLE hFile, hMapping;
 typedef char *caddr_t;
 #if defined _FILE_OFFSET_BITS && _FILE_OFFSET_BITS == 64
-#ifdef _MSC_VER_
+#ifdef _MSC_VER
 #define stat _stati64
 #define fstat _fstati64
 #endif
@@ -305,6 +305,8 @@ static Dtype table[] = {
 { 256,get_8  , swap8 , mxINT8_CLASS   , 8,1},
 { 512,get_16 , swap16, mxUINT16_CLASS ,16,1},
 { 768,get_32 , swap32, mxUINT32_CLASS ,32,1},
+{1024,get_64 , swap64, mxINT64_CLASS  ,64,1},
+{1280,get_64 , swap64, mxUINT64_CLASS ,64,1},
 {1792,get_w64, swap64, mxDOUBLE_CLASS ,64,2}
 };
 
@@ -470,7 +472,7 @@ static void do_map_file(const mxArray *ptr, MTYPE *map)
     if (map->off < 0) map->off = 0;
 
     arr = mxGetField(ptr,0,"fname");
-    if (arr == (mxArray *)0) mexErrMsgTxt("Cant find fname.");
+    if (arr == (mxArray *)0) mexErrMsgTxt("Cannot find fname.");
     if (mxIsChar(arr))
     {
         char *buf = NULL;
@@ -479,18 +481,18 @@ static void do_map_file(const mxArray *ptr, MTYPE *map)
         if ((buf = mxArrayToString(arr)) == NULL)
         {
             mxFree(buf);
-            mexErrMsgTxt("Cant get filename.");
+            mexErrMsgTxt("Cannot get filename.");
         }
         if ((fd = open(buf, O_RDONLY)) == -1)
         {
             mxFree(buf);
-            mexErrMsgTxt("Cant open file.");
+            mexErrMsgTxt("Cannot open file.");
         }
         if (fstat(fd, &stbuf) == -1)
         {
             (void)close(fd);
             mxFree(buf);
-            mexErrMsgTxt("Cant get file size.");
+            mexErrMsgTxt("Cannot get file size.");
         }
         if (stbuf.st_size < siz + map->off)
         {
@@ -627,18 +629,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (map.dtype->channels == 1)
     {
         plhs[0] = mxCreateNumericArray(ndim,odim,map.dtype->clss,mxREAL);
-#ifdef _MSC_VER_
+#ifdef _MSC_VER
         /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa366801.aspx */
         __try
         {
 #endif
             map.dtype->func(ndim-1, idim, iptr, idat, odim, mxGetData(plhs[0]));
-#ifdef _MSC_VER_
+#ifdef _MSC_VER
         }
         __except(GetExceptionCode()==EXCEPTION_IN_PAGE_ERROR ?
             EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
         {
-            mexErrMsgTxt("An exception occured while accessing the data.");
+            mexErrMsgTxt("An exception occurred whilst accessing the data.");
         }
 #endif
         if (map.swap)

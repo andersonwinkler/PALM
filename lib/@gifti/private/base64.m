@@ -14,10 +14,9 @@ function y = base64(action,x)
 %
 % >> char(base64('decode',base64('encode',uint8('Base64'))))
 %__________________________________________________________________________
-% Copyright (C) 2019 Wellcome Trust Centre for Neuroimaging
 
 % Guillaume Flandin
-% $Id$
+% Copyright (C) 2008-2023 Wellcome Centre for Human Neuroimaging
 
 
 switch action
