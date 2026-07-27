@@ -43,9 +43,9 @@ function YNd = palm_conv2toN(Y2d,siz,N)
 % YNd = reshape(Y2d',[siz(:)' size(Y2d,1)]);
 
 % Third version:
-if nargin < 3 || isempty(N)
-    N = numel(siz);
-end
+%if nargin < 3 || isempty(N)
+%    N = numel(siz);
+%end
 nd            = max(numel(siz),N);
 siz(end+1:nd) = 1;
 d             = 1:nd;

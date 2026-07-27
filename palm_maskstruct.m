@@ -61,14 +61,14 @@ switch lower(readwith)
     case 'nifticlass'
 
         % If the original data is NIFTI and was read with the NIFTI class
-        S.data          = palm_conv2toN(mask,extra.dat.dim(1:3));
+        S.data          = palm_conv2toN(mask,extra.dat.dim(1:3),4);
         S.extra.mat     = extra.mat;
         S.extra.dat.dim = extra.dat.dim;
 
     case 'fs_load_nifti'
 
         % If the original data is NIFTI and was read with FreeSurfer.
-        S.data                 = palm_conv2toN(mask,extra.hdr.dim(2:4));
+        S.data                 = palm_conv2toN(mask,extra.hdr.dim(2:4),4);
         S.extra                = extra;
         S.extra.hdr.scl_slope  = 1;
         S.extra.hdr.dim([1 5]) = [3 1];
@@ -80,7 +80,7 @@ switch lower(readwith)
 
         % If the original data is NIFTI and was read with the MATLAB's
         % Image Processing Toolbox or Octave's equivalent commands
-        S.data      = palm_conv2toN(mask,extra.hdr.ImageSize(1:3));
+        S.data      = palm_conv2toN(mask,extra.hdr.ImageSize(1:3),4);
         S.extra.hdr = extra.hdr;
 
     case 'parquet'

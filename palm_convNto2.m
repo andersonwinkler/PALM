@@ -43,9 +43,9 @@ function Y2d = palm_convNto2(YNd,N)
 %     size(YNd,ndims(YNd)))';
 
 % Third version, more general:
-if nargin < 2 || isempty(N)
-    N = ndims(YNd);
-end
+%if nargin < 2 || isempty(N)
+%    N = ndims(YNd);
+%end
 nd   = max(ndims(YNd),N);
 d    = 1:nd;
 d(N) = []; % avoids setdiff (may fail in Octave)

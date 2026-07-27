@@ -1720,18 +1720,20 @@ if opts.npcmod || opts.MV || opts.CCA || opts.PLS
 end
 
 % Some extra packages for Octave
-if opts.spatial.do && any(plm.Yisvol)
-    if palm_isoctave && ext.octave_image
-        pkg load image
-    else
-        error('In Octave, spatial statistics with volume data requires the "image" package.');
+if palm_isoctave
+    if opts.spatial.do && any(plm.Yisvol)
+        if ext.octave_image
+            pkg load image
+        else
+            error('In Octave, spatial statistics with volume data requires the "image" package.');
+        end
     end
-end
-if opts.accel.lowrank || opts.zstat || opts.corrcon || Nf > 0
-    if palm_isoctave && ext.statistics
-        pkg load statistics
-    else
-        error('In Octave, the following options require the "statistics" package: "-f", "-zstat", "-corrcon", and "-accel lowrank".');
+    if opts.accel.lowrank || opts.zstat || opts.corrcon || Nf > 0
+        if ext.statistics
+            pkg load statistics
+        else
+            error('In Octave, the following options require the "statistics" package: "-f", "-zstat", "-corrcon", and "-accel lowrank".');
+        end
     end
 end
 
