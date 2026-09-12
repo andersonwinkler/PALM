@@ -1728,13 +1728,6 @@ if palm_isoctave
             error('In Octave, spatial statistics with volume data requires the "image" package.');
         end
     end
-    if opts.accel.lowrank || opts.zstat || opts.corrcon || Nf > 0
-        if ext.octave_statistics
-            pkg load statistics
-        else
-            error('In Octave, the following options require the "statistics" package: "-f", "-zstat", "-corrcon", and "-accel lowrank".');
-        end
-    end
 end
 
 % Read the EV per datum:

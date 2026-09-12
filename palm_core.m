@@ -3079,7 +3079,7 @@ function T = winer(G,df1,df2)
 df2 = bsxfun(@times,ones(size(G)),df2);
 cte = sqrt(sum(df2./(df2-2),1));
 gp  = palm_gpval(G,df1,df2);
-gt  = sign(gp-.5).*sqrt(df2./betainv(2*min(gp,1-gp),df2/2,.5)-df2); % =tinv(gp,df2)
+gt  = sign(gp-.5).*sqrt(df2./palm_betainv(2*min(gp,1-gp),df2/2,.5)-df2); % =tinv(gp,df2)
 T   = -sum(gt)./cte;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function P = winerp(T,~)

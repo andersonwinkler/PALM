@@ -62,10 +62,10 @@ if EE && ~ISE
     % Permutations only
     if islog
         cte = nP - log(sqrt(2*pi));
-        n   = cte./lambertw(cte/exp(1))-.5;
+        n   = cte./palm_lambertw(cte/exp(1))-.5;
     else
         cte = log(nP/sqrt(2*pi));
-        n   = cte./lambertw(cte/exp(1))-.5;
+        n   = cte./palm_lambertw(cte/exp(1))-.5;
     end
     
 elseif ~EE && ISE
@@ -82,9 +82,9 @@ elseif EE && ISE
     % Permutations with sign-flippings
     if islog
         cte = nP - log(sqrt(pi));
-        n   = cte./lambertw(2*cte/exp(1))-.5;
+        n   = cte./palm_lambertw(2*cte/exp(1))-.5;
     else
         cte = log(nP/sqrt(pi));
-        n   = cte./lambertw(2*cte/exp(1))-.5;
+        n   = cte./palm_lambertw(2*cte/exp(1))-.5;
     end
 end
