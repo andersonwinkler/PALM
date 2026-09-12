@@ -128,17 +128,23 @@ switch lower(fext{end})
         X.affine   = NaN;
         X.size     = size(X.data);
 
-    case 'csv'
+    case {'csv','tsv'}
 
         % Read a CSV file. It has to contain numeric values only.
         % The command 'csvwrite' is a frontend to 'dlmwrite', which calls
         % 'textscan', which on its turn has a limitation of 100k columns.
-        % Using 'load' bypass this issue.
-        X.readwith = 'load';
-        X.data     = load(X.filename);
-        X.extra    = [];
-        X.affine   = NaN;
-        X.size     = size(X.data);
+        % Using 'load' bypasses this issue.
+        X.readwith  = 'load';
+        X.data      = load(X.filename);
+        if     strcmpi(fext{end},'csv')
+            X.extra.delimiter = ',';
+        elseif strcmpi(fext{end},'tsv')
+            X.extra.delimiter = '\t';
+        elseif strcmpi(fext{end},'ssv')
+            X.extra.delimiter = ' ';
+        end
+        X.affine    = NaN;
+        X.size      = size(X.data);
 
     case {'mat','con','fts','grp'} % note the 'mat' exception above
 

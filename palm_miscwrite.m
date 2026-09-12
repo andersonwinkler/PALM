@@ -50,14 +50,20 @@ switch lower(X.readwith)
         fprintf(fid,'%s\n',X.data{:});
         fclose(fid);
 
-    case {'load','csvread'}
+    case 'load'
 
         % Write a CSV file.
         [~,~,fext] = fileparts(X.filename);
-        if isempty(fext) || ~ strcmpi(fext,'.csv')
-            X.filename = horzcat(X.filename,'.csv');
+        if isempty(fext)
+            if     strcmp(X.extra.delimiter,',')
+                X.filename = horzcat(X.filename,'.csv');
+            elseif strcmp(X.extra.delimiter,'\t')
+                X.filename = horzcat(X.filename,'.tsv');
+            elseif strcmp(X.extra.delimiter,' ')
+                X.filename = horzcat(X.filename,'.ssv');
+            end
         end
-        dlmwrite(X.filename,X.data,'delimiter',',','precision','%g'); %#ok<DLMWT>
+        dlmwrite(X.filename,X.data,'delimiter',X.extra.delimiter,'precision','%g'); %#ok<DLMWT>
 
     case 'vestread'
 

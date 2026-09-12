@@ -1729,7 +1729,7 @@ if palm_isoctave
         end
     end
     if opts.accel.lowrank || opts.zstat || opts.corrcon || Nf > 0
-        if ext.statistics
+        if ext.octave_statistics
             pkg load statistics
         else
             error('In Octave, the following options require the "statistics" package: "-f", "-zstat", "-corrcon", and "-accel lowrank".');
