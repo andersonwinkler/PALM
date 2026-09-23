@@ -118,7 +118,7 @@ if any(Pidx),
         
         % Estimate the distribution parameters. See §3.2 of Hosking &
         % Wallis (1987). Compared to the usual GPD parameterisation, 
-        % here k = shape (xi), and a = scale.
+        % here k = shape (-xi), and a = scale.
         x    = mean(ytail);
         s2   = var(ytail);
         apar = x*(x^2/s2 + 1)/2;
@@ -185,7 +185,7 @@ A2table = [ ...
     0.4960 0.7350 1.0610 1.3210 1.5900 1.9580 2.2430 2.9220];
 
 % The p-values are already sorted
-k  = max(0.5,k);
+k  = -min(0.5,k);
 z  = flipud(z)';
 n  = numel(z);
 j  = 1:n;
