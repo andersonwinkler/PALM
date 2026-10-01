@@ -2,3 +2,5 @@
 .nfs*
 *.asv
 .obsidian
+octave-workspace
+_*

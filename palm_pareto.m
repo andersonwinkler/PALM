@@ -104,7 +104,7 @@ if any(Pidx),
         Gtail = Gdist(qidx);
         qi    = find(qidx,1);
         if qi == 1,
-            upar = Gdist(qi) - mean(Gdist(qi:qi+1));
+            upar = 2*Gdist(qi) - mean(Gdist(qi:qi+1));
         else
             upar = mean(Gdist(qi-1:qi));
         end
