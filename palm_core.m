@@ -2853,7 +2853,7 @@ end
 G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
 sW1  = sum(W,1);
 bsum = sum(bsxfun(@rdivide,(1-bsxfun(@rdivide,W,sW1)).^2,dRmb),1);
-df2  = 1/3./bsum;
+df2  = 1./bsum;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastv3d(M,psi,res,y,m,c,o,plm)
 nT   = size(res,2);
@@ -2877,7 +2877,7 @@ end
 G    = plm.eC{y}{m}{c}{o}'*psi./sqrt(den);
 sW1  = sum(W,1);
 bsum = sum((1-bsxfun(@rdivide,W,sW1)).^2./dRmb,1);
-df2  = 1/3./bsum;
+df2  = 1./bsum;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 function [G,df2] = fastvswe(M,psi,res,y,m,c,o,plm)
 nT   = size(res,2);
