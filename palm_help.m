@@ -300,8 +300,10 @@ fprintf('-mcar : Assume that data is missing completely at random.\n\n');
 fprintf('-noniiclass : Do not use the NIFTI class (use this option only if you\n');
 fprintf('	have problems and even so, only for small datasets).\n\n');
 
-fprintf('-compress <level> : gzip-compress HDF5 outputs. The level is an integer\n');
-fprintf('	from 0 (none) to 9. "-compress" alone uses level 4.\n\n');
+fprintf('-compress <level> : gzip level for HDF5 outputs. Default is 6.\n');
+fprintf('	The level is required and is an integer from 0 (no compression) to 9.\n');
+fprintf('	For MZ3 and Parquet, 0 stores the file uncompressed and any other\n');
+fprintf('	value compresses it (MZ3 uses gzip, Parquet uses Snappy).\n\n');
 
 fprintf('-precision <string> : Precision ("single" or "double") for input files.\n\n');
 

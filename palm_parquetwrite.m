@@ -1,13 +1,16 @@
-function palm_parquetwrite(filename,T,cols)
+function palm_parquetwrite(filename,T,cols,level)
 % Write a numeric array and its column names to a Parquet file.
 %
-% palm_parquetwrite('data.parquet', T, cols)
+% palm_parquetwrite('data.parquet', T, cols, level)
 %
 % filename : Name of the Parquet file to create
 % T        : Array containing the values (no column headers)
 % cols     : Column names (cell array)
+% level    : Optional. 0 stores the file uncompressed. Any other value,
+%            or omitting the argument, uses Snappy. The level is not a
+%            gzip setting.
 %
-% This function uses DuckDB as backend.
+% Octave uses DuckDB. MATLAB uses parquetwrite.
 % _____________________________________
 % Anderson M. Winkler
 % UTRGV
@@ -43,6 +46,16 @@ if numel(cols) ~= size(T,2)
     error('Number of column names (%d) does not match the number of data columns (%d).', ...
         numel(cols), size(T,2));
 end
+if nargin < 4 || isempty(level)
+    level = [];
+end
+% Snappy unless the caller asked for no compression. A positive level
+% does not switch Parquet to gzip.
+if ~isempty(level) && level == 0
+    codec = 'uncompressed';
+else
+    codec = 'snappy';
+end
 
 if palm_isoctave
     
@@ -62,8 +75,8 @@ if palm_isoctave
     typelist = strjoin(repmat({'''DOUBLE'''}, 1, numel(cols)), ',');
     cmd      = sprintf(['duckdb -c "COPY (SELECT * FROM read_csv(''%s'', ' ...
         'header = true, delim = '','', types = [%s])) ' ...
-        'TO ''%s'' (FORMAT PARQUET);"'], ...
-        csvfile,typelist,filename);
+        'TO ''%s'' (FORMAT PARQUET, COMPRESSION ''%s'');"'], ...
+        csvfile,typelist,filename,codec);
     [status,output] = system(cmd);
 
     % Clean up the temporary file (whether or not DuckDB succeeded)
@@ -78,6 +91,6 @@ else
 
     % MATLAB
     T = array2table(T,'VariableNames',cols);
-    parquetwrite(filename,T);
+    parquetwrite(filename,T,'VariableCompression',codec);
 
 end

@@ -115,7 +115,7 @@ opts.accel.G1out         = false;              % Exclude (true) or not (false) t
 % File parsing options:
 opts.useniiclass         = true;               % Use the NIFTI class (saves memory)
 opts.precision           = [];                 % Precision? Can be 'single', 'double', or [] for what the file defines.
-opts.compress            = 0;                  % gzip level for HDF5 outputs (0 = none; -compress uses 4).
+opts.compress            = 6;                  % gzip level for HDF5 outputs (0 = none; 1-9 = deflate).
 opts.mz3surf             = false;              % Treat mz3 files as surfaces (true) or curvatures (false)?
 opts.hdf5                = { ...               % Recognized extensions for HDF5 files
     'h5','hdf5','nwb'};

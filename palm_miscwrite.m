@@ -92,7 +92,7 @@ switch lower(X.readwith)
         if isempty(fext) || ~ strcmpi(fext,'.h5')
             X.filename = horzcat(X.filename,'.h5');
         end
-        if isfield(X,'compress') && ~isempty(X.compress)
+        if isfield(X,'compress')
             palm_hdf5write(X.filename,X.extra.datapath,X.data,X.compress);
         else
             palm_hdf5write(X.filename,X.extra.datapath,X.data);
@@ -107,12 +107,16 @@ switch lower(X.readwith)
 
     case 'parquet'
         
-        % Write Parquet files (in Octave)
+        % Write a Parquet file.
         [~,~,fext] = fileparts(X.filename);
         if isempty(fext) || ~ strcmpi(fext,'.parquet')
             X.filename = horzcat(X.filename,'.parquet');
         end
-        palm_parquetwrite(X.filename,X.data,X.extra.VariableNames);
+        if isfield(X,'compress')
+            palm_parquetwrite(X.filename,X.data,X.extra.VariableNames,X.compress);
+        else
+            palm_parquetwrite(X.filename,X.data,X.extra.VariableNames);
+        end
 
     case 'nifticlass'
 
@@ -192,11 +196,16 @@ switch lower(X.readwith)
 
     case 'mz3'
 
-        % Write a MZ3 file
-        if numel(fieldnames(X.data)) == 2
-            writeMz3(X.filename,X.data.fac,X.data.vtx,X.extra.colour);
+        % Write a MZ3 file.
+        if isfield(X,'compress') && X.compress == 0
+            mz3compress = false;
         else
-            writeMz3(X.filename,X.extra.fac,X.extra.vtx,X.data);
+            mz3compress = true;
+        end
+        if numel(fieldnames(X.data)) == 2
+            writeMz3(X.filename,X.data.fac,X.data.vtx,X.extra.colour,[],mz3compress);
+        else
+            writeMz3(X.filename,X.extra.fac,X.extra.vtx,X.data,[],mz3compress);
         end
 
     case 'fs_read_curv'

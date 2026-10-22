@@ -162,9 +162,8 @@ if ~ isempty(X)
         S.data = S.data';
     end
     
-    % Save. compress is used only by the HDF5 writer.
-    if isfield(opts,'compress') && ~isempty(opts.compress) && opts.compress > 0
-        S.compress = opts.compress;
-    end
+    % Save. HDF5 uses the level. MZ3 is gzipped unless the level is 0.
+    % Parquet uses Snappy unless the level is 0.
+    S.compress = opts.compress;
     palm_miscwrite(S,true);
 end
