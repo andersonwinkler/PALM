@@ -154,11 +154,17 @@ if ~ isempty(X)
         end
     end
     
-    % Transpose back
-    if opts.transposedata && max(size(S.data)) == numel(S.data)
+    % Transpose tables back. Masks that were rebuilt in the file
+    % layout (HDF5, MATLAB, CIFTI) already sit on the right axis.
+    if opts.transposedata && ndims(S.data) == 2 && ...
+            max(size(S.data)) == numel(S.data) && ...
+            ~ any(strcmpi(S.readwith,{'hdf5read','matlab','cifti-matlab'}))
         S.data = S.data';
     end
     
-    % Save
+    % Save. compress is used only by the HDF5 writer.
+    if isfield(opts,'compress') && ~isempty(opts.compress) && opts.compress > 0
+        S.compress = opts.compress;
+    end
     palm_miscwrite(S,true);
 end

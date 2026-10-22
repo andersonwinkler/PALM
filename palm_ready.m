@@ -72,8 +72,35 @@ if ~isempty(maskstruct) && ...
     end
 end
 
-% If this is 4D read with the NIFTI class, it needs a mask now
-if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4
+% Observation axis, in the original array layout. -transposedata
+% applies to 2D tables: it selects columns instead of rows. CIFTI
+% already names its axis, so the flag is not applied there.
+if ~ isfield(Ytmp,'permdim') || isempty(Ytmp.permdim)
+    error('The permutation dimension of %s is not defined.',Yfile);
+end
+permdim = Ytmp.permdim;
+if opts.transposedata && ndims(Ytmp.data) == 2 && ...
+        ~ strcmpi(Ytmp.readwith,'cifti-matlab')
+    permdim = 2;
+end
+if ~ isscalar(permdim) || ~ isfinite(permdim) || permdim < 1
+    if any(strcmpi(Ytmp.readwith,{'hdf5read','matlab'}))
+        error(['The permutation dimension was not specified for %s.\n' ...
+            'Append :N to the dataset or variable name, where N is the\n' ...
+            'dimension along which observations are arranged.'],Yfile);
+    else
+        error(['Cannot determine the permutation dimension of %s.\n' ...
+            'CIFTI files need exactly one dimension of type scalars or series.'],Yfile);
+    end
+end
+Ytmp.permdim = permdim;
+if isstruct(Ytmp.extra)
+    Ytmp.extra.permdim = permdim;
+end
+
+% If this is 4D read with the NIFTI class, it needs a mask now.
+% Observations are the 4th dimension, walked one volume at a time.
+if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4 && permdim == 4
     if isempty(maskstruct)
 
         % If a mask hasn't been supplied, make one
@@ -103,48 +130,21 @@ if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4
     end
 end
 
-% For CIFTI, reorder dimensions so that the last is the one permutable
-if strcmpi(Ytmp.readwith,'cifti-matlab')
-    Ytmp = palm_dimreorder(Ytmp);
-end
+% One observation per row. Every format, including CIFTI, uses the
+% permutation dimension stored on the input; the array is not reordered
+% before this.
+if strcmp(Ytmp.readwith,'nifticlass') && ndims(Ytmp.data) == 4 && permdim == 4
+    tmpmsk = maskstruct.data(:)';
 
-% Now deal with the actual data
-if ndims(Ytmp.data) == 2 %#ok<ISMAT>
-
-    % Transpose if that was chosen.
-    % We always transpose 2D CIFTI files at this stage since the permutation
-    % dimension was shifted earlier to be the last
-    if opts.transposedata || strcmpi(Ytmp.readwith,'cifti-matlab')
-        Ytmp.data = Ytmp.data';
+    % Read each volume, reshape and apply the mask
+    Y = zeros(size(Ytmp.data,4),sum(tmpmsk));
+    for n = 1:size(Ytmp.data,4)
+        tmp = Ytmp.extra.dat(:,:,:,n);
+        tmp = tmp(:)';
+        Y(n,:) = tmp(tmpmsk);
     end
-
-    % This should cover the CSV files and DPX 4D files that
-    % were converted to CSV with 'dpx2csv' and then transposed.
-    Y = Ytmp.data;
-
-elseif ndims(Ytmp.data) == 3
-
-    % For 3D files in which the 3rd dim is what needs to be permuted (e.g.,
-    % with some CIFTI variants), that has now become the first
-    Y = palm_convNto2(Ytmp.data,3);
-
-elseif ndims(Ytmp.data) == 4
-
-    % Sort out loading for the NIFTI class
-    if strcmp(Ytmp.readwith,'nifticlass')
-        tmpmsk = maskstruct.data(:)';
-
-        % Read each volume, reshape and apply the mask
-        Y = zeros(size(Ytmp.data,4),sum(tmpmsk));
-        for n = 1:size(Ytmp.data,4)
-            tmp = Ytmp.extra.dat(:,:,:,n);
-            tmp = tmp(:)';
-            Y(n,:) = tmp(tmpmsk);
-        end
-    else
-        % If not read with the NIFTI class, get all immediately
-        Y = palm_convNto2(Ytmp.data,4);
-    end
+else
+    Y = palm_convNto2(Ytmp.data,permdim);
 end
 
 % Check if the size of data is compatible with size of mask.

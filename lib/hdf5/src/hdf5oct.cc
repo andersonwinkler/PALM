@@ -45,11 +45,11 @@ namespace h5o = hdf5oct;
 // PKG_DEL: autoload("__h5delete__","hdf5oct.oct","remove")
 // PKG_DEL: autoload("h5info","hdf5oct.oct","remove")
 
-// __h5create__(fname,create_file,loc,sz,datatype,chunksize,fillvalue)
+// __h5create__(fname,create_file,loc,sz,datatype,chunksize,fillvalue,deflate)
 DEFUN_DLD(__h5create__, args, , "__h5create__: backend for h5create\n\
 Users should not use this directly. Use h5create.m instead")
 {
-    if (args.length() != 7)
+    if (args.length() != 8)
         error("__h5create__: wrong # of args");
     string filename = args(0).string_value();
     bool create_file = args(1).bool_value();
@@ -58,7 +58,12 @@ Users should not use this directly. Use h5create.m instead")
     string datatype = args(4).string_value();
     uint64NDArray chunksize = args(5).uint64_array_value();
     int fillvalue = args(6).int_value();
-    bool has_unlimited = !chunksize.isempty();
+    int deflate = args(7).int_value();
+    bool chunked = !chunksize.isempty();
+    if (deflate < 0 || deflate > 9)
+        error("h5create: deflate level must be between 0 and 9");
+    if (deflate > 0 && !chunked)
+        error("h5create: deflate requires a chunk size");
     try
     {
         // open the hdf5 file, create it if it does not exist
@@ -92,13 +97,16 @@ Users should not use this directly. Use h5create.m instead")
         }
 
         // Modify dataset creation properties, i.e. enable chunking.
+        // A positive deflate level is gzip. HDF5 only allows it on a chunked dataset.
         H5::DataSetCreateProps dscp;
-        if (has_unlimited)
+        if (chunked)
         {
             vector<hsize_t> chunk_dims(ndim);
             for (int i = 0; i < ndim; i++)
                 chunk_dims[ndim - 1 - i] = chunksize(i);
             dscp.add(H5::Chunking(chunk_dims));
+            if (deflate > 0)
+                dscp.add(H5::Deflate(static_cast<unsigned>(deflate)));
         }
         // Set fill value for the dataset
         // cparms.setFillValue( PredType::NATIVE_INT, &fill_val);
@@ -703,6 +711,31 @@ void hdf5oct::dset_info_t::assign(const H5::DataSet &ds, const string &path)
     dspace_info.assign(ds.getSpace());
     // check creation properties
     H5::DataSetCreateProps dscpl = ds.getCreatePropertyList();
+    deflate = 0;
+    hid_t plist = dscpl.getId();
+    int nfilt = H5Pget_nfilters(plist);
+    for (int i = 0; i < nfilt; i++)
+    {
+        unsigned int flags = 0;
+        size_t cd_nelmts = 8;
+        unsigned int cd_values[8] = {0};
+        char fname[32];
+        unsigned int filter_config = 0;
+        // H5Pget_filter2 is the 1.8.5+ form. On newer HDF5, H5Pget_filter is
+        // that function, so the extra filter_config argument is required.
+#if H5_VERSION_GE(1, 8, 5)
+        H5Z_filter_t fid = H5Pget_filter2(plist, static_cast<unsigned>(i),
+                                          &flags, &cd_nelmts, cd_values,
+                                          sizeof(fname), fname, &filter_config);
+#else
+        H5Z_filter_t fid = H5Pget_filter(plist, static_cast<unsigned>(i),
+                                         &flags, &cd_nelmts, cd_values,
+                                         sizeof(fname), fname);
+        (void)filter_config;
+#endif
+        if (fid == H5Z_FILTER_DEFLATE && cd_nelmts >= 1)
+            deflate = static_cast<int>(cd_values[0]);
+    }
     if (dspace_info.isSimple() && H5Pget_layout(dscpl.getId()) == H5D_CHUNKED)
     {
         int ndim = dspace_info.size.numel();
@@ -724,6 +757,7 @@ octave_scalar_map hdf5oct::dset_info_t::oct_map() const
     M["Datatype"] = dtype_info.oct_map();
     M["Dataspace"] = dspace_info.oct_map();
     M["ChunkSize"] = chunksize;
+    M["Deflate"] = deflate;
     M["Attributes"] = attributes;
     return octave_scalar_map(M);
 }
@@ -785,7 +819,7 @@ octave_scalar_map hdf5oct::group_info_t::oct_map() const
         omap.fast_elem_insert(i, groups[i].oct_map());
     M["Groups"] = omap;
 
-    keys = {"Name", "Datatype", "Dataspace", "ChunkSize", "Attributes"};
+    keys = {"Name", "Datatype", "Dataspace", "ChunkSize", "Deflate", "Attributes"};
     omap = octave_map(dim_vector(datasets.size(), 1), keys);
     for (int i = 0; i < datasets.size(); i++)
         omap.fast_elem_insert(i, datasets[i].oct_map());

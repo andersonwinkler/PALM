@@ -7,7 +7,7 @@ function Y = palm_dimreorder(X,sqz)
 % Y = palm_dimreorder(X,sqz)
 %
 % X   : Data structure from palm_miscread.
-% szq : Squeeze the permutable dimension? (true/false)
+% sqz : Squeeze the permutable dimension? (true/false)
 % Y   : Like X, but with the dimensions permuted.
 %
 % For reordering an array only, see palm_convNto2 and palm_conv2toN.
@@ -74,18 +74,24 @@ switch X.readwith
         else
 
             % Otherwise, we want to reorder such that the permutable
-            % dimension is the last.
-            % Locate the dimension type for each dimension
+            % dimension is the last. palm_ready does not use this path;
+            % it flattens X.data along X.permdim. The axis stored by
+            % palm_miscread is reused here when it is known.
             nD = numel(X.extra.diminfo);
-            Dtypes = cell(1,nD);
-            for d = 1:nD
-                Dtypes{d} = X.extra.diminfo{d}.type;
-            end
-
-            % Identify the permutable dimension
-            pdim = find(strcmpi('scalars',Dtypes) | strcmpi('series',Dtypes));
-            if numel(pdim) ~= 1
-                error('Cannot determine the permutation dimension in CIFTI file: %s', X.filename);
+            if isfield(X,'permdim') && isscalar(X.permdim) && isfinite(X.permdim)
+                pdim = X.permdim;
+            elseif isfield(X.extra,'permdim') && isscalar(X.extra.permdim) && ...
+                    isfinite(X.extra.permdim)
+                pdim = X.extra.permdim;
+            else
+                Dtypes = cell(1,nD);
+                for d = 1:nD
+                    Dtypes{d} = X.extra.diminfo{d}.type;
+                end
+                pdim = find(strcmpi('scalars',Dtypes) | strcmpi('series',Dtypes));
+                if numel(pdim) ~= 1
+                    error('Cannot determine the permutation dimension in CIFTI file: %s', X.filename);
+                end
             end
 
             % Reorder the data such that the permutable dimension is the last

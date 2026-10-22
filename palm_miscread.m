@@ -4,7 +4,7 @@ function X = palm_miscread(filespec,varargin)
 % X = palm_miscread(filespec,useniiclass,precision,mz3surf);
 %
 % filespec    : Path to file to be read or specification of an HDF5
-%               datablock (see palm_hdf5spec.m).
+%               datablock (see palm_filespec.m).
 % useniiclass : True/False. For NIFTI files, use the NIFTI class
 %               when reading them. It requires less memory.
 % precision   : Ensure the output data is 'single' or 'double'
@@ -26,7 +26,15 @@ function X = palm_miscread(filespec,varargin)
 %               the one inside extras.
 % X.extra     : Contain extra information, depending on the kind
 %               of data that was read and the function or
-%               program used for reading.
+%               program used for reading. When X.extra is a
+%               struct, X.extra.permdim repeats X.permdim.
+% X.permdim   : Dimension along which observations are arranged,
+%               counted in the original layout of X.data. The
+%               array itself is not permuted. NaN if it cannot
+%               be determined (HDF5 or MATLAB with more than two
+%               dimensions and no :N, or a CIFTI file without
+%               exactly one scalars or series dimension). For a
+%               2D HDF5 or MATLAB array, an omitted :N means 1.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -413,6 +421,46 @@ switch lower(fext{end})
 
     otherwise
         error('File extension %s not known. Data cannot be loaded\n',fext{end});
+end
+
+% Record the permutation dimension. Do not reorder X.data: callers
+% that permute (palm_ready) or rebuild a mask (palm_maskstruct)
+% read this field and leave the file layout to palm_miscwrite.
+if ~ (isstruct(X.data) || iscell(X.data))
+    if isfield(X,'extra') && isstruct(X.extra) && ...
+            isfield(X.extra,'permdim') && ~ isempty(X.extra.permdim)
+        permdim = X.extra.permdim;
+        if isnan(permdim) && ndims(X.data) <= 2
+            permdim = 1;
+        end
+    elseif strcmpi(X.readwith,'cifti-matlab')
+        % Index of the single scalars or series dimension, or NaN.
+        nD = numel(X.extra.diminfo);
+        Dtypes = cell(1,nD);
+        for d = 1:nD
+            Dtypes{d} = X.extra.diminfo{d}.type;
+        end
+        permdim = find(strcmpi('scalars',Dtypes) | strcmpi('series',Dtypes));
+        if numel(permdim) ~= 1
+            permdim = NaN;
+        end
+    else
+        % Fixed permutation axis for formats that do not name one.
+        % Matrices use rows. NIFTI uses the 4th dimension when it exists,
+        % otherwise the last. Every other array uses its last dimension.
+        nd = ndims(X.data);
+        if nd <= 2
+            permdim = 1;
+        elseif any(strcmpi(X.readwith,{'nifticlass','fs_load_nifti','ipt'}))
+            permdim = min(nd,4);
+        else
+            permdim = nd;
+        end
+    end
+    X.permdim = permdim;
+    if isfield(X,'extra') && isstruct(X.extra)
+        X.extra.permdim = permdim;
+    end
 end
 
 % Restore the state of the random number generator.

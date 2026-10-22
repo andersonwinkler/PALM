@@ -85,6 +85,11 @@
 # @item @option{ChunkSize}
 # The value may be either a vector specifying the chunk size,
 # or an empty vector [], which means no chunking (this is the default).
+# @item @option{Deflate}
+# gzip compression level, an integer from 0 (no compression) to 9.
+# If this option is omitted, the dataset is not compressed.
+# Specifying @option{Deflate} requires @option{ChunkSize}, including
+# when the level is 0. Option names are case-insensitive.
 # @end table
 #
 # @seealso{h5write}
@@ -119,11 +124,28 @@ for i=1:length(sz),
   endif
 endfor
 
-## check options
-[reg, datatype, chunksize, fillvalue] = parseparams (varargin, ...
+## check options. Names match MATLAB's h5create and are case-insensitive.
+deflate_given = false;
+for k = 1:2:numel(varargin)
+  if ischar(varargin{k})
+    switch lower(varargin{k})
+      case 'datatype'
+        varargin{k} = 'Datatype';
+      case 'chunksize'
+        varargin{k} = 'ChunkSize';
+      case 'fillvalue'
+        varargin{k} = 'FillValue';
+      case 'deflate'
+        varargin{k} = 'Deflate';
+        deflate_given = true;
+    endswitch
+  endif
+endfor
+[reg, datatype, chunksize, fillvalue, deflate] = parseparams (varargin, ...
   'Datatype', 'double',...
   'ChunkSize',[],...
-  'FillValue',0);
+  'FillValue',0,...
+  'Deflate',0);
 
 # check datatype
 if !(strcmp(datatype,'double') || ...
@@ -156,6 +178,17 @@ if !isempty(chunksize)
   chunksize = chunksize(:);
 endif
 
+# Deflate is MATLAB-compatible: 0..9, and naming it requires chunks
+# even when the level is 0. Omitting it leaves the dataset uncompressed.
+if !(isnumeric(deflate) && isscalar(deflate) && isfinite(deflate) && ...
+    deflate == fix(deflate) && deflate >= 0 && deflate <= 9)
+  error("h5create: Deflate must be an integer between 0 and 9");
+endif
+deflate = double(deflate);
+if deflate_given && isempty(chunksize)
+  error("h5create: Deflate requires ChunkSize");
+endif
+
 if size(sz,1)==1, # convert [n] to [1xn]
   sz = [sz; 1];
   if !isempty(chunksize)
@@ -163,7 +196,7 @@ if size(sz,1)==1, # convert [n] to [1xn]
   endif
 endif
 
-__h5create__(filename,create_file,location,sz,datatype,chunksize,fillvalue);
+__h5create__(filename,create_file,location,sz,datatype,chunksize,fillvalue,deflate);
 
 # tests for all functions in package
 
@@ -192,6 +225,15 @@ __h5create__(filename,create_file,location,sz,datatype,chunksize,fillvalue);
 %! x = reshape(1:150,10,15);
 %! y = test1(fname,'/T1/D3',x,'double',size(x));
 %! assert (x, y);
+
+%!test
+%! x = reshape(single(1:24),2,3,4);
+%! loc = '/T1/Ddeflate';
+%! h5create(fname,loc,size(x),'Datatype','single','ChunkSize',size(x),'Deflate',4);
+%! h5write(fname,loc,x);
+%! assert(x, h5read(fname,loc));
+%! info = h5info(fname,loc);
+%! assert(info.Deflate, 4);
 
 %!test
 %! x = {"ένα"; "δύο"; "τρία"; "τέσσερα"; "πέντε"};

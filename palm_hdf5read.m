@@ -9,7 +9,7 @@ function data = palm_hdf5read(filename,datapath)
 % datapath : Dataset path within HDF5
 % data     : Data, as read
 %
-% See also: palm_hdf5write.m, palm_hdf5spec.m
+% See also: palm_hdf5write.m, palm_filespec.m
 %
 % _____________________________________
 % Anderson M. Winkler

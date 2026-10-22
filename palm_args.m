@@ -889,6 +889,25 @@ while a <= narginx
             opts.useniiclass = false;
             a = a + 1;
             
+        case '-compress' % advanced
+
+            % gzip level for HDF5 outputs. Bare -compress uses level 4.
+            if narginx > a && ~ strcmpi(args{a+1}(1),'-')
+                level = args{a+1};
+                if ischar(level)
+                    level = str2double(level);
+                end
+                if ~(isnumeric(level) && isscalar(level) && isfinite(level) && ...
+                        level == fix(level) && level >= 0 && level <= 9)
+                    error('The option "-compress" requires an integer from 0 to 9.');
+                end
+                opts.compress = double(level);
+                a = a + 2;
+            else
+                opts.compress = 4;
+                a = a + 1;
+            end
+
         case '-precision' % advanced
             
             % Precision to use?
@@ -1954,12 +1973,18 @@ if opts.savemask
             M.filename = sprintf('%smask_m%d',opts.o,y);
         end
         M.data = double(M.data);
+        if opts.compress > 0
+            M.compress = opts.compress;
+        end
         palm_miscwrite(M,true);
     end
     if plm.nY > 1 && (opts.npcmod || opts.MV || opts.forcemaskinter)
         M          = plm.maskinter;
         M.filename = sprintf('%sintersection_mask',opts.o);
         M.data     = double(M.data);
+        if opts.compress > 0
+            M.compress = opts.compress;
+        end
         palm_miscwrite(M,true);
     end
 end

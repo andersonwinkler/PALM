@@ -67,7 +67,7 @@ where `/path/to/file.h5` is the path to the HDF5 file (can use absolute or relat
 
 HDF5 files can be loaded with any extension (including `.mat` and `.nwb`), but PALM must be able to recognize these extensions. Make sure to list them in `palm_defaults.m`, under the variable `opts.hdf5`.
 
-If an HDF5 file is specified as output (e.g., `-o /my/directory/myresults.h5`), then all outputs will be stored into the same HDF5 file, which is a convenient way to store an entire analysis into a single file. If an output HDF5 file already exists, new datablocks will be appended; if these datablocks already exist, they will be overwritten. PALM is unable to reclaim space of datablocks overwritten in smaller size. To reclaim space in the files, you can use the tool [h5repack](https://support.hdfgroup.org/documentation/hdf5/latest/_h5_t_o_o_l__r_p__u_g.html#sec_cltools_h5repack) (installed separately).
+If an HDF5 file is specified as output (e.g., `-o /my/directory/myresults.h5`), then all outputs will be stored into the same HDF5 file, which is a convenient way to store an entire analysis into a single file. The option `-compress` stores those datasets with gzip (deflate). Unlinking a dataset that is later rewritten does not return the old bytes to the file. If an output HDF5 file already exists, new datablocks will be appended; if these datablocks already exist, they will be overwritten. PALM is unable to reclaim space of datablocks overwritten in smaller size. To reclaim space in the files, you can use the tool [h5repack](https://support.hdfgroup.org/documentation/hdf5/latest/_h5_t_o_o_l__r_p__u_g.html#sec_cltools_h5repack) (installed separately).
 
 ### Support for CSV files
 

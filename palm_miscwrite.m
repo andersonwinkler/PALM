@@ -4,6 +4,7 @@ function palm_miscwrite(varargin)
 % palm_miscwrite(X);
 %
 % See 'palm_miscread.m' for a description of the contents of X.
+% X.data is written as given. X.permdim is not applied.
 %
 % _____________________________________
 % Anderson M. Winkler
@@ -91,7 +92,11 @@ switch lower(X.readwith)
         if isempty(fext) || ~ strcmpi(fext,'.h5')
             X.filename = horzcat(X.filename,'.h5');
         end
-        palm_hdf5write(X.filename,X.extra.datapath,X.data);
+        if isfield(X,'compress') && ~isempty(X.compress)
+            palm_hdf5write(X.filename,X.extra.datapath,X.data,X.compress);
+        else
+            palm_hdf5write(X.filename,X.extra.datapath,X.data);
+        end
         
     case 'matlab'
 

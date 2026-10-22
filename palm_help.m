@@ -300,6 +300,9 @@ fprintf('-mcar : Assume that data is missing completely at random.\n\n');
 fprintf('-noniiclass : Do not use the NIFTI class (use this option only if you\n');
 fprintf('	have problems and even so, only for small datasets).\n\n');
 
+fprintf('-compress <level> : gzip-compress HDF5 outputs. The level is an integer\n');
+fprintf('	from 0 (none) to 9. "-compress" alone uses level 4.\n\n');
+
 fprintf('-precision <string> : Precision ("single" or "double") for input files.\n\n');
 
 fprintf('-noranktest : Don''t test whether the space spanned by effects of interest\n');

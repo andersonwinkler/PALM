@@ -33,7 +33,9 @@ function [filename,datapath,permdim] = palm_filespec(spec)
 % datapath : Path to dataset within the file, or NaN if the spec does
 %            not refer to an HDF5 or MATLAB .mat file
 % permdim  : Permutation dimension (NaN if not supplied, or if the spec
-%            does not refer to an HDF5 or .mat file)
+%            does not refer to an HDF5 or .mat file). palm_miscread
+%            leaves NaN in place when the array has more than two
+%            dimensions, and uses 1 when the array is a matrix.
 %
 % _____________________________________
 % Anderson M. Winkler

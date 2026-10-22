@@ -67,6 +67,7 @@ Advanced options are:
 |`-inputmv`|Treat the (sole) input as multivariate, that is, each column is a variable in a multivariate model, as opposed to independent univariate tests. Useful with non-imaging data.|
 |`-noranktest`|For MV, don't check the rank of the data before trying to compute the multivariate statistics.|
 |`-noniiclass`|Do not use the NIFTI class (use this option only if you have problems and even so, only for small datasets).|
+|`-compress <level>`|gzip-compress HDF5 outputs. The level is an integer from 0 (none) to 9. `-compress` alone uses level 4.|
 |`-precision <string>`|Precision (`single` or `double`) for input files.|
 |`-nounivariate`|Don't save univariate results.|
 |`-nouncorrected`|Don't save uncorrected results.|

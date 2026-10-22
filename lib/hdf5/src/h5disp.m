@@ -126,6 +126,9 @@ elseif isfield(info,"Dataspace"), # info is a dataset
     if !isempty(info.ChunkSize)
         disp([indent "  ChunkSize: [" num2str(info.ChunkSize) "]"]);
     endif
+    if isfield(info,"Deflate") && info.Deflate > 0
+        disp([indent "  Deflate: " num2str(info.Deflate)]);
+    endif
 elseif isfield(info,"Class"), # info is a datatype
     disp([indent "Datatype"]);
     disp([indent "  Class: '" info.Class "'"]);

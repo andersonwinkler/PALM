@@ -207,6 +207,7 @@ namespace hdf5oct
         dtype_info_t dtype_info;
         dspace_info_t dspace_info;
         uint64NDArray chunksize;
+        int deflate;
         octave_value fillValue;
         std::map<std::string, octave_value> attributes;
         void assign(const HighFive::DataSet &ds, const std::string &path);

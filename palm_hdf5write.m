@@ -1,13 +1,16 @@
-function palm_hdf5write(filename,datapath,data)
+function palm_hdf5write(filename,datapath,data,level)
 % Write an N-D array to a dataset within an HDF5 file.
 %
 % Usage:
 %
-% palm_hdf5write(filename,datapath,data);
+% palm_hdf5write(filename,datapath,data,level);
 %
 % filename : HDF5 file to write to (created if it does not exist)
 % datapath : Path to the dataset within the HDF5 file, starting with "/"
 % data     : Data to be written (numeric; logical is stored as uint8)
+% level    : Optional gzip level, an integer from 0 to 9. 0, or omitting
+%            the argument, stores the dataset uncompressed. A positive
+%            level chunks the array and uses HDF5 deflate.
 %
 % If the file does not exist it is created. If it exists, the dataset at
 % "datapath" is overwritten if already present, or added otherwise; any
@@ -39,9 +42,17 @@ function palm_hdf5write(filename,datapath,data)
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-if nargin ~= 3
+if nargin < 3 || nargin > 4
     error('Incorrect number of arguments.');
 end
+if nargin < 4 || isempty(level)
+    level = 0;
+end
+if ~(isnumeric(level) && isscalar(level) && isfinite(level) && ...
+        level == fix(level) && level >= 0 && level <= 9)
+    error('The compression level must be an integer between 0 and 9.');
+end
+level = double(level);
 if isempty(datapath) || datapath(1) ~= '/'
     error('The dataset path must start with "/": %s',datapath);
 end
@@ -64,21 +75,18 @@ if palm_isoctave
         ds       = find_dataset(filename,datapath);
         existing = ~ isempty(ds);
         if existing
-            if exist('h5delete') %#ok<EXIST>
-                same_shape = isequal(ds.Dataspace.Size,size(data));
-                same_type  = strcmp(class(data),h5_class_to_matlab(ds.Datatype));
-                if ~ (same_shape && same_type)
-                    % A dataset is there but its shape or type differs. HDF5 cannot
-                    % resize/retype in place through the high-level interface, so
-                    % drop the old link and recreate.
-                    h5delete(filename,datapath);
-                    existing = false;
-                end
-                % A matching dataset (or the freshly created one) is now in place, so
-                % h5write simply overwrites the values.
-                h5write(filename,datapath,data);
+            same_shape   = isequal(ds.Dataspace.Size,size(data));
+            same_type    = strcmp(class(data),h5_class_to_matlab(ds.Datatype));
+            same_deflate = dataset_deflate(ds) == level;
+            if same_shape && same_type && same_deflate
+                % A matching dataset is already in place.
+            elseif exist('h5delete') %#ok<EXIST>
+                % HDF5 cannot resize, retype, or add a filter in place, so
+                % drop the old link and recreate. Unlinking does not return
+                % the old bytes to the file.
+                h5delete(filename,datapath);
+                existing = false;
             else
-                % If h5delete is not available, we cannot do the same
                 error([
                     'Dataset %s already exists in file %s, but this Octave installation does not have the h5delete command.\n',...
                     'You have to either delete either the dataset or the entire file first.\n'], ...
@@ -86,11 +94,9 @@ if palm_isoctave
             end
         end
         if ~ existing
-            % If the dataset doesn't already exist, we can create it and
-            % write the file
-            h5create(filename,datapath,size(data),'Datatype',class(data));
-            h5write(filename,datapath,data);
+            create_dataset(filename,datapath,data,level);
         end
+        h5write(filename,datapath,data);
     else % if no hdf5oct functions
         % Octave without hdf5oct package: fallback using Octave own
         % "-hdf5" format (not interchangeable with standard HDF5 readers).
@@ -106,23 +112,72 @@ else
     ds       = find_dataset(filename,datapath);
     existing = ~ isempty(ds);
     if existing
-        same_shape = isequal(ds.Dataspace.Size,size(data));
-        same_type  = strcmp(class(data),h5_class_to_matlab(ds.Datatype));
-        if ~ (same_shape && same_type)
-            % A dataset is there but its shape or type differs. HDF5 cannot
-            % resize/retype in place through the high-level interface, so
-            % drop the old link and recreate.
+        same_shape   = isequal(ds.Dataspace.Size,size(data));
+        same_type    = strcmp(class(data),h5_class_to_matlab(ds.Datatype));
+        same_deflate = dataset_deflate(ds) == level;
+        if ~ (same_shape && same_type && same_deflate)
+            % HDF5 cannot resize, retype, or add a filter in place, so
+            % drop the old link and recreate. Unlinking does not return
+            % the old bytes to the file.
             remove_link(filename,datapath);
             existing = false;
         end
     end
     if ~ existing
-        % Create new dataset
-        h5create(filename,datapath,size(data),'Datatype',class(data));
+        create_dataset(filename,datapath,data,level);
     end
     % A matching dataset (or the freshly created one) is now in place, so
     % h5write simply overwrites the values.
     h5write(filename,datapath,data);
+end
+
+% ------------------------------------------------------------------
+function create_dataset(filename,datapath,data,level)
+% Create a dataset. A positive level gzip-compresses it. The whole array
+% is one chunk unless that would be large, in which case the longest
+% dimension is split into pieces of a few megabytes.
+if level > 0
+    h5create(filename,datapath,size(data), ...
+        'Datatype',class(data), ...
+        'ChunkSize',chunk_size(data), ...
+        'Deflate',level);
+else
+    h5create(filename,datapath,size(data),'Datatype',class(data));
+end
+
+% ------------------------------------------------------------------
+function chunks = chunk_size(data)
+% Chunk shape for a compressed dataset. Small arrays are one chunk.
+chunks = size(data);
+switch class(data)
+    case {'double','uint64','int64'}, nbytes = 8;
+    case {'single','uint32','int32'}, nbytes = 4;
+    case {'uint16','int16'},          nbytes = 2;
+    otherwise,                        nbytes = 1;
+end
+nbytes = nbytes * numel(data);
+limit  = 4 * 1024 * 1024;
+if nbytes <= limit
+    return
+end
+[~,dim] = max(chunks);
+nchunk = ceil(nbytes / limit);
+chunks(dim) = max(1,ceil(chunks(dim) / nchunk));
+
+% ------------------------------------------------------------------
+function level = dataset_deflate(ds)
+% gzip level stored on an h5info dataset, or 0 when the dataset is not
+% compressed. Octave's h5info reports Deflate; MATLAB reports Filters.
+level = 0;
+if isfield(ds,'Deflate') && ~isempty(ds.Deflate) && isnumeric(ds.Deflate)
+    level = double(ds.Deflate);
+elseif isfield(ds,'Filters') && ~isempty(ds.Filters)
+    for k = 1:numel(ds.Filters)
+        if isfield(ds.Filters(k),'Name') && strcmpi(ds.Filters(k).Name,'deflate') ...
+                && isfield(ds.Filters(k),'Data') && ~isempty(ds.Filters(k).Data)
+            level = double(ds.Filters(k).Data(1));
+        end
+    end
 end
 
 % ------------------------------------------------------------------

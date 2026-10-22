@@ -89,16 +89,14 @@ switch lower(readwith)
         S.data  = mask;
         S.extra = extra;
 
-    case 'hdf5read'
+    case {'hdf5read','matlab'}
 
-        % If the original data is an HDF5 file
-        S.data  = mask;
-        S.extra = extra;
-
-    case 'matlab'
-
-        % If the original data is in a MATLAB .mat file
-        S.data  = mask;
+        % Collapse the permutation dimension and put the mask back
+        % in the layout of the file. palm_miscwrite then stores that
+        % array unchanged.
+        osiz = size;
+        osiz(extra.permdim) = 1;
+        S.data  = palm_conv2toN(mask,osiz,extra.permdim);
         S.extra = extra;
 
     case {'fs_read_curv','dpxread'}
@@ -110,7 +108,8 @@ switch lower(readwith)
     case 'fs_load_mgh'
         
         % If the original data is an FS MGH/MGZ file.
-        S.data  = palm_conv2toN(mask,extra.volsz(1:3));
+        % Frames are the 4th dimension; a mask keeps one frame.
+        S.data  = palm_conv2toN(mask,extra.volsz(1:3),4);
         S.extra = extra;
  
     case 'wb_command'
@@ -123,17 +122,22 @@ switch lower(readwith)
     case 'cifti-matlab'
 
         % If the original data is CIFTI and was read with
-        % the cifti-matlab toolbox
+        % the cifti-matlab toolbox. The mask is one map, placed
+        % on the original permutation dimension.
+        pdim = extra.permdim;
         nD = numel(extra.diminfo);
         Dlength = ones(1,nD);
         for d = 1:nD
             Dlength(d) = extra.diminfo{d}.length;
         end
-        S.data  = palm_conv2toN(mask,Dlength(1:end-1));
+        Dlength(pdim) = 1;
+        S.data  = palm_conv2toN(mask,Dlength,pdim);
         S.extra = extra;
-        S.extra.diminfo{end}.length = 1;
-        S.extra.diminfo{end}.maps = extra.diminfo{end}.maps(1);
-        S = palm_dimreorder(S,true);
+        S.extra.diminfo{pdim}.length = 1;
+        if isfield(S.extra.diminfo{pdim},'maps') && ...
+                ~ isempty(S.extra.diminfo{pdim}.maps)
+            S.extra.diminfo{pdim}.maps = S.extra.diminfo{pdim}.maps(1);
+        end
 
     case 'gifti'
         
