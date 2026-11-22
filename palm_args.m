@@ -818,14 +818,12 @@ while a <= narginx
                         if ischar(args{a+2})
                             if     any(strcmpi(args{a+2},{'out','G1out','T1out','true', '1'}))
                                 opts.accel.G1out = true;
-                                opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
                             elseif any(strcmpi(args{a+2},{'in', 'G1in', 'T1in', 'false','0'}))
                                 opts.accel.G1out = false;
                             end
                         else
                             if args{a+2}
                                 opts.accel.G1out = true;
-                                opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
                             else
                                 opts.accel.G1out = false;
                             end
@@ -842,14 +840,12 @@ while a <= narginx
                         if ischar(args{a+2})
                             if     any(strcmpi(args{a+2},{'out','G1out','T1out','true', '1'}))
                                 opts.accel.G1out = true;
-                                opts.saveuncorrected = false;
                             elseif any(strcmpi(args{a+2},{'in', 'G1in', 'T1in', 'false','0'}))
                                 opts.accel.G1out = false; % defensive, as the uncorrected will be invalid here.
                             end
                         else
                             if args{a+2}
                                 opts.accel.G1out = true;
-                                opts.saveuncorrected = false; % defensive, as the uncorrected will be invalid here.
                             else
                                 opts.accel.G1out = false;
                             end
@@ -882,7 +878,13 @@ while a <= narginx
                     'The options "-accel" and "-approx" require a method to.\n' ...
                     'be specified. Consult the documentation.%s'],'');
             end
-            
+        
+        case '-approx_uncorrected'
+
+            % Apply tail or gamma approximation to uncorrected p-values?
+            opts.accel.uncorrected = true;
+            a = a + 1;
+
         case {'-noniiclass','-nonifticlass'} % advanced
             
             % Disable using the NIFTI class
@@ -1109,10 +1111,9 @@ while a <= narginx
             a = a + 1;
             
         case '-saveuncorrected'  % advanced
-            
-            % Save or not uncorrected p-vals
-            opts.saveuncorrected = true;
-            a = a + 1;
+
+            error(['The option "-saveuncorrected" has been removed; uncorrected p-values are\n' ...
+                'saved by default. Remove it (use "-nouncorrected" to disable them).%s'],'');
             
         case '-savedof' % advanced
             
@@ -1262,6 +1263,18 @@ if sum(logical([ ...
         opts.accel.gamma,  ...
         opts.accel.lowrank])) > 1
     error('Only one approximation method can be used for a given run.');
+end
+if opts.accel.uncorrected
+    if ~ (opts.accel.tail || opts.accel.gamma)
+        error(['The option "-approx_uncorrected" requires "-approx tail" or "-approx gamma".\n' ...
+            'Either add one of these, or remove "-approx_uncorrected".%s'],'');
+    elseif ~ opts.saveuncorrected
+        error(['The option "-approx_uncorrected" cannot be used together with "-nouncorrected".\n' ...
+            'Use either of these, but not both together.%s'],'');
+    elseif opts.accel.G1out
+        error(['The option "-approx_uncorrected" cannot be used with the "out" setting of\n' ...
+            '"-approx tail" or "-approx gamma". Either remove "out", or remove "-approx_uncorrected".%s'],'');
+    end
 end
 if opts.accel.negbin
     if opts.accel.negbin < 2

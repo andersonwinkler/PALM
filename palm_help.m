@@ -215,10 +215,14 @@ fprintf('	                      The remainder are computed via low rank matrix\n
 fprintf('	                      filling. Default val = NaN, such that it''s\n');
 fprintf('	                      computed as N*(N+1)/2, where N is the\n');
 fprintf('	                      number of subjects.\n');
+fprintf('	For "tail" and "gamma", the approximation is applied to the\n');
+fprintf('	FWER-corrected p-values only. Uncorrected p-values (and their FDR\n');
+fprintf('	adjustment) are computed from permutation counts, so they can''t be\n');
+fprintf('	smaller than 1/<number of permutations>. See "-approx_uncorrected".\n');
 fprintf('	If unsure about which option to use, and if unwilling to read the\n');
-fprintf('	full paper, go with "-accel tail", setting a relatively small number\n');
-fprintf('	of permutations, such as "-n 500". If using "-nouncorrected", or\n');
-fprintf('	if the images are small (or for non-images), this number can\n');
+fprintf('	full paper, go with "-approx tail", setting a relatively small number\n');
+fprintf('	of permutations, such as "-n 500". If not using "-approx_uncorrected",\n');
+fprintf('	or if the images are small (or for non-images), this number can\n');
 fprintf('	be increased without hitting memory limits.\n\n');
 
 fprintf('-reversemasks : Reverse 0/1 in the masks, so that the zero values\n');
@@ -316,7 +320,11 @@ fprintf('-nounivariate : Don''t save univariate results.\n\n');
 
 fprintf('-nouncorrected : Don''t save uncorrected p-values.\n\n');
 
-fprintf('-saveuncorrected : Save uncorrected p-values if an earlier option disabled it.\n\n');
+fprintf('-approx_uncorrected : Apply the tail or gamma approximation also to the\n');
+fprintf('	uncorrected p-values, and so to their FDR adjustment. This is slow\n');
+fprintf('	(one fit per test) and needs all permutations held in memory.\n');
+fprintf('	Requires "-approx tail" or "-approx gamma", and cannot be used with\n');
+fprintf('	"-nouncorrected" or with the "out" setting of these.\n\n');
 
 fprintf('-pmethodp : Partition method used when defining the set of permutations.\n');
 fprintf('	Can be "Guttman", "Beckmann", "Ridgway" or "None".\n');

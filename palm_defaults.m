@@ -111,6 +111,7 @@ opts.accel.lowrank       = false;              % Try a low rank approximation
 opts.accel.lowrank_val   = NaN;                % Use NaN for N*(N+1)/2. Values <=1 are fraction of voxels to use; vals >1 are number of voxels to use.
 opts.accel.lowrank_recon = false;              % Reconstruct past permutations in the new basis? This is very slow.
 opts.accel.G1out         = false;              % Exclude (true) or not (false) the unpermuted statistic in the null distribution for tail and gamma?
+opts.accel.uncorrected   = false;              % Apply tail or gamma approximation to uncorrected p-values?
 
 % File parsing options:
 opts.useniiclass         = true;               % Use the NIFTI class (saves memory)

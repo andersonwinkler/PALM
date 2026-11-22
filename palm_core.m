@@ -89,7 +89,7 @@ end
 if opts.accel.negbin
     plm.Gppermp                     = plm.Gpperm; % number of perms done, for the negative binomial mode
 end
-if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma) || opts.FDR
+if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
     plm.Gperms                      = plm.G;      % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
 end
 if opts.accel.lowrank
@@ -138,7 +138,7 @@ if opts.tfce.uni.do
             plm.Gtfcemax  {y}{m}    = cell(plm.nC(m),1);
         end
     end
-    if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+    if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
         plm.Gtfceperms              = plm.Gtfce; % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
     end
 end
@@ -199,7 +199,7 @@ if opts.NPC
         plm.Ttfcepperm              = plm.Tmax;   % counter, for the TFCE p-value
         plm.Ttfce                   = plm.Tmax;   % for the unpermuted TFCE
         plm.Ttfcemax                = plm.Tmax;   % to store the max TFCE statistic
-        if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+        if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
             plm.Ttfceperms          = plm.Ttfce;
         end
     end
@@ -259,7 +259,7 @@ if opts.MV
     if opts.accel.negbin
         plm.Qppermp                 = plm.Qpperm; % number of perms done, for the negative binomial mode
     end
-    if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+    if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
         plm.Qperms                  = plm.Q; % The 1xYsiz(1) will be replaced by nPxYsiz(1) later below
         if opts.tfce.mv.do
             plm.Qtfceperms          = plm.Qtfce;
@@ -1512,7 +1512,7 @@ for po = P_outer
                             end
                             
                             % Tail and gamma approximations
-                            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                            if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                                 if p == 1
                                     plm.Gperms{y}{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(y));
                                 end
@@ -1544,7 +1544,7 @@ for po = P_outer
                                 plm.Gtfcemax{y}{m}{c}(p) = max(Gtfce{y}{m}{c},[],2);
                                 
                                 % Tail and gamma approximations
-                                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                                if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                                     if p == 1
                                         plm.Gtfceperms{y}{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(y));
                                     end
@@ -1641,7 +1641,7 @@ for po = P_outer
                     plm.Tmax{m}{c}(p) = plm.npcextr(T{m}{c},[],2);
                     
                     % Tail and gamma approximations
-                    if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                    if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                         if p == 1
                             plm.Tperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                         end
@@ -1679,7 +1679,7 @@ for po = P_outer
                         plm.Ttfcemax{m}{c}(p) = max(Ttfce{m}{c},[],2);
                         
                         % Tail and gamma approximations
-                        if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                        if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                             if p == 1
                                 plm.Ttfceperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                             end
@@ -1811,7 +1811,7 @@ for po = P_outer
                             plm.Qmax  {m}{c}(p)   = mvextr(Q{m}{c},[],2);
                             
                             % Tail and gamma approximations
-                            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                            if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                                 if p == 1
                                     plm.Qperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                                 end
@@ -1849,7 +1849,7 @@ for po = P_outer
                                 plm.Qtfcemax{m}{c}(p) = max(Qtfce{m}{c},[],2);
                                 
                                 % Tail and gamma approximations
-                                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                                if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                                     if p == 1
                                         plm.Qtfceperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                                     end
@@ -1958,7 +1958,7 @@ for po = P_outer
                             plm.Qmax  {m}{c}(p)  = max(Q{m}{c},[],2);
                             
                             % Tail and gamma approximations
-                            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                            if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                                 if p == 1
                                     plm.Qperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                                 end
@@ -1997,7 +1997,7 @@ for po = P_outer
                                 plm.Qtfcemax{m}{c}(p) = max(Qtfce{m}{c},[],2);
                                 
                                 % Tail and gamma approximations
-                                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                                if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                                     if p == 1
                                         plm.Qtfceperms{m}{c} = zeros(plm.nP{m}(c),plm.Ysiz(1));
                                     end
@@ -2100,7 +2100,7 @@ for po = P_outer
             plm.Tmax{1}{c}(po) = plm.npcextr(T{1}{c},[],2);
             
             % Tail and gamma approximations
-            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+            if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                 if po == 1
                     plm.Tperms{1}{c} = zeros(plm.nP{1}(c),plm.Ysiz(1));
                 end
@@ -2138,7 +2138,7 @@ for po = P_outer
                 plm.Ttfcemax{1}{c}(po) = max(Ttfce{1}{c},[],2);
                 
                 % Tail and gamma approximations
-                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                     if po == 1
                         plm.Ttfceperms{1}{c} = zeros(plm.nP{1}(c),plm.Ysiz(1));
                     end
@@ -2275,7 +2275,7 @@ for po = P_outer
             plm.Tmax{j}(po) = plm.npcextr(T{j},[],2);
             
             % Tail and gamma approximations
-            if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+            if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                 if po == 1
                     plm.Tperms{j} = zeros(plm.nP{1}(1),size(T{j},2));
                 end
@@ -2313,7 +2313,7 @@ for po = P_outer
                 plm.Ttfcemax{j}(po) = max(Ttfce{j},[],2);
                 
                 % Tail and gamma approximations
-                if opts.saveuncorrected && (opts.accel.tail || opts.accel.gamma)
+                if opts.saveuncorrected && opts.accel.uncorrected && (opts.accel.tail || opts.accel.gamma)
                     if po == 1
                         plm.Ttfceperms{j} = zeros(plm.nP{1}(1),size(T{j},2));
                     end

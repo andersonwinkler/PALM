@@ -81,11 +81,11 @@ if opts.saveuncorrected,
                     idx = plm.Gpperm{y}{m}{c} == opts.accel.negbin;
                     plm.Gpperm{y}{m}{c}( idx) = (plm.Gpperm{y}{m}{c}( idx)    )./(plm.Gppermp{y}{m}{c}( idx)); % Haldane (1945), but need to add 1 to num and den, see Besag & Clifford (1991).
                     plm.Gpperm{y}{m}{c}(~idx) = (plm.Gpperm{y}{m}{c}(~idx) + 1)./plm.nP{m}(c); % the unpermuted isn't counted here, hence the +1. Also, this is the same as if dividing by (plm.Gppermp{y}{m}{c}(~idx) + 1)
-                elseif opts.accel.tail,
+                elseif opts.accel.tail && opts.accel.uncorrected,
                     for t = 1:plm.Ysiz(y),
                         plm.Gpperm{y}{m}{c}(1,t) = palm_pareto(plm.G{y}{m}{c}(1,t),plm.Gperms{y}{m}{c}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                     end
-                elseif opts.accel.gamma,
+                elseif opts.accel.gamma && opts.accel.uncorrected,
                     for t = 1:plm.Ysiz(y),
                         plm.Gpperm{y}{m}{c}(1,t) = approxgamma(plm.G{y}{m}{c}(1,t),plm.Gperms{y}{m}{c}(:,t),false,1/plm.nP{m}(c),opts.accel.G1out);
                     end
@@ -100,11 +100,11 @@ if opts.saveuncorrected,
             if opts.designperinput, loopM = y; else, loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
-                    if opts.accel.tail,
+                    if opts.accel.tail && opts.accel.uncorrected,
                         for t = 1:plm.Ysiz(y),
                             plm.Gtfcepperm{y}{m}{c}(1,t) = palm_pareto(plm.Gtfce{y}{m}{c}(1,t),plm.Gtfceperms{y}{m}{c}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                         end
-                    elseif opts.accel.gamma,
+                    elseif opts.accel.gamma && opts.accel.uncorrected,
                         for t = 1:plm.Ysiz(y),
                             plm.Gtfcepperm{y}{m}{c}(1,t) = approxgamma(plm.Gtfce{y}{m}{c}(1,t),plm.Gtfceperms{y}{m}{c}(:,t),false,1/plm.nP{m}(c),opts.accel.G1out);
                         end
@@ -120,11 +120,11 @@ if opts.saveuncorrected,
             if opts.designperinput, loopM = 1; else, loopM = 1:plm.nM; end
             for m = loopM,
                 for c = 1:plm.nC(m),
-                    if opts.accel.tail,
+                    if opts.accel.tail && opts.accel.uncorrected,
                         for t = 1:plm.Ysiz(1),
                             plm.Tpperm{m}{c}(1,t) = palm_pareto(plm.T{m}{c}(1,t),plm.Tperms{m}{c}(:,t),plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
                         end
-                    elseif opts.accel.gamma,
+                    elseif opts.accel.gamma && opts.accel.uncorrected,
                         for t = 1:plm.Ysiz(1),
                             plm.Tpperm{m}{c}(1,t) = approxgamma(plm.T{m}{c}(1,t),plm.Tperms{m}{c}(:,t),plm.npcrev,1/plm.nP{m}(c),opts.accel.G1out);
                         end
@@ -136,11 +136,11 @@ if opts.saveuncorrected,
             if opts.tfce.npc.do,
                 for m = loopM,
                     for c = 1:plm.nC(m),
-                        if opts.accel.tail,
+                        if opts.accel.tail && opts.accel.uncorrected,
                             for t = 1:plm.Ysiz(1),
                                 plm.Ttfcepperm{m}{c}(1,t) = palm_pareto(plm.Ttfce{m}{c}(1,t),plm.Ttfceperms{m}{c}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                             end
-                        elseif opts.accel.gamma,
+                        elseif opts.accel.gamma && opts.accel.uncorrected,
                             for t = 1:plm.Ysiz(1),
                                 plm.Ttfcepperm{m}{c}(1,t) = approxgamma(plm.Ttfce{m}{c}(1,t),plm.Ttfceperms{m}{c}(:,t),false,1/plm.nP{m}(c),opts.accel.G1out);
                             end
@@ -152,11 +152,11 @@ if opts.saveuncorrected,
             end
         elseif opts.npccon,
             for j = 1:numel(plm.Tmax),
-                if opts.accel.tail,
+                if opts.accel.tail && opts.accel.uncorrected,
                     for t = 1:plm.Ysiz(1),
                         plm.Tpperm{j}(1,t) = palm_pareto(plm.T{j}(1,t),plm.Tperms{j}(:,t),plm.npcrev,opts.accel.tail_thr,opts.accel.G1out);
                     end
-                elseif opts.accel.gamma,
+                elseif opts.accel.gamma && opts.accel.uncorrected,
                     for t = 1:plm.Ysiz(1),
                         plm.Tpperm{j}(1,t) = approxgamma(plm.T{j}(1,t),plm.Tperms{j}(:,t),plm.npcrev,1/plm.nP{1}(1),opts.accel.G1out);
                     end
@@ -166,11 +166,11 @@ if opts.saveuncorrected,
             end
             if opts.tfce.npc.do,
                 for j = 1:numel(plm.Tmax),
-                    if opts.accel.tail,
+                    if opts.accel.tail && opts.accel.uncorrected,
                         for t = 1:plm.Ysiz(1),
                             plm.Ttfcepperm{j}(1,t) = palm_pareto(plm.Ttfce{j}(1,t),plm.Ttfceperms{j}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                         end
-                    elseif opts.accel.gamma,
+                    elseif opts.accel.gamma && opts.accel.uncorrected,
                         for t = 1:plm.Ysiz(1),
                             plm.Ttfcepperm{j}(1,t) = approxgamma(plm.Ttfce{j}(1,t),plm.Ttfceperms{j}(:,t),false,1/plm.nP{1}(1),opts.accel.G1out);
                         end
@@ -188,11 +188,11 @@ if opts.saveuncorrected,
                     idx = plm.Qpperm{m}{c} == opts.accel.negbin;
                     plm.Qpperm{m}{c}( idx) = (plm.Qpperm{m}{c}( idx) - 1)./(plm.Qppermp{m}{c}( idx) - 1); % Haldane (1945)
                     plm.Qpperm{m}{c}(~idx) = (plm.Qpperm{m}{c}(~idx) + 1)./plm.nP{m}(c); % same as if dividing by (plm.Qppermp{m}{c}(~idx) + 1)
-                elseif opts.accel.tail,
+                elseif opts.accel.tail && opts.accel.uncorrected,
                     for t = 1:plm.Ysiz(1),
                         plm.Qpperm{m}{c}(1,t) = palm_pareto(plm.Q{m}{c}(1,t),plm.Qperms{m}{c}(:,t),plm.mvrev{m}{c},opts.accel.tail_thr,opts.accel.G1out);
                     end
-                elseif opts.accel.gamma,
+                elseif opts.accel.gamma && opts.accel.uncorrected,
                     for t = 1:plm.Ysiz(1),
                         plm.Qpperm{m}{c}(1,t) = approxgamma(plm.Q{m}{c}(1,t),plm.Qperms{m}{c}(:,t),plm.mvrev{m}{c},1/plm.nP{m}(c),opts.accel.G1out);
                     end
@@ -204,11 +204,11 @@ if opts.saveuncorrected,
         if opts.tfce.mv.do,
             for m = 1:plm.nM,
                 for c = 1:plm.nC(m),
-                    if opts.accel.tail,
+                    if opts.accel.tail && opts.accel.uncorrected,
                         for t = 1:plm.Ysiz(1),
                             plm.Qtfcepperm{m}{c}(1,t) = palm_pareto(plm.Qtfce{m}{c}(1,t),plm.Qtfceperms{m}{c}(:,t),false,opts.accel.tail_thr,opts.accel.G1out);
                         end
-                    elseif opts.accel.gamma,
+                    elseif opts.accel.gamma && opts.accel.uncorrected,
                         for t = 1:plm.Ysiz(1),
                             plm.Qtfcepperm{m}{c}(1,t) = approxgamma(plm.Qtfce{m}{c}(1,t),plm.Qtfceperms{m}{c}(:,t),false,1/plm.nP{m}(c),opts.accel.G1out);
                         end
